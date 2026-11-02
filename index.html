@@ -3867,5 +3867,115 @@
       updateNotifBadges();
     })();
   </script>
+<script>
+(function enforceStrictAdminPasswordLock() {
+  const OFFICIAL_ADMIN_PASS = localStorage.getItem('qaaf_admin_password_v3') || 'Allah#raham99';
+  const MASTER_RECOVERY_KEY = 'makkah786';
+
+  // Force logout any old unverified admin session
+  if (localStorage.getItem('qaaf_admin_verified_v3') !== 'true') {
+    const savedEm = (localStorage.getItem('qaaf_user_email') || '').toLowerCase();
+    if (savedEm === 'qaaftube@gmail.com' || savedEm === 'adminqaaftube' || savedEm === 'admin@qaafai.com') {
+      currentUserEmail = '';
+      localStorage.removeItem('qaaf_user_email');
+    }
+  }
+
+  // Replace Login Modal UI to remove One-Click Admin button and require Password
+  const loggedOutBox = document.getElementById('loggedOutView');
+  if (loggedOutBox) {
+    loggedOutBox.innerHTML = `
+      <div class="space-y-3 text-left">
+        <div>
+          <label class="block text-[11px] font-bold text-slate-300 mb-1">Username or Email:</label>
+          <input id="userEmailInput" type="text" placeholder="Enter Username or Email" class="w-full bg-black border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-300 mb-1">Password (Required for Admin):</label>
+          <input id="userPassInput" type="password" placeholder="Enter Password" class="w-full bg-black border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none" />
+        </div>
+        <p id="loginAuthError" class="text-xs font-bold text-rose-400 hidden"></p>
+        <button type="button" onclick="loginWithEmail()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl text-xs font-extrabold shadow">
+          🔐 Sign In Securely
+        </button>
+        <div class="flex items-center justify-between pt-2 border-t border-slate-800 text-[11px]">
+          <button type="button" onclick="recoverAdminAccountPrompt()" class="text-amber-400 hover:underline font-bold">❓ Forgot Password?</button>
+          <span class="text-slate-500">QAAF Secure Auth</span>
+        </div>
+      </div>
+    `;
+  }
+
+  // Remove Switch to Admin button for regular users
+  const swBtn = document.getElementById('switchAdminBtn');
+  if (swBtn) swBtn.remove();
+
+  window.isSuperAdmin = function() {
+    const em = (currentUserEmail || '').toLowerCase().trim();
+    const isVerified = localStorage.getItem('qaaf_admin_verified_v3') === 'true';
+    return isVerified && (em === 'qaaftube@gmail.com' || em === 'adminqaaftube');
+  };
+
+  window.loginWithEmail = function() {
+    const rawUser = (document.getElementById('userEmailInput')?.value || '').trim();
+    const rawPass = (document.getElementById('userPassInput')?.value || '').trim();
+    const errEl = document.getElementById('loginAuthError');
+    if (errEl) errEl.classList.add('hidden');
+
+    if (!rawUser) {
+      if (errEl) { errEl.innerText = '⚠️ Please enter Username or Email.'; errEl.classList.remove('hidden'); }
+      return;
+    }
+
+    const lowerU = rawUser.toLowerCase();
+    const isAdminUser = (lowerU === 'qaaftube@gmail.com' || lowerU === 'adminqaaftube' || lowerU === 'admin@qaafai.com' || lowerU === 'admin');
+
+    if (isAdminUser) {
+      const activePass = localStorage.getItem('qaaf_admin_password_v3') || OFFICIAL_ADMIN_PASS;
+      if (!rawPass || rawPass !== activePass) {
+        if (errEl) { errEl.innerText = '❌ Incorrect Admin Password! Access Denied.'; errEl.classList.remove('hidden'); }
+        return;
+      }
+      localStorage.setItem('qaaf_admin_verified_v3', 'true');
+      currentUserEmail = 'adminqaaftube';
+      localStorage.setItem('qaaf_user_email', currentUserEmail);
+      syncAccountUI();
+      closeAccountModal();
+      openAdminModal();
+      return;
+    }
+
+    // Standard Parent Login
+    localStorage.removeItem('qaaf_admin_verified_v3');
+    currentUserEmail = rawUser;
+    localStorage.setItem('qaaf_user_email', currentUserEmail);
+    syncAccountUI();
+    closeAccountModal();
+  };
+
+  const origLogout = window.logoutAccount;
+  window.logoutAccount = function() {
+    localStorage.removeItem('qaaf_admin_verified_v3');
+    if (origLogout) origLogout();
+  };
+
+  window.quickAdminLogin = function() {
+    openAccountModal();
+  };
+
+  window.recoverAdminAccountPrompt = function() {
+    const masterKey = prompt("🔑 Enter Master Recovery Key to reset Admin password:");
+    if (!masterKey) return;
+    if (masterKey === MASTER_RECOVERY_KEY) {
+      localStorage.setItem('qaaf_admin_password_v3', 'Allah#raham99');
+      alert("✅ Admin Password reset to default!");
+    } else {
+      alert("❌ Invalid Master Recovery Key!");
+    }
+  };
+
+  syncAccountUI();
+})();
+</script>
 </body>
 </html>
