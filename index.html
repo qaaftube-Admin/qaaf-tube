@@ -3780,30 +3780,86 @@
         }
       };
 
-      // SECURE SUPER ADMIN LOGIN WITH PASSWORD & RECOVERY
-      window.quickAdminLogin = function() {
-        const entered = prompt("👑 Enter Super Admin Password (Default: Qaaf786)\nOr type 'recover' if you forgot your password:");
-        if (!entered) return;
-        if (entered === 'recover') {
-          const masterKey = prompt("🔑 Enter Admin Master Recovery Key (Default: makkah786):");
-          if (masterKey === ADMIN_MASTER_RECOVERY_KEY) {
-            adminPassword = 'Qaaf786';
-            localStorage.setItem('qaaf_admin_password', adminPassword);
-            alert("✅ Admin Password reset to: Qaaf786");
-          } else {
-            alert("❌ Invalid Master Recovery Key!");
+      // SECURE SUPER ADMIN & USER LOGIN (EMAIL OR USERNAME + PASSWORD)
+      adminPassword = localStorage.getItem('qaaf_admin_password_v2') || 'Allah#raham99';
+
+      const loggedOutBox = document.getElementById('loggedOutView');
+      if (loggedOutBox && !document.getElementById('userPassInput')) {
+        loggedOutBox.innerHTML = `
+          <div class="space-y-2.5 text-left">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-300 mb-1">Email or Admin Username:</label>
+              <input id="userEmailInput" type="text" placeholder="Enter Email or Username" class="w-full bg-black border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white focus:border-emerald-500 focus:outline-none" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-300 mb-1">Password:</label>
+              <input id="userPassInput" type="password" placeholder="••••••••••••" class="w-full bg-black border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white focus:border-emerald-500 focus:outline-none" />
+            </div>
+            <p id="loginAuthError" class="text-xs font-bold text-rose-400 hidden"></p>
+            <button type="button" onclick="loginWithEmail()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl text-xs font-extrabold shadow mt-1">
+              🔐 Sign In Securely
+            </button>
+            <div class="flex items-center justify-between pt-2 border-t border-slate-800 text-[11px]">
+              <button type="button" onclick="recoverAdminAccountPrompt()" class="text-amber-400 hover:underline font-bold">❓ Forgot Password?</button>
+              <span class="text-slate-500">Protected by QAAF Auth</span>
+            </div>
+          </div>
+        `;
+      }
+
+      window.isSuperAdmin = function() {
+        const em = (currentUserEmail || '').toLowerCase().trim();
+        return em === 'qaaftube@gmail.com' || em === 'adminqaaftube' || em === 'admin@qaafai.com';
+      };
+
+      window.loginWithEmail = function() {
+        const rawUser = (document.getElementById('userEmailInput')?.value || '').trim();
+        const rawPass = (document.getElementById('userPassInput')?.value || '').trim();
+        const errEl = document.getElementById('loginAuthError');
+        if (errEl) errEl.classList.add('hidden');
+
+        if (!rawUser) {
+          if (errEl) { errEl.innerText = '⚠️ Please enter your Email or Username.'; errEl.classList.remove('hidden'); }
+          return;
+        }
+
+        const lowerU = rawUser.toLowerCase();
+        const isTryingAdmin = (lowerU === 'qaaftube@gmail.com' || lowerU === 'adminqaaftube' || lowerU === 'admin@qaafai.com');
+
+        if (isTryingAdmin) {
+          if (rawPass !== adminPassword) {
+            if (errEl) { errEl.innerText = '❌ Invalid Super Admin Password!'; errEl.classList.remove('hidden'); }
+            return;
           }
+          currentUserEmail = 'qaaftube@gmail.com';
+          localStorage.setItem('qaaf_user_email', currentUserEmail);
+          syncAccountUI();
+          closeAccountModal();
+          openAdminModal();
           return;
         }
-        if (entered !== adminPassword) {
-          alert("❌ Incorrect Admin Password!");
-          return;
-        }
-        currentUserEmail = 'qaaftube@gmail.com';
+
+        // Standard Parent Login
+        currentUserEmail = rawUser;
         localStorage.setItem('qaaf_user_email', currentUserEmail);
         syncAccountUI();
         closeAccountModal();
-        openAdminModal();
+      };
+
+      window.quickAdminLogin = function() {
+        openAccountModal();
+      };
+
+      window.recoverAdminAccountPrompt = function() {
+        const masterKey = prompt("🔑 Enter Master Recovery Key to reset password:");
+        if (!masterKey) return;
+        if (masterKey === ADMIN_MASTER_RECOVERY_KEY) {
+          adminPassword = 'Allah#raham99';
+          localStorage.setItem('qaaf_admin_password_v2', adminPassword);
+          alert("✅ Super Admin Password has been restored!");
+        } else {
+          alert("❌ Invalid Master Recovery Key!");
+        }
       };
 
       renderVideos();
