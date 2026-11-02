@@ -4605,6 +4605,139 @@
   renderVideos();
 })();
 </script>
+<script>
+(function enableDirectChannelBanEverywhere() {
+  // Master function to Ban & Remove an entire channel and all its videos
+  window.adminBanAndRemoveChannel = function(channelName, event) {
+    if (event) event.stopPropagation();
+    if (!channelName) return;
+    const count = videosData.filter(v => v.channel === channelName).length;
+    if (!confirm(`⛔ Ban & Remove Entire Channel?\n\nChannel: "${channelName}"\nThis will immediately remove all ${count} video(s) of this channel and block it.`)) return;
+
+    if (!bannedChannels.includes(channelName)) {
+      bannedChannels.push(channelName);
+      localStorage.setItem('qaaf_banned_channels', JSON.stringify(bannedChannels));
+    }
+    videosData = videosData.filter(v => v.channel !== channelName);
+    localStorage.setItem('qaaf_videos_data', JSON.stringify(videosData));
+
+    if (typeof selectChannelFilter === 'function') selectChannelFilter('ALL');
+    renderVideos();
+    if (window.renderAdminActiveVideosCatalog) window.renderAdminActiveVideosCatalog();
+    if (window.qaafCloudSync) qaafCloudSync.pushState(`Banned Channel: ${channelName}`);
+    showSyncToast(`⛔ Channel "${channelName}" banned and removed!`);
+  };
+
+  window.adminUnbanChannel = function(channelName) {
+    bannedChannels = bannedChannels.filter(c => c !== channelName);
+    localStorage.setItem('qaaf_banned_channels', JSON.stringify(bannedChannels));
+    renderVideos();
+    if (window.renderAdminActiveVideosCatalog) window.renderAdminActiveVideosCatalog();
+    if (window.qaafCloudSync) qaafCloudSync.pushState(`Unbanned Channel: ${channelName}`);
+    showSyncToast(`✅ Channel "${channelName}" unbanned!`);
+  };
+
+  // 1. Upgrade Admin Catalog to show BOTH "Ban Channel" and "Delete Video" + Active Channels List
+  window.renderAdminActiveVideosCatalog = function() {
+    const listEl = document.getElementById('adminActiveVideosCatalogList');
+    const countBadge = document.getElementById('admVideosCountBadge');
+    if (countBadge) countBadge.innerText = videosData.length;
+    if (!listEl) return;
+
+    const uniqueChs = [...new Set(videosData.map(v => v.channel))];
+    let htmlOut = '';
+
+    // Top Summary of Active Channels for 1-click Channel Removal
+    if (uniqueChs.length > 0) {
+      htmlOut += `
+        <div class="bg-slate-900/90 border border-slate-700/80 rounded-xl p-3 mb-3">
+          <p class="text-[11px] font-extrabold text-amber-300 mb-2">📺 Active Channels (${uniqueChs.length}) — Click any channel to Ban &amp; Remove it completely:</p>
+          <div class="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-0.5">
+      `;
+      uniqueChs.forEach(ch => {
+        const cCount = videosData.filter(v => v.channel === ch).length;
+        const safeCh = ch.replace(/'/g, "\\'");
+        htmlOut += `
+          <button type="button" onclick="adminBanAndRemoveChannel('${safeCh}', event)" class="bg-black hover:bg-red-950/80 border border-slate-700 hover:border-red-500 text-slate-200 hover:text-red-200 px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition" title="Click to Ban & Remove this entire channel">
+            <span>${ch} (${cCount})</span>
+            <span class="text-rose-400 font-extrabold">⛔ Ban</span>
+          </button>
+        `;
+      });
+      htmlOut += `</div></div>`;
+    }
+
+    // Banned Channels Restore Box (if any)
+    if (bannedChannels.length > 0) {
+      htmlOut += `
+        <div class="bg-rose-950/20 border border-rose-500/30 rounded-xl p-2.5 mb-3">
+          <p class="text-[10px] font-bold text-rose-300 mb-1.5">⛔ Banned Channels (Click to Unban):</p>
+          <div class="flex flex-wrap gap-1.5">
+      `;
+      bannedChannels.forEach(bch => {
+        const safeBch = bch.replace(/'/g, "\\'");
+        htmlOut += `<button type="button" onclick="adminUnbanChannel('${safeBch}')" class="bg-black/70 border border-rose-500/40 text-rose-200 px-2 py-0.5 rounded text-[10px] font-bold hover:bg-emerald-950">🔄 Unban: ${bch}</button>`;
+      });
+      htmlOut += `</div></div>`;
+    }
+
+    // Individual Video Rows with both "Ban Channel" and "Delete Video"
+    videosData.forEach(v => {
+      const safeCh = (v.channel || '').replace(/'/g, "\\'");
+      htmlOut += `
+        <div class="bg-black/60 border border-slate-800 hover:border-slate-700 p-2.5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition">
+          <div class="min-w-0 flex-1">
+            <p class="font-bold text-white truncate">${v.title}</p>
+            <p class="text-[10px] text-slate-400">Channel: <strong class="text-amber-300">${v.channel}</strong> • ID: <span class="font-mono text-emerald-400">${v.ytId}</span> • ${v.lang.toUpperCase()}</p>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button type="button" onclick="adminBanAndRemoveChannel('${safeCh}', event)" class="bg-amber-600/20 hover:bg-red-600 border border-amber-500/40 text-amber-300 hover:text-white px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition">
+              ⛔ Ban Channel
+            </button>
+            <button type="button" onclick="adminDeleteVideoCard('${v.id}', event)" class="bg-rose-600/20 hover:bg-rose-600 border border-rose-500/40 text-rose-300 hover:text-white px-2.5 py-1 rounded-lg text-[10px] font-bold transition">
+              🗑️ Video
+            </button>
+          </div>
+        </div>`;
+    });
+    listEl.innerHTML = htmlOut;
+  };
+
+  // 2. Inject "⛔ Ban Channel" button directly under every Video Card next to the Channel Name when Admin is logged in
+  const prevRenderVids = window.renderVideos;
+  window.renderVideos = function() {
+    if (prevRenderVids) prevRenderVids();
+
+    if (isSuperAdmin() && !isKidsLocked) {
+      // Add Ban button right next to Channel Name on each Video Card
+      document.querySelectorAll('#videoGrid > div').forEach(card => {
+        const flagBtn = card.querySelector('button[onclick*="openFlagModal"]');
+        if (!flagBtn) return;
+        const match = flagBtn.getAttribute('onclick').match(/'([^']+)'/);
+        if (!match || !match[1]) return;
+        const vidObj = videosData.find(x => x.id === match[1]);
+        if (!vidObj) return;
+
+        const chRow = card.querySelector('.p-3 .flex.items-center.justify-between');
+        if (chRow && !chRow.querySelector('.card-ban-ch-btn')) {
+          const banBtn = document.createElement('button');
+          banBtn.type = 'button';
+          banBtn.className = 'card-ban-ch-btn bg-red-600/25 hover:bg-red-600 border border-red-500/50 text-red-300 hover:text-white px-2 py-0.5 rounded text-[10px] font-extrabold transition ml-1 shrink-0';
+          banBtn.innerHTML = '⛔ Ban Channel';
+          banBtn.title = `Ban & Remove entire channel: ${vidObj.channel}`;
+          banBtn.onclick = function(e) {
+            adminBanAndRemoveChannel(vidObj.channel, e);
+          };
+          chRow.insertBefore(banBtn, chRow.lastElementChild);
+        }
+      });
+    }
+  };
+
+  renderVideos();
+  if (window.renderAdminActiveVideosCatalog) window.renderAdminActiveVideosCatalog();
+})();
+</script>
 </body>
 
 
