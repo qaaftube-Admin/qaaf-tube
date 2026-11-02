@@ -3059,7 +3059,7 @@
       function scrubBrokenVideoIds() {
         let fixedAny = false;
         videosData = videosData.map(v => {
-          if (brokenIdFixes[v.ytId]) {
+          if (false && brokenIdFixes[v.ytId]) {
             v.ytId = brokenIdFixes[v.ytId];
             fixedAny = true;
           }
@@ -4360,5 +4360,89 @@
   window.runStartupSplash();
 })();
 </script>
+
+<script>
+(function applyCleanCatalogAndLogoLoop() {
+  const FRESH_CATALOG = [{"id": "v__0mNHh43l78", "title": "Ayat Al Birr 2 177  surah al baqarah  سورة البقرة آية البر   #deen #islamicknowledge #ayatoftheday #Shorts", "channel": "Tarbiah Islamic Centre", "lang": "ur", "region": "UR", "category": "bayan", "kidsSafe": false, "isShort": true, "ytId": "_0mNHh43l78", "isCustomAdded": true, "duration": "0:55", "views": 19500, "createdAt": 1793646965}, {"id": "v_tXEHF1JZVOo", "title": "Surah Al-Asr — A Powerful Visual Reminder |  سورۃ العصر — ایک پکار، ایک نصیحت #Shorts", "channel": "Tarbiah Islamic Centre", "lang": "ur", "region": "UR", "category": "bayan", "kidsSafe": false, "isShort": true, "ytId": "tXEHF1JZVOo", "isCustomAdded": true, "duration": "0:55", "views": 19500, "createdAt": 1793646905}];
+  const CATALOG_VERSION = 'qaaf_clean_v12_1793646970';
+
+  // Purge old v1..v10 & cached videos from localStorage
+  if (localStorage.getItem('qaaf_catalog_ver') !== CATALOG_VERSION) {
+    videosData = JSON.parse(JSON.stringify(FRESH_CATALOG));
+    localStorage.setItem('qaaf_videos_data', JSON.stringify(videosData));
+    localStorage.setItem('qaaf_catalog_ver', CATALOG_VERSION);
+  } else {
+    videosData = videosData.filter(v => !['v1','v2','v3','v4','v5','v6','v7','v8','v9','v10'].includes(v.id));
+    if (videosData.length === 0) videosData = JSON.parse(JSON.stringify(FRESH_CATALOG));
+    localStorage.setItem('qaaf_videos_data', JSON.stringify(videosData));
+  }
+
+  // Also ensure Firebase incoming state never restores old v1..v10
+  if (window.qaafCloudSync) {
+    const origApply = qaafCloudSync.applyIncomingState.bind(qaafCloudSync);
+    qaafCloudSync.applyIncomingState = function(payload, source) {
+      if (payload && Array.isArray(payload.videosData)) {
+        payload.videosData = payload.videosData.filter(v => !['v1','v2','v3','v4','v5','v6','v7','v8','v9','v10'].includes(v.id));
+      }
+      origApply(payload, source);
+    };
+  }
+
+  // Update Splash Logo White Bar so it fills, pulses between full (578) and half (309) while loading, then settles at half (309)
+  const styleEl = document.createElement('style');
+  styleEl.textContent = `
+    @keyframes qaafBarPulseLoop {
+      0% { width: 120px; }
+      50% { width: 578px; }
+      100% { width: 309px; }
+    }
+    .qaaf-bar-looping {
+      animation: qaafBarPulseLoop 1.2s ease-in-out infinite alternate !important;
+    }
+  `;
+  document.head.appendChild(styleEl);
+
+  const origSplash = window.runStartupSplash;
+  window.runStartupSplash = function() {
+    if (origSplash) origSplash();
+    setTimeout(() => {
+      const barGroup = document.getElementById('spBarGroup');
+      const barFill = document.getElementById('spBarFill');
+      if (barGroup && barFill) {
+        barGroup.setAttribute('opacity', '1');
+        barGroup.setAttribute('transform', 'translate(0, 0)');
+        barFill.classList.add('qaaf-bar-looping');
+        setTimeout(() => {
+          barFill.classList.remove('qaaf-bar-looping');
+          barFill.setAttribute('width', '309');
+        }, 1600);
+      }
+    }, 1800);
+  };
+  window.replayStartupSplash = window.runStartupSplash;
+
+  // Support pasting Channel URLs (@Handle) in Admin Auto-Fetch
+  const origAutoFetch = window.adminAutoFetchYouTubeInfo;
+  window.adminAutoFetchYouTubeInfo = async function() {
+    const inp = document.getElementById('adminYtUrlInput');
+    const raw = (inp ? inp.value : '').trim();
+    if (raw.includes('/@') || raw.startsWith('@')) {
+      const handleMatch = raw.match(/@([a-zA-Z0-9_.-]+)/);
+      const handle = handleMatch ? handleMatch[1] : 'Channel';
+      const titleInput = document.getElementById('adminVideoTitle');
+      const channelInput = document.getElementById('adminChannelName');
+      if (channelInput) channelInput.value = handle;
+      if (titleInput && !titleInput.value) titleInput.value = handle + ' — Official Islamic Video';
+      showSyncToast('📺 Channel Handle @' + handle + ' detected! Paste any video URL from this channel or click Push Live.');
+      return;
+    }
+    if (origAutoFetch) return origAutoFetch();
+  };
+
+  renderVideos();
+  if (window.renderAdminActiveVideosCatalog) window.renderAdminActiveVideosCatalog();
+})();
+</script>
 </body>
+
 </html>
