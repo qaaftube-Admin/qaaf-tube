@@ -3977,5 +3977,195 @@
   syncAccountUI();
 })();
 </script>
+<script>
+(function initSignInAndSignUpSystem() {
+  window.registeredUsersMap = JSON.parse(localStorage.getItem('qaaf_registered_users') || '{}');
+  const OFFICIAL_ADMIN_PASS = localStorage.getItem('qaaf_admin_password_v3') || 'Allah#raham99';
+
+  const loggedOutBox = document.getElementById('loggedOutView');
+  if (loggedOutBox) {
+    loggedOutBox.innerHTML = `
+      <!-- SIGN IN / SIGN UP TABS -->
+      <div class="grid grid-cols-2 gap-1.5 bg-black p-1 rounded-xl border border-slate-800 mb-3.5 text-xs font-extrabold">
+        <button type="button" id="authTabSignInBtn" onclick="switchAuthModalTab('signin')" class="py-2 rounded-lg bg-emerald-600 text-white shadow transition">🔐 Sign In</button>
+        <button type="button" id="authTabSignUpBtn" onclick="switchAuthModalTab('signup')" class="py-2 rounded-lg text-slate-400 hover:text-white transition">✨ Sign Up</button>
+      </div>
+
+      <!-- 1. SIGN IN FORM -->
+      <div id="authSignInPane" class="space-y-3 text-left">
+        <div>
+          <label class="block text-[11px] font-bold text-slate-300 mb-1">Username or Email:</label>
+          <input id="userEmailInput" type="text" placeholder="Enter Username or Email" class="w-full bg-black border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-300 mb-1">Password:</label>
+          <input id="userPassInput" type="password" placeholder="Enter Password" class="w-full bg-black border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none" />
+        </div>
+        <p id="loginAuthError" class="text-xs font-bold text-rose-400 hidden"></p>
+        <button type="button" onclick="loginWithEmail()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl text-xs font-extrabold shadow">
+          🔐 Sign In to Account
+        </button>
+        <div class="flex items-center justify-between pt-2 border-t border-slate-800 text-[11px]">
+          <button type="button" onclick="recoverUserOrAdminPassword()" class="text-amber-400 hover:underline font-bold">❓ Forgot Password?</button>
+          <button type="button" onclick="switchAuthModalTab('signup')" class="text-emerald-400 hover:underline font-bold">Create New Account ➔</button>
+        </div>
+      </div>
+
+      <!-- 2. SIGN UP (CREATE ACCOUNT) FORM -->
+      <div id="authSignUpPane" class="hidden space-y-2.5 text-left">
+        <div>
+          <label class="block text-[11px] font-bold text-slate-300 mb-1">Full Name / Family Name:</label>
+          <input id="regNameInput" type="text" placeholder="e.g. Ahmad Family" class="w-full bg-black border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-300 mb-1">Email or Username:</label>
+          <input id="regEmailInput" type="text" placeholder="e.g. ahmad@gmail.com" class="w-full bg-black border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none" />
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-300 mb-1">Create Password:</label>
+            <input id="regPassInput" type="password" placeholder="Min 6 characters" class="w-full bg-black border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-amber-300 mb-1">Recovery Secret Word:</label>
+            <input id="regRecoveryWordInput" type="text" placeholder="e.g. madinah" class="w-full bg-black border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-500 focus:outline-none" />
+          </div>
+        </div>
+        <p id="signUpAuthError" class="text-xs font-bold text-rose-400 hidden"></p>
+        <button type="button" onclick="registerNewFamilyAccount()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-xl text-xs font-extrabold shadow mt-1">
+          ✨ Create Family Account
+        </button>
+      </div>
+    `;
+  }
+
+  window.switchAuthModalTab = function(tab) {
+    const inPane = document.getElementById('authSignInPane');
+    const upPane = document.getElementById('authSignUpPane');
+    const inBtn = document.getElementById('authTabSignInBtn');
+    const upBtn = document.getElementById('authTabSignUpBtn');
+    if (!inPane || !upPane) return;
+    if (tab === 'signup') {
+      inPane.classList.add('hidden');
+      upPane.classList.remove('hidden');
+      upBtn.className = 'py-2 rounded-lg bg-blue-600 text-white shadow transition';
+      inBtn.className = 'py-2 rounded-lg text-slate-400 hover:text-white transition';
+    } else {
+      upPane.classList.add('hidden');
+      inPane.classList.remove('hidden');
+      inBtn.className = 'py-2 rounded-lg bg-emerald-600 text-white shadow transition';
+      upBtn.className = 'py-2 rounded-lg text-slate-400 hover:text-white transition';
+    }
+  };
+
+  window.registerNewFamilyAccount = function() {
+    const name = (document.getElementById('regNameInput')?.value || '').trim();
+    const userKey = (document.getElementById('regEmailInput')?.value || '').trim().toLowerCase();
+    const pass = (document.getElementById('regPassInput')?.value || '').trim();
+    const recWord = (document.getElementById('regRecoveryWordInput')?.value || 'makkah').trim().toLowerCase();
+    const errEl = document.getElementById('signUpAuthError');
+    if (errEl) errEl.classList.add('hidden');
+
+    if (!name || !userKey || !pass) {
+      if (errEl) { errEl.innerText = '⚠️ Please fill in Name, Email/Username, and Password.'; errEl.classList.remove('hidden'); }
+      return;
+    }
+    if (userKey === 'adminqaaftube' || userKey === 'qaaftube@gmail.com') {
+      if (errEl) { errEl.innerText = '🚫 Reserved Super Admin username! Please Sign In instead.'; errEl.classList.remove('hidden'); }
+      return;
+    }
+    if (window.registeredUsersMap[userKey]) {
+      if (errEl) { errEl.innerText = '⚠️ Account already exists! Please Sign In.'; errEl.classList.remove('hidden'); }
+      return;
+    }
+
+    window.registeredUsersMap[userKey] = { name, userKey, pass, recWord, createdAt: new Date().toLocaleDateString() };
+    localStorage.setItem('qaaf_registered_users', JSON.stringify(window.registeredUsersMap));
+    localStorage.setItem('qaaf_parent_recovery_secret', recWord);
+
+    localStorage.removeItem('qaaf_admin_verified_v3');
+    currentUserEmail = userKey;
+    localStorage.setItem('qaaf_user_email', currentUserEmail);
+    syncAccountUI();
+    closeAccountModal();
+    if (window.qaafCloudSync) qaafCloudSync.pushState('New Family Account Registered');
+    alert(`🎉 Welcome ${name}! Your QAAF Tube Family Account has been created.`);
+  };
+
+  window.loginWithEmail = function() {
+    const rawUser = (document.getElementById('userEmailInput')?.value || '').trim();
+    const rawPass = (document.getElementById('userPassInput')?.value || '').trim();
+    const errEl = document.getElementById('loginAuthError');
+    if (errEl) errEl.classList.add('hidden');
+
+    if (!rawUser || !rawPass) {
+      if (errEl) { errEl.innerText = '⚠️ Please enter both Username/Email and Password.'; errEl.classList.remove('hidden'); }
+      return;
+    }
+
+    const lowerU = rawUser.toLowerCase();
+    const isAdminUser = (lowerU === 'qaaftube@gmail.com' || lowerU === 'adminqaaftube' || lowerU === 'admin@qaafai.com' || lowerU === 'admin');
+
+    if (isAdminUser) {
+      const activePass = localStorage.getItem('qaaf_admin_password_v3') || OFFICIAL_ADMIN_PASS;
+      if (rawPass !== activePass) {
+        if (errEl) { errEl.innerText = '❌ Incorrect Admin Password!'; errEl.classList.remove('hidden'); }
+        return;
+      }
+      localStorage.setItem('qaaf_admin_verified_v3', 'true');
+      currentUserEmail = 'adminqaaftube';
+      localStorage.setItem('qaaf_user_email', currentUserEmail);
+      syncAccountUI();
+      closeAccountModal();
+      openAdminModal();
+      return;
+    }
+
+    const existingUser = window.registeredUsersMap[lowerU];
+    if (!existingUser) {
+      if (errEl) { errEl.innerText = '⚠️ Account not found! Click "Sign Up" above to create an account.'; errEl.classList.remove('hidden'); }
+      return;
+    }
+    if (existingUser.pass !== rawPass) {
+      if (errEl) { errEl.innerText = '❌ Incorrect Password!'; errEl.classList.remove('hidden'); }
+      return;
+    }
+
+    localStorage.removeItem('qaaf_admin_verified_v3');
+    currentUserEmail = lowerU;
+    localStorage.setItem('qaaf_user_email', currentUserEmail);
+    syncAccountUI();
+    closeAccountModal();
+  };
+
+  window.recoverUserOrAdminPassword = function() {
+    const rawUser = (document.getElementById('userEmailInput')?.value || '').trim().toLowerCase();
+    if (!rawUser) {
+      alert('👆 Please type your Username or Email in the box first, then click Forgot Password.');
+      return;
+    }
+    if (rawUser === 'adminqaaftube' || rawUser === 'qaaftube@gmail.com') {
+      window.recoverAdminAccountPrompt();
+      return;
+    }
+    const existing = window.registeredUsersMap[rawUser];
+    if (!existing) {
+      alert('❌ No account found with this Email/Username.');
+      return;
+    }
+    const word = prompt(`🔑 Enter your Recovery Secret Word for ${rawUser}:`);
+    if (word && word.trim().toLowerCase() === existing.recWord) {
+      const newP = prompt('✅ Verified! Enter your new password:');
+      if (newP && newP.trim()) {
+        existing.pass = newP.trim();
+        localStorage.setItem('qaaf_registered_users', JSON.stringify(window.registeredUsersMap));
+        alert('✅ Password updated successfully! You can now Sign In.');
+      }
+    } else {
+      alert('❌ Incorrect Recovery Secret Word!');
+    }
+  };
+})();
+</script>
 </body>
 </html>
