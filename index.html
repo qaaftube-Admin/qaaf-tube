@@ -4167,5 +4167,198 @@
   };
 })();
 </script>
+<script>
+(function installNewQaafVectorLogoAndSplash() {
+  // 1. UPDATE HEADER LOGO TO NEW 1024x716 VECTOR DESIGN
+  const headerSvg = document.querySelector('#mainHeader svg');
+  if (headerSvg) {
+    headerSvg.setAttribute('viewBox', '0 0 1024 716');
+    headerSvg.innerHTML = `
+      <path d="M 512.00 55.00 C 788.00 55.00 896.96 64.47 934.00 95.00 C 971.04 125.53 984.00 222.00 984.00 358.00 C 984.00 494.00 971.04 590.47 934.00 621.00 C 896.96 651.53 788.00 661.00 512.00 661.00 C 236.00 661.00 127.04 651.53 90.00 621.00 C 52.96 590.47 40.00 494.00 40.00 358.00 C 40.00 222.00 52.96 125.53 90.00 95.00 C 127.04 64.47 236.00 55.00 512.00 55.00 Z" fill="#E51920" />
+      <path d="M 512.00 79.00 C 772.00 79.00 893.79 91.81 920.00 115.00 C 946.21 138.19 959.00 232.00 959.00 358.00 C 959.00 484.00 946.21 577.81 920.00 601.00 C 893.79 624.19 772.00 637.00 512.00 637.00 C 252.00 637.00 130.21 624.19 104.00 601.00 C 77.79 577.81 65.00 484.00 65.00 358.00 C 65.00 232.00 77.79 138.19 104.00 115.00 C 130.21 91.81 252.00 79.00 512.00 79.00 Z M 512.00 95.00 C 698.00 95.00 869.51 93.54 908.00 127.00 C 946.49 160.46 943.00 288.00 943.00 358.00 C 943.00 428.00 946.49 555.54 908.00 589.00 C 869.51 622.46 698.00 621.00 512.00 621.00 C 326.00 621.00 154.49 622.46 116.00 589.00 C 77.51 555.54 81.00 428.00 81.00 358.00 C 81.00 288.00 77.51 160.46 116.00 127.00 C 154.49 93.54 326.00 95.00 512.00 95.00 Z" fill="#FFFFFF" fill-rule="evenodd" />
+      <path d="M 562.00 240.68 L 562.00 473.52 Q 562.00 504.70 589.00 489.11 L 789.20 372.19 Q 816.20 356.60 789.20 341.01 L 589.00 225.09 Q 562.00 209.50 562.00 240.68 Z" fill="#FFFFFF" />
+      <path d="M 452.00 219.00 L 446.00 220.00 L 443.00 221.00 L 440.00 222.00 L 434.00 225.00 L 431.00 227.00 L 422.00 236.00 L 419.00 240.00 L 416.00 244.00 L 414.00 247.00 L 413.00 250.00 L 411.00 252.00 L 407.00 260.00 L 407.00 262.00 L 405.00 265.00 L 404.00 268.00 L 403.00 271.00 L 402.00 275.00 L 401.00 279.00 L 400.00 285.00 L 400.00 307.00 L 401.00 312.00 L 403.00 315.00 L 403.00 317.00 L 404.00 319.00 L 407.00 323.00 L 409.00 325.00 L 412.00 327.00 L 415.00 329.00 L 421.00 332.00 L 424.00 333.00 L 427.00 334.00 L 432.00 335.00 L 450.00 335.00 L 461.00 333.00 L 469.00 333.00 L 477.00 334.00 L 483.00 335.00 L 486.00 336.00 L 489.00 338.00 L 491.00 338.00 L 494.00 340.00 L 498.00 343.00 L 501.00 347.00 L 504.00 348.00 L 504.00 346.00 L 504.00 333.00 L 505.00 330.00 L 506.00 332.00 L 508.00 334.00 L 508.00 336.00 L 511.00 341.00 L 512.00 346.00 L 512.00 354.00 L 508.00 359.00 L 495.00 372.00 L 488.00 378.00 L 484.00 381.00 L 480.00 383.00 L 476.00 387.00 L 472.00 390.00 L 468.00 393.00 L 464.00 396.00 L 460.00 399.00 L 455.00 403.00 L 452.00 405.00 L 449.00 407.00 L 446.00 409.00 L 443.00 411.00 L 440.00 413.00 L 437.00 414.00 L 435.00 416.00 L 432.00 417.00 L 430.00 419.00 L 425.00 421.00 L 423.00 423.00 L 412.00 428.00 L 410.00 430.00 L 400.00 435.00 L 397.00 436.00 L 395.00 436.00 L 392.00 438.00 L 390.00 438.00 L 385.00 441.00 L 383.00 441.00 L 380.00 443.00 L 378.00 443.00 L 375.00 445.00 L 372.00 446.00 L 369.00 447.00 L 366.00 448.00 L 364.00 448.00 L 361.00 450.00 L 357.00 451.00 L 353.00 452.00 L 350.00 453.00 L 346.00 454.00 L 341.00 455.00 L 336.00 456.00 L 325.00 457.00 L 310.00 457.00 L 301.00 456.00 L 301.00 456.00 L 297.00 455.00 L 293.00 454.00 L 289.00 453.00 L 286.00 451.00 L 284.00 451.00 L 280.00 449.00 L 278.00 447.00 L 275.00 446.00 L 272.00 444.00 L 269.00 442.00 L 262.00 436.00 L 258.00 432.00 L 256.00 429.00 L 254.00 426.00 L 251.00 420.00 L 250.00 417.00 L 249.00 414.00 L 248.00 411.00 L 247.00 407.00 L 246.00 401.00 L 245.00 393.00 L 245.00 383.00 L 246.00 375.00 L 247.00 369.00 L 248.00 365.00 L 249.00 362.00 L 250.00 358.00 L 251.00 355.00 L 252.00 352.00 L 254.00 348.00 L 254.00 345.00 L 256.00 342.00 L 257.00 338.00 L 258.00 335.00 L 259.00 331.00 L 260.00 327.00 L 260.00 325.00 L 257.00 326.00 L 255.00 325.00 L 252.00 328.00 L 251.00 331.00 L 249.00 333.00 L 240.00 351.00 L 240.00 353.00 L 238.00 356.00 L 238.00 358.00 L 236.00 361.00 L 235.00 364.00 L 234.00 367.00 L 233.00 370.00 L 232.00 373.00 L 231.00 377.00 L 230.00 381.00 L 229.00 385.00 L 228.00 391.00 L 228.00 401.00 L 226.00 409.00 L 226.00 431.00 L 228.00 436.00 L 231.00 441.00 L 231.00 447.00 L 232.00 453.00 L 233.00 457.00 L 234.00 461.00 L 235.00 464.00 L 238.00 470.00 L 240.00 473.00 L 245.00 479.00 L 262.00 496.00 L 266.00 499.00 L 270.00 501.00 L 273.00 502.00 L 275.00 502.00 L 278.00 504.00 L 283.00 504.00 L 287.00 505.00 L 290.00 507.00 L 295.00 508.00 L 310.00 508.00 L 315.00 511.00 L 324.00 511.00 L 331.00 510.00 L 337.00 509.00 L 344.00 508.00 L 348.00 507.00 L 351.00 506.00 L 355.00 505.00 L 359.00 504.00 L 362.00 503.00 L 365.00 502.00 L 368.00 501.00 L 371.00 500.00 L 374.00 499.00 L 377.00 497.00 L 379.00 497.00 L 382.00 496.00 L 387.00 493.00 L 389.00 493.00 L 407.00 484.00 L 409.00 482.00 L 412.00 481.00 L 414.00 479.00 L 417.00 478.00 L 420.00 476.00 L 422.00 474.00 L 425.00 473.00 L 428.00 471.00 L 430.00 469.00 L 433.00 467.00 L 437.00 465.00 L 440.00 463.00 L 443.00 461.00 L 445.00 459.00 L 446.00 461.00 L 450.00 458.00 L 455.00 454.00 L 461.00 450.00 L 465.00 447.00 L 472.00 441.00 L 478.00 435.00 L 482.00 433.00 L 493.00 423.00 L 504.00 412.00 L 509.00 406.00 L 511.00 401.00 L 514.00 398.00 L 515.00 395.00 L 517.00 393.00 L 523.00 381.00 L 523.00 379.00 L 525.00 376.00 L 526.00 373.00 L 527.00 370.00 L 528.00 367.00 L 529.00 363.00 L 530.00 358.00 L 531.00 353.00 L 532.00 346.00 L 532.00 315.00 L 531.00 309.00 L 530.00 304.00 L 529.00 299.00 L 528.00 296.00 L 527.00 293.00 L 526.00 289.00 L 525.00 286.00 L 523.00 283.00 L 523.00 281.00 L 521.00 278.00 L 521.00 276.00 L 519.00 272.00 L 517.00 270.00 L 517.00 268.00 L 515.00 266.00 L 513.00 261.00 L 511.00 259.00 L 511.00 257.00 L 509.00 254.00 L 507.00 251.00 L 504.00 247.00 L 489.00 232.00 L 485.00 229.00 L 482.00 227.00 L 472.00 222.00 L 469.00 221.00 L 466.00 220.00 L 460.00 219.00 Z M 438.00 266.00 L 439.00 265.00 L 449.00 265.00 L 452.00 266.00 L 455.00 268.00 L 457.00 268.00 L 461.00 270.00 L 465.00 273.00 L 477.00 285.00 L 474.00 287.00 L 455.00 288.00 L 438.00 288.00 L 435.00 287.00 L 429.00 284.00 L 424.00 279.00 L 424.00 277.00 L 425.00 275.00 L 427.00 273.00 L 429.00 271.00 L 431.00 269.00 L 434.00 267.00 L 436.00 267.00 Z M 459.00 144.00 L 457.00 147.00 L 455.00 150.00 L 455.00 152.00 L 453.00 155.00 L 451.00 158.00 L 449.00 161.00 L 445.00 166.00 L 440.00 168.00 L 437.00 167.00 L 435.00 165.00 L 432.00 164.00 L 430.00 162.00 L 427.00 161.00 L 424.00 159.00 L 421.00 156.00 L 418.00 154.00 L 415.00 153.00 L 412.00 150.00 L 409.00 148.00 L 406.00 146.00 L 402.00 147.00 L 401.00 150.00 L 399.00 152.00 L 397.00 157.00 L 395.00 160.00 L 393.00 163.00 L 390.00 166.00 L 388.00 169.00 L 386.00 172.00 L 384.00 175.00 L 382.00 178.00 L 381.00 180.00 L 381.00 182.00 L 383.00 184.00 L 386.00 186.00 L 389.00 188.00 L 393.00 190.00 L 396.00 193.00 L 400.00 196.00 L 403.00 198.00 L 407.00 201.00 L 410.00 203.00 L 413.00 205.00 L 416.00 207.00 L 420.00 210.00 L 422.00 210.00 L 429.00 203.00 L 432.00 199.00 L 435.00 195.00 L 436.00 192.00 L 438.00 190.00 L 439.00 187.00 L 441.00 184.00 L 443.00 182.00 L 445.00 183.00 L 447.00 185.00 L 451.00 188.00 L 455.00 190.00 L 459.00 194.00 L 463.00 197.00 L 466.00 199.00 L 470.00 202.00 L 473.00 204.00 L 477.00 207.00 L 479.00 207.00 L 482.00 204.00 L 488.00 197.00 L 491.00 193.00 L 493.00 190.00 L 494.00 187.00 L 496.00 185.00 L 501.00 175.00 L 502.00 172.00 L 502.00 169.00 L 500.00 167.00 L 497.00 165.00 L 494.00 164.00 L 492.00 162.00 L 488.00 160.00 L 485.00 158.00 L 482.00 156.00 L 479.00 153.00 L 476.00 151.00 L 473.00 149.00 L 470.00 147.00 L 466.00 144.00 L 464.00 143.00 Z" fill="#FFFFFF" fill-rule="evenodd" />
+      <rect x="223" y="554" width="578" height="25" rx="12.5" ry="12.5" fill="none" stroke="#FFFFFF" stroke-width="5" />
+      <rect x="223" y="554" width="309" height="25" rx="12.5" ry="12.5" fill="#FFFFFF" />
+    `;
+  }
+
+  // 2. INSTALL COLLISION PHYSICS ANIMATION INTO STARTUP SPLASH MODAL
+  const splashModal = document.getElementById('startupSplashModal');
+  if (splashModal) {
+    splashModal.innerHTML = `
+      <div id="splashStageWrapper" class="relative w-full max-w-md flex flex-col items-center justify-center p-4" style="filter: drop-shadow(0 15px 45px rgba(229, 25, 32, 0.35));">
+        <div id="splashLogoContainer" class="w-full h-auto block">
+          <svg class="w-full h-auto block overflow-visible" viewBox="0 0 1024 716" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <radialGradient id="impactGlow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#ffffff" stop-opacity="1" />
+                <stop offset="35%" stop-color="#ffffff" stop-opacity="0.85" />
+                <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+              </radialGradient>
+              <clipPath id="barClip">
+                <rect x="223" y="554" width="578" height="25" rx="12.5" ry="12.5" />
+              </clipPath>
+            </defs>
+            <path id="spRedBox" d="M 512.00 55.00 C 788.00 55.00 896.96 64.47 934.00 95.00 C 971.04 125.53 984.00 222.00 984.00 358.00 C 984.00 494.00 971.04 590.47 934.00 621.00 C 896.96 651.53 788.00 661.00 512.00 661.00 C 236.00 661.00 127.04 651.53 90.00 621.00 C 52.96 590.47 40.00 494.00 40.00 358.00 C 40.00 222.00 52.96 125.53 90.00 95.00 C 127.04 64.47 236.00 55.00 512.00 55.00 Z" fill="#E51920" />
+            <path id="spInnerBorder" d="M 512.00 79.00 C 772.00 79.00 893.79 91.81 920.00 115.00 C 946.21 138.19 959.00 232.00 959.00 358.00 C 959.00 484.00 946.21 577.81 920.00 601.00 C 893.79 624.19 772.00 637.00 512.00 637.00 C 252.00 637.00 130.21 624.19 104.00 601.00 C 77.79 577.81 65.00 484.00 65.00 358.00 C 65.00 232.00 77.79 138.19 104.00 115.00 C 130.21 91.81 252.00 79.00 512.00 79.00 Z M 512.00 95.00 C 698.00 95.00 869.51 93.54 908.00 127.00 C 946.49 160.46 943.00 288.00 943.00 358.00 C 943.00 428.00 946.49 555.54 908.00 589.00 C 869.51 622.46 698.00 621.00 512.00 621.00 C 326.00 621.00 154.49 622.46 116.00 589.00 C 77.51 555.54 81.00 428.00 81.00 358.00 C 81.00 288.00 77.51 160.46 116.00 127.00 C 154.49 93.54 326.00 95.00 512.00 95.00 Z" fill="#FFFFFF" fill-rule="evenodd" />
+            <g id="spTriangleGrp">
+              <path d="M 562.00 240.68 L 562.00 473.52 Q 562.00 504.70 589.00 489.11 L 789.20 372.19 Q 816.20 356.60 789.20 341.01 L 589.00 225.09 Q 562.00 209.50 562.00 240.68 Z" fill="#FFFFFF" />
+            </g>
+            <g id="spQaafGrp">
+              <path d="${headerSvg ? headerSvg.querySelectorAll('path')[3].getAttribute('d') : ''}" fill="#FFFFFF" fill-rule="evenodd" />
+            </g>
+            <circle id="spImpactFlash" cx="400" cy="356" r="95" fill="url(#impactGlow)" opacity="0" />
+            <g id="spBarGroup" opacity="0" transform="translate(0, 25)">
+              <rect x="223" y="554" width="578" height="25" rx="12.5" ry="12.5" fill="none" stroke="#FFFFFF" stroke-width="3.5" />
+              <g clip-path="url(#barClip)">
+                <rect id="spBarFill" x="223" y="554" width="0" height="25" fill="#FFFFFF" />
+              </g>
+            </g>
+          </svg>
+        </div>
+        <div class="mt-4 text-center">
+          <div class="text-2xl font-extrabold tracking-tight flex items-center justify-center gap-2">
+            <span class="text-white" style="font-family: 'Noto Nastaliq Urdu', serif;">قاف</span>
+            <span class="text-[#E51920] tracking-widest">TUBE</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-2">qaaftube.com • Muslim Family &amp; Kids Hub</p>
+        </div>
+      </div>
+    `;
+  }
+
+  let spAudioCtx = null;
+  function playCollisionSound() {
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!spAudioCtx) spAudioCtx = new AudioContext();
+      if (spAudioCtx.state === 'suspended') spAudioCtx.resume();
+      const now = spAudioCtx.currentTime;
+      const bufferSize = spAudioCtx.sampleRate * 0.16;
+      const buffer = spAudioCtx.createBuffer(1, bufferSize, spAudioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+      const noise = spAudioCtx.createBufferSource();
+      noise.buffer = buffer;
+      const bandpass = spAudioCtx.createBiquadFilter();
+      bandpass.type = 'bandpass';
+      bandpass.frequency.setValueAtTime(3600, now);
+      bandpass.frequency.exponentialRampToValueAtTime(1600, now + 0.14);
+      bandpass.Q.value = 4.0;
+      const gain = spAudioCtx.createGain();
+      gain.gain.setValueAtTime(0.35, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+      noise.connect(bandpass);
+      bandpass.connect(gain);
+      gain.connect(spAudioCtx.destination);
+      noise.start(now);
+    } catch (e) {}
+  }
+
+  function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+  function easeOutBack(t, s = 1.7) { t = t - 1; return t * t * ((s + 1) * t + s) + 1; }
+  function easeInOutQuad(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+
+  let spAnimId = null;
+  window.runStartupSplash = function() {
+    const modal = document.getElementById('startupSplashModal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    modal.style.opacity = '1';
+
+    const redBox = document.getElementById('spRedBox');
+    const innerBorder = document.getElementById('spInnerBorder');
+    const triangleGrp = document.getElementById('spTriangleGrp');
+    const qaafGrp = document.getElementById('spQaafGrp');
+    const impactFlash = document.getElementById('spImpactFlash');
+    const barGroup = document.getElementById('spBarGroup');
+    const barFill = document.getElementById('spBarFill');
+    const container = document.getElementById('splashLogoContainer');
+
+    if (spAnimId) cancelAnimationFrame(spAnimId);
+    let soundPlayed = false;
+    const startTime = performance.now();
+
+    function frame(now) {
+      const elapsed = (now - startTime) / 1000;
+      if (elapsed < 0.7) {
+        const p = Math.min(1, elapsed / 0.7);
+        const scale = 0.6 + 0.4 * easeOutBack(p, 1.2);
+        redBox.setAttribute('transform', `matrix(${scale}, 0, 0, ${scale}, ${512 * (1 - scale)}, ${358 * (1 - scale)})`);
+        redBox.setAttribute('opacity', Math.min(1, p * 2));
+      } else {
+        redBox.removeAttribute('transform');
+        redBox.setAttribute('opacity', '1');
+      }
+
+      if (elapsed < 0.3) innerBorder.setAttribute('opacity', '0');
+      else if (elapsed < 0.8) innerBorder.setAttribute('opacity', ((elapsed - 0.3) / 0.5).toFixed(3));
+      else innerBorder.setAttribute('opacity', '1');
+
+      const tQaafStart = 0.8, tContact = 1.35, tSettle = 1.75;
+      let dxQaaf = -650, opacityQaaf = 0, dxTri = -171;
+
+      if (elapsed >= tQaafStart && elapsed < tContact) {
+        const p = (elapsed - tQaafStart) / (tContact - tQaafStart);
+        dxQaaf = -650 + (-132 - (-650)) * easeInOutQuad(p);
+        opacityQaaf = Math.min(1, p * 3);
+      } else if (elapsed >= tContact && elapsed <= tSettle) {
+        if (!soundPlayed) { playCollisionSound(); soundPlayed = true; }
+        const p = (elapsed - tContact) / (tSettle - tContact);
+        dxQaaf = -132 + 132 * easeOutCubic(p);
+        opacityQaaf = 1;
+        dxTri = Math.max(dxQaaf - 39, -171 + 171 * easeOutBack(p, 1.4));
+        const flashP = Math.min(1, (elapsed - tContact) / 0.35);
+        const flashScale = 0.3 + flashP * 1.8;
+        impactFlash.setAttribute('opacity', ((1 - flashP) * 0.9).toFixed(3));
+        impactFlash.setAttribute('transform', `matrix(${flashScale}, 0, 0, ${flashScale}, ${400 * (1 - flashScale)}, ${356 * (1 - flashScale)})`);
+        if (p < 0.6) {
+          const sh = (1 - p / 0.6) * 5;
+          container.style.transform = `translate(${((Math.random() - 0.5) * sh).toFixed(1)}px, ${((Math.random() - 0.5) * sh).toFixed(1)}px)`;
+        } else container.style.transform = 'translate(0, 0)';
+      } else if (elapsed > tSettle) {
+        dxQaaf = 0; opacityQaaf = 1; dxTri = 0;
+        impactFlash.setAttribute('opacity', '0');
+        container.style.transform = 'translate(0, 0)';
+      }
+
+      qaafGrp.setAttribute('transform', `translate(${dxQaaf.toFixed(2)}, 0)`);
+      qaafGrp.setAttribute('opacity', opacityQaaf.toFixed(3));
+      triangleGrp.setAttribute('transform', `translate(${dxTri.toFixed(2)}, 0)`);
+
+      if (elapsed < 2.0) {
+        barGroup.setAttribute('opacity', '0');
+        barGroup.setAttribute('transform', 'translate(0, 25)');
+        barFill.setAttribute('width', '0');
+      } else if (elapsed < 2.4) {
+        const p = easeOutCubic((elapsed - 2.0) / 0.4);
+        barGroup.setAttribute('opacity', p.toFixed(3));
+        barGroup.setAttribute('transform', `translate(0, ${((1 - p) * 25).toFixed(1)})`);
+        barFill.setAttribute('width', '0');
+      } else if (elapsed < 3.4) {
+        barGroup.setAttribute('opacity', '1');
+        barGroup.setAttribute('transform', 'translate(0, 0)');
+        barFill.setAttribute('width', (309 * easeOutCubic((elapsed - 2.4) / 1.0)).toFixed(1));
+      } else {
+        barGroup.setAttribute('opacity', '1');
+        barGroup.setAttribute('transform', 'translate(0, 0)');
+        barFill.setAttribute('width', '309');
+      }
+
+      if (elapsed < 3.7) {
+        spAnimId = requestAnimationFrame(frame);
+      } else {
+        modal.style.opacity = '0';
+        setTimeout(() => modal.classList.add('hidden'), 450);
+      }
+    }
+    spAnimId = requestAnimationFrame(frame);
+  };
+
+  window.replayStartupSplash = window.runStartupSplash;
+  window.runStartupSplash();
+})();
+</script>
 </body>
 </html>
