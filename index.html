@@ -558,12 +558,19 @@
           <select id="adminVideoLang" class="bg-black border border-slate-700 rounded-lg px-2.5 py-1.5 text-white">
             <option value="global">🌍 Global (All Languages)</option>
             <option value="en">🇬🇧 English</option>
-            <option value="ur">🇵🇰 Urdu</option>
-            <option value="bn">🇧🇩 Bengali</option>
-            <option value="ar">🇸🇦 Arabic</option>
-            <option value="hi">🇮🇳 Hindi</option>
-            <option value="tr">🇹🇷 Turkish</option>
-          </select>
+            <option value="ar">🇸🇦 Arabic (العربية)</option>
+            <option value="ur">🇵🇰 Urdu (اردو)</option>
+            <option value="hi">🇮🇳 Hindi (हिन्दी)</option>
+            <option value="bn">🇧🇩 Bengali (বাংলা)</option>
+            <option value="tr">🇹🇷 Turkish (Türkçe)</option>
+            <option value="ms">🇲🇾 Malay (Melayu)</option>
+            <option value="id">🇮🇩 Indonesian (Bahasa)</option>
+            <option value="fr">🇫🇷 French (Français)</option>
+            <option value="de">🇩🇪 German (Deutsch)</option>
+            <option value="it">🇮🇹 Italian (Italiano)</option>
+            <option value="es">🇪🇸 Spanish (Español)</option>
+            <option value="ru">🇷🇺 Russian (Русский)</option>
+</select>
           <select id="adminVideoCat" class="bg-black border border-slate-700 rounded-lg px-2.5 py-1.5 text-white">
             <option value="kids_cartoon">🌟 Kids Cartoon</option>
             <option value="stories">📖 Prophet Stories</option>
@@ -788,13 +795,21 @@
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
             <select id="parentVideoLang" class="bg-black border border-slate-700 rounded-lg px-2 py-1.5 text-white">
-              <option value="global">🌍 Global (All Languages)</option>
-              <option value="ur">🇵🇰 Urdu</option>
-              <option value="en">🇬🇧 English</option>
-              <option value="ar">🇸🇦 Arabic</option>
-              <option value="bn">🇧🇩 Bengali</option>
-              <option value="hi">🇮🇳 Hindi</option>
-            </select>
+            <option value="global">🌍 Global (All Languages)</option>
+            <option value="en">🇬🇧 English</option>
+            <option value="ar">🇸🇦 Arabic (العربية)</option>
+            <option value="ur">🇵🇰 Urdu (اردو)</option>
+            <option value="hi">🇮🇳 Hindi (हिन्दी)</option>
+            <option value="bn">🇧🇩 Bengali (বাংলা)</option>
+            <option value="tr">🇹🇷 Turkish (Türkçe)</option>
+            <option value="ms">🇲🇾 Malay (Melayu)</option>
+            <option value="id">🇮🇩 Indonesian (Bahasa)</option>
+            <option value="fr">🇫🇷 French (Français)</option>
+            <option value="de">🇩🇪 German (Deutsch)</option>
+            <option value="it">🇮🇹 Italian (Italiano)</option>
+            <option value="es">🇪🇸 Spanish (Español)</option>
+            <option value="ru">🇷🇺 Russian (Русский)</option>
+</select>
             <select id="parentVideoCat" class="bg-black border border-slate-700 rounded-lg px-2 py-1.5 text-white">
               <option value="kids_cartoon">🌟 Kids Cartoon</option>
               <option value="stories">📖 Prophet Stories</option>
@@ -841,23 +856,24 @@
  <script>
     const globalLanguagesList = [
       { code: 'en', short: 'ENG', label: '🇬🇧 English (Default)', rtl: false, regionKey: 'US_UK' },
-      { code: 'ur', short: 'URD', label: '🇵🇰 Urdu (اردو)', rtl: true, regionKey: 'PK' },
       { code: 'ar', short: 'ARA', label: '🇸🇦 Arabic (العربية)', rtl: true, regionKey: 'AR' },
-      { code: 'bn', short: 'BEN', label: '🇧🇩 Bengali (বাংলা)', rtl: false, regionKey: 'BD' },
+      { code: 'ur', short: 'URD', label: '🇵🇰 Urdu (اردو)', rtl: true, regionKey: 'PK' },
       { code: 'hi', short: 'HIN', label: '🇮🇳 Hindi (हिन्दी)', rtl: false, regionKey: 'GLOBAL' },
+      { code: 'bn', short: 'BEN', label: '🇧🇩 Bengali (বাংলা)', rtl: false, regionKey: 'BD' },
       { code: 'tr', short: 'TUR', label: '🇹🇷 Turkish (Türkçe)', rtl: false, regionKey: 'GLOBAL' },
+      { code: 'ms', short: 'MSA', label: '🇲🇾 Malay (Bahasa Melayu)', rtl: false, regionKey: 'GLOBAL' },
       { code: 'id', short: 'IND', label: '🇮🇩 Indonesian (Bahasa)', rtl: false, regionKey: 'GLOBAL' },
-      { code: 'ms', short: 'MSA', label: '🇲🇾 Malay (Melayu)', rtl: false, regionKey: 'GLOBAL' },
       { code: 'fr', short: 'FRA', label: '🇫🇷 French (Français)', rtl: false, regionKey: 'US_UK' },
       { code: 'de', short: 'DEU', label: '🇩🇪 German (Deutsch)', rtl: false, regionKey: 'US_UK' },
+      { code: 'it', short: 'ITA', label: '🇮🇹 Italian (Italiano)', rtl: false, regionKey: 'US_UK' },
       { code: 'es', short: 'ESP', label: '🇪🇸 Spanish (Español)', rtl: false, regionKey: 'US_UK' },
+      { code: 'ru', short: 'RUS', label: '🇷🇺 Russian (Русский)', rtl: false, regionKey: 'GLOBAL' },
       { code: 'fa', short: 'FAS', label: '🇮🇷 Persian (فارسی)', rtl: true, regionKey: 'GLOBAL' },
       { code: 'ps', short: 'PUS', label: '🇦🇫 Pashto (پښتو)', rtl: true, regionKey: 'PK' },
       { code: 'pa', short: 'PAN', label: '🇵🇰 Punjabi (پنجابی)', rtl: false, regionKey: 'PK' },
       { code: 'sw', short: 'SWA', label: '🇰🇪 Swahili', rtl: false, regionKey: 'GLOBAL' },
       { code: 'ha', short: 'HAU', label: '🇳🇬 Hausa', rtl: false, regionKey: 'GLOBAL' },
       { code: 'so', short: 'SOM', label: '🇸🇴 Somali', rtl: false, regionKey: 'GLOBAL' },
-      { code: 'ru', short: 'RUS', label: '🇷🇺 Russian', rtl: false, regionKey: 'GLOBAL' },
       { code: 'uz', short: 'UZB', label: '🇺🇿 Uzbek', rtl: false, regionKey: 'GLOBAL' },
       { code: 'sq', short: 'SQI', label: '🇦🇱 Albanian', rtl: false, regionKey: 'GLOBAL' },
       { code: 'bs', short: 'BOS', label: '🇧🇦 Bosnian', rtl: false, regionKey: 'GLOBAL' },
@@ -5227,7 +5243,116 @@
   renderVideos();
 })();
 </script>
+
+<script>
+(function enableStoreComplianceAndNativeKioskBridge() {
+  // A. Add "Delete My Account" button & "Privacy Policy" link for Google Play & Apple App Store compliance
+  const loggedInView = document.getElementById('loggedInView');
+  if (loggedInView && !document.getElementById('deleteMyAccountBtn')) {
+    const delBtn = document.createElement('button');
+    delBtn.id = 'deleteMyAccountBtn';
+    delBtn.type = 'button';
+    delBtn.onclick = function() {
+      if (!currentUserEmail) return;
+      if (isSuperAdmin()) {
+        alert('👑 Super Admin account cannot be deleted.');
+        return;
+      }
+      if (!confirm('⚠️ Are you sure you want to permanently delete your account and saved preferences?')) return;
+      if (window.registeredUsersMap && window.registeredUsersMap[currentUserEmail.toLowerCase()]) {
+        delete window.registeredUsersMap[currentUserEmail.toLowerCase()];
+        localStorage.setItem('qaaf_registered_users', JSON.stringify(window.registeredUsersMap));
+      }
+      logoutAccount();
+      closeAccountModal();
+      alert('✅ Your account has been permanently deleted.');
+    };
+    delBtn.className = 'w-full bg-slate-800 hover:bg-rose-950 border border-slate-700 text-slate-400 hover:text-rose-300 py-2 rounded-xl text-[11px] font-bold transition mt-2';
+    delBtn.innerText = '🗑️ Delete My Account & Data';
+    loggedInView.appendChild(delBtn);
+  }
+
+  // Add Privacy Policy & iOS Guided Access Info inside Parent Settings
+  const settingsView = document.getElementById('settingsStepView');
+  if (settingsView && !document.getElementById('storePrivacyAndKioskCard')) {
+    const card = document.createElement('div');
+    card.id = 'storePrivacyAndKioskCard';
+    card.className = 'bg-slate-900/90 p-3.5 rounded-xl border border-slate-800 space-y-2 text-xs';
+    card.innerHTML = `
+      <div class="flex items-center justify-between">
+        <h4 class="font-extrabold text-emerald-400">🔒 Hardware Kiosk Lock &amp; Family Privacy</h4>
+        <button type="button" onclick="openPrivacyPolicyModal()" class="text-blue-400 hover:underline font-bold text-[11px]">📜 Privacy Policy</button>
+      </div>
+      <p class="text-[11px] text-slate-300 leading-relaxed">
+        • <strong>Android App:</strong> Kids Mode activates Fullscreen Kiosk Screen Pinning &amp; WakeLock while allowing incoming phone calls.<br/>
+        • <strong>iPhone / iPad (iOS):</strong> To lock the physical Home bar on iOS, enable <em>Settings ➔ Accessibility ➔ Guided Access</em> and triple-click the side button in Kids Mode.
+      </p>
+    `;
+    settingsView.appendChild(card);
+  }
+
+  // Privacy Policy Modal (Required by Google Play Families Policy & Apple Kids Category)
+  if (!document.getElementById('privacyPolicyModal')) {
+    const pm = document.createElement('div');
+    pm.id = 'privacyPolicyModal';
+    pm.className = 'fixed inset-0 z-50 hidden bg-black/90 backdrop-blur-sm flex items-center justify-center p-4';
+    pm.dir = 'ltr';
+    pm.innerHTML = `
+      <div class="bg-[#16181d] border border-slate-700 rounded-2xl max-w-lg w-full p-5 shadow-2xl max-h-[85vh] overflow-y-auto space-y-3 text-xs text-slate-300">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <h3 class="text-sm sm:text-base font-extrabold text-emerald-400">🛡️ QAAF Tube — Family &amp; Kids Privacy Policy</h3>
+          <button type="button" onclick="document.getElementById('privacyPolicyModal').classList.add('hidden')" class="bg-slate-800 px-2.5 py-1 rounded text-white font-bold">✕ Close</button>
+        </div>
+        <p><strong>1. 100% Child-Safe &amp; COPPA Compliant:</strong> QAAF Tube is designed for Muslim families and children. In Kids Mode, all external links, sponsor banners, and unverified videos are strictly hidden behind a 6-digit Parental PIN gate.</p>
+        <p><strong>2. Zero Third-Party Behavioral Tracking:</strong> We use privacy-enhanced video embedding (youtube-nocookie) and do not sell or share personal data with third-party advertisers.</p>
+        <p><strong>3. Account &amp; Data Deletion:</strong> Parents can permanently delete their account and preferences at any time from the Account menu using the "Delete My Account" button.</p>
+        <p><strong>4. Contact:</strong> qaaftube@gmail.com | https://qaaftube.com</p>
+      </div>
+    `;
+    document.body.appendChild(pm);
+  }
+
+  window.openPrivacyPolicyModal = function() {
+    document.getElementById('privacyPolicyModal').classList.remove('hidden');
+  };
+
+  // B. Native Android / Capacitor Kiosk Screen Pinning & Screen WakeLock Bridge
+  let wakeLockSentinel = null;
+  async function requestScreenWakeLock(enable) {
+    if (!('wakeLock' in navigator)) return;
+    try {
+      if (enable) {
+        wakeLockSentinel = await navigator.wakeLock.request('screen');
+      } else if (wakeLockSentinel) {
+        await wakeLockSentinel.release();
+        wakeLockSentinel = null;
+      }
+    } catch (e) {}
+  }
+
+  const prevToggleKids = window.toggleKidsMode;
+  window.toggleKidsMode = function() {
+    if (prevToggleKids) prevToggleKids();
+    if (isKidsLocked) {
+      requestScreenWakeLock(true);
+      // If running inside Capacitor Android Native App with Kiosk Plugin
+      if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.KioskMode) {
+        try { window.Capacitor.Plugins.KioskMode.enterKioskMode(); } catch (e) {}
+      }
+      // Show 1-time iOS Guided Access tip if on iPhone/iPad
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      if (isIOS && !sessionStorage.getItem('qaaf_ios_tip_shown')) {
+        sessionStorage.setItem('qaaf_ios_tip_shown', '1');
+        showSyncToast('📱 iPhone/iPad Tip: Triple-click side button for Guided Access Lock!');
+      }
+    } else {
+      requestScreenWakeLock(false);
+    }
+  };
+})();
+</script>
 </body>
+
 
 
 
