@@ -4174,7 +4174,7 @@
   window.renderVideos = function() {
     renderChannelsBar();
     const fullBackup = [...videosData];
-    if (selectedChannelFilter !== 'ALL') {
+    if (selectedChannelFilter !== 'ALL' && !window.qaafActiveSearchQuery) {
       videosData = videosData.filter(v => v.channel === selectedChannelFilter);
     }
     prevRender();
@@ -5351,6 +5351,893 @@
   };
 })();
 </script>
+<!-- QAAF TUBE v9.5 START -->
+<style>
+  #qaafSearchInput {
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    pointer-events: auto !important;
+  }
+  .game-card-3d {
+    background: linear-gradient(145deg, #171c28 0%, #0e121a 100%);
+    box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.7), inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
+    transform: perspective(900px) translateZ(0);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  }
+  .game-card-3d:hover {
+    transform: perspective(900px) translateY(-4px) scale(1.01);
+    box-shadow: 0 18px 36px -8px rgba(16, 185, 129, 0.28), inset 0 1px 0 0 rgba(255, 255, 129, 0.2);
+  }
+</style>
+<script>
+(function activateSmartSearchAndOnDemandGamesBridge() {
+  window.qaafActiveSearchQuery = '';
+  let liveSearchTimeout = null;
+  let isFetchingLiveSearch = false;
+
+  const URDU_AND_SPELLING_SYNONYMS = {
+    'مفتی': 'mufti',
+    'طارق': 'tariq',
+    'مسعود': 'masood',
+    'غلام': 'ghulam gulam',
+    'رسول': 'rasool',
+    'غلام رسول': 'ghulam rasool gulam rasool kids land',
+    'gulam': 'ghulam gulam',
+    'ghulam': 'ghulam gulam',
+    'عبدالباری': 'abdul bari moral vision',
+    'عبد الباری': 'abdul bari moral vision',
+    'باری': 'bari',
+    'مورل': 'moral vision',
+    'کڈز': 'kids',
+    'فرحت': 'farhat',
+    'ہاشمی': 'hashmi',
+    'ذاکر': 'zakir',
+    'نائیک': 'naik',
+    'شمائل': 'shamail',
+    'ندوی': 'nadwi',
+    'ذوالفقار': 'zulfiqar',
+    'پیر': 'peer',
+    'یوتھ': 'youth club',
+    'عمر': 'omar umar',
+    'حنا': 'hana',
+    'قرآن': 'quran recitation surah tilawat',
+    'تلاوت': 'quran recitation surah',
+    'سورۃ': 'surah',
+    'سورہ': 'surah',
+    'بیان': 'bayan lecture speech',
+    'کارٹون': 'cartoon kids_cartoon',
+    'کہانی': 'stories story prophet',
+    'قصص': 'stories prophet',
+    'انبیاء': 'prophet stories',
+    'نماز': 'namaz prayer salah',
+    'حدیث': 'hadith hadees',
+    'hadees': 'hadith hadees',
+    'hadith': 'hadith hadees',
+    'تفسیر': 'tafseer tafsir',
+    'tafsir': 'tafseer tafsir',
+    'tafseer': 'tafseer tafsir',
+    'شارٹس': 'shorts #shorts',
+    'خالد': 'khalid الراشد',
+    'الراشد': 'الراشد khalid',
+    'دبیروف': 'dibirov ديبيروف',
+    'زید': 'zaid patel',
+    'اصلاح': 'islah media',
+    'شعور': 'shaoor media',
+    'المدینہ': 'al madinah',
+    'دارالاحسان': 'dar ul ahsan',
+    'تربیہ': 'tarbiah tarbiyah',
+    'پیغام': 'paigham tv',
+    'اقرا': 'iqra tv',
+    'حج': 'hajj makkah'
+  };
+
+  function expandQueryTokens(rawQuery) {
+    let q = (rawQuery || '').trim().toLowerCase();
+    if (!q) return [];
+    let expanded = q;
+    Object.keys(URDU_AND_SPELLING_SYNONYMS).forEach(k => {
+      if (q.includes(k)) {
+        expanded += ' ' + URDU_AND_SPELLING_SYNONYMS[k];
+      }
+    });
+    return expanded.split(/\s+/).filter(Boolean);
+  }
+
+  function matchesVideoSmart(v, rawQuery, tokens) {
+    if (!rawQuery) return true;
+    const rawLower = rawQuery.trim().toLowerCase();
+    const hay = (`${v.title || ''} ${v.channel || ''} ${v.category || ''} ${v.lang || ''} ${v.ytId || ''}`).toLowerCase();
+    if (hay.includes(rawLower)) return true;
+
+    let expandedHay = hay;
+    if (hay.includes('gulam')) expandedHay += ' ghulam غلام رسول';
+    if (hay.includes('ghulam')) expandedHay += ' gulam غلام رسول';
+    if (hay.includes('abdul bari')) expandedHay += ' عبدالباری عبد الباری';
+    if (hay.includes('tariq masood')) expandedHay += ' مفتی طارق مسعود';
+    if (hay.includes('farhat hashmi')) expandedHay += ' ڈاکٹر فرحت ہاشمی';
+    if (hay.includes('zakir naik')) expandedHay += ' ڈاکٹر ذاکر نائیک';
+    if (hay.includes('omar & hana')) expandedHay += ' عمر اینڈ حنا';
+    if (hay.includes('quran')) expandedHay += ' قرآن تلاوت سورۃ';
+    if (hay.includes('bayan')) expandedHay += ' بیان علماء';
+    if (hay.includes('kids_cartoon')) expandedHay += ' کارٹون کڈز';
+
+    const rawWords = rawLower.split(/\s+/).filter(Boolean);
+    return rawWords.every(w => {
+      if (expandedHay.includes(w)) return true;
+      const syn = URDU_AND_SPELLING_SYNONYMS[w];
+      if (syn) {
+        return syn.split(/\s+/).some(sw => expandedHay.includes(sw));
+      }
+      return false;
+    });
+  }
+
+  const origSelectChannel = window.selectChannelFilter;
+  window.selectChannelFilter = function(chName) {
+    if (window.qaafActiveSearchQuery) {
+      window.qaafActiveSearchQuery = '';
+      const sInput = document.getElementById('qaafSearchInput');
+      const sClear = document.getElementById('qaafSearchClearBtn');
+      const banner = document.getElementById('qaafSearchStatusBanner');
+      const drop = document.getElementById('qaafLiveSearchDropdown');
+      if (sInput) sInput.value = '';
+      if (sClear) sClear.classList.add('hidden');
+      if (banner) banner.classList.add('hidden');
+      if (drop) drop.classList.add('hidden');
+    }
+    if (origSelectChannel) origSelectChannel(chName);
+  };
+
+  function renderLiveSearchDropdown(rawQuery) {
+    const drop = document.getElementById('qaafLiveSearchDropdown');
+    if (!drop) return;
+    const q = (rawQuery || '').trim();
+    if (!q) {
+      drop.classList.add('hidden');
+      return;
+    }
+
+    const tokens = expandQueryTokens(q);
+    const matchedVids = videosData.filter(v => {
+      if (blockedVideoIds.includes(v.id)) return false;
+      if (bannedChannels.includes(v.channel)) return false;
+      if (isKidsLocked && !v.kidsSafe) return false;
+      return matchesVideoSmart(v, q, tokens);
+    });
+
+    const visibleAll = videosData.filter(v => (!isKidsLocked || v.kidsSafe) && !bannedChannels.includes(v.channel));
+    const allChs = [...new Set(visibleAll.map(v => v.channel))];
+    const matchedChs = allChs.filter(ch => {
+      const chLow = ch.toLowerCase();
+      return chLow.includes(q.toLowerCase()) || tokens.some(t => chLow.includes(t));
+    }).slice(0, 4);
+
+    let html = '';
+    if (matchedChs.length > 0) {
+      html += `<div class="px-3 py-1.5 bg-slate-900/90 text-[10px] font-extrabold text-emerald-400 uppercase tracking-wider">📺 Matching Approved Channels</div>`;
+      matchedChs.forEach(ch => {
+        const safeCh = ch.replace(/'/g, "\\'");
+        html += `
+          <button type="button" onclick="selectChannelFromSearch('${safeCh}')" class="w-full px-3.5 py-2 text-left hover:bg-emerald-950/50 flex items-center justify-between text-xs text-white border-b border-slate-800/70 transition">
+            <span class="font-bold flex items-center gap-2"><span>✅</span> <span>${ch}</span></span>
+            <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-bold">Open Channel ➔</span>
+          </button>`;
+      });
+    }
+
+    if (matchedVids.length > 0) {
+      html += `<div class="px-3 py-1.5 bg-slate-900/90 text-[10px] font-extrabold text-amber-300 uppercase tracking-wider">🎬 Matching Videos (${matchedVids.length})</div>`;
+      matchedVids.slice(0, 6).forEach(v => {
+        const thumb = v.customThumb || `https://i.ytimg.com/vi/${v.ytId}/hqdefault.jpg`;
+        html += `
+          <button type="button" onclick="playVideoFromSearchDropdown('${v.id}')" class="w-full px-3 py-2 text-left hover:bg-slate-800/90 flex items-center gap-2.5 border-b border-slate-800/70 transition">
+            <img src="${thumb}" alt="" class="w-12 h-7 object-cover rounded border border-white/10 shrink-0" onerror="this.style.display='none'" />
+            <div class="min-w-0 flex-1">
+              <p class="text-xs font-bold text-white truncate">${v.title}</p>
+              <p class="text-[10px] text-slate-400 truncate">✅ ${v.channel} • ${v.lang.toUpperCase()}</p>
+            </div>
+            <span class="text-emerald-400 text-xs font-extrabold shrink-0">▶ Play</span>
+          </button>`;
+      });
+    }
+
+    const safeQ = q.replace(/'/g, "\\'");
+    html += `
+      <button type="button" onclick="qaafTriggerLiveYouTubeSearch('${safeQ}'); document.getElementById('qaafLiveSearchDropdown').classList.add('hidden');" class="w-full px-3.5 py-2.5 bg-gradient-to-r from-emerald-950 to-blue-950 hover:from-emerald-900 hover:to-blue-900 text-emerald-300 text-xs font-extrabold flex items-center justify-center gap-2 transition">
+        <span>🌐</span> <span>Search More "${q}" Videos Across Approved Islamic Channels</span>
+      </button>
+    `;
+
+    drop.innerHTML = html;
+    drop.classList.remove('hidden');
+  }
+
+  window.selectChannelFromSearch = function(chName) {
+    const drop = document.getElementById('qaafLiveSearchDropdown');
+    if (drop) drop.classList.add('hidden');
+    window.selectChannelFilter(chName);
+  };
+
+  window.playVideoFromSearchDropdown = function(vidId) {
+    const drop = document.getElementById('qaafLiveSearchDropdown');
+    if (drop) drop.classList.add('hidden');
+    openVideoPlayer(vidId);
+  };
+
+  function upgradeSearchBarDOM() {
+    const wrapper = document.getElementById('qaafSearchBarWrapper');
+    if (!wrapper) return;
+    wrapper.innerHTML = `
+      <div class="flex-1 flex flex-col gap-1.5 relative">
+        <div class="relative flex items-center bg-[#121621] border-2 border-slate-700 focus-within:border-emerald-500 rounded-full pl-3.5 pr-1.5 py-1.5 shadow-lg transition">
+          <span class="text-emerald-400 mr-2 text-sm">🔍</span>
+          <input id="qaafSearchInput" type="text" autocomplete="off" placeholder="Search any Video, Scholar, Surah, Cartoon or Channel (Urdu / English)..." class="w-full bg-transparent text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-none" />
+          <button id="qaafSearchClearBtn" type="button" class="hidden text-slate-400 hover:text-white text-xs font-extrabold px-2.5 py-1 rounded-full hover:bg-slate-800 mr-1" title="Clear Search">✕</button>
+          <button id="qaafSearchSubmitBtn" type="button" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-extrabold shrink-0 shadow flex items-center gap-1 transition">
+            <span>🔍</span> <span>Search</span>
+          </button>
+        </div>
+        <div id="qaafLiveSearchDropdown" class="hidden absolute left-0 right-0 top-12 z-40 bg-[#141822] border border-emerald-500/50 rounded-2xl shadow-2xl overflow-hidden max-h-80 overflow-y-auto"></div>
+        <div id="qaafSearchStatusBanner" class="hidden bg-emerald-950/60 border border-emerald-500/40 rounded-xl px-3 py-1.5 text-xs flex items-center justify-between gap-2">
+          <span id="qaafSearchStatusText" class="text-emerald-300 font-bold truncate"></span>
+          <button type="button" onclick="qaafClearSearchNow()" class="bg-slate-800 hover:bg-rose-600 text-white px-2.5 py-0.5 rounded-lg text-[11px] font-bold shrink-0">✕ Show All</button>
+        </div>
+      </div>
+      <button id="qaafNotifBellBtn" type="button" class="bg-[#181c26] hover:bg-slate-800 border border-slate-700 text-slate-200 px-3.5 py-2 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 shrink-0 shadow self-start sm:self-center">
+        <span>🔔</span>
+        <span>Request Status</span>
+        <span id="userNotifCountBadge" class="bg-emerald-600 text-white px-1.5 py-0.5 rounded-full text-[10px] font-extrabold">0</span>
+      </button>
+    `;
+
+    const sInput = document.getElementById('qaafSearchInput');
+    const sClear = document.getElementById('qaafSearchClearBtn');
+    const sBtn = document.getElementById('qaafSearchSubmitBtn');
+    const bellBtn = document.getElementById('qaafNotifBellBtn');
+
+    if (bellBtn && typeof window.openUserNotificationsModal === 'function') {
+      bellBtn.addEventListener('click', window.openUserNotificationsModal);
+    }
+
+    if (sInput) {
+      sInput.addEventListener('input', function() {
+        window.qaafActiveSearchQuery = this.value;
+        if (sClear) sClear.classList.toggle('hidden', !this.value.trim());
+        renderLiveSearchDropdown(this.value);
+        renderVideos();
+
+        clearTimeout(liveSearchTimeout);
+        const trimmed = this.value.trim();
+        if (trimmed.length >= 3) {
+          liveSearchTimeout = setTimeout(() => {
+            const currentMatches = countLocalMatches(trimmed);
+            if (currentMatches < 3) {
+              qaafTriggerLiveYouTubeSearch(trimmed);
+            }
+          }, 650);
+        }
+      });
+
+      sInput.addEventListener('focus', function() {
+        if (this.value.trim()) renderLiveSearchDropdown(this.value);
+      });
+
+      sInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const drop = document.getElementById('qaafLiveSearchDropdown');
+          if (drop) drop.classList.add('hidden');
+          window.qaafActiveSearchQuery = this.value;
+          renderVideos();
+          if (this.value.trim().length >= 2) {
+            qaafTriggerLiveYouTubeSearch(this.value.trim());
+          }
+        }
+      });
+    }
+
+    if (sBtn) {
+      sBtn.addEventListener('click', function() {
+        const drop = document.getElementById('qaafLiveSearchDropdown');
+        if (drop) drop.classList.add('hidden');
+        const val = (document.getElementById('qaafSearchInput')?.value || '').trim();
+        window.qaafActiveSearchQuery = val;
+        renderVideos();
+        if (val.length >= 2) {
+          qaafTriggerLiveYouTubeSearch(val);
+        }
+      });
+    }
+
+    if (sClear) {
+      sClear.addEventListener('click', function() {
+        window.qaafClearSearchNow();
+      });
+    }
+
+    document.addEventListener('click', function(e) {
+      const wrap = document.getElementById('qaafSearchBarWrapper');
+      const drop = document.getElementById('qaafLiveSearchDropdown');
+      if (wrap && drop && !wrap.contains(e.target)) {
+        drop.classList.add('hidden');
+      }
+    });
+  }
+
+  window.qaafClearSearchNow = function() {
+    window.qaafActiveSearchQuery = '';
+    const sInput = document.getElementById('qaafSearchInput');
+    const sClear = document.getElementById('qaafSearchClearBtn');
+    const banner = document.getElementById('qaafSearchStatusBanner');
+    const drop = document.getElementById('qaafLiveSearchDropdown');
+    if (sInput) sInput.value = '';
+    if (sClear) sClear.classList.add('hidden');
+    if (banner) banner.classList.add('hidden');
+    if (drop) drop.classList.add('hidden');
+    renderVideos();
+  };
+
+  function countLocalMatches(q) {
+    const tokens = expandQueryTokens(q);
+    return videosData.filter(v => {
+      if (blockedVideoIds.includes(v.id)) return false;
+      if (bannedChannels.includes(v.channel)) return false;
+      if (isKidsLocked && !v.kidsSafe) return false;
+      return matchesVideoSmart(v, q, tokens);
+    }).length;
+  }
+
+  window.qaafTriggerLiveYouTubeSearch = async function(rawQuery) {
+    const q = (rawQuery || '').trim();
+    if (!q || isFetchingLiveSearch) return;
+    isFetchingLiveSearch = true;
+
+    const statusBanner = document.getElementById('qaafSearchStatusBanner');
+    const statusText = document.getElementById('qaafSearchStatusText');
+    if (statusBanner && statusText) {
+      statusBanner.classList.remove('hidden');
+      statusText.innerHTML = `⏳ Searching approved Islamic channels for "<strong>${q}</strong>"...`;
+    }
+
+    try {
+      const searchSuffix = isKidsLocked ? 'Islamic kids cartoon no music' : 'Islamic bayan quran halal';
+      const fullSearchQuery = `${q} ${searchSuffix}`;
+      const ytSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(fullSearchQuery)}`;
+
+      const proxyUrls = [
+        `https://r.jina.ai/${ytSearchUrl}`,
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(ytSearchUrl)}`,
+        `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(ytSearchUrl)}`
+      ];
+
+      let foundIds = [];
+      for (const pUrl of proxyUrls) {
+        try {
+          const res = await fetch(pUrl);
+          if (!res.ok) continue;
+          const text = await res.text();
+          const ids = [...text.matchAll(/(?:watch\?v=|\/shorts\/|"videoId":")([a-zA-Z0-9_-]{11})/g)].map(m => m[1]);
+          const unique = [...new Set(ids)];
+          if (unique.length > 0) {
+            foundIds = unique.slice(0, 6);
+            break;
+          }
+        } catch (e) {}
+      }
+
+      let addedCount = 0;
+      const BLOCKED_WORDS = ['music', 'song', 'dance', 'movie', 'concert', 'remix', 'dj', 'bollywood', 'qawwali', 'qawali', 'urs', 'matam', 'noha', 'majlis', 'kala jadu', 'گانا', 'موسیقی', 'قوالی', 'ماتم', 'نوحہ'];
+
+      for (const vidId of foundIds) {
+        if (videosData.some(v => v.ytId === vidId)) continue;
+        try {
+          const oe = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${vidId}`);
+          const d = await oe.json();
+          if (d && d.title) {
+            const combinedLower = (`${d.title} ${d.author_name || ''}`).toLowerCase();
+            if (BLOCKED_WORDS.some(bw => combinedLower.includes(bw))) continue;
+            if (bannedChannels.includes(d.author_name)) continue;
+
+            const isSh = combinedLower.includes('#short');
+            videosData.unshift({
+              id: 'v_search_' + vidId,
+              title: `${d.title} (${q})`,
+              channel: d.author_name || 'Islamic Channel',
+              lang: preferredContentLang || 'ur',
+              region: (preferredContentLang || 'ur').toUpperCase(),
+              category: isKidsLocked ? 'kids_cartoon' : 'bayan',
+              kidsSafe: isKidsLocked ? true : !combinedLower.includes('debate'),
+              isShort: isSh,
+              ytId: vidId,
+              isCustomAdded: true,
+              duration: isSh ? '0:55' : '12:30',
+              views: 15400,
+              createdAt: Math.floor(Date.now() / 1000)
+            });
+            addedCount++;
+          }
+        } catch (e) {}
+      }
+
+      if (addedCount > 0) {
+        localStorage.setItem('qaaf_videos_data', JSON.stringify(videosData));
+      }
+    } catch (err) {
+    } finally {
+      isFetchingLiveSearch = false;
+      renderVideos();
+    }
+  };
+
+  const baseRenderVideos = window.renderVideos;
+  window.renderVideos = function() {
+    const q = (window.qaafActiveSearchQuery || '').trim();
+    const statusBanner = document.getElementById('qaafSearchStatusBanner');
+    const statusText = document.getElementById('qaafSearchStatusText');
+
+    if (!q) {
+      if (statusBanner && !isFetchingLiveSearch) statusBanner.classList.add('hidden');
+      if (baseRenderVideos) baseRenderVideos();
+      return;
+    }
+
+    const savedCategory = currentCategory;
+    const savedStrictLang = strictLanguageOnly;
+    const savedVideos = [...videosData];
+
+    currentCategory = 'all';
+    strictLanguageOnly = false;
+
+    const tokens = expandQueryTokens(q);
+    const matchedList = videosData.filter(v => {
+      if (blockedVideoIds.includes(v.id)) return false;
+      if (bannedChannels.includes(v.channel)) return false;
+      if (isKidsLocked && !v.kidsSafe) return false;
+      return matchesVideoSmart(v, q, tokens);
+    });
+
+    videosData = matchedList;
+    if (baseRenderVideos) baseRenderVideos();
+
+    videosData = savedVideos;
+    currentCategory = savedCategory;
+    strictLanguageOnly = savedStrictLang;
+
+    if (statusBanner && statusText && !isFetchingLiveSearch) {
+      statusBanner.classList.remove('hidden');
+      statusText.innerHTML = `🔍 Found <strong>${matchedList.length}</strong> video(s) for "<strong>${q}</strong>"`;
+    }
+
+    const grid = document.getElementById('videoGrid');
+    if (grid && matchedList.length === 0) {
+      grid.innerHTML = `
+        <div class="col-span-full bg-[#121620] border border-slate-800 rounded-2xl p-6 text-center my-2">
+          <div class="text-3xl mb-2">🔍</div>
+          <h4 class="text-sm sm:text-base font-extrabold text-white mb-1">No local videos matched "${q}"</h4>
+          <p class="text-xs text-slate-400 mb-4">Click the button below to fetch matching Islamic videos from our approved channels, or clear your search.</p>
+          <div class="flex items-center justify-center gap-2 flex-wrap">
+            <button type="button" onclick="qaafTriggerLiveYouTubeSearch('${q.replace(/'/g, "\\'")}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-extrabold shadow">
+              🌐 Fetch "${q}" from Approved Channels
+            </button>
+            <button type="button" onclick="qaafClearSearchNow()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl text-xs font-bold">
+              🔄 Show All Videos
+            </button>
+          </div>
+        </div>
+      `;
+    }
+  };
+
+  upgradeSearchBarDOM();
+
+  // =========================================================================
+  // PART 2: ON-DEMAND 3D GAMES INSTALLER, LOCAL MEMORY CACHE & qaaf-games.html BRIDGE
+  // =========================================================================
+  const defaultFourGames = [
+    {
+      id: "g1",
+      slug: "quran-quiz",
+      icon: "📖",
+      badge: "10 Stages • 3D Quiz",
+      gradient: "from-emerald-900/80 via-slate-900 to-teal-950",
+      border: "border-emerald-500/40",
+      title: "Quran Quiz Adventure",
+      desc: "10 interactive stages of Holy Quran, Prophets & Seerah questions with voice feedback & star rewards.",
+      size: "1.2 MB",
+      installed: false,
+      blockedByParent: false
+    },
+    {
+      id: "g2",
+      slug: "arabic-alphabet",
+      icon: "🔤",
+      badge: "10 Stages • Audio Puzzle",
+      gradient: "from-blue-900/80 via-slate-900 to-indigo-950",
+      border: "border-blue-500/40",
+      title: "Arabic Alphabet Puzzle",
+      desc: "10 stages matching Alif to Yaa with authentic Arabic voice pronunciation and memory cards.",
+      size: "1.4 MB",
+      installed: false,
+      blockedByParent: false
+    },
+    {
+      id: "g3",
+      slug: "masjid-builder",
+      icon: "🕌",
+      badge: "10 Stages • 3D Builder",
+      gradient: "from-amber-900/70 via-slate-900 to-emerald-950",
+      border: "border-amber-500/40",
+      title: "Masjid & Wudu Builder",
+      desc: "Learn Wudu steps in order and construct 10 famous Masjids including Masjid al-Haram & Masjid an-Nabawi.",
+      size: "1.6 MB",
+      installed: false,
+      blockedByParent: false
+    },
+    {
+      id: "g4",
+      slug: "word-search",
+      icon: "🧩",
+      badge: "10 Stages • EN / AR / UR",
+      gradient: "from-purple-900/80 via-slate-900 to-blue-950",
+      border: "border-purple-500/40",
+      title: "Islamic Word Search Puzzle",
+      desc: "New 10×10 Word Search Grid in English, Arabic & Urdu with 10 illustrated popup cards and 10 stages!",
+      size: "1.8 MB",
+      installed: false,
+      blockedByParent: false
+    }
+  ];
+
+  function syncGamesMemoryState() {
+    let savedMap = {};
+    try {
+      savedMap = JSON.parse(localStorage.getItem('qaaf_games_memory_v10') || '{}');
+    } catch (e) {}
+
+    gamesData.length = 0;
+    defaultFourGames.forEach(def => {
+      const st = savedMap[def.id] || {};
+      gamesData.push({
+        ...def,
+        installed: st.installed === true,
+        blockedByParent: st.blockedByParent === true,
+        installingProgress: null
+      });
+    });
+  }
+
+  function saveGamesMemoryState() {
+    const map = {};
+    gamesData.forEach(g => {
+      map[g.id] = {
+        installed: !!g.installed,
+        blockedByParent: !!g.blockedByParent
+      };
+    });
+    localStorage.setItem('qaaf_games_memory_v10', JSON.stringify(map));
+  }
+
+  syncGamesMemoryState();
+
+  if (!document.getElementById('qaafStandaloneGamesModal')) {
+    const gm = document.createElement('div');
+    gm.id = 'qaafStandaloneGamesModal';
+    gm.className = 'fixed inset-0 z-50 hidden bg-[#05070b] flex flex-col';
+    gm.dir = 'ltr';
+    gm.innerHTML = `
+      <div class="bg-[#0d1118] border-b border-white/10 px-3 sm:px-5 py-2 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-2">
+          <span id="extGameHeaderIcon" class="text-xl">🎮</span>
+          <div>
+            <h3 id="extGameHeaderTitle" class="text-xs sm:text-sm font-extrabold text-white">QAAF Kids Halal Game</h3>
+            <p class="text-[10px] text-emerald-400 font-bold">100% Music-Free • 10 Stages • Memory Installed</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="bg-amber-500/20 border border-amber-400/40 text-amber-300 px-2.5 py-1 rounded-full text-xs font-extrabold">⭐ <span id="extGameStarsCount">0</span></span>
+          <button type="button" onclick="closeStandaloneGameModal()" class="bg-slate-800 hover:bg-red-600 text-white px-3 py-1.5 rounded-xl text-xs font-extrabold transition">✕ Exit Game</button>
+        </div>
+      </div>
+      <iframe id="qaafStandaloneGameIframe" class="flex-1 w-full h-full border-0 bg-[#070b12]" src="about:blank" allow="autoplay"></iframe>
+    `;
+    document.body.appendChild(gm);
+  }
+
+  window.closeStandaloneGameModal = function() {
+    const gm = document.getElementById('qaafStandaloneGamesModal');
+    const ifr = document.getElementById('qaafStandaloneGameIframe');
+    if (ifr) ifr.src = 'about:blank';
+    if (gm) gm.classList.add('hidden');
+  };
+
+  window.addEventListener('message', function(e) {
+    if (!e.data || typeof e.data !== 'object') return;
+    if (e.data.type === 'QAAF_GAME_STAR_EARNED') {
+      awardGameStar();
+      const stEl = document.getElementById('extGameStarsCount');
+      if (stEl) stEl.innerText = gameStars;
+    } else if (e.data.type === 'QAAF_GAME_EXIT') {
+      closeStandaloneGameModal();
+    } else if (e.data.type === 'QAAF_OPEN_PARENT_SUPPORT') {
+      closeStandaloneGameModal();
+      openParentalGate('support');
+    }
+  });
+
+  window.installGameByChild = function(gameId) {
+    const g = gamesData.find(x => x.id === gameId);
+    if (!g) return;
+    if (g.blockedByParent) {
+      requestParentGameInstall(gameId);
+      return;
+    }
+    if (g.installingProgress !== null) return;
+
+    g.installingProgress = 5;
+    renderGames();
+
+    if ('caches' in window && window.location.protocol.startsWith('http')) {
+      caches.open('qaaf-games-on-demand-v1').then(cache => {
+        cache.add('./qaaf-games.html').catch(() => {});
+      }).catch(() => {});
+    }
+
+    const stepMs = 200;
+    const timer = setInterval(() => {
+      g.installingProgress += 15;
+      const barEl = document.getElementById(`installProgBar_${gameId}`);
+      const txtEl = document.getElementById(`installProgTxt_${gameId}`);
+      if (barEl) barEl.style.width = `${Math.min(100, g.installingProgress)}%`;
+      if (txtEl) txtEl.innerText = `⬇️ Downloading & Installing (${Math.min(100, g.installingProgress)}%)...`;
+
+      if (g.installingProgress >= 100) {
+        clearInterval(timer);
+        g.installingProgress = null;
+        g.installed = true;
+        saveGamesMemoryState();
+        renderGames();
+        showSyncToast(`🎉 "${g.title}" installed in device memory!`);
+      }
+    }, stepMs);
+  };
+
+  window.parentToggleUninstallGame = function(gameId) {
+    const g = gamesData.find(x => x.id === gameId);
+    if (!g) return;
+    if (g.blockedByParent) {
+      g.blockedByParent = false;
+      g.installed = true;
+      showSyncToast(`🔓 "${g.title}" unlocked & restored by Parent.`);
+    } else {
+      g.installed = false;
+      g.blockedByParent = true;
+      showSyncToast(`🔒 "${g.title}" uninstalled & locked with 6-Digit Parent PIN.`);
+    }
+    saveGamesMemoryState();
+    renderGames();
+  };
+
+  const prevVerifyPin = window.verifyPinCode;
+  window.verifyPinCode = function() {
+    const entered = (document.getElementById('pinInput')?.value || '').trim();
+    const isInstallingGame = (pendingParentPurpose === 'reinstall_game' && entered === parentPin);
+    if (prevVerifyPin) prevVerifyPin();
+    if (isInstallingGame) {
+      saveGamesMemoryState();
+      renderGames();
+    }
+  };
+
+  window.renderGames = function() {
+    const grid = document.getElementById('gamesGrid');
+    if (!grid) return;
+    grid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4';
+    grid.innerHTML = '';
+
+    gamesData.forEach(game => {
+      let actionHtml = '';
+      if (game.installingProgress !== null) {
+        actionHtml = `
+          <div class="w-full bg-black/80 border border-blue-500/50 rounded-xl p-2">
+            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden mb-1">
+              <div id="installProgBar_${game.id}" class="bg-gradient-to-r from-blue-500 to-emerald-400 h-full transition-all duration-150" style="width: ${game.installingProgress}%"></div>
+            </div>
+            <p id="installProgTxt_${game.id}" class="text-[11px] font-extrabold text-blue-300 text-center">⬇️ Downloading (${game.installingProgress}%)...</p>
+          </div>`;
+      } else if (game.installed && !game.blockedByParent) {
+        actionHtml = `
+          <div class="flex items-center gap-1.5">
+            <button type="button" onclick="openAndPlayGame('${game.id}')" class="flex-1 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white py-2.5 rounded-xl text-xs font-extrabold shadow-lg transition">
+              ▶ Play Now (10 Stages)
+            </button>
+          </div>`;
+      } else if (game.blockedByParent) {
+        actionHtml = `
+          <button type="button" onclick="requestParentGameInstall('${game.id}')" class="w-full bg-amber-600/25 hover:bg-amber-600/40 border border-amber-500/60 text-amber-300 py-2.5 rounded-xl text-xs font-extrabold transition">
+            🔒 Uninstalled • Enter 6-Digit PIN
+          </button>`;
+      } else {
+        actionHtml = `
+          <button type="button" onclick="installGameByChild('${game.id}')" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-xl text-xs font-extrabold shadow-lg transition flex items-center justify-center gap-1.5">
+            <span>⬇️</span> <span>Install Game (${game.size})</span>
+          </button>`;
+      }
+
+      grid.innerHTML += `
+        <div class="game-card-3d bg-gradient-to-br ${game.gradient} border ${game.border} rounded-2xl p-4 flex flex-col justify-between relative overflow-hidden">
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-3">
+              <div class="w-12 h-12 rounded-2xl bg-black/50 border border-white/15 flex items-center justify-center text-2xl shadow-inner">
+                ${game.icon}
+              </div>
+              <div class="text-right">
+                <span class="text-[10px] bg-black/60 border border-white/10 text-emerald-300 px-2.5 py-1 rounded-full font-extrabold block">${game.badge}</span>
+                <span class="text-[10px] ${game.installed ? 'text-emerald-400' : 'text-slate-400'} font-bold mt-1 block">
+                  ${game.installed ? '✅ Installed in Memory' : (game.blockedByParent ? '🔒 Locked by Parent' : '☁️ Ready to Install')}
+                </span>
+              </div>
+            </div>
+            <h3 class="text-sm sm:text-base font-extrabold text-white mb-1">${game.title}</h3>
+            <p class="text-xs text-slate-300 leading-relaxed mb-4">${game.desc}</p>
+          </div>
+          ${actionHtml}
+        </div>
+      `;
+    });
+
+    if (typeof renderParentGameControls === 'function') renderParentGameControls();
+  };
+
+  window.openAndPlayGame = async function(gameId) {
+    const g = gamesData.find(x => x.id === gameId);
+    if (!g || !g.installed || g.blockedByParent) {
+      installGameByChild(gameId);
+      return;
+    }
+
+    let hasExternalGamesFile = false;
+    if (window.location.protocol.startsWith('http')) {
+      try {
+        const resp = await fetch('./qaaf-games.html', { method: 'HEAD', cache: 'no-store' });
+        if (resp.ok) hasExternalGamesFile = true;
+      } catch (e) {}
+    }
+
+    if (hasExternalGamesFile) {
+      const gm = document.getElementById('qaafStandaloneGamesModal');
+      const ifr = document.getElementById('qaafStandaloneGameIframe');
+      document.getElementById('extGameHeaderIcon').innerText = g.icon;
+      document.getElementById('extGameHeaderTitle').innerText = g.title;
+      document.getElementById('extGameStarsCount').innerText = gameStars;
+      const proFlag = isSupporterPro ? '1' : '0';
+      ifr.src = `./qaaf-games.html?game=${encodeURIComponent(g.slug)}&id=${encodeURIComponent(g.id)}&lang=${encodeURIComponent(preferredContentLang || 'en')}&pro=${proFlag}&stars=${gameStars}`;
+      gm.classList.remove('hidden');
+      return;
+    }
+
+    launchMiniGame(gameId);
+  };
+
+  const wordSearchPuzzles = {
+    en: {
+      words: [
+        { word: "QURAN", icon: "📖", label: "Quran" },
+        { word: "MAKKAH", icon: "🕋", label: "Makkah" },
+        { word: "MADINAH", icon: "🕌", label: "Madinah" },
+        { word: "SALAH", icon: "🧎", label: "Salah" },
+        { word: "ZAKAT", icon: "🪙", label: "Zakat" },
+        { word: "SAWM", icon: "🌙", label: "Sawm" },
+        { word: "HAJJ", icon: "⛺", label: "Hajj" },
+        { word: "DUA", icon: "🤲", label: "Dua" },
+        { word: "WUDU", icon: "💧", label: "Wudu" },
+        { word: "SABR", icon: "🌿", label: "Sabr" }
+      ]
+    },
+    ar: {
+      words: [
+        { word: "قران", icon: "📖", label: "قرآن" },
+        { word: "مكة", icon: "🕋", label: "مكة" },
+        { word: "مدينة", icon: "🕌", label: "مدينة" },
+        { word: "صلاة", icon: "🧎", label: "صلاة" },
+        { word: "زكاة", icon: "🪙", label: "زكاة" },
+        { word: "صوم", icon: "🌙", label: "صوم" },
+        { word: "حج", icon: "⛺", label: "حج" },
+        { word: "دعاء", icon: "🤲", label: "دعاء" },
+        { word: "وضوء", icon: "💧", label: "وضوء" },
+        { word: "صبر", icon: "🌿", label: "صبر" }
+      ]
+    },
+    ur: {
+      words: [
+        { word: "قرآن", icon: "📖", label: "قرآن" },
+        { word: "مکہ", icon: "🕋", label: "مکہ" },
+        { word: "مدینہ", icon: "🕌", label: "مدینہ" },
+        { word: "نماز", icon: "🧎", label: "نماز" },
+        { word: "زکوۃ", icon: "🪙", label: "زکوۃ" },
+        { word: "روزہ", icon: "🌙", label: "روزہ" },
+        { word: "حج", icon: "⛺", label: "حج" },
+        { word: "دعا", icon: "🤲", label: "دعا" },
+        { word: "وضو", icon: "💧", label: "وضو" },
+        { word: "صبر", icon: "🌿", label: "صبر" }
+      ]
+    }
+  };
+  let activeWordSearchLang = 'en';
+  let foundWordSearchList = [];
+
+  const origLaunchMiniGame = window.launchMiniGame;
+  window.launchMiniGame = function(gameId = 'g1') {
+    foundWordSearchList = [];
+    if (origLaunchMiniGame) origLaunchMiniGame(gameId);
+    if (gameId === 'g4') {
+      document.getElementById('activeGameTitle').innerText = 'Islamic Word Search Puzzle';
+      document.getElementById('activeGameIcon').innerText = '🧩';
+      renderWordSearchFallback();
+    }
+  };
+
+  const origRenderMiniGameStage = window.renderMiniGameStage;
+  window.renderMiniGameStage = function() {
+    if (origRenderMiniGameStage) origRenderMiniGameStage();
+    if (activeMiniGameId === 'g4' && !isStageLocked('g4', activeGameStage)) {
+      renderWordSearchFallback();
+    }
+  };
+
+  window.switchWordSearchLang = function(langKey) {
+    activeWordSearchLang = langKey;
+    foundWordSearchList = [];
+    renderWordSearchFallback();
+  };
+
+  window.tapWordSearchTarget = function(wordStr) {
+    if (foundWordSearchList.includes(wordStr)) return;
+    foundWordSearchList.push(wordStr);
+    awardGameStar();
+    speakArabicAudio("مَا شَاءَ اللَّه");
+    renderWordSearchFallback();
+  };
+
+  function renderWordSearchFallback() {
+    const container = document.getElementById('miniGameContainer');
+    if (!container) return;
+    document.getElementById('gameStageLabel').innerText = `Stage ${activeGameStage}: 10×10 Islamic Word Search`;
+    const pack = wordSearchPuzzles[activeWordSearchLang] || wordSearchPuzzles.en;
+
+    let topCardsHtml = '';
+    pack.words.forEach(item => {
+      const isFound = foundWordSearchList.includes(item.word);
+      topCardsHtml += `
+        <button type="button" onclick="tapWordSearchTarget('${item.word}')" class="p-1.5 rounded-xl border text-center transition flex flex-col items-center justify-center ${isFound ? 'bg-emerald-600/30 border-emerald-400 text-emerald-300 scale-95' : 'bg-slate-800/90 hover:bg-slate-700 border-slate-700 text-white'}">
+          <span class="text-base">${item.icon}</span>
+          <span class="text-[10px] font-extrabold truncate w-full">${item.label}</span>
+        </button>`;
+    });
+
+    container.innerHTML = `
+      <div class="bg-slate-950/90 rounded-2xl p-3 sm:p-4 border border-slate-800 space-y-3">
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-xs font-extrabold text-amber-300">🌍 Select Puzzle Language:</span>
+          <div class="flex gap-1">
+            <button type="button" onclick="switchWordSearchLang('en')" class="px-2.5 py-1 rounded-lg text-xs font-extrabold ${activeWordSearchLang === 'en' ? 'bg-emerald-500 text-black' : 'bg-slate-800 text-slate-300'}">🇬🇧 English</button>
+            <button type="button" onclick="switchWordSearchLang('ar')" class="px-2.5 py-1 rounded-lg text-xs font-extrabold ${activeWordSearchLang === 'ar' ? 'bg-emerald-500 text-black' : 'bg-slate-800 text-slate-300'}">🇸🇦 العربية</button>
+            <button type="button" onclick="switchWordSearchLang('ur')" class="px-2.5 py-1 rounded-lg text-xs font-extrabold ${activeWordSearchLang === 'ur' ? 'bg-emerald-500 text-black' : 'bg-slate-800 text-slate-300'}">🇵🇰 اردو</button>
+          </div>
+        </div>
+        <div>
+          <p class="text-[11px] text-slate-400 font-bold mb-1.5 text-left">🖼️ 10 Picture Clues (Tap words as you find them — Found ${foundWordSearchList.length}/10):</p>
+          <div class="grid grid-cols-5 gap-1.5">${topCardsHtml}</div>
+        </div>
+        <p class="text-[11px] text-emerald-400 font-bold">✨ Ready for full standalone 10×10 Grid when qaaf-games.html is added to the folder!</p>
+      </div>
+    `;
+  }
+
+  renderGames();
+  renderVideos();
+})();
+</script>
+<!-- QAAF TUBE v9.5 END -->
 </body>
 
 
