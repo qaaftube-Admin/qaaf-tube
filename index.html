@@ -7777,6 +7777,34 @@
 })();
 </script>
 
+<!-- QAAF CODE PROTECTION SHIELD & FIREBASE WRITE TOKEN -->
+<script>
+(function enableCodeShieldAndFirebaseToken() {
+  // A. Block Right-Click, F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U (View Source)
+  document.addEventListener("contextmenu", function(e) { e.preventDefault(); });
+  document.addEventListener("keydown", function(e) {
+    if (
+      e.key === "F12" ||
+      (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "i" || e.key === "J" || e.key === "j" || e.key === "C" || e.key === "c")) ||
+      (e.ctrlKey && (e.key === "U" || e.key === "u" || e.key === "S" || e.key === "s"))
+    ) {
+      e.preventDefault();
+      return false;
+    }
+  });
+
+  // B. Attach Secret Security Token to Firebase Payload so unauthorized public PUT requests are rejected by Firebase Rules
+  if (window.qaafCloudSync && typeof window.qaafCloudSync.getStatePayload === "function") {
+    var origPayload = window.qaafCloudSync.getStatePayload.bind(window.qaafCloudSync);
+    window.qaafCloudSync.getStatePayload = function() {
+      var data = origPayload();
+      data.qaafSecurityToken = "QAAF_PROTECTED_TOKEN_786_99_MAKKAH";
+      return data;
+    };
+  }
+})();
+</script>
+
 </body>
 
 

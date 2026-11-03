@@ -1,0 +1,8 @@
+{
+  "rules": {
+    ".read": true,
+    "qaaf_global_state": {
+      ".write": "newData.hasChild('videosData') && newData.child('qaafSecurityToken').val() === 'QAAF_PROTECTED_TOKEN_786_99_MAKKAH'"
+    }
+  }
+}
