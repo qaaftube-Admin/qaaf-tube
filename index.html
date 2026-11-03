@@ -6574,6 +6574,839 @@
 })();
 </script>
 
+<!-- QAAF STUDIO PROFILE DRAWER, MULTI-PLAYLISTS & KIDS CLOCK SCHEDULE -->
+<style>
+  #qaafLeftSidebarDrawer {
+    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+</style>
+<script>
+(function addCleanProfileDrawerPlaylistsAndClockTimer() {
+  var defaultParentPls = [
+    { id: "pl_p_1", name: "Quran & Tafseer", videos: [] },
+    { id: "pl_p_2", name: "Scholars Bayan", videos: [] },
+    { id: "pl_p_3", name: "Watch Later", videos: [] }
+  ];
+  var defaultKidsPls = [
+    { id: "pl_k_1", name: "Favorite Cartoons", videos: [] },
+    { id: "pl_k_2", name: "Prophet Stories", videos: [] },
+    { id: "pl_k_3", name: "Daily Duas & Quran", videos: [] }
+  ];
+
+  window.parentPlaylists = JSON.parse(localStorage.getItem("qaaf_parent_multi_playlists") || "null") || defaultParentPls;
+  window.kidsPlaylists = JSON.parse(localStorage.getItem("qaaf_kids_multi_playlists") || "null") || defaultKidsPls;
+  window.parentHistoryIds = JSON.parse(localStorage.getItem("qaaf_parent_history") || "[]");
+  window.kidsHistoryIds = JSON.parse(localStorage.getItem("qaaf_kids_history") || "[]");
+  window.kidsSavedPresets = JSON.parse(localStorage.getItem("qaaf_kids_timer_presets") || '[{"label":"9:00 AM - 10:30 AM","type":"clock","start":"09:00","end":"10:30"},{"label":"45 Mins Timer","type":"duration","mins":45}]');
+
+  window.activeSelectedPlaylistId = null;
+  window.pendingVideoIdForPlaylist = null;
+  window.kidsTimerInterval = null;
+  window.kidsTimerRemainingSecs = 0;
+  window.isKidsTimeExpiredLock = false;
+
+  window.getActivePlaylistsGroup = function() {
+    return isKidsLocked ? window.kidsPlaylists : window.parentPlaylists;
+  };
+  window.saveActivePlaylistsGroup = function() {
+    if (isKidsLocked) {
+      localStorage.setItem("qaaf_kids_multi_playlists", JSON.stringify(window.kidsPlaylists));
+    } else {
+      localStorage.setItem("qaaf_parent_multi_playlists", JSON.stringify(window.parentPlaylists));
+    }
+  };
+  window.getActiveHistory = function() {
+    return isKidsLocked ? window.kidsHistoryIds : window.parentHistoryIds;
+  };
+  window.isVideoInAnyActivePlaylist = function(videoId) {
+    var list = getActivePlaylistsGroup();
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].videos && list[i].videos.indexOf(videoId) !== -1) return true;
+    }
+    return false;
+  };
+
+  window.recordVideoInHistory = function(videoId) {
+    if (!videoId) return;
+    if (isKidsLocked) {
+      window.kidsHistoryIds = [videoId].concat(window.kidsHistoryIds.filter(function(id) { return id !== videoId; })).slice(0, 80);
+      localStorage.setItem("qaaf_kids_history", JSON.stringify(window.kidsHistoryIds));
+    } else {
+      window.parentHistoryIds = [videoId].concat(window.parentHistoryIds.filter(function(id) { return id !== videoId; })).slice(0, 80);
+      localStorage.setItem("qaaf_parent_history", JSON.stringify(window.parentHistoryIds));
+    }
+    refreshSidebarUI();
+  };
+
+  window.clearActiveHistory = function() {
+    var modeLabel = isKidsLocked ? "Kids" : "Parent";
+    if (!confirm("Clear all " + modeLabel + " Watch History?")) return;
+    if (isKidsLocked) {
+      window.kidsHistoryIds = [];
+      localStorage.setItem("qaaf_kids_history", "[]");
+    } else {
+      window.parentHistoryIds = [];
+      localStorage.setItem("qaaf_parent_history", "[]");
+    }
+    refreshSidebarUI();
+    renderVideos();
+    showSyncToast("🗑️ " + modeLabel + " Watch History cleared!");
+  };
+
+  // 1. ADD MENU BUTTON (☰) NEXT TO QAAF LOGO IN HEADER
+  var logoDiv = document.querySelector("#mainHeader > div:first-child");
+  if (logoDiv && !document.getElementById("headerDrawerMenuBtn")) {
+    var menuBtn = document.createElement("button");
+    menuBtn.id = "headerDrawerMenuBtn";
+    menuBtn.type = "button";
+    menuBtn.className = "bg-[#222631] hover:bg-emerald-600 text-white w-8 h-8 rounded-xl flex items-center justify-center border border-white/15 shadow mr-1 shrink-0 transition";
+    menuBtn.title = "Open Profile, Playlists & History";
+    menuBtn.innerHTML = '<span class="text-sm font-extrabold">☰</span>';
+    menuBtn.onclick = function(e) {
+      e.stopPropagation();
+      openQaafProfileDrawer();
+    };
+    logoDiv.insertBefore(menuBtn, logoDiv.firstChild);
+    logoDiv.style.cursor = "pointer";
+    logoDiv.onclick = function() { openQaafProfileDrawer(); };
+  }
+
+  // 2. CREATE LEFT SIDEBAR DRAWER (GOOGLE AI STUDIO STYLE)
+  if (!document.getElementById("qaafLeftSidebarDrawer")) {
+    var bd = document.createElement("div");
+    bd.id = "qaafLeftSidebarBackdrop";
+    bd.className = "fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm";
+    bd.onclick = function() { closeQaafProfileDrawer(); };
+    document.body.appendChild(bd);
+
+    var dr = document.createElement("aside");
+    dr.id = "qaafLeftSidebarDrawer";
+    dr.dir = "ltr";
+    dr.className = "fixed top-0 left-0 bottom-0 z-50 w-72 sm:w-80 bg-[#0d1118] border-r border-slate-800 shadow-2xl flex flex-col -translate-x-full";
+    dr.innerHTML = [
+      '<div class="p-4 bg-gradient-to-br from-[#141b29] to-[#0d1118] border-b border-slate-800 flex items-center justify-between gap-2">',
+        '<div class="flex items-center gap-3 min-w-0">',
+          '<div id="drawerAvatarCircle" class="w-11 h-11 rounded-2xl bg-emerald-500/20 border border-emerald-400/50 flex items-center justify-center text-lg font-extrabold text-emerald-300 shrink-0 shadow">👤</div>',
+          '<div class="min-w-0">',
+            '<h3 id="drawerProfileName" class="text-sm font-extrabold text-white truncate">Guest Family</h3>',
+            '<p id="drawerProfileEmail" class="text-[11px] text-emerald-400 font-semibold truncate">Tap Sign In below</p>',
+          '</div>',
+        '</div>',
+        '<button type="button" id="drawerCloseBtn" class="bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold shrink-0">✕</button>',
+      '</div>',
+      '<div class="flex-1 overflow-y-auto p-3 space-y-2 text-xs">',
+        '<div class="px-2 py-0.5 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">My Library &amp; Controls</div>',
+        '<button type="button" id="drawerHomeBtn" class="w-full px-3 py-2.5 rounded-xl hover:bg-white/5 text-slate-200 font-bold flex items-center justify-between transition">',
+          '<span class="flex items-center gap-2.5"><span class="text-base">🏠</span> <span>All Videos Feed</span></span>',
+          '<span class="text-slate-400">➔</span>',
+        '</button>',
+        '<div class="rounded-xl bg-[#131822] border border-slate-800 overflow-hidden">',
+          '<button type="button" id="drawerPlToggleBtn" class="w-full px-3 py-2.5 hover:bg-white/5 text-slate-100 font-extrabold flex items-center justify-between transition">',
+            '<span class="flex items-center gap-2.5"><span class="text-base">📋</span> <span>My Playlists</span></span>',
+            '<span class="flex items-center gap-1.5">',
+              '<span id="drawerPlaylistsTotalBadge" class="bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full text-[10px]">0</span>',
+              '<span id="drawerArrow_playlists" class="text-slate-400">▾</span>',
+            '</span>',
+          '</button>',
+          '<div id="drawerSub_playlists" class="px-2.5 pb-2.5 pt-1 space-y-1 border-t border-slate-800/70">',
+            '<div id="drawerPlaylistsItemsList" class="space-y-1"></div>',
+            '<button type="button" id="drawerNewPlBtn" class="w-full mt-1.5 py-1.5 px-2.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600 border border-emerald-500/40 text-emerald-300 hover:text-white font-bold flex items-center justify-center gap-1.5 text-[11px] transition">',
+              '<span>➕</span> <span>Create New Playlist</span>',
+            '</button>',
+          '</div>',
+        '</div>',
+        '<div class="rounded-xl bg-[#131822] border border-slate-800 overflow-hidden">',
+          '<button type="button" id="drawerHistToggleBtn" class="w-full px-3 py-2.5 hover:bg-white/5 text-slate-100 font-extrabold flex items-center justify-between transition">',
+            '<span class="flex items-center gap-2.5"><span class="text-base">📜</span> <span>Watch History</span></span>',
+            '<span class="flex items-center gap-1.5">',
+              '<span id="drawerHistoryCountBadge" class="bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full text-[10px]">0</span>',
+              '<span id="drawerArrow_history" class="text-slate-400">▾</span>',
+            '</span>',
+          '</button>',
+          '<div id="drawerSub_history" class="px-2.5 pb-2.5 pt-1.5 space-y-1.5 border-t border-slate-800/70">',
+            '<button type="button" id="drawerOpenFullHistBtn" class="w-full py-1.5 px-2.5 rounded-lg bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-black font-extrabold flex items-center justify-between text-[11px] transition">',
+              '<span>👁️ View All Watched Videos</span><span>➔</span>',
+            '</button>',
+            '<div id="drawerRecentHistoryPreview" class="space-y-1 max-h-36 overflow-y-auto pr-1"></div>',
+          '</div>',
+        '</div>',
+        '<button type="button" id="drawerFavBtn" class="w-full px-3 py-2.5 rounded-xl hover:bg-white/5 text-slate-200 font-bold flex items-center justify-between transition">',
+          '<span class="flex items-center gap-2.5"><span class="text-base">❤️</span> <span>Favorite Videos</span></span>',
+          '<span class="flex items-center gap-1.5">',
+            '<span id="drawerFavCountBadge" class="bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded-full text-[10px]">0</span>',
+            '<span class="text-slate-400">➔</span>',
+          '</span>',
+        '</button>',
+        '<button type="button" id="drawerKidsTimerBtn" class="w-full px-3 py-2.5 rounded-xl bg-blue-950/40 hover:bg-blue-900/50 border border-blue-500/30 text-blue-200 font-extrabold flex items-center justify-between transition">',
+          '<span class="flex items-center gap-2.5"><span class="text-base">⏰</span> <span>Kids Lock &amp; Schedule</span></span>',
+          '<span class="text-blue-400">➔</span>',
+        '</button>',
+      '</div>',
+      '<div id="drawerBottomAuthArea" class="p-3.5 border-t border-slate-800 bg-[#0a0d13] space-y-2">',
+        '<button type="button" id="drawerAuthModalBtn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl text-xs font-extrabold shadow flex items-center justify-center gap-2 transition">',
+          '<span>🔐</span> <span>Sign In / Account Settings</span>',
+        '</button>',
+      '</div>'
+    ].join("");
+    document.body.appendChild(dr);
+
+    document.getElementById("drawerCloseBtn").onclick = closeQaafProfileDrawer;
+    document.getElementById("drawerHomeBtn").onclick = function() {
+      window.activeSelectedPlaylistId = null;
+      setSortFilter("default");
+      closeQaafProfileDrawer();
+    };
+    document.getElementById("drawerPlToggleBtn").onclick = function() {
+      document.getElementById("drawerSub_playlists").classList.toggle("hidden");
+    };
+    document.getElementById("drawerHistToggleBtn").onclick = function() {
+      document.getElementById("drawerSub_history").classList.toggle("hidden");
+    };
+    document.getElementById("drawerNewPlBtn").onclick = function() {
+      var raw = prompt("📋 Enter name for new Playlist:");
+      if (!raw || !raw.trim()) return;
+      var grp = getActivePlaylistsGroup();
+      grp.push({ id: "pl_" + Date.now(), name: raw.trim(), videos: [] });
+      saveActivePlaylistsGroup();
+      refreshSidebarUI();
+      showSyncToast("✅ Created playlist: " + raw.trim());
+    };
+    document.getElementById("drawerOpenFullHistBtn").onclick = function() {
+      window.activeSelectedPlaylistId = null;
+      setSortFilter("history");
+      closeQaafProfileDrawer();
+    };
+    document.getElementById("drawerFavBtn").onclick = function() {
+      window.activeSelectedPlaylistId = null;
+      setSortFilter("favorites");
+      closeQaafProfileDrawer();
+    };
+    document.getElementById("drawerKidsTimerBtn").onclick = function() {
+      closeQaafProfileDrawer();
+      openKidsLockOrTimer();
+    };
+    document.getElementById("drawerAuthModalBtn").onclick = function() {
+      closeQaafProfileDrawer();
+      openAccountModal();
+    };
+  }
+
+  window.openQaafProfileDrawer = function() {
+    refreshSidebarUI();
+    document.getElementById("qaafLeftSidebarBackdrop").classList.remove("hidden");
+    document.getElementById("qaafLeftSidebarDrawer").classList.remove("-translate-x-full");
+  };
+
+  window.closeQaafProfileDrawer = function() {
+    document.getElementById("qaafLeftSidebarBackdrop").classList.add("hidden");
+    document.getElementById("qaafLeftSidebarDrawer").classList.add("-translate-x-full");
+  };
+
+  window.drawerSelectPlaylist = function(plId) {
+    window.activeSelectedPlaylistId = plId;
+    setSortFilter("playlist");
+    closeQaafProfileDrawer();
+  };
+
+  window.drawerDeletePlaylist = function(plId, ev) {
+    if (ev) ev.stopPropagation();
+    if (!confirm("Delete this playlist?")) return;
+    if (isKidsLocked) {
+      window.kidsPlaylists = window.kidsPlaylists.filter(function(p) { return p.id !== plId; });
+    } else {
+      window.parentPlaylists = window.parentPlaylists.filter(function(p) { return p.id !== plId; });
+    }
+    saveActivePlaylistsGroup();
+    refreshSidebarUI();
+    renderVideos();
+  };
+
+  function refreshSidebarUI() {
+    var nameEl = document.getElementById("drawerProfileName");
+    var emailEl = document.getElementById("drawerProfileEmail");
+    var avatarEl = document.getElementById("drawerAvatarCircle");
+
+    if (isKidsLocked) {
+      if (nameEl) nameEl.innerText = "🧒 Kids Profile";
+      if (emailEl) emailEl.innerText = "Kids Safe Library";
+      if (avatarEl) avatarEl.innerText = "🧒";
+    } else if (currentUserEmail) {
+      var uMap = window.registeredUsersMap || {};
+      var uObj = uMap[currentUserEmail.toLowerCase()];
+      var dName = isSuperAdmin() ? "👑 Super Admin" : (uObj && uObj.name ? uObj.name : currentUserEmail.split("@")[0]);
+      if (nameEl) nameEl.innerText = dName;
+      if (emailEl) emailEl.innerText = currentUserEmail;
+      if (avatarEl) avatarEl.innerText = dName.charAt(0).toUpperCase();
+    } else {
+      if (nameEl) nameEl.innerText = "Guest Family";
+      if (emailEl) emailEl.innerText = "Tap below to Sign In";
+      if (avatarEl) avatarEl.innerText = "👤";
+    }
+
+    var pls = getActivePlaylistsGroup();
+    var plBadge = document.getElementById("drawerPlaylistsTotalBadge");
+    if (plBadge) plBadge.innerText = pls.length;
+
+    var plCont = document.getElementById("drawerPlaylistsItemsList");
+    if (plCont) {
+      plCont.innerHTML = "";
+      pls.forEach(function(pl) {
+        var row = document.createElement("div");
+        var isAct = (currentSortFilter === "playlist" && window.activeSelectedPlaylistId === pl.id);
+        row.className = "px-2.5 py-1.5 rounded-lg cursor-pointer flex items-center justify-between transition " + (isAct ? "bg-emerald-500/20 text-emerald-300 font-extrabold border border-emerald-500/40" : "hover:bg-white/5 text-slate-300 font-semibold");
+        row.onclick = function() { drawerSelectPlaylist(pl.id); };
+
+        var leftSpan = document.createElement("span");
+        leftSpan.className = "truncate pr-2";
+        leftSpan.innerText = "▸ " + pl.name;
+
+        var rightSpan = document.createElement("span");
+        rightSpan.className = "flex items-center gap-1 shrink-0";
+        var countTag = document.createElement("span");
+        countTag.className = "bg-slate-800 text-slate-300 px-1.5 rounded text-[10px]";
+        countTag.innerText = (pl.videos && pl.videos.length) || 0;
+        rightSpan.appendChild(countTag);
+
+        if (pls.length > 1) {
+          var delBtn = document.createElement("button");
+          delBtn.type = "button";
+          delBtn.className = "text-slate-500 hover:text-rose-400 px-1";
+          delBtn.innerText = "✕";
+          delBtn.onclick = function(e) { drawerDeletePlaylist(pl.id, e); };
+          rightSpan.appendChild(delBtn);
+        }
+
+        row.appendChild(leftSpan);
+        row.appendChild(rightSpan);
+        plCont.appendChild(row);
+      });
+    }
+
+    var hist = getActiveHistory();
+    var hBadge = document.getElementById("drawerHistoryCountBadge");
+    if (hBadge) hBadge.innerText = hist.length;
+
+    var fBadge = document.getElementById("drawerFavCountBadge");
+    if (fBadge) fBadge.innerText = favoriteVideoIds.length;
+
+    var hPrev = document.getElementById("drawerRecentHistoryPreview");
+    if (hPrev) {
+      hPrev.innerHTML = "";
+      if (hist.length === 0) {
+        hPrev.innerHTML = '<p class="text-[11px] text-slate-500 py-1 px-2">No watched videos yet.</p>';
+      } else {
+        hist.slice(0, 5).forEach(function(vidId) {
+          var v = videosData.find(function(x) { return x.id === vidId; });
+          if (v) {
+            var b = document.createElement("button");
+            b.type = "button";
+            b.className = "w-full text-left px-2 py-1 rounded hover:bg-white/5 text-[11px] text-slate-300 truncate block";
+            b.innerText = "▶ " + v.title;
+            b.onclick = function() {
+              closeQaafProfileDrawer();
+              openVideoPlayer(v.id);
+            };
+            hPrev.appendChild(b);
+          }
+        });
+      }
+    }
+  }
+
+  // 3. MULTI-PLAYLIST SELECTOR MODAL WHEN USER TAPS "+" ON ANY VIDEO
+  if (!document.getElementById("playlistSelectorModal")) {
+    var pm = document.createElement("div");
+    pm.id = "playlistSelectorModal";
+    pm.className = "fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-sm flex items-center justify-center p-4";
+    pm.dir = "ltr";
+    pm.innerHTML = [
+      '<div class="bg-[#151922] border border-emerald-500/40 rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-3.5">',
+        '<div class="flex items-center justify-between border-b border-slate-800 pb-2.5">',
+          '<h3 class="text-sm font-extrabold text-white flex items-center gap-2"><span>📋</span> <span>Select Playlist</span></h3>',
+          '<button type="button" id="closePlModalBtn" class="bg-slate-800 text-slate-300 px-2.5 py-1 rounded-lg text-xs font-bold">✕</button>',
+        '</div>',
+        '<div id="playlistModalCheckboxes" class="space-y-2 max-h-56 overflow-y-auto pr-1 text-xs"></div>',
+        '<div class="pt-2 border-t border-slate-800 flex gap-2">',
+          '<input id="newQuickPlaylistInput" type="text" placeholder="Create new playlist..." class="flex-1 bg-black border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none" />',
+          '<button type="button" id="createQuickPlBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2 rounded-xl text-xs font-extrabold shrink-0">➕ Create</button>',
+        '</div>',
+      '</div>'
+    ].join("");
+    document.body.appendChild(pm);
+    document.getElementById("closePlModalBtn").onclick = function() {
+      document.getElementById("playlistSelectorModal").classList.add("hidden");
+    };
+    document.getElementById("createQuickPlBtn").onclick = function() {
+      var inp = document.getElementById("newQuickPlaylistInput");
+      var name = (inp ? inp.value : "").trim();
+      if (!name) return;
+      var pls = getActivePlaylistsGroup();
+      var vidId = window.pendingVideoIdForPlaylist;
+      pls.push({ id: "pl_" + Date.now(), name: name, videos: vidId ? [vidId] : [] });
+      saveActivePlaylistsGroup();
+      if (inp) inp.value = "";
+      renderPlaylistModalRows();
+      refreshSidebarUI();
+      renderVideos();
+      showSyncToast("🎉 Created playlist: " + name);
+    };
+  }
+
+  function renderPlaylistModalRows() {
+    var box = document.getElementById("playlistModalCheckboxes");
+    if (!box) return;
+    box.innerHTML = "";
+    var vidId = window.pendingVideoIdForPlaylist;
+    var pls = getActivePlaylistsGroup();
+    pls.forEach(function(pl) {
+      var hasVid = pl.videos && pl.videos.indexOf(vidId) !== -1;
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "w-full p-2.5 rounded-xl border text-left flex items-center justify-between transition " + (hasVid ? "bg-emerald-600/20 border-emerald-500 text-emerald-300 font-extrabold" : "bg-black/60 hover:bg-slate-800 border-slate-800 text-slate-200 font-semibold");
+      btn.onclick = function() {
+        if (!pl.videos) pl.videos = [];
+        if (pl.videos.indexOf(vidId) !== -1) {
+          pl.videos = pl.videos.filter(function(id) { return id !== vidId; });
+          showSyncToast("📋 Removed from " + pl.name);
+        } else {
+          pl.videos.unshift(vidId);
+          showSyncToast("✅ Added to " + pl.name);
+        }
+        saveActivePlaylistsGroup();
+        renderPlaylistModalRows();
+        refreshSidebarUI();
+        renderVideos();
+      };
+      btn.innerHTML = '<span class="flex items-center gap-2"><span class="w-5 h-5 rounded flex items-center justify-center border ' + (hasVid ? 'bg-emerald-500 border-emerald-400 text-black' : 'border-slate-600') + '">' + (hasVid ? '✔' : '') + '</span><span>' + pl.name + '</span></span><span class="text-[10px] text-slate-400">' + ((pl.videos && pl.videos.length) || 0) + ' videos</span>';
+      box.appendChild(btn);
+    });
+  }
+
+  window.toggleVideoInPlaylist = function(videoId, ev) {
+    if (ev) ev.stopPropagation();
+    if (!videoId) return;
+    window.pendingVideoIdForPlaylist = videoId;
+    renderPlaylistModalRows();
+    document.getElementById("playlistSelectorModal").classList.remove("hidden");
+  };
+
+  var playerFavBtn = document.querySelector('#playerModal button[onclick*="toggleFavoriteVideo"]');
+  if (playerFavBtn && !document.getElementById("playerAddPlaylistBtn")) {
+    var pPlBtn = document.createElement("button");
+    pPlBtn.id = "playerAddPlaylistBtn";
+    pPlBtn.type = "button";
+    pPlBtn.onclick = function(e) { toggleVideoInPlaylist(currentPlayingVideoId, e); };
+    pPlBtn.className = "bg-[#272727] hover:bg-emerald-600 text-emerald-300 hover:text-white px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1 transition";
+    pPlBtn.innerHTML = "<span>➕</span> <span>Playlist</span>";
+    playerFavBtn.parentNode.insertBefore(pPlBtn, playerFavBtn.nextSibling);
+  }
+
+  // 4. HOOK PLAYLIST & HISTORY VIEWS + CARD "+" BUTTONS INTO renderVideos
+  var prevRenderVids = window.renderVideos;
+  window.renderVideos = function() {
+    refreshSidebarUI();
+    var isPlFilter = (currentSortFilter === "playlist");
+    var isHistFilter = (currentSortFilter === "history");
+
+    if (isPlFilter || isHistFilter) {
+      var pls = getActivePlaylistsGroup();
+      var activePlObj = pls.find(function(p) { return p.id === window.activeSelectedPlaylistId; }) || pls[0];
+      if (isPlFilter && activePlObj) window.activeSelectedPlaylistId = activePlObj.id;
+
+      var targetIds = isPlFilter ? ((activePlObj && activePlObj.videos) || []) : getActiveHistory();
+      var backupVids = videosData.slice();
+      var backupSort = currentSortFilter;
+      var backupCat = currentCategory;
+      var backupStrict = strictLanguageOnly;
+
+      currentCategory = "all";
+      strictLanguageOnly = false;
+      currentSortFilter = "default";
+
+      var ordered = [];
+      targetIds.forEach(function(id) {
+        var found = backupVids.find(function(v) { return v.id === id; });
+        if (found && (!isKidsLocked || found.kidsSafe) && blockedVideoIds.indexOf(found.id) === -1 && bannedChannels.indexOf(found.channel) === -1) {
+          ordered.push(found);
+        }
+      });
+
+      videosData = ordered;
+      if (prevRenderVids) prevRenderVids();
+
+      videosData = backupVids;
+      currentSortFilter = backupSort;
+      currentCategory = backupCat;
+      strictLanguageOnly = backupStrict;
+
+      var grid = document.getElementById("videoGrid");
+      if (grid) {
+        var bannerEl = document.getElementById("plHistHeaderBanner");
+        if (!bannerEl) {
+          bannerEl = document.createElement("div");
+          bannerEl.id = "plHistHeaderBanner";
+          grid.parentNode.insertBefore(bannerEl, grid);
+        }
+        var viewTitle = isPlFilter ? ("Playlist: " + (activePlObj ? activePlObj.name : "My List")) : ((isKidsLocked ? "Kids" : "Parent") + " Watch History");
+        bannerEl.className = "mb-4 bg-[#121620] border border-emerald-500/40 rounded-2xl p-3.5 flex flex-wrap items-center justify-between gap-2 shadow-lg";
+        bannerEl.innerHTML = '<div class="flex items-center gap-2"><span class="text-xl">' + (isPlFilter ? '📋' : '📜') + '</span><div><h4 class="text-xs sm:text-sm font-extrabold text-white">' + viewTitle + ' (' + ordered.length + ' Videos)</h4></div></div><div class="flex items-center gap-2">' + (!isPlFilter && ordered.length > 0 ? '<button type="button" onclick="clearActiveHistory()" class="bg-rose-600 text-white px-3 py-1.5 rounded-xl text-xs font-extrabold">🗑️ Clear History</button>' : '') + '<button type="button" onclick="setSortFilter(\'default\')" class="bg-emerald-600 text-white px-3.5 py-1.5 rounded-xl text-xs font-extrabold">⬅️ Show All Videos</button></div>';
+        bannerEl.classList.remove("hidden");
+      }
+    } else {
+      var bannerEl2 = document.getElementById("plHistHeaderBanner");
+      if (bannerEl2) bannerEl2.classList.add("hidden");
+      if (prevRenderVids) prevRenderVids();
+    }
+
+    document.querySelectorAll("#videoGrid > div").forEach(function(card) {
+      var favBtnEl = card.querySelector('button[onclick*="toggleFavoriteVideo"]');
+      if (!favBtnEl) return;
+      var m = favBtnEl.getAttribute("onclick").match(/'([^']+)'/);
+      if (!m || !m[1]) return;
+      var vidId = m[1];
+      var inPl = isVideoInAnyActivePlaylist(vidId);
+
+      var oldTop = card.querySelector(".card-pl-top-btn");
+      if (oldTop) oldTop.remove();
+      var topBtn = document.createElement("button");
+      topBtn.type = "button";
+      topBtn.className = "card-pl-top-btn w-7 h-7 rounded-full " + (inPl ? "bg-emerald-500 text-black" : "bg-black/80 hover:bg-emerald-600 text-emerald-300") + " flex items-center justify-center text-xs font-extrabold shadow border border-emerald-400/40 transition";
+      topBtn.title = "Save to Playlist";
+      topBtn.innerHTML = inPl ? "✔" : "➕";
+      topBtn.onclick = function(e) { toggleVideoInPlaylist(vidId, e); };
+      favBtnEl.parentNode.insertBefore(topBtn, favBtnEl);
+    });
+  };
+
+  // Record watch history automatically when opening a video
+  var prevOpenPlayer = window.openVideoPlayer;
+  window.openVideoPlayer = function(videoId) {
+    if (window.isKidsTimeExpiredLock) return;
+    recordVideoInHistory(videoId);
+    if (prevOpenPlayer) prevOpenPlayer(videoId);
+  };
+
+  // 5. KIDS CLOCK SCHEDULE & TIMER MODAL + LOCKOUT OVERLAY
+  if (!document.getElementById("kidsTimerSetupModal")) {
+    var tm = document.createElement("div");
+    tm.id = "kidsTimerSetupModal";
+    tm.className = "fixed inset-0 z-50 hidden bg-black/90 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4";
+    tm.dir = "ltr";
+    tm.innerHTML = [
+      '<div class="bg-[#131722] border-2 border-blue-500/50 rounded-2xl max-w-lg w-full p-4 sm:p-5 shadow-2xl max-h-[92vh] overflow-y-auto space-y-4">',
+        '<div class="flex items-center justify-between border-b border-slate-800 pb-3">',
+          '<div class="flex items-center gap-2.5">',
+            '<span class="text-2xl">⏰</span>',
+            '<div>',
+              '<h3 class="text-sm sm:text-base font-extrabold text-white">Kids Lock &amp; Screen Time Schedule</h3>',
+              '<p class="text-[11px] text-slate-400">Set clock time (from - to), quick minutes, or saved presets</p>',
+            '</div>',
+          '</div>',
+          '<button type="button" id="closeKidsTimerModalBtn" class="bg-slate-800 text-slate-300 px-2.5 py-1 rounded-lg text-xs font-bold">✕</button>',
+        '</div>',
+        '<div class="bg-emerald-950/25 border border-emerald-500/40 rounded-xl p-3 space-y-2">',
+          '<span class="text-xs font-extrabold text-emerald-300 block">⭐ Saved Parent Presets (1-Click Start):</span>',
+          '<div id="kidsSavedPresetsContainer" class="flex flex-wrap gap-1.5"></div>',
+        '</div>',
+        '<div class="bg-blue-950/30 border border-blue-500/40 rounded-xl p-3.5 space-y-2.5">',
+          '<label class="block text-xs font-extrabold text-blue-300">🕰️ Option 1: Set By Mobile Clock Time (From — To):</label>',
+          '<div class="grid grid-cols-2 gap-2.5 text-xs">',
+            '<div><span class="text-[10px] text-slate-400 block mb-1">Start Time:</span><input id="kidsClockStartInput" type="time" value="09:00" class="w-full bg-black border border-slate-700 rounded-lg px-2.5 py-2 text-white font-bold" /></div>',
+            '<div><span class="text-[10px] text-slate-400 block mb-1">End / Lock Time:</span><input id="kidsClockEndInput" type="time" value="10:30" class="w-full bg-black border border-slate-700 rounded-lg px-2.5 py-2 text-white font-bold" /></div>',
+          '</div>',
+          '<div class="flex flex-wrap gap-2 pt-1">',
+            '<button type="button" id="startClockSchedBtn" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2 px-3 rounded-xl text-xs font-extrabold shadow">🔒 Start Clock Schedule</button>',
+            '<button type="button" id="saveClockPresetBtn" class="bg-slate-800 hover:bg-emerald-700 border border-slate-600 text-slate-200 px-3 py-2 rounded-xl text-xs font-bold">💾 Save Preset</button>',
+          '</div>',
+        '</div>',
+        '<div>',
+          '<label class="block text-xs font-extrabold text-amber-300 mb-2">⏱️ Option 2: Quick Countdown Timer:</label>',
+          '<div class="grid grid-cols-3 sm:grid-cols-6 gap-1.5 text-xs font-extrabold">',
+            '<button type="button" onclick="startKidsModeWithTimer(0)" class="bg-slate-800 hover:bg-emerald-600 text-white py-2.5 px-1 rounded-xl border border-slate-700">♾️ No Limit</button>',
+            '<button type="button" onclick="startKidsModeWithTimer(15)" class="bg-slate-900 hover:bg-blue-600 text-blue-200 py-2.5 px-1 rounded-xl border border-slate-700">15m</button>',
+            '<button type="button" onclick="startKidsModeWithTimer(30)" class="bg-slate-900 hover:bg-blue-600 text-blue-200 py-2.5 px-1 rounded-xl border border-slate-700">30m</button>',
+            '<button type="button" onclick="startKidsModeWithTimer(45)" class="bg-slate-900 hover:bg-blue-600 text-blue-200 py-2.5 px-1 rounded-xl border border-slate-700">45m</button>',
+            '<button type="button" onclick="startKidsModeWithTimer(60)" class="bg-slate-900 hover:bg-emerald-600 text-emerald-200 py-2.5 px-1 rounded-xl border border-slate-700">1 Hr</button>',
+            '<button type="button" onclick="startKidsModeWithTimer(120)" class="bg-slate-900 hover:bg-emerald-600 text-emerald-200 py-2.5 px-1 rounded-xl border border-slate-700">2 Hrs</button>',
+          '</div>',
+        '</div>',
+        '<div class="bg-black/70 border border-slate-800 rounded-xl p-2.5 flex flex-wrap items-center gap-2">',
+          '<input id="customKidsTimerMins" type="number" min="1" max="480" placeholder="Custom minutes (e.g. 25)" class="flex-1 min-w-[140px] bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white" />',
+          '<button type="button" id="startCustomMinsBtn" class="bg-amber-500 hover:bg-amber-400 text-black px-3.5 py-1.5 rounded-lg text-xs font-extrabold shadow">Start</button>',
+          '<button type="button" id="saveCustomMinsBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold">💾 Save</button>',
+        '</div>',
+      '</div>'
+    ].join("");
+    document.body.appendChild(tm);
+
+    document.getElementById("closeKidsTimerModalBtn").onclick = function() {
+      document.getElementById("kidsTimerSetupModal").classList.add("hidden");
+    };
+    document.getElementById("startClockSchedBtn").onclick = function() {
+      var endStr = document.getElementById("kidsClockEndInput").value || "10:30";
+      var mins = calculateMinutesUntilClockTime(endStr);
+      startKidsModeWithTimer(mins);
+      showSyncToast("🕰️ Kids Mode locked until " + format12Hr(endStr));
+    };
+    document.getElementById("saveClockPresetBtn").onclick = function() {
+      var st = document.getElementById("kidsClockStartInput").value || "09:00";
+      var en = document.getElementById("kidsClockEndInput").value || "10:30";
+      var lbl = format12Hr(st) + " - " + format12Hr(en);
+      window.kidsSavedPresets.push({ label: lbl, type: "clock", start: st, end: en });
+      localStorage.setItem("qaaf_kids_timer_presets", JSON.stringify(window.kidsSavedPresets));
+      renderKidsSavedPresets();
+      showSyncToast("💾 Saved preset: " + lbl);
+    };
+    document.getElementById("startCustomMinsBtn").onclick = function() {
+      var v = parseInt(document.getElementById("customKidsTimerMins").value || "0", 10);
+      if (!v || v <= 0) { alert("Enter valid minutes."); return; }
+      startKidsModeWithTimer(v);
+    };
+    document.getElementById("saveCustomMinsBtn").onclick = function() {
+      var v = parseInt(document.getElementById("customKidsTimerMins").value || "0", 10);
+      if (!v || v <= 0) { alert("Enter custom minutes first."); return; }
+      var lbl = v + " Mins Timer";
+      window.kidsSavedPresets.push({ label: lbl, type: "duration", mins: v });
+      localStorage.setItem("qaaf_kids_timer_presets", JSON.stringify(window.kidsSavedPresets));
+      renderKidsSavedPresets();
+      showSyncToast("💾 Saved preset: " + lbl);
+    };
+  }
+
+  if (!document.getElementById("kidsTimeUpLockOverlay")) {
+    var lo = document.createElement("div");
+    lo.id = "kidsTimeUpLockOverlay";
+    lo.className = "fixed inset-0 z-[95] hidden bg-[#04060b] flex flex-col items-center justify-center p-6 text-center select-none";
+    lo.dir = "ltr";
+    lo.innerHTML = [
+      '<div class="max-w-md w-full bg-[#0e131d] border-2 border-amber-500/70 rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col items-center">',
+        '<div class="w-20 h-20 rounded-full bg-amber-500/20 border-2 border-amber-400 flex items-center justify-center text-4xl mb-4 animate-bounce">🌙</div>',
+        '<h2 class="text-xl sm:text-2xl font-extrabold text-white mb-1">Screen Time Finished!</h2>',
+        '<p class="text-sm font-bold text-amber-300 mb-2" dir="rtl">بچے کا مقررہ وقت مکمل ہو چکا ہے!</p>',
+        '<p class="text-xs text-slate-400 mb-6">Videos and games are now locked. Please hand the device to your parents.</p>',
+        '<div class="w-full bg-black/80 border border-slate-800 rounded-2xl p-4 space-y-3">',
+          '<label class="block text-xs font-extrabold text-emerald-400">🔒 Enter 6-Digit Parent PIN to Unlock:</label>',
+          '<input id="timeUpParentPinInput" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" class="w-44 mx-auto block text-center text-2xl tracking-[0.4em] bg-slate-950 border border-slate-700 rounded-xl py-2 text-white" />',
+          '<p id="timeUpPinError" class="text-xs font-bold text-rose-400 hidden">❌ Incorrect Parent PIN!</p>',
+          '<div class="flex flex-col sm:flex-row gap-2 pt-1">',
+            '<button type="button" id="unlockExitKidsBtn" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl text-xs font-extrabold shadow">🔓 Unlock to Family Mode</button>',
+            '<button type="button" id="unlockAdd15mBtn" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-xl text-xs font-extrabold shadow">⏱️ +15 Mins for Child</button>',
+          '</div>',
+        '</div>',
+      '</div>'
+    ].join("");
+    document.body.appendChild(lo);
+    document.getElementById("unlockExitKidsBtn").onclick = function() { unlockTimeUpOverlay("exit_kids"); };
+    document.getElementById("unlockAdd15mBtn").onclick = function() { unlockTimeUpOverlay("add_15m"); };
+  }
+
+  function format12Hr(timeStr) {
+    if (!timeStr) return "";
+    var p = timeStr.split(":");
+    var h = parseInt(p[0], 10);
+    var m = p[1];
+    var ampm = h >= 12 ? "PM" : "AM";
+    var h12 = h % 12;
+    if (h12 === 0) h12 = 12;
+    return h12 + ":" + m + " " + ampm;
+  }
+
+  function calculateMinutesUntilClockTime(endTimeStr) {
+    var now = new Date();
+    var p = endTimeStr.split(":");
+    var target = new Date();
+    target.setHours(parseInt(p[0], 10), parseInt(p[1], 10), 0, 0);
+    if (target <= now) target.setDate(target.getDate() + 1);
+    return Math.max(10, Math.floor((target.getTime() - now.getTime()) / 1000)) / 60;
+  }
+
+  function renderKidsSavedPresets() {
+    var cont = document.getElementById("kidsSavedPresetsContainer");
+    if (!cont) return;
+    cont.innerHTML = "";
+    if (!window.kidsSavedPresets || window.kidsSavedPresets.length === 0) {
+      cont.innerHTML = '<span class="text-[11px] text-slate-400">No saved presets yet.</span>';
+      return;
+    }
+    window.kidsSavedPresets.forEach(function(pr, idx) {
+      var wrap = document.createElement("div");
+      wrap.className = "inline-flex items-center bg-black/80 border border-emerald-500/50 rounded-xl overflow-hidden shadow";
+      var runBtn = document.createElement("button");
+      runBtn.type = "button";
+      runBtn.className = "px-3 py-1.5 text-xs font-extrabold text-emerald-300 hover:bg-emerald-600 hover:text-white transition";
+      runBtn.innerText = "▶ " + pr.label;
+      runBtn.onclick = function() {
+        if (pr.type === "clock") {
+          startKidsModeWithTimer(calculateMinutesUntilClockTime(pr.end));
+        } else {
+          startKidsModeWithTimer(pr.mins || 30);
+        }
+      };
+      var delBtn = document.createElement("button");
+      delBtn.type = "button";
+      delBtn.className = "px-2 py-1.5 text-[10px] text-slate-400 hover:bg-rose-600 hover:text-white border-l border-slate-800";
+      delBtn.innerText = "✕";
+      delBtn.onclick = function() {
+        window.kidsSavedPresets.splice(idx, 1);
+        localStorage.setItem("qaaf_kids_timer_presets", JSON.stringify(window.kidsSavedPresets));
+        renderKidsSavedPresets();
+      };
+      wrap.appendChild(runBtn);
+      wrap.appendChild(delBtn);
+      cont.appendChild(wrap);
+    });
+  }
+
+  window.formatTimerMMSS = function(totalSecs) {
+    var hrs = Math.floor(totalSecs / 3600);
+    var mins = Math.floor((totalSecs % 3600) / 60);
+    var secs = totalSecs % 60;
+    if (hrs > 0) return hrs + ":" + (mins < 10 ? "0" : "") + mins + ":" + (secs < 10 ? "0" : "") + secs;
+    return mins + ":" + (secs < 10 ? "0" : "") + secs;
+  };
+
+  function updateHeaderTimerBadge() {
+    var kmBadge = document.getElementById("kidsModeOnHeaderBadge");
+    if (!kmBadge) return;
+    if (!isKidsLocked) {
+      kmBadge.classList.add("hidden");
+      kmBadge.classList.remove("flex");
+      return;
+    }
+    kmBadge.classList.remove("hidden");
+    kmBadge.classList.add("flex");
+    if (window.kidsTimerRemainingSecs > 0) {
+      kmBadge.innerHTML = "<span>⏰</span> <span>" + formatTimerMMSS(window.kidsTimerRemainingSecs) + "</span>";
+    } else {
+      kmBadge.innerHTML = "<span>🔐</span> <span>Kids Mode ON</span>";
+    }
+  }
+
+  function triggerKidsTimeUpLockdown() {
+    if (window.kidsTimerInterval) {
+      clearInterval(window.kidsTimerInterval);
+      window.kidsTimerInterval = null;
+    }
+    window.kidsTimerRemainingSecs = 0;
+    window.isKidsTimeExpiredLock = true;
+    if (typeof closeVideoPlayer === "function") closeVideoPlayer();
+    if (typeof closeMiniGame === "function") closeMiniGame();
+    if (typeof closeStandaloneGameModal === "function") closeStandaloneGameModal();
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    document.getElementById("timeUpParentPinInput").value = "";
+    document.getElementById("timeUpPinError").classList.add("hidden");
+    document.getElementById("kidsTimeUpLockOverlay").classList.remove("hidden");
+  }
+
+  function unlockTimeUpOverlay(actionType) {
+    var entered = (document.getElementById("timeUpParentPinInput").value || "").trim();
+    if (entered !== parentPin) {
+      document.getElementById("timeUpPinError").classList.remove("hidden");
+      return;
+    }
+    document.getElementById("timeUpPinError").classList.add("hidden");
+    window.isKidsTimeExpiredLock = false;
+    document.getElementById("kidsTimeUpLockOverlay").classList.add("hidden");
+    if (actionType === "add_15m") {
+      activateKidsCountdown(15);
+      showSyncToast("⏱️ Added 15 minutes!");
+    } else {
+      document.getElementById("pinInput").value = parentPin;
+      pendingParentPurpose = "unlock";
+      verifyPinCode();
+    }
+  }
+
+  function activateKidsCountdown(minutes) {
+    if (window.kidsTimerInterval) {
+      clearInterval(window.kidsTimerInterval);
+      window.kidsTimerInterval = null;
+    }
+    if (!minutes || minutes <= 0) {
+      window.kidsTimerRemainingSecs = 0;
+      updateHeaderTimerBadge();
+      return;
+    }
+    window.kidsTimerRemainingSecs = Math.floor(minutes * 60);
+    updateHeaderTimerBadge();
+    window.kidsTimerInterval = setInterval(function() {
+      if (!isKidsLocked) {
+        clearInterval(window.kidsTimerInterval);
+        window.kidsTimerInterval = null;
+        return;
+      }
+      window.kidsTimerRemainingSecs--;
+      updateHeaderTimerBadge();
+      if (window.kidsTimerRemainingSecs <= 0) {
+        triggerKidsTimeUpLockdown();
+      }
+    }, 1000);
+  }
+
+  function enterKidsModeDirectly() {
+    isKidsLocked = true;
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(function() {});
+    }
+    document.getElementById("appBody").className = "bg-islamic-kids min-h-screen flex flex-col justify-between pb-12 transition-colors duration-500";
+    document.getElementById("brandSuffix").innerHTML = '<span class="kids-letters font-extrabold"><span>K</span><span>i</span><span>d</span><span>s</span></span>';
+    document.getElementById("lockIcon").innerText = "🔐";
+    document.getElementById("parentPanelBtn").classList.add("hidden");
+    document.getElementById("accountBtn").classList.add("hidden");
+    document.getElementById("superAdminHeaderBtn").classList.add("hidden");
+    document.getElementById("langDropdownContainer").classList.add("hidden");
+    document.getElementById("kidsContentSwitcher").classList.remove("hidden");
+    document.getElementById("kidsContentSwitcher").classList.add("flex");
+    document.querySelectorAll(".family-only-chip").forEach(function(el) { el.classList.add("hidden"); });
+    if (currentCategory === "bayan") currentCategory = "all";
+    syncRegionalPromoBar();
+    updateHeaderTimerBadge();
+    renderVideos();
+  }
+
+  window.openKidsLockOrTimer = function() {
+    if (!isKidsLocked) {
+      renderKidsSavedPresets();
+      var now = new Date();
+      var stInp = document.getElementById("kidsClockStartInput");
+      if (stInp) stInp.value = String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
+      document.getElementById("kidsTimerSetupModal").classList.remove("hidden");
+    } else {
+      openParentalGate("unlock");
+    }
+  };
+
+  window.toggleKidsMode = function() {
+    window.openKidsLockOrTimer();
+  };
+
+  window.startKidsModeWithTimer = function(minutes) {
+    document.getElementById("kidsTimerSetupModal").classList.add("hidden");
+    enterKidsModeDirectly();
+    activateKidsCountdown(minutes);
+  };
+
+  var baseVerifyPin = window.verifyPinCode;
+  window.verifyPinCode = function() {
+    var wasUnlock = (pendingParentPurpose === "unlock");
+    if (baseVerifyPin) baseVerifyPin();
+    if (wasUnlock && !isKidsLocked) {
+      if (window.kidsTimerInterval) {
+        clearInterval(window.kidsTimerInterval);
+        window.kidsTimerInterval = null;
+      }
+      window.kidsTimerRemainingSecs = 0;
+      window.isKidsTimeExpiredLock = false;
+      updateHeaderTimerBadge();
+      renderVideos();
+    }
+  };
+
+  refreshSidebarUI();
+  renderVideos();
+})();
+</script>
+
 </body>
 
 
