@@ -6574,14 +6574,175 @@
 })();
 </script>
 
-<!-- QAAF STUDIO PROFILE DRAWER, MULTI-PLAYLISTS & KIDS CLOCK SCHEDULE -->
+<!-- QAAF WORKING DRAWER, MULTI-PLAYLISTS, KIDS CLOCK TIMER & YOUTUBE SWIPE/CENTER EXPAND -->
 <style>
   #qaafLeftSidebarDrawer {
-    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  #miniCenterExpandOverlay {
+    transition: opacity 0.2s ease;
   }
 </style>
+
+<!-- SAFE HTML TEMPLATES (ZERO JS QUOTE ESCAPING ISSUES) -->
+<div id="qaafLeftSidebarBackdrop" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm"></div>
+<aside id="qaafLeftSidebarDrawer" dir="ltr" class="fixed top-0 left-0 bottom-0 z-50 w-72 sm:w-80 bg-[#0d1118] border-r border-slate-800 shadow-2xl flex flex-col -translate-x-full">
+  <div class="p-4 bg-gradient-to-br from-[#141b29] to-[#0d1118] border-b border-slate-800 flex items-center justify-between gap-2">
+    <div class="flex items-center gap-3 min-w-0">
+      <div id="drawerAvatarCircle" class="w-11 h-11 rounded-2xl bg-emerald-500/20 border border-emerald-400/50 flex items-center justify-center text-lg font-extrabold text-emerald-300 shrink-0 shadow">👤</div>
+      <div class="min-w-0">
+        <h3 id="drawerProfileName" class="text-sm font-extrabold text-white truncate">Guest Family</h3>
+        <p id="drawerProfileEmail" class="text-[11px] text-emerald-400 font-semibold truncate">Tap Sign In below</p>
+      </div>
+    </div>
+    <button type="button" id="drawerCloseBtn" class="bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold shrink-0">✕</button>
+  </div>
+
+  <div class="flex-1 overflow-y-auto p-3 space-y-2 text-xs">
+    <div class="px-2 py-0.5 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">My Library &amp; Controls</div>
+
+    <button type="button" id="drawerHomeBtn" class="w-full px-3 py-2.5 rounded-xl hover:bg-white/5 text-slate-200 font-bold flex items-center justify-between transition">
+      <span class="flex items-center gap-2.5"><span class="text-base">🏠</span> <span>All Videos Feed</span></span>
+      <span class="text-slate-400">➔</span>
+    </button>
+
+    <div class="rounded-xl bg-[#131822] border border-slate-800 overflow-hidden">
+      <button type="button" id="drawerPlToggleBtn" class="w-full px-3 py-2.5 hover:bg-white/5 text-slate-100 font-extrabold flex items-center justify-between transition">
+        <span class="flex items-center gap-2.5"><span class="text-base">📋</span> <span>My Playlists</span></span>
+        <span class="flex items-center gap-1.5">
+          <span id="drawerPlaylistsTotalBadge" class="bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full text-[10px]">0</span>
+          <span id="drawerArrow_playlists" class="text-slate-400">▾</span>
+        </span>
+      </button>
+      <div id="drawerSub_playlists" class="px-2.5 pb-2.5 pt-1 space-y-1 border-t border-slate-800/70">
+        <div id="drawerPlaylistsItemsList" class="space-y-1"></div>
+        <button type="button" id="drawerNewPlBtn" class="w-full mt-1.5 py-1.5 px-2.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600 border border-emerald-500/40 text-emerald-300 hover:text-white font-bold flex items-center justify-center gap-1.5 text-[11px] transition">
+          <span>➕</span> <span>Create New Playlist</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="rounded-xl bg-[#131822] border border-slate-800 overflow-hidden">
+      <button type="button" id="drawerHistToggleBtn" class="w-full px-3 py-2.5 hover:bg-white/5 text-slate-100 font-extrabold flex items-center justify-between transition">
+        <span class="flex items-center gap-2.5"><span class="text-base">📜</span> <span>Watch History</span></span>
+        <span class="flex items-center gap-1.5">
+          <span id="drawerHistoryCountBadge" class="bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full text-[10px]">0</span>
+          <span id="drawerArrow_history" class="text-slate-400">▾</span>
+        </span>
+      </button>
+      <div id="drawerSub_history" class="px-2.5 pb-2.5 pt-1.5 space-y-1.5 border-t border-slate-800/70">
+        <button type="button" id="drawerOpenFullHistBtn" class="w-full py-1.5 px-2.5 rounded-lg bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-black font-extrabold flex items-center justify-between text-[11px] transition">
+          <span>👁️ View All Watched Videos</span><span>➔</span>
+        </button>
+        <div id="drawerRecentHistoryPreview" class="space-y-1 max-h-36 overflow-y-auto pr-1"></div>
+      </div>
+    </div>
+
+    <button type="button" id="drawerFavBtn" class="w-full px-3 py-2.5 rounded-xl hover:bg-white/5 text-slate-200 font-bold flex items-center justify-between transition">
+      <span class="flex items-center gap-2.5"><span class="text-base">❤️</span> <span>Favorite Videos</span></span>
+      <span class="flex items-center gap-1.5">
+        <span id="drawerFavCountBadge" class="bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded-full text-[10px]">0</span>
+        <span class="text-slate-400">➔</span>
+      </span>
+    </button>
+
+    <button type="button" id="drawerKidsTimerBtn" class="w-full px-3 py-2.5 rounded-xl bg-blue-950/40 hover:bg-blue-900/50 border border-blue-500/30 text-blue-200 font-extrabold flex items-center justify-between transition">
+      <span class="flex items-center gap-2.5"><span class="text-base">⏰</span> <span>Kids Lock &amp; Schedule</span></span>
+      <span class="text-blue-400">➔</span>
+    </button>
+  </div>
+
+  <div id="drawerBottomAuthArea" class="p-3.5 border-t border-slate-800 bg-[#0a0d13] space-y-2">
+    <button type="button" id="drawerAuthModalBtn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl text-xs font-extrabold shadow flex items-center justify-center gap-2 transition">
+      <span>🔐</span> <span>Sign In / Account Settings</span>
+    </button>
+  </div>
+</aside>
+
+<div id="playlistSelectorModal" dir="ltr" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="bg-[#151922] border border-emerald-500/40 rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-3.5">
+    <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+      <h3 class="text-sm font-extrabold text-white flex items-center gap-2"><span>📋</span> <span>Select Playlist</span></h3>
+      <button type="button" id="closePlModalBtn" class="bg-slate-800 text-slate-300 px-2.5 py-1 rounded-lg text-xs font-bold">✕</button>
+    </div>
+    <div id="playlistModalCheckboxes" class="space-y-2 max-h-56 overflow-y-auto pr-1 text-xs"></div>
+    <div class="pt-2 border-t border-slate-800 flex gap-2">
+      <input id="newQuickPlaylistInput" type="text" placeholder="Create new playlist..." class="flex-1 bg-black border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none" />
+      <button type="button" id="createQuickPlBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2 rounded-xl text-xs font-extrabold shrink-0">➕ Create</button>
+    </div>
+  </div>
+</div>
+
+<div id="kidsTimerSetupModal" dir="ltr" class="fixed inset-0 z-50 hidden bg-black/90 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+  <div class="bg-[#131722] border-2 border-blue-500/50 rounded-2xl max-w-lg w-full p-4 sm:p-5 shadow-2xl max-h-[92vh] overflow-y-auto space-y-4">
+    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+      <div class="flex items-center gap-2.5">
+        <span class="text-2xl">⏰</span>
+        <div>
+          <h3 class="text-sm sm:text-base font-extrabold text-white">Kids Lock &amp; Screen Time Schedule</h3>
+          <p class="text-[11px] text-slate-400">Set clock time (from - to), quick minutes, or saved presets</p>
+        </div>
+      </div>
+      <button type="button" id="closeKidsTimerModalBtn" class="bg-slate-800 text-slate-300 px-2.5 py-1 rounded-lg text-xs font-bold">✕</button>
+    </div>
+
+    <div class="bg-emerald-950/25 border border-emerald-500/40 rounded-xl p-3 space-y-2">
+      <span class="text-xs font-extrabold text-emerald-300 block">⭐ Saved Parent Presets (1-Click Start):</span>
+      <div id="kidsSavedPresetsContainer" class="flex flex-wrap gap-1.5"></div>
+    </div>
+
+    <div class="bg-blue-950/30 border border-blue-500/40 rounded-xl p-3.5 space-y-2.5">
+      <label class="block text-xs font-extrabold text-blue-300">🕰️ Option 1: Set By Mobile Clock Time (From — To):</label>
+      <div class="grid grid-cols-2 gap-2.5 text-xs">
+        <div><span class="text-[10px] text-slate-400 block mb-1">Start Time:</span><input id="kidsClockStartInput" type="time" value="09:00" class="w-full bg-black border border-slate-700 rounded-lg px-2.5 py-2 text-white font-bold" /></div>
+        <div><span class="text-[10px] text-slate-400 block mb-1">End / Lock Time:</span><input id="kidsClockEndInput" type="time" value="10:30" class="w-full bg-black border border-slate-700 rounded-lg px-2.5 py-2 text-white font-bold" /></div>
+      </div>
+      <div class="flex flex-wrap gap-2 pt-1">
+        <button type="button" id="startClockSchedBtn" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2 px-3 rounded-xl text-xs font-extrabold shadow">🔒 Start Clock Schedule</button>
+        <button type="button" id="saveClockPresetBtn" class="bg-slate-800 hover:bg-emerald-700 border border-slate-600 text-slate-200 px-3 py-2 rounded-xl text-xs font-bold">💾 Save Preset</button>
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-xs font-extrabold text-amber-300 mb-2">⏱️ Option 2: Quick Countdown Timer:</label>
+      <div class="grid grid-cols-3 sm:grid-cols-6 gap-1.5 text-xs font-extrabold">
+        <button type="button" onclick="startKidsModeWithTimer(0)" class="bg-slate-800 hover:bg-emerald-600 text-white py-2.5 px-1 rounded-xl border border-slate-700">♾️ No Limit</button>
+        <button type="button" onclick="startKidsModeWithTimer(15)" class="bg-slate-900 hover:bg-blue-600 text-blue-200 py-2.5 px-1 rounded-xl border border-slate-700">15m</button>
+        <button type="button" onclick="startKidsModeWithTimer(30)" class="bg-slate-900 hover:bg-blue-600 text-blue-200 py-2.5 px-1 rounded-xl border border-slate-700">30m</button>
+        <button type="button" onclick="startKidsModeWithTimer(45)" class="bg-slate-900 hover:bg-blue-600 text-blue-200 py-2.5 px-1 rounded-xl border border-slate-700">45m</button>
+        <button type="button" onclick="startKidsModeWithTimer(60)" class="bg-slate-900 hover:bg-emerald-600 text-emerald-200 py-2.5 px-1 rounded-xl border border-slate-700">1 Hr</button>
+        <button type="button" onclick="startKidsModeWithTimer(120)" class="bg-slate-900 hover:bg-emerald-600 text-emerald-200 py-2.5 px-1 rounded-xl border border-slate-700">2 Hrs</button>
+      </div>
+    </div>
+
+    <div class="bg-black/70 border border-slate-800 rounded-xl p-2.5 flex flex-wrap items-center gap-2">
+      <input id="customKidsTimerMins" type="number" min="1" max="480" placeholder="Custom minutes (e.g. 25)" class="flex-1 min-w-[140px] bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white" />
+      <button type="button" id="startCustomMinsBtn" class="bg-amber-500 hover:bg-amber-400 text-black px-3.5 py-1.5 rounded-lg text-xs font-extrabold shadow">Start</button>
+      <button type="button" id="saveCustomMinsBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="kidsTimeUpLockOverlay" dir="ltr" class="fixed inset-0 z-[95] hidden bg-[#04060b] flex flex-col items-center justify-center p-6 text-center select-none">
+  <div class="max-w-md w-full bg-[#0e131d] border-2 border-amber-500/70 rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col items-center">
+    <div class="w-20 h-20 rounded-full bg-amber-500/20 border-2 border-amber-400 flex items-center justify-center text-4xl mb-4 animate-bounce">🌙</div>
+    <h2 class="text-xl sm:text-2xl font-extrabold text-white mb-1">Screen Time Finished!</h2>
+    <p class="text-sm font-bold text-amber-300 mb-2" dir="rtl">بچے کا مقررہ وقت مکمل ہو چکا ہے!</p>
+    <p class="text-xs text-slate-400 mb-6">Videos and games are now locked. Please hand the device to your parents.</p>
+    <div class="w-full bg-black/80 border border-slate-800 rounded-2xl p-4 space-y-3">
+      <label class="block text-xs font-extrabold text-emerald-400">🔒 Enter 6-Digit Parent PIN to Unlock:</label>
+      <input id="timeUpParentPinInput" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" class="w-44 mx-auto block text-center text-2xl tracking-[0.4em] bg-slate-950 border border-slate-700 rounded-xl py-2 text-white" />
+      <p id="timeUpPinError" class="text-xs font-bold text-rose-400 hidden">❌ Incorrect Parent PIN!</p>
+      <div class="flex flex-col sm:flex-row gap-2 pt-1">
+        <button type="button" id="unlockExitKidsBtn" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl text-xs font-extrabold shadow">🔓 Unlock to Family Mode</button>
+        <button type="button" id="unlockAdd15mBtn" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-xl text-xs font-extrabold shadow">⏱️ +15 Mins for Child</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
-(function addCleanProfileDrawerPlaylistsAndClockTimer() {
+(function initDrawerPlaylistsTimerAndCenterSquareExpand() {
   var defaultParentPls = [
     { id: "pl_p_1", name: "Quran & Tafseer", videos: [] },
     { id: "pl_p_2", name: "Scholars Bayan", videos: [] },
@@ -6653,142 +6814,19 @@
     showSyncToast("🗑️ " + modeLabel + " Watch History cleared!");
   };
 
-  // 1. ADD MENU BUTTON (☰) NEXT TO QAAF LOGO IN HEADER
+  // 1. ADD WORKING MENU BUTTON (☰) IN HEADER
   var logoDiv = document.querySelector("#mainHeader > div:first-child");
   if (logoDiv && !document.getElementById("headerDrawerMenuBtn")) {
     var menuBtn = document.createElement("button");
     menuBtn.id = "headerDrawerMenuBtn";
     menuBtn.type = "button";
     menuBtn.className = "bg-[#222631] hover:bg-emerald-600 text-white w-8 h-8 rounded-xl flex items-center justify-center border border-white/15 shadow mr-1 shrink-0 transition";
-    menuBtn.title = "Open Profile, Playlists & History";
     menuBtn.innerHTML = '<span class="text-sm font-extrabold">☰</span>';
     menuBtn.onclick = function(e) {
       e.stopPropagation();
       openQaafProfileDrawer();
     };
     logoDiv.insertBefore(menuBtn, logoDiv.firstChild);
-    logoDiv.style.cursor = "pointer";
-    logoDiv.onclick = function() { openQaafProfileDrawer(); };
-  }
-
-  // 2. CREATE LEFT SIDEBAR DRAWER (GOOGLE AI STUDIO STYLE)
-  if (!document.getElementById("qaafLeftSidebarDrawer")) {
-    var bd = document.createElement("div");
-    bd.id = "qaafLeftSidebarBackdrop";
-    bd.className = "fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm";
-    bd.onclick = function() { closeQaafProfileDrawer(); };
-    document.body.appendChild(bd);
-
-    var dr = document.createElement("aside");
-    dr.id = "qaafLeftSidebarDrawer";
-    dr.dir = "ltr";
-    dr.className = "fixed top-0 left-0 bottom-0 z-50 w-72 sm:w-80 bg-[#0d1118] border-r border-slate-800 shadow-2xl flex flex-col -translate-x-full";
-    dr.innerHTML = [
-      '<div class="p-4 bg-gradient-to-br from-[#141b29] to-[#0d1118] border-b border-slate-800 flex items-center justify-between gap-2">',
-        '<div class="flex items-center gap-3 min-w-0">',
-          '<div id="drawerAvatarCircle" class="w-11 h-11 rounded-2xl bg-emerald-500/20 border border-emerald-400/50 flex items-center justify-center text-lg font-extrabold text-emerald-300 shrink-0 shadow">👤</div>',
-          '<div class="min-w-0">',
-            '<h3 id="drawerProfileName" class="text-sm font-extrabold text-white truncate">Guest Family</h3>',
-            '<p id="drawerProfileEmail" class="text-[11px] text-emerald-400 font-semibold truncate">Tap Sign In below</p>',
-          '</div>',
-        '</div>',
-        '<button type="button" id="drawerCloseBtn" class="bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold shrink-0">✕</button>',
-      '</div>',
-      '<div class="flex-1 overflow-y-auto p-3 space-y-2 text-xs">',
-        '<div class="px-2 py-0.5 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">My Library &amp; Controls</div>',
-        '<button type="button" id="drawerHomeBtn" class="w-full px-3 py-2.5 rounded-xl hover:bg-white/5 text-slate-200 font-bold flex items-center justify-between transition">',
-          '<span class="flex items-center gap-2.5"><span class="text-base">🏠</span> <span>All Videos Feed</span></span>',
-          '<span class="text-slate-400">➔</span>',
-        '</button>',
-        '<div class="rounded-xl bg-[#131822] border border-slate-800 overflow-hidden">',
-          '<button type="button" id="drawerPlToggleBtn" class="w-full px-3 py-2.5 hover:bg-white/5 text-slate-100 font-extrabold flex items-center justify-between transition">',
-            '<span class="flex items-center gap-2.5"><span class="text-base">📋</span> <span>My Playlists</span></span>',
-            '<span class="flex items-center gap-1.5">',
-              '<span id="drawerPlaylistsTotalBadge" class="bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full text-[10px]">0</span>',
-              '<span id="drawerArrow_playlists" class="text-slate-400">▾</span>',
-            '</span>',
-          '</button>',
-          '<div id="drawerSub_playlists" class="px-2.5 pb-2.5 pt-1 space-y-1 border-t border-slate-800/70">',
-            '<div id="drawerPlaylistsItemsList" class="space-y-1"></div>',
-            '<button type="button" id="drawerNewPlBtn" class="w-full mt-1.5 py-1.5 px-2.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600 border border-emerald-500/40 text-emerald-300 hover:text-white font-bold flex items-center justify-center gap-1.5 text-[11px] transition">',
-              '<span>➕</span> <span>Create New Playlist</span>',
-            '</button>',
-          '</div>',
-        '</div>',
-        '<div class="rounded-xl bg-[#131822] border border-slate-800 overflow-hidden">',
-          '<button type="button" id="drawerHistToggleBtn" class="w-full px-3 py-2.5 hover:bg-white/5 text-slate-100 font-extrabold flex items-center justify-between transition">',
-            '<span class="flex items-center gap-2.5"><span class="text-base">📜</span> <span>Watch History</span></span>',
-            '<span class="flex items-center gap-1.5">',
-              '<span id="drawerHistoryCountBadge" class="bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full text-[10px]">0</span>',
-              '<span id="drawerArrow_history" class="text-slate-400">▾</span>',
-            '</span>',
-          '</button>',
-          '<div id="drawerSub_history" class="px-2.5 pb-2.5 pt-1.5 space-y-1.5 border-t border-slate-800/70">',
-            '<button type="button" id="drawerOpenFullHistBtn" class="w-full py-1.5 px-2.5 rounded-lg bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-black font-extrabold flex items-center justify-between text-[11px] transition">',
-              '<span>👁️ View All Watched Videos</span><span>➔</span>',
-            '</button>',
-            '<div id="drawerRecentHistoryPreview" class="space-y-1 max-h-36 overflow-y-auto pr-1"></div>',
-          '</div>',
-        '</div>',
-        '<button type="button" id="drawerFavBtn" class="w-full px-3 py-2.5 rounded-xl hover:bg-white/5 text-slate-200 font-bold flex items-center justify-between transition">',
-          '<span class="flex items-center gap-2.5"><span class="text-base">❤️</span> <span>Favorite Videos</span></span>',
-          '<span class="flex items-center gap-1.5">',
-            '<span id="drawerFavCountBadge" class="bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded-full text-[10px]">0</span>',
-            '<span class="text-slate-400">➔</span>',
-          '</span>',
-        '</button>',
-        '<button type="button" id="drawerKidsTimerBtn" class="w-full px-3 py-2.5 rounded-xl bg-blue-950/40 hover:bg-blue-900/50 border border-blue-500/30 text-blue-200 font-extrabold flex items-center justify-between transition">',
-          '<span class="flex items-center gap-2.5"><span class="text-base">⏰</span> <span>Kids Lock &amp; Schedule</span></span>',
-          '<span class="text-blue-400">➔</span>',
-        '</button>',
-      '</div>',
-      '<div id="drawerBottomAuthArea" class="p-3.5 border-t border-slate-800 bg-[#0a0d13] space-y-2">',
-        '<button type="button" id="drawerAuthModalBtn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl text-xs font-extrabold shadow flex items-center justify-center gap-2 transition">',
-          '<span>🔐</span> <span>Sign In / Account Settings</span>',
-        '</button>',
-      '</div>'
-    ].join("");
-    document.body.appendChild(dr);
-
-    document.getElementById("drawerCloseBtn").onclick = closeQaafProfileDrawer;
-    document.getElementById("drawerHomeBtn").onclick = function() {
-      window.activeSelectedPlaylistId = null;
-      setSortFilter("default");
-      closeQaafProfileDrawer();
-    };
-    document.getElementById("drawerPlToggleBtn").onclick = function() {
-      document.getElementById("drawerSub_playlists").classList.toggle("hidden");
-    };
-    document.getElementById("drawerHistToggleBtn").onclick = function() {
-      document.getElementById("drawerSub_history").classList.toggle("hidden");
-    };
-    document.getElementById("drawerNewPlBtn").onclick = function() {
-      var raw = prompt("📋 Enter name for new Playlist:");
-      if (!raw || !raw.trim()) return;
-      var grp = getActivePlaylistsGroup();
-      grp.push({ id: "pl_" + Date.now(), name: raw.trim(), videos: [] });
-      saveActivePlaylistsGroup();
-      refreshSidebarUI();
-      showSyncToast("✅ Created playlist: " + raw.trim());
-    };
-    document.getElementById("drawerOpenFullHistBtn").onclick = function() {
-      window.activeSelectedPlaylistId = null;
-      setSortFilter("history");
-      closeQaafProfileDrawer();
-    };
-    document.getElementById("drawerFavBtn").onclick = function() {
-      window.activeSelectedPlaylistId = null;
-      setSortFilter("favorites");
-      closeQaafProfileDrawer();
-    };
-    document.getElementById("drawerKidsTimerBtn").onclick = function() {
-      closeQaafProfileDrawer();
-      openKidsLockOrTimer();
-    };
-    document.getElementById("drawerAuthModalBtn").onclick = function() {
-      closeQaafProfileDrawer();
-      openAccountModal();
-    };
   }
 
   window.openQaafProfileDrawer = function() {
@@ -6800,6 +6838,47 @@
   window.closeQaafProfileDrawer = function() {
     document.getElementById("qaafLeftSidebarBackdrop").classList.add("hidden");
     document.getElementById("qaafLeftSidebarDrawer").classList.add("-translate-x-full");
+  };
+
+  document.getElementById("qaafLeftSidebarBackdrop").onclick = closeQaafProfileDrawer;
+  document.getElementById("drawerCloseBtn").onclick = closeQaafProfileDrawer;
+  document.getElementById("drawerHomeBtn").onclick = function() {
+    window.activeSelectedPlaylistId = null;
+    setSortFilter("default");
+    closeQaafProfileDrawer();
+  };
+  document.getElementById("drawerPlToggleBtn").onclick = function() {
+    document.getElementById("drawerSub_playlists").classList.toggle("hidden");
+  };
+  document.getElementById("drawerHistToggleBtn").onclick = function() {
+    document.getElementById("drawerSub_history").classList.toggle("hidden");
+  };
+  document.getElementById("drawerNewPlBtn").onclick = function() {
+    var raw = prompt("📋 Enter name for new Playlist:");
+    if (!raw || !raw.trim()) return;
+    var grp = getActivePlaylistsGroup();
+    grp.push({ id: "pl_" + Date.now(), name: raw.trim(), videos: [] });
+    saveActivePlaylistsGroup();
+    refreshSidebarUI();
+    showSyncToast("✅ Created playlist: " + raw.trim());
+  };
+  document.getElementById("drawerOpenFullHistBtn").onclick = function() {
+    window.activeSelectedPlaylistId = null;
+    setSortFilter("history");
+    closeQaafProfileDrawer();
+  };
+  document.getElementById("drawerFavBtn").onclick = function() {
+    window.activeSelectedPlaylistId = null;
+    setSortFilter("favorites");
+    closeQaafProfileDrawer();
+  };
+  document.getElementById("drawerKidsTimerBtn").onclick = function() {
+    closeQaafProfileDrawer();
+    openKidsLockOrTimer();
+  };
+  document.getElementById("drawerAuthModalBtn").onclick = function() {
+    closeQaafProfileDrawer();
+    openAccountModal();
   };
 
   window.drawerSelectPlaylist = function(plId) {
@@ -6913,44 +6992,24 @@
     }
   }
 
-  // 3. MULTI-PLAYLIST SELECTOR MODAL WHEN USER TAPS "+" ON ANY VIDEO
-  if (!document.getElementById("playlistSelectorModal")) {
-    var pm = document.createElement("div");
-    pm.id = "playlistSelectorModal";
-    pm.className = "fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-sm flex items-center justify-center p-4";
-    pm.dir = "ltr";
-    pm.innerHTML = [
-      '<div class="bg-[#151922] border border-emerald-500/40 rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-3.5">',
-        '<div class="flex items-center justify-between border-b border-slate-800 pb-2.5">',
-          '<h3 class="text-sm font-extrabold text-white flex items-center gap-2"><span>📋</span> <span>Select Playlist</span></h3>',
-          '<button type="button" id="closePlModalBtn" class="bg-slate-800 text-slate-300 px-2.5 py-1 rounded-lg text-xs font-bold">✕</button>',
-        '</div>',
-        '<div id="playlistModalCheckboxes" class="space-y-2 max-h-56 overflow-y-auto pr-1 text-xs"></div>',
-        '<div class="pt-2 border-t border-slate-800 flex gap-2">',
-          '<input id="newQuickPlaylistInput" type="text" placeholder="Create new playlist..." class="flex-1 bg-black border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none" />',
-          '<button type="button" id="createQuickPlBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2 rounded-xl text-xs font-extrabold shrink-0">➕ Create</button>',
-        '</div>',
-      '</div>'
-    ].join("");
-    document.body.appendChild(pm);
-    document.getElementById("closePlModalBtn").onclick = function() {
-      document.getElementById("playlistSelectorModal").classList.add("hidden");
-    };
-    document.getElementById("createQuickPlBtn").onclick = function() {
-      var inp = document.getElementById("newQuickPlaylistInput");
-      var name = (inp ? inp.value : "").trim();
-      if (!name) return;
-      var pls = getActivePlaylistsGroup();
-      var vidId = window.pendingVideoIdForPlaylist;
-      pls.push({ id: "pl_" + Date.now(), name: name, videos: vidId ? [vidId] : [] });
-      saveActivePlaylistsGroup();
-      if (inp) inp.value = "";
-      renderPlaylistModalRows();
-      refreshSidebarUI();
-      renderVideos();
-      showSyncToast("🎉 Created playlist: " + name);
-    };
-  }
+  // 2. PLAYLIST SELECTOR MODAL WIRING
+  document.getElementById("closePlModalBtn").onclick = function() {
+    document.getElementById("playlistSelectorModal").classList.add("hidden");
+  };
+  document.getElementById("createQuickPlBtn").onclick = function() {
+    var inp = document.getElementById("newQuickPlaylistInput");
+    var name = (inp ? inp.value : "").trim();
+    if (!name) return;
+    var pls = getActivePlaylistsGroup();
+    var vidId = window.pendingVideoIdForPlaylist;
+    pls.push({ id: "pl_" + Date.now(), name: name, videos: vidId ? [vidId] : [] });
+    saveActivePlaylistsGroup();
+    if (inp) inp.value = "";
+    renderPlaylistModalRows();
+    refreshSidebarUI();
+    renderVideos();
+    showSyncToast("🎉 Created playlist: " + name);
+  };
 
   function renderPlaylistModalRows() {
     var box = document.getElementById("playlistModalCheckboxes");
@@ -7001,7 +7060,7 @@
     playerFavBtn.parentNode.insertBefore(pPlBtn, playerFavBtn.nextSibling);
   }
 
-  // 4. HOOK PLAYLIST & HISTORY VIEWS + CARD "+" BUTTONS INTO renderVideos
+  // 3. HOOK PLAYLIST & HISTORY VIEWS INTO renderVideos
   var prevRenderVids = window.renderVideos;
   window.renderVideos = function() {
     refreshSidebarUI();
@@ -7049,8 +7108,10 @@
         }
         var viewTitle = isPlFilter ? ("Playlist: " + (activePlObj ? activePlObj.name : "My List")) : ((isKidsLocked ? "Kids" : "Parent") + " Watch History");
         bannerEl.className = "mb-4 bg-[#121620] border border-emerald-500/40 rounded-2xl p-3.5 flex flex-wrap items-center justify-between gap-2 shadow-lg";
-        bannerEl.innerHTML = '<div class="flex items-center gap-2"><span class="text-xl">' + (isPlFilter ? '📋' : '📜') + '</span><div><h4 class="text-xs sm:text-sm font-extrabold text-white">' + viewTitle + ' (' + ordered.length + ' Videos)</h4></div></div><div class="flex items-center gap-2">' + (!isPlFilter && ordered.length > 0 ? '<button type="button" onclick="clearActiveHistory()" class="bg-rose-600 text-white px-3 py-1.5 rounded-xl text-xs font-extrabold">🗑️ Clear History</button>' : '') + '<button type="button" onclick="setSortFilter(\'default\')" class="bg-emerald-600 text-white px-3.5 py-1.5 rounded-xl text-xs font-extrabold">⬅️ Show All Videos</button></div>';
+        bannerEl.innerHTML = '<div class="flex items-center gap-2"><span class="text-xl">' + (isPlFilter ? '📋' : '📜') + '</span><div><h4 class="text-xs sm:text-sm font-extrabold text-white">' + viewTitle + ' (' + ordered.length + ' Videos)</h4></div></div><div class="flex items-center gap-2">' + (!isPlFilter && ordered.length > 0 ? '<button type="button" onclick="clearActiveHistory()" class="bg-rose-600 text-white px-3 py-1.5 rounded-xl text-xs font-extrabold">🗑️ Clear History</button>' : '') + '<button type="button" id="backAllVidsBannerBtn" class="bg-emerald-600 text-white px-3.5 py-1.5 rounded-xl text-xs font-extrabold">⬅️ Show All Videos</button></div>';
         bannerEl.classList.remove("hidden");
+        var backBtn = document.getElementById("backAllVidsBannerBtn");
+        if (backBtn) backBtn.onclick = function() { setSortFilter("default"); };
       }
     } else {
       var bannerEl2 = document.getElementById("plHistHeaderBanner");
@@ -7078,127 +7139,124 @@
     });
   };
 
-  // Record watch history automatically when opening a video
+  // 4. YOUTUBE MINI-PLAYER CENTER SQUARE EXPAND OVERLAY + SMOOTH SWIPE-DOWN
+  var aspectBox = document.getElementById("playerAspectBox");
+  if (aspectBox && !document.getElementById("miniCenterExpandOverlay")) {
+    var centerOv = document.createElement("div");
+    centerOv.id = "miniCenterExpandOverlay";
+    centerOv.className = "hidden absolute inset-0 z-30 bg-black/35 flex items-center justify-center cursor-pointer";
+    centerOv.innerHTML =
+      '<div class="w-12 h-12 rounded-2xl bg-black/80 border-2 border-white/80 hover:border-emerald-400 hover:scale-110 text-white flex items-center justify-center shadow-2xl transition">' +
+        '<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
+          '<polyline points="15 3 21 3 21 9"></polyline>' +
+          '<polyline points="9 21 3 21 3 15"></polyline>' +
+          '<line x1="21" y1="3" x2="14" y2="10"></line>' +
+          '<line x1="3" y1="21" x2="10" y2="14"></line>' +
+        '</svg>' +
+      '</div>';
+    centerOv.onclick = function(e) {
+      e.stopPropagation();
+      window.expandFromMiniPlayer();
+    };
+    aspectBox.appendChild(centerOv);
+  }
+
+  var baseMinFn = window.minimizeToMiniPlayer;
+  window.minimizeToMiniPlayer = function() {
+    if (baseMinFn) baseMinFn();
+    var co = document.getElementById("miniCenterExpandOverlay");
+    if (co) co.classList.remove("hidden");
+  };
+
+  var baseExpFn = window.expandFromMiniPlayer;
+  window.expandFromMiniPlayer = function() {
+    var co = document.getElementById("miniCenterExpandOverlay");
+    if (co) co.classList.add("hidden");
+    if (baseExpFn) baseExpFn();
+  };
+
+  // Make the entire Info area below the video + Top bar + Left/Right edges swipeable downwards to minimize!
+  var pBox = document.getElementById("playerModalBox");
+  var scrollCont = document.getElementById("ytWatchScrollContainer");
+  var sStartY = 0;
+  var sCurrY = 0;
+  var sDragging = false;
+
+  if (scrollCont && pBox) {
+    scrollCont.addEventListener("touchstart", function(e) {
+      if (scrollCont.scrollTop > 5 || !e.touches || e.touches.length !== 1) return;
+      sStartY = e.touches[0].clientY;
+      sCurrY = sStartY;
+      sDragging = true;
+    }, { passive: true });
+
+    scrollCont.addEventListener("touchmove", function(e) {
+      if (!sDragging || !e.touches || e.touches.length !== 1) return;
+      sCurrY = e.touches[0].clientY;
+      var dy = sCurrY - sStartY;
+      if (dy > 12 && scrollCont.scrollTop <= 0) {
+        pBox.style.transform = "translateY(" + Math.min(dy * 0.6, 180) + "px)";
+      }
+    }, { passive: true });
+
+    scrollCont.addEventListener("touchend", function() {
+      if (!sDragging) return;
+      sDragging = false;
+      var dy = sCurrY - sStartY;
+      pBox.style.transform = "";
+      if (dy > 55 && scrollCont.scrollTop <= 0) {
+        window.minimizeToMiniPlayer();
+      }
+      sStartY = 0;
+      sCurrY = 0;
+    }, { passive: true });
+  }
+
+  // Record history when opening video
   var prevOpenPlayer = window.openVideoPlayer;
   window.openVideoPlayer = function(videoId) {
     if (window.isKidsTimeExpiredLock) return;
+    var co = document.getElementById("miniCenterExpandOverlay");
+    if (co) co.classList.add("hidden");
     recordVideoInHistory(videoId);
     if (prevOpenPlayer) prevOpenPlayer(videoId);
   };
 
-  // 5. KIDS CLOCK SCHEDULE & TIMER MODAL + LOCKOUT OVERLAY
-  if (!document.getElementById("kidsTimerSetupModal")) {
-    var tm = document.createElement("div");
-    tm.id = "kidsTimerSetupModal";
-    tm.className = "fixed inset-0 z-50 hidden bg-black/90 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4";
-    tm.dir = "ltr";
-    tm.innerHTML = [
-      '<div class="bg-[#131722] border-2 border-blue-500/50 rounded-2xl max-w-lg w-full p-4 sm:p-5 shadow-2xl max-h-[92vh] overflow-y-auto space-y-4">',
-        '<div class="flex items-center justify-between border-b border-slate-800 pb-3">',
-          '<div class="flex items-center gap-2.5">',
-            '<span class="text-2xl">⏰</span>',
-            '<div>',
-              '<h3 class="text-sm sm:text-base font-extrabold text-white">Kids Lock &amp; Screen Time Schedule</h3>',
-              '<p class="text-[11px] text-slate-400">Set clock time (from - to), quick minutes, or saved presets</p>',
-            '</div>',
-          '</div>',
-          '<button type="button" id="closeKidsTimerModalBtn" class="bg-slate-800 text-slate-300 px-2.5 py-1 rounded-lg text-xs font-bold">✕</button>',
-        '</div>',
-        '<div class="bg-emerald-950/25 border border-emerald-500/40 rounded-xl p-3 space-y-2">',
-          '<span class="text-xs font-extrabold text-emerald-300 block">⭐ Saved Parent Presets (1-Click Start):</span>',
-          '<div id="kidsSavedPresetsContainer" class="flex flex-wrap gap-1.5"></div>',
-        '</div>',
-        '<div class="bg-blue-950/30 border border-blue-500/40 rounded-xl p-3.5 space-y-2.5">',
-          '<label class="block text-xs font-extrabold text-blue-300">🕰️ Option 1: Set By Mobile Clock Time (From — To):</label>',
-          '<div class="grid grid-cols-2 gap-2.5 text-xs">',
-            '<div><span class="text-[10px] text-slate-400 block mb-1">Start Time:</span><input id="kidsClockStartInput" type="time" value="09:00" class="w-full bg-black border border-slate-700 rounded-lg px-2.5 py-2 text-white font-bold" /></div>',
-            '<div><span class="text-[10px] text-slate-400 block mb-1">End / Lock Time:</span><input id="kidsClockEndInput" type="time" value="10:30" class="w-full bg-black border border-slate-700 rounded-lg px-2.5 py-2 text-white font-bold" /></div>',
-          '</div>',
-          '<div class="flex flex-wrap gap-2 pt-1">',
-            '<button type="button" id="startClockSchedBtn" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2 px-3 rounded-xl text-xs font-extrabold shadow">🔒 Start Clock Schedule</button>',
-            '<button type="button" id="saveClockPresetBtn" class="bg-slate-800 hover:bg-emerald-700 border border-slate-600 text-slate-200 px-3 py-2 rounded-xl text-xs font-bold">💾 Save Preset</button>',
-          '</div>',
-        '</div>',
-        '<div>',
-          '<label class="block text-xs font-extrabold text-amber-300 mb-2">⏱️ Option 2: Quick Countdown Timer:</label>',
-          '<div class="grid grid-cols-3 sm:grid-cols-6 gap-1.5 text-xs font-extrabold">',
-            '<button type="button" onclick="startKidsModeWithTimer(0)" class="bg-slate-800 hover:bg-emerald-600 text-white py-2.5 px-1 rounded-xl border border-slate-700">♾️ No Limit</button>',
-            '<button type="button" onclick="startKidsModeWithTimer(15)" class="bg-slate-900 hover:bg-blue-600 text-blue-200 py-2.5 px-1 rounded-xl border border-slate-700">15m</button>',
-            '<button type="button" onclick="startKidsModeWithTimer(30)" class="bg-slate-900 hover:bg-blue-600 text-blue-200 py-2.5 px-1 rounded-xl border border-slate-700">30m</button>',
-            '<button type="button" onclick="startKidsModeWithTimer(45)" class="bg-slate-900 hover:bg-blue-600 text-blue-200 py-2.5 px-1 rounded-xl border border-slate-700">45m</button>',
-            '<button type="button" onclick="startKidsModeWithTimer(60)" class="bg-slate-900 hover:bg-emerald-600 text-emerald-200 py-2.5 px-1 rounded-xl border border-slate-700">1 Hr</button>',
-            '<button type="button" onclick="startKidsModeWithTimer(120)" class="bg-slate-900 hover:bg-emerald-600 text-emerald-200 py-2.5 px-1 rounded-xl border border-slate-700">2 Hrs</button>',
-          '</div>',
-        '</div>',
-        '<div class="bg-black/70 border border-slate-800 rounded-xl p-2.5 flex flex-wrap items-center gap-2">',
-          '<input id="customKidsTimerMins" type="number" min="1" max="480" placeholder="Custom minutes (e.g. 25)" class="flex-1 min-w-[140px] bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white" />',
-          '<button type="button" id="startCustomMinsBtn" class="bg-amber-500 hover:bg-amber-400 text-black px-3.5 py-1.5 rounded-lg text-xs font-extrabold shadow">Start</button>',
-          '<button type="button" id="saveCustomMinsBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold">💾 Save</button>',
-        '</div>',
-      '</div>'
-    ].join("");
-    document.body.appendChild(tm);
-
-    document.getElementById("closeKidsTimerModalBtn").onclick = function() {
-      document.getElementById("kidsTimerSetupModal").classList.add("hidden");
-    };
-    document.getElementById("startClockSchedBtn").onclick = function() {
-      var endStr = document.getElementById("kidsClockEndInput").value || "10:30";
-      var mins = calculateMinutesUntilClockTime(endStr);
-      startKidsModeWithTimer(mins);
-      showSyncToast("🕰️ Kids Mode locked until " + format12Hr(endStr));
-    };
-    document.getElementById("saveClockPresetBtn").onclick = function() {
-      var st = document.getElementById("kidsClockStartInput").value || "09:00";
-      var en = document.getElementById("kidsClockEndInput").value || "10:30";
-      var lbl = format12Hr(st) + " - " + format12Hr(en);
-      window.kidsSavedPresets.push({ label: lbl, type: "clock", start: st, end: en });
-      localStorage.setItem("qaaf_kids_timer_presets", JSON.stringify(window.kidsSavedPresets));
-      renderKidsSavedPresets();
-      showSyncToast("💾 Saved preset: " + lbl);
-    };
-    document.getElementById("startCustomMinsBtn").onclick = function() {
-      var v = parseInt(document.getElementById("customKidsTimerMins").value || "0", 10);
-      if (!v || v <= 0) { alert("Enter valid minutes."); return; }
-      startKidsModeWithTimer(v);
-    };
-    document.getElementById("saveCustomMinsBtn").onclick = function() {
-      var v = parseInt(document.getElementById("customKidsTimerMins").value || "0", 10);
-      if (!v || v <= 0) { alert("Enter custom minutes first."); return; }
-      var lbl = v + " Mins Timer";
-      window.kidsSavedPresets.push({ label: lbl, type: "duration", mins: v });
-      localStorage.setItem("qaaf_kids_timer_presets", JSON.stringify(window.kidsSavedPresets));
-      renderKidsSavedPresets();
-      showSyncToast("💾 Saved preset: " + lbl);
-    };
-  }
-
-  if (!document.getElementById("kidsTimeUpLockOverlay")) {
-    var lo = document.createElement("div");
-    lo.id = "kidsTimeUpLockOverlay";
-    lo.className = "fixed inset-0 z-[95] hidden bg-[#04060b] flex flex-col items-center justify-center p-6 text-center select-none";
-    lo.dir = "ltr";
-    lo.innerHTML = [
-      '<div class="max-w-md w-full bg-[#0e131d] border-2 border-amber-500/70 rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col items-center">',
-        '<div class="w-20 h-20 rounded-full bg-amber-500/20 border-2 border-amber-400 flex items-center justify-center text-4xl mb-4 animate-bounce">🌙</div>',
-        '<h2 class="text-xl sm:text-2xl font-extrabold text-white mb-1">Screen Time Finished!</h2>',
-        '<p class="text-sm font-bold text-amber-300 mb-2" dir="rtl">بچے کا مقررہ وقت مکمل ہو چکا ہے!</p>',
-        '<p class="text-xs text-slate-400 mb-6">Videos and games are now locked. Please hand the device to your parents.</p>',
-        '<div class="w-full bg-black/80 border border-slate-800 rounded-2xl p-4 space-y-3">',
-          '<label class="block text-xs font-extrabold text-emerald-400">🔒 Enter 6-Digit Parent PIN to Unlock:</label>',
-          '<input id="timeUpParentPinInput" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" class="w-44 mx-auto block text-center text-2xl tracking-[0.4em] bg-slate-950 border border-slate-700 rounded-xl py-2 text-white" />',
-          '<p id="timeUpPinError" class="text-xs font-bold text-rose-400 hidden">❌ Incorrect Parent PIN!</p>',
-          '<div class="flex flex-col sm:flex-row gap-2 pt-1">',
-            '<button type="button" id="unlockExitKidsBtn" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl text-xs font-extrabold shadow">🔓 Unlock to Family Mode</button>',
-            '<button type="button" id="unlockAdd15mBtn" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-xl text-xs font-extrabold shadow">⏱️ +15 Mins for Child</button>',
-          '</div>',
-        '</div>',
-      '</div>'
-    ].join("");
-    document.body.appendChild(lo);
-    document.getElementById("unlockExitKidsBtn").onclick = function() { unlockTimeUpOverlay("exit_kids"); };
-    document.getElementById("unlockAdd15mBtn").onclick = function() { unlockTimeUpOverlay("add_15m"); };
-  }
+  // 5. KIDS TIMER WIRING
+  document.getElementById("closeKidsTimerModalBtn").onclick = function() {
+    document.getElementById("kidsTimerSetupModal").classList.add("hidden");
+  };
+  document.getElementById("startClockSchedBtn").onclick = function() {
+    var endStr = document.getElementById("kidsClockEndInput").value || "10:30";
+    var mins = calculateMinutesUntilClockTime(endStr);
+    startKidsModeWithTimer(mins);
+    showSyncToast("🕰️ Kids Mode locked until " + format12Hr(endStr));
+  };
+  document.getElementById("saveClockPresetBtn").onclick = function() {
+    var st = document.getElementById("kidsClockStartInput").value || "09:00";
+    var en = document.getElementById("kidsClockEndInput").value || "10:30";
+    var lbl = format12Hr(st) + " - " + format12Hr(en);
+    window.kidsSavedPresets.push({ label: lbl, type: "clock", start: st, end: en });
+    localStorage.setItem("qaaf_kids_timer_presets", JSON.stringify(window.kidsSavedPresets));
+    renderKidsSavedPresets();
+    showSyncToast("💾 Saved preset: " + lbl);
+  };
+  document.getElementById("startCustomMinsBtn").onclick = function() {
+    var v = parseInt(document.getElementById("customKidsTimerMins").value || "0", 10);
+    if (!v || v <= 0) { alert("Enter valid minutes."); return; }
+    startKidsModeWithTimer(v);
+  };
+  document.getElementById("saveCustomMinsBtn").onclick = function() {
+    var v = parseInt(document.getElementById("customKidsTimerMins").value || "0", 10);
+    if (!v || v <= 0) { alert("Enter custom minutes first."); return; }
+    var lbl = v + " Mins Timer";
+    window.kidsSavedPresets.push({ label: lbl, type: "duration", mins: v });
+    localStorage.setItem("qaaf_kids_timer_presets", JSON.stringify(window.kidsSavedPresets));
+    renderKidsSavedPresets();
+    showSyncToast("💾 Saved preset: " + lbl);
+  };
+  document.getElementById("unlockExitKidsBtn").onclick = function() { unlockTimeUpOverlay("exit_kids"); };
+  document.getElementById("unlockAdd15mBtn").onclick = function() { unlockTimeUpOverlay("add_15m"); };
 
   function format12Hr(timeStr) {
     if (!timeStr) return "";
