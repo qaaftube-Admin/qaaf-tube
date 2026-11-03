@@ -336,7 +336,7 @@
 
         <!-- YOUTUBE IFRAME (NO BLOCKING OVERLAYS — VOLUME & SETTINGS GEAR 100% WORKING) -->
         <div id="ytPlayerContainer" class="absolute inset-0 w-full h-full">
-          <iframe id="ytIframe" class="w-full h-full" src="" title="QAAF YouTube Player" frameborder="0" sandbox="allow-scripts allow-same-origin allow-presentation" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+          <iframe id="ytIframe" class="w-full h-full" src="" title="QAAF YouTube Player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
         </div>
 
         <!-- FALLBACK SAFE CANVAS CONTAINER (HIDDEN BY DEFAULT) -->
@@ -4766,19 +4766,43 @@
     }
   };
 
-  // Handle Mobile Hardware / Browser Back Button
-  window.addEventListener('popstate', function() {
+  // Handle Mobile Hardware / Browser Back Button Seamlessly
+  let qaafBackTrapTimer = null;
+  const origMinFn = window.minimizeToMiniPlayer;
+  window.minimizeToMiniPlayer = function() {
+    if (origMinFn) origMinFn();
+    // Keep YouTube playing when minimized on mobile
+    [50, 200, 500, 900].forEach(ms => {
+      setTimeout(() => { if (typeof sendYouTubeCommand === 'function') sendYouTubeCommand('playVideo'); }, ms);
+    });
+  };
+
+  const origExpFn = window.expandFromMiniPlayer;
+  window.expandFromMiniPlayer = function() {
+    if (origExpFn) origExpFn();
+    try { history.pushState({ qaafFullWatch: true }, ''); } catch (e) {}
+    [50, 250].forEach(ms => {
+      setTimeout(() => { if (typeof sendYouTubeCommand === 'function') sendYouTubeCommand('playVideo'); }, ms);
+    });
+  };
+
+  window.addEventListener('popstate', function(e) {
     const modal = document.getElementById('playerModal');
-    if (modal && !modal.classList.contains('hidden')) {
-      const scrollWrap = document.getElementById('ytWatchScrollContainer');
-      const isCurrentlyFull = scrollWrap && !scrollWrap.classList.contains('hidden');
-      if (isCurrentlyFull && typeof window.minimizeToMiniPlayer === 'function') {
-        // Minimize to corner Mini-Player just like YouTube!
-        window.minimizeToMiniPlayer();
-        try { history.pushState({ qaafMiniPlayer: true }, ''); } catch (e) {}
-      } else {
-        closeVideoPlayer();
-      }
+    if (!modal || modal.classList.contains('hidden')) return;
+
+    const scrollWrap = document.getElementById('ytWatchScrollContainer');
+    const isCurrentlyFull = scrollWrap && !scrollWrap.classList.contains('hidden');
+
+    if (isCurrentlyFull && typeof window.minimizeToMiniPlayer === 'function') {
+      window.minimizeToMiniPlayer();
+      // Push state back so the page stays alive while Mini-Player runs in the corner
+      try { history.pushState({ qaafMiniPlayer: true }, ''); } catch (err) {}
+    } else {
+      // If already in Mini-Player, keep it playing unless user taps ✕ Close
+      [100, 300].forEach(ms => {
+        setTimeout(() => { if (typeof sendYouTubeCommand === 'function') sendYouTubeCommand('playVideo'); }, ms);
+      });
+      try { history.pushState({ qaafMiniPlayer: true }, ''); } catch (err) {}
     }
   });
 
@@ -6449,66 +6473,6 @@
   window.renderAdminParentRequests();
 })();
 </script>
-<!-- QAAF BACK BUTTON SEAMLESS MINIPLAYER FIX -->
-<script>
-(function enableSeamlessBackMiniPlayer() {
-  window.qaafPlayerMode = "closed";
-
-  var origOpen = window.openVideoPlayer;
-  window.openVideoPlayer = function(videoId) {
-    var wasClosed = (window.qaafPlayerMode === "closed");
-    if (origOpen) origOpen(videoId);
-    window.qaafPlayerMode = "full";
-    if (wasClosed) {
-      try {
-        history.pushState({ qaafStep: "mini" }, "");
-        history.pushState({ qaafStep: "full" }, "");
-      } catch (e) {}
-    }
-  };
-
-  var origMin = window.minimizeToMiniPlayer;
-  window.minimizeToMiniPlayer = function() {
-    window.qaafPlayerMode = "mini";
-    if (origMin) origMin();
-    if (typeof sendYouTubeCommand === "function") {
-      sendYouTubeCommand("playVideo");
-      setTimeout(function() { sendYouTubeCommand("playVideo"); }, 200);
-      setTimeout(function() { sendYouTubeCommand("playVideo"); }, 500);
-    }
-  };
-
-  var origExp = window.expandFromMiniPlayer;
-  window.expandFromMiniPlayer = function() {
-    window.qaafPlayerMode = "full";
-    if (origExp) origExp();
-    if (typeof sendYouTubeCommand === "function") {
-      sendYouTubeCommand("playVideo");
-      setTimeout(function() { sendYouTubeCommand("playVideo"); }, 200);
-    }
-  };
-
-  var origClose = window.closeVideoPlayer;
-  window.closeVideoPlayer = function() {
-    window.qaafPlayerMode = "closed";
-    if (origClose) origClose();
-  };
-
-  window.addEventListener("popstate", function() {
-    var modal = document.getElementById("playerModal");
-    if (!modal || modal.classList.contains("hidden")) {
-      window.qaafPlayerMode = "closed";
-      return;
-    }
-    if (window.qaafPlayerMode === "full") {
-      window.minimizeToMiniPlayer();
-    } else if (window.qaafPlayerMode === "mini") {
-      window.closeVideoPlayer();
-    }
-  }, true);
-})();
-</script>
-
 </body>
 
 
