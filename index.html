@@ -882,14 +882,14 @@
     ];
 
     const defaultPromos = {
-      GLOBAL: { text: "📢 For Promotion & Sponsorship on QAAF Tube Contact Us: qaaftube@gmail.com", imgUrl: "", linkUrl: "https://qaaftube.com", dir: "rtl" },
-      PK: { text: "🇵🇰 دارالعلوم و حلال فوڈز پاکستان — اشتہارات اور پروموشن کے لیے رابطہ کریں: 0300-1234567 | qaaftube@gmail.com", imgUrl: "", linkUrl: "https://qaaftube.com", dir: "ltr" },
-      US_UK: { text: "🇬🇧🇺🇸 Noor Islamic Books & Halal Kids Box (UK / USA Free Delivery) — For Promotion Contact Us: +44 20 7946 0192 | Order Today!", imgUrl: "", linkUrl: "https://qaaftube.com", dir: "rtl" },
-      BD: { text: "🇧🇩 আল-কুরআন একাডেমি বাংলাদেশ — প্রমোশনের জন্য যোগাযোগ করুন: +880 1711-000000 | শিশুদের সহজ তাজবীদ কোর্স!", imgUrl: "", linkUrl: "https://qaaftube.com", dir: "rtl" },
-      AR: { text: "🇸🇦 أكاديمية الفرقان لتحفيظ القرآن الكريم — للإعلان والتواصل معنا: +966 50 000 0000", imgUrl: "", linkUrl: "https://qaaftube.com", dir: "ltr" }
+      GLOBAL: { text: "", imgUrl: "", linkUrl: "https://qaaftube.com", dir: "rtl" },
+      PK: { text: "", imgUrl: "", linkUrl: "https://qaaftube.com", dir: "ltr" },
+      US_UK: { text: "", imgUrl: "", linkUrl: "https://qaaftube.com", dir: "rtl" },
+      BD: { text: "", imgUrl: "", linkUrl: "https://qaaftube.com", dir: "rtl" },
+      AR: { text: "", imgUrl: "", linkUrl: "https://qaaftube.com", dir: "ltr" }
     };
     let regionalPromos = JSON.parse(localStorage.getItem('qaaf_regional_promos_v7')) || defaultPromos;
-    let isPromoBarEnabled = localStorage.getItem("qaaf_promo_bar_enabled") !== "false";
+    let isPromoBarEnabled = localStorage.getItem("qaaf_promo_bar_enabled") === "true";
 
     let parentPin = localStorage.getItem('qaaf_parent_pin_6') || '123456';
     let currentUserEmail = localStorage.getItem('qaaf_user_email') || '';
@@ -1023,13 +1023,7 @@
 
 
 // BUILT-IN ISLAMIC SHORTS (BAYAN SHORTS FOR PARENTS & REMINDERS FOR KIDS)
-    const defaultIslamicShorts = [
-      { id: "sh1", title: "والدین کی قدر اور اولاد کی تربیت — مختصر اصلاحی کلپ #Shorts", channel: "Islamic Bayan Shorts", lang: "ur", category: "bayan", kidsSafe: false, isShort: true, ytId: "vZ96sXj5ngY", views: 45200, createdAt: 1715100000 },
-      { id: "sh2", title: "Power of Saying Alhamdulillah in Every Situation #Shorts", channel: "MercifulServant Shorts", lang: "en", category: "bayan", kidsSafe: true, isShort: true, ytId: "vZ96sXj5ngY", views: 62000, createdAt: 1715090000 },
-      { id: "sh3", title: "Beautiful Recitation of Surah Al-Fatihah — Mishary Alafasy #Shorts", channel: "Quran Shorts HD", lang: "ar", universalQuran: true, category: "quran", kidsSafe: true, isShort: true, ytId: "tgYsKjUSf7s", views: 89000, createdAt: 1715080000 },
-      { id: "sh4", title: "Omar & Hana — Always Say Bismillah Before Eating! #Shorts", channel: "Omar & Hana Shorts", lang: "en", category: "kids_cartoon", kidsSafe: true, isShort: true, ytId: "0r6BcBXZyUg", views: 54000, createdAt: 1715070000 },
-      { id: "sh5", title: "سونے سے پہلے کی مسنون دعا بچوں کے لیے — اسلامک شارٹس", channel: "Kids Sunnah Shorts", lang: "ur", category: "stories", kidsSafe: true, isShort: true, ytId: "7MhI1hD56Ww", views: 38900, createdAt: 1715060000 }
-    ];
+    const defaultIslamicShorts = [];
 
     defaultIslamicShorts.forEach(sh => {
       if (!videosData.some(v => v.id === sh.id)) videosData.push(sh);
@@ -4122,7 +4116,7 @@
   let selectedChannelFilter = 'ALL';
   let pendingChannelFetchedVideos = [];
 
-  if (localStorage.getItem('qaaf_ch_ver') !== VER_TAG) {
+  if (!localStorage.getItem('qaaf_videos_data') && localStorage.getItem('qaaf_ch_ver') !== VER_TAG) {
     videosData = JSON.parse(JSON.stringify(ALL_VIDEOS_INIT));
     localStorage.setItem('qaaf_videos_data', JSON.stringify(videosData));
     localStorage.setItem('qaaf_ch_ver', VER_TAG);
@@ -4785,7 +4779,106 @@
   };
 })();
 </script>
+
+<script>
+(function fixInstantCloudBanAndPromoBar() {
+  // A. Purge old test shorts (sh1..sh5) and any banned channels from videosData
+  function cleanVideosList() {
+    videosData = videosData.filter(v => {
+      if (['sh1','sh2','sh3','sh4','sh5','v1','v2','v3','v4','v5','v6','v7','v8','v9','v10'].includes(v.id)) return false;
+      if (bannedChannels && bannedChannels.includes(v.channel)) return false;
+      if (blockedVideoIds && blockedVideoIds.includes(v.id)) return false;
+      return true;
+    });
+  }
+  cleanVideosList();
+
+  // B. Ensure Channels Bar NEVER shows banned channels or blocked videos
+  const origRenderVids = window.renderVideos;
+  window.renderVideos = function() {
+    cleanVideosList();
+    if (origRenderVids) origRenderVids();
+  };
+
+  // C. Smart Promo Bar: Only show if Admin enabled it AND typed non-empty text or image!
+  // Also fallback to GLOBAL text if a specific region is empty.
+  window.syncRegionalPromoBar = function() {
+    const bar = document.getElementById('regionalPromoBar');
+    if (!bar) return;
+    if (!isPromoBarEnabled || isKidsLocked) {
+      bar.classList.add('hidden');
+      return;
+    }
+    const found = globalLanguagesList.find(l => l.code === preferredContentLang);
+    const regionKey = (found && regionalPromos[found.regionKey]) ? found.regionKey : 'GLOBAL';
+    let promoObj = regionalPromos[regionKey] || regionalPromos.GLOBAL;
+
+    // If specific region has no text/image, use GLOBAL text/image set by Admin
+    if ((!promoObj.text || !promoObj.text.trim()) && (!promoObj.imgUrl || !promoObj.imgUrl.trim())) {
+      promoObj = regionalPromos.GLOBAL || { text: '', imgUrl: '' };
+    }
+
+    const hasText = promoObj.text && promoObj.text.trim() !== '' && !promoObj.text.includes('Al-Huda') && !promoObj.text.includes('Noor Islamic Books');
+    const hasImg = promoObj.imgUrl && promoObj.imgUrl.trim() !== '';
+
+    if (!hasText && !hasImg) {
+      bar.classList.add('hidden');
+      return;
+    }
+
+    bar.classList.remove('hidden');
+    document.getElementById('promoRegionTag').innerText = '📢 SPONSOR';
+    const imgLinkEl = document.getElementById('promoImageBannerLink');
+    const imgEl = document.getElementById('promoImageBannerEl');
+    const tickerWrap = document.getElementById('promoTickerWrapper');
+    const tickerLink = document.getElementById('promoTickerLink');
+
+    if (hasImg) {
+      imgEl.src = promoObj.imgUrl.trim();
+      imgLinkEl.href = promoObj.linkUrl || '#';
+      imgLinkEl.classList.remove('hidden');
+      tickerWrap.classList.add('hidden');
+    } else {
+      imgLinkEl.classList.add('hidden');
+      tickerWrap.classList.remove('hidden');
+      tickerLink.innerText = promoObj.text.trim();
+      tickerLink.href = promoObj.linkUrl || '#';
+      tickerLink.className = (promoObj.dir === 'ltr' ? 'promo-ticker-ltr' : 'promo-ticker-rtl') + ' text-slate-100 hover:text-amber-300 font-semibold tracking-wide';
+    }
+  };
+
+  // D. Instant 13-byte Timestamp Check on Every Load so Mobile/PC Admin deletions sync across all browsers immediately!
+  async function checkCloudVersionAndSync() {
+    try {
+      const base = qaafCloudSync.cleanFirebaseUrl(qaafCloudSync.firebaseUrl) || DEFAULT_FIREBASE_RTDB_URL;
+      const res = await fetch(`${base}/qaaf_global_state/updatedAt.json?t=${Date.now()}`);
+      if (!res.ok) return;
+      const cloudUpdatedAt = await res.json();
+      const localUpdatedAt = parseInt(localStorage.getItem('qaaf_cloud_updated_at') || '0', 10);
+      if (cloudUpdatedAt && cloudUpdatedAt !== localUpdatedAt) {
+        await qaafCloudSync.pullFromCloud(true);
+        localStorage.setItem('qaaf_cloud_updated_at', cloudUpdatedAt.toString());
+        cleanVideosList();
+        syncRegionalPromoBar();
+        renderVideos();
+      }
+    } catch (e) {}
+  }
+
+  const origPush = qaafCloudSync.pushState.bind(qaafCloudSync);
+  qaafCloudSync.pushState = async function(label) {
+    cleanVideosList();
+    await origPush(label);
+    localStorage.setItem('qaaf_cloud_updated_at', Date.now().toString());
+  };
+
+  syncRegionalPromoBar();
+  renderVideos();
+  checkCloudVersionAndSync();
+})();
+</script>
 </body>
+
 
 
 
