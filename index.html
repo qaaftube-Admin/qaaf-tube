@@ -639,7 +639,7 @@
   <div id="accountModal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-sm flex items-center justify-center p-4" dir="ltr">
     <div class="bg-[#181818] border border-slate-700 rounded-2xl max-w-md w-full p-5 shadow-2xl">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
-        <h3 class="text-base font-bold text-white">👤 QAAF Account & Admin Login</h3>
+        <h3 class="text-base font-bold text-white">👤 QAAF Account Login</h3>
         <button onclick="closeAccountModal()" class="text-xs bg-slate-800 px-2.5 py-1 rounded text-slate-300">✕</button>
       </div>
       <div id="loggedOutView">
@@ -739,13 +739,13 @@
 
       <div id="settingsStepView" class="hidden space-y-4">
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-          <h3 class="text-base font-bold text-emerald-400">🛡️ QAAF Parent Control & 6-Digit PIN</h3>
+          <h3 class="text-base font-bold text-emerald-400">🛡️ Parent Control</h3>
           <button onclick="closeParentModal()" class="text-xs bg-slate-800 px-2.5 py-1 rounded text-slate-300">✕ Close</button>
         </div>
         <div class="bg-blue-950/30 p-3.5 rounded-xl border border-blue-500/40">
           <div class="flex items-center justify-between mb-1.5">
             <label class="text-xs font-bold text-blue-300">🔑 Change 6-Digit Parent PIN</label>
-            <span class="text-[11px] text-slate-400">Active: <strong id="settingsPinDisplay" class="text-emerald-400">123456</strong></span>
+            <span class="text-[11px] text-slate-400">Active: <strong id="settingsPinDisplay" class="text-emerald-400">••••••</strong></span>
           </div>
           <div class="flex flex-col sm:flex-row gap-2">
             <input id="newPinInput" type="password" inputmode="numeric" maxlength="6" placeholder="New 6-digit PIN" class="flex-1 bg-black border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white" />
@@ -2808,7 +2808,7 @@
         hintEl.innerHTML = `•••••• (Protected) • <button type="button" onclick="if(window.toggleForgotPinBox) window.toggleForgotPinBox();" class="text-amber-300 underline font-bold ml-1">❓ Forgot PIN?</button>`;
       }
       const settingsPinEl = document.getElementById('settingsPinDisplay');
-      if (settingsPinEl) settingsPinEl.innerText = parentPin;
+      if (settingsPinEl) settingsPinEl.innerText = '••••••';
     }
 
     function openParentalGate(purpose) {
@@ -3377,7 +3377,7 @@
             miniTitle.innerText = video ? video.title : 'Playing...';
             miniTitle.classList.remove('hidden');
           }
-          if (expBtn) expBtn.classList.remove('hidden');
+          if (expBtn) expBtn.classList.add('hidden');
         }
       };
 
@@ -3694,7 +3694,7 @@
           hintEl.innerHTML = `•••••• • <button type="button" onclick="toggleForgotPinBox()" class="text-amber-300 underline font-bold ml-1">❓ Forgot PIN?</button>`;
         }
         const settingsPinEl = document.getElementById('settingsPinDisplay');
-        if (settingsPinEl) settingsPinEl.innerText = parentPin;
+        if (settingsPinEl) settingsPinEl.innerText = '••••••';
       };
       window.syncPinDisplays();
 
@@ -7137,9 +7137,9 @@
   if (aspectBox && !document.getElementById("miniCenterExpandOverlay")) {
     var centerOv = document.createElement("div");
     centerOv.id = "miniCenterExpandOverlay";
-    centerOv.className = "hidden absolute inset-0 z-30 bg-black/35 flex items-center justify-center cursor-pointer";
+    centerOv.className = "hidden absolute inset-0 z-30 bg-black/10 flex items-center justify-center cursor-pointer";
     centerOv.innerHTML =
-      '<div class="w-12 h-12 rounded-2xl bg-black/80 border-2 border-white/80 hover:border-emerald-400 hover:scale-110 text-white flex items-center justify-center shadow-2xl transition">' +
+      '<div class="w-12 h-12 rounded-2xl bg-transparent border-2 border-white/75 hover:border-white hover:scale-110 text-white flex items-center justify-center drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)] transition">' +
         '<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
           '<polyline points="15 3 21 3 21 9"></polyline>' +
           '<polyline points="9 21 3 21 3 15"></polyline>' +
