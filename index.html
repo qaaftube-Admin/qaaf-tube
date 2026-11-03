@@ -556,6 +556,7 @@
         <!-- Mobile-friendly 1-col on mobile, 3-col on sm screens -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
           <select id="adminVideoLang" class="bg-black border border-slate-700 rounded-lg px-2.5 py-1.5 text-white">
+            <option value="global">🌍 Global (All Languages)</option>
             <option value="en">🇬🇧 English</option>
             <option value="ur">🇵🇰 Urdu</option>
             <option value="bn">🇧🇩 Bengali</option>
@@ -787,6 +788,7 @@
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
             <select id="parentVideoLang" class="bg-black border border-slate-700 rounded-lg px-2 py-1.5 text-white">
+              <option value="global">🌍 Global (All Languages)</option>
               <option value="ur">🇵🇰 Urdu</option>
               <option value="en">🇬🇧 English</option>
               <option value="ar">🇸🇦 Arabic</option>
@@ -5037,7 +5039,196 @@
   if (window.renderAdminActiveVideosCatalog) window.renderAdminActiveVideosCatalog();
 })();
 </script>
+
+<style>
+  /* Hide Top Simulator Test Bar & Bottom Fake Hardware Nav Bar in Production */
+  #kioskStatusBadge { display: none !important; }
+</style>
+<script>
+(function finalizeProductionModeAndGuestGate() {
+  // 1. Hide Top Simulator Test Bar & Bottom Simulator Footer
+  const topTestBar = document.querySelector('body > div.bg-slate-900\\/95.border-b');
+  if (topTestBar) topTestBar.classList.add('hidden');
+  const bottomSimFooter = document.querySelector('footer.bg-black\\/95.border-t');
+  if (bottomSimFooter) bottomSimFooter.classList.add('hidden');
+  const appBody = document.getElementById('appBody');
+  if (appBody) appBody.classList.replace('pb-28', 'pb-12');
+
+  // 2. Add "🔒 Kids Mode ON" Badge inside Main Header (Hidden in Family Mode, Visible in Kids Mode)
+  const kidsSwitcher = document.getElementById('kidsContentSwitcher');
+  if (kidsSwitcher && !document.getElementById('kidsModeOnHeaderBadge')) {
+    const badge = document.createElement('span');
+    badge.id = 'kidsModeOnHeaderBadge';
+    badge.className = 'hidden bg-red-600/25 border border-red-500/50 text-red-300 px-2.5 py-1 rounded-full text-[11px] font-extrabold items-center gap-1 shadow shrink-0';
+    badge.innerHTML = '<span>🔐</span> <span>Kids Mode ON</span>';
+    kidsSwitcher.parentNode.insertBefore(badge, kidsSwitcher);
+  }
+
+  // 3. Support "🌍 Global (All Languages)" in Priority Score & Preferred Badge & Strict Filter
+  window.getModePriorityScore = function(video) {
+    let score = 0;
+    if (video.lang === preferredContentLang || video.lang === 'global' || video.universalQuran) score += 55;
+    if (isKidsLocked) {
+      if (kidsWatchedIds.includes(video.id)) score += 40;
+      if (video.category === 'kids_cartoon') score += 30;
+      else if (video.category === 'stories') score += 25;
+      else if (video.category === 'quran') score += 20;
+    } else {
+      if (parentWatchedIds.includes(video.id)) score += 45;
+      if (video.category === 'bayan') score += 35;
+      else if (video.category === 'quran') score += 30;
+      else if (video.category === 'stories') score += 10;
+      else if (video.category === 'kids_cartoon') score += 5;
+    }
+    return score;
+  };
+
+  // Upgrade renderVideos so 'global' videos show "⭐ Preferred (GLOBAL)" and pass Strict Language filter
+  const prevRenderVideos = window.renderVideos;
+  window.renderVideos = function() {
+    // Temporarily mark global videos as universalQuran so strictLanguageOnly never hides them
+    videosData.forEach(v => {
+      if (v.lang === 'global') v.universalQuran = true;
+    });
+    if (prevRenderVideos) prevRenderVideos();
+
+    // Update badge on global cards to show "⭐ Preferred (GLOBAL)"
+    document.querySelectorAll('#videoGrid > div').forEach(card => {
+      const badgeSpan = card.querySelector('.absolute.top-2.left-2 span');
+      if (badgeSpan && badgeSpan.innerText.trim() === 'GLOBAL') {
+        badgeSpan.className = 'bg-emerald-500 text-black text-[10px] font-extrabold px-2 py-0.5 rounded shadow';
+        badgeSpan.innerText = '⭐ Preferred (GLOBAL)';
+      }
+    });
+  };
+
+  // 4. Add 6-Digit Parent PIN field to Sign-Up Form so users save their PIN with their account
+  const signUpPane = document.getElementById('authSignUpPane');
+  if (signUpPane && !document.getElementById('regPinInput')) {
+    const errNode = document.getElementById('signUpAuthError');
+    const pinDiv = document.createElement('div');
+    pinDiv.innerHTML = `
+      <label class="block text-[11px] font-bold text-emerald-400 mb-1">Set 6-Digit Kids Lock PIN:</label>
+      <input id="regPinInput" type="password" inputmode="numeric" maxlength="6" placeholder="e.g. 123456 (6 digits for Kids Mode)" class="w-full bg-black border border-emerald-500/50 rounded-xl px-3.5 py-2 text-xs text-white tracking-widest focus:border-emerald-400 focus:outline-none" />
+    `;
+    if (errNode) signUpPane.insertBefore(pinDiv, errNode);
+  }
+
+  // Banner inside Account Modal when triggered by Guest clicking Kids Mode
+  let pendingKidsActivationAfterAuth = false;
+  function showGuestAuthRequirementBanner(msg) {
+    const modalBox = document.querySelector('#accountModal > div');
+    if (!modalBox) return;
+    let banner = document.getElementById('guestKidsAuthBanner');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'guestKidsAuthBanner';
+      banner.className = 'bg-amber-500/20 border border-amber-400/50 text-amber-200 px-3 py-2 rounded-xl text-xs font-bold mb-3 flex items-center gap-2';
+      const loggedOutView = document.getElementById('loggedOutView');
+      if (loggedOutView) modalBox.insertBefore(banner, loggedOutView);
+    }
+    if (msg) {
+      banner.innerHTML = `<span>🔒</span> <span>${msg}</span>`;
+      banner.classList.remove('hidden');
+    } else {
+      banner.classList.add('hidden');
+    }
+  }
+
+  const origOpenAccountModal = window.openAccountModal;
+  window.openAccountModal = function(guestNotice) {
+    if (origOpenAccountModal) origOpenAccountModal();
+    showGuestAuthRequirementBanner(guestNotice || '');
+  };
+
+  // 5. Intercept Kids Mode & Parent Settings if Guest (not logged in)
+  const origToggleKidsMode = window.toggleKidsMode;
+  window.toggleKidsMode = function() {
+    if (!isKidsLocked && !currentUserEmail) {
+      pendingKidsActivationAfterAuth = true;
+      window.openAccountModal('Please Sign In or Sign Up first to save your Parent PIN and activate Kids Mode!');
+      return;
+    }
+    if (origToggleKidsMode) origToggleKidsMode();
+    const kmBadge = document.getElementById('kidsModeOnHeaderBadge');
+    if (kmBadge) {
+      kmBadge.classList.toggle('hidden', !isKidsLocked);
+      kmBadge.classList.toggle('flex', isKidsLocked);
+    }
+  };
+
+  const origOpenParentalGate = window.openParentalGate;
+  window.openParentalGate = function(purpose) {
+    if (!currentUserEmail && purpose === 'settings') {
+      window.openAccountModal('Please Sign In or Sign Up to configure Parent Settings & PIN!');
+      return;
+    }
+    if (origOpenParentalGate) origOpenParentalGate(purpose);
+  };
+
+  // Also hide "🔒 Kids Mode ON" badge when unlocking Kids Mode via verifyPinCode
+  const origVerifyPin = window.verifyPinCode;
+  window.verifyPinCode = function() {
+    if (origVerifyPin) origVerifyPin();
+    const kmBadge = document.getElementById('kidsModeOnHeaderBadge');
+    if (kmBadge) {
+      kmBadge.classList.toggle('hidden', !isKidsLocked);
+      kmBadge.classList.toggle('flex', isKidsLocked);
+    }
+  };
+
+  // Save per-user PIN on Sign Up & auto-enter Kids Mode if requested
+  const origRegister = window.registerNewFamilyAccount;
+  window.registerNewFamilyAccount = function() {
+    const customPin = (document.getElementById('regPinInput')?.value || '').trim();
+    if (customPin && !/^\d{6}$/.test(customPin)) {
+      const errEl = document.getElementById('signUpAuthError');
+      if (errEl) { errEl.innerText = '⚠️ Kids Lock PIN must be exactly 6 digits (e.g. 123456).'; errEl.classList.remove('hidden'); }
+      return;
+    }
+    if (origRegister) origRegister();
+    if (currentUserEmail) {
+      if (/^\d{6}$/.test(customPin)) {
+        parentPin = customPin;
+        localStorage.setItem('qaaf_parent_pin_6', parentPin);
+        if (window.registeredUsersMap && window.registeredUsersMap[currentUserEmail]) {
+          window.registeredUsersMap[currentUserEmail].pin = parentPin;
+          localStorage.setItem('qaaf_registered_users', JSON.stringify(window.registeredUsersMap));
+        }
+        window.syncPinDisplays();
+      }
+      if (pendingKidsActivationAfterAuth) {
+        pendingKidsActivationAfterAuth = false;
+        window.toggleKidsMode();
+      }
+    }
+  };
+
+  const origLogin = window.loginWithEmail;
+  window.loginWithEmail = function() {
+    if (origLogin) origLogin();
+    if (currentUserEmail) {
+      // Load user's saved PIN if they have one
+      const uObj = window.registeredUsersMap && window.registeredUsersMap[currentUserEmail.toLowerCase()];
+      if (uObj && uObj.pin) {
+        parentPin = uObj.pin;
+        localStorage.setItem('qaaf_parent_pin_6', parentPin);
+        window.syncPinDisplays();
+      }
+      if (pendingKidsActivationAfterAuth && !isSuperAdmin()) {
+        pendingKidsActivationAfterAuth = false;
+        window.toggleKidsMode();
+      } else {
+        pendingKidsActivationAfterAuth = false;
+      }
+    }
+  };
+
+  renderVideos();
+})();
+</script>
 </body>
+
 
 
 
