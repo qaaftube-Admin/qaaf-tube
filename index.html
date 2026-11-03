@@ -6449,6 +6449,66 @@
   window.renderAdminParentRequests();
 })();
 </script>
+<!-- QAAF BACK BUTTON SEAMLESS MINIPLAYER FIX -->
+<script>
+(function enableSeamlessBackMiniPlayer() {
+  window.qaafPlayerMode = "closed";
+
+  var origOpen = window.openVideoPlayer;
+  window.openVideoPlayer = function(videoId) {
+    var wasClosed = (window.qaafPlayerMode === "closed");
+    if (origOpen) origOpen(videoId);
+    window.qaafPlayerMode = "full";
+    if (wasClosed) {
+      try {
+        history.pushState({ qaafStep: "mini" }, "");
+        history.pushState({ qaafStep: "full" }, "");
+      } catch (e) {}
+    }
+  };
+
+  var origMin = window.minimizeToMiniPlayer;
+  window.minimizeToMiniPlayer = function() {
+    window.qaafPlayerMode = "mini";
+    if (origMin) origMin();
+    if (typeof sendYouTubeCommand === "function") {
+      sendYouTubeCommand("playVideo");
+      setTimeout(function() { sendYouTubeCommand("playVideo"); }, 200);
+      setTimeout(function() { sendYouTubeCommand("playVideo"); }, 500);
+    }
+  };
+
+  var origExp = window.expandFromMiniPlayer;
+  window.expandFromMiniPlayer = function() {
+    window.qaafPlayerMode = "full";
+    if (origExp) origExp();
+    if (typeof sendYouTubeCommand === "function") {
+      sendYouTubeCommand("playVideo");
+      setTimeout(function() { sendYouTubeCommand("playVideo"); }, 200);
+    }
+  };
+
+  var origClose = window.closeVideoPlayer;
+  window.closeVideoPlayer = function() {
+    window.qaafPlayerMode = "closed";
+    if (origClose) origClose();
+  };
+
+  window.addEventListener("popstate", function() {
+    var modal = document.getElementById("playerModal");
+    if (!modal || modal.classList.contains("hidden")) {
+      window.qaafPlayerMode = "closed";
+      return;
+    }
+    if (window.qaafPlayerMode === "full") {
+      window.minimizeToMiniPlayer();
+    } else if (window.qaafPlayerMode === "mini") {
+      window.closeVideoPlayer();
+    }
+  }, true);
+})();
+</script>
+
 </body>
 
 
