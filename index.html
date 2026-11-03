@@ -4457,7 +4457,7 @@
   const splashModal = document.getElementById('startupSplashModal');
   if (splashModal) {
     splashModal.innerHTML = `
-      <div class="relative w-full max-w-md flex flex-col items-center justify-center p-4" style="filter: drop-shadow(0 15px 45px rgba(229, 25, 32, 0.35));">
+      <div class="relative w-full max-w-md flex flex-col items-center justify-center p-4" >
         <div id="logo-container" class="w-full h-auto block">
           <svg class="w-full h-auto block overflow-visible" viewBox="0 0 1024 716" xmlns="http://www.w3.org/2000/svg">
             <defs>
@@ -4659,14 +4659,14 @@
       }
 
       if (elapsed < 4.75) {
-        animFrameId = requestAnimationFrame(frame);
+        // Replaced by Pure GPU CSS Keyframes
       } else {
         modal.style.opacity = '0';
         setTimeout(() => modal.classList.add('hidden'), 400);
       }
     }
 
-    animFrameId = requestAnimationFrame(frame);
+    // Replaced by Pure GPU CSS Keyframes
   };
 
   window.replayStartupSplash = window.runStartupSplash;
@@ -7544,6 +7544,115 @@
 
   // Trigger one clean initial render
   window.renderVideosNow();
+})();
+</script>
+
+<!-- QAAF PURE HARDWARE GPU ACCELERATED SPLASH ANIMATION -->
+<style>
+  @keyframes gpuRedBoxIn {
+    0% { transform: scale3d(0.65, 0.65, 1); opacity: 0; }
+    100% { transform: scale3d(1, 1, 1); opacity: 1; }
+  }
+  @keyframes gpuBorderFadeIn {
+    0%, 20% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+  @keyframes gpuQaafSlideIn {
+    0%, 22% { transform: translate3d(-480px, 0, 0); opacity: 0; }
+    35% { opacity: 1; }
+    62% { transform: translate3d(-90px, 0, 0); opacity: 1; }
+    100% { transform: translate3d(0, 0, 0); opacity: 1; }
+  }
+  @keyframes gpuTriSlideIn {
+    0%, 55% { transform: translate3d(-150px, 0, 0); }
+    100% { transform: translate3d(0, 0, 0); }
+  }
+  @keyframes gpuFlashPop {
+    0%, 56% { opacity: 0; transform: scale3d(0.4, 0.4, 1); }
+    63% { opacity: 0.85; transform: scale3d(1.2, 1.2, 1); }
+    78%, 100% { opacity: 0; transform: scale3d(1.8, 1.8, 1); }
+  }
+  @keyframes gpuBarRise {
+    0%, 62% { opacity: 0; transform: translate3d(0, 20px, 0); }
+    74%, 100% { opacity: 1; transform: translate3d(0, 0, 0); }
+  }
+  @keyframes gpuBarHalfFill {
+    0%, 68% { transform: scaleX(0); }
+    84% { transform: scaleX(0.85); }
+    100% { transform: scaleX(0.535); }
+  }
+
+  .gpu-anim-redbox {
+    transform-origin: 512px 358px;
+    will-change: transform, opacity;
+    animation: gpuRedBoxIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  .gpu-anim-border {
+    will-change: opacity;
+    animation: gpuBorderFadeIn 0.65s ease-out forwards;
+  }
+  .gpu-anim-qaaf {
+    will-change: transform, opacity;
+    animation: gpuQaafSlideIn 1.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  .gpu-anim-tri {
+    will-change: transform;
+    animation: gpuTriSlideIn 1.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  .gpu-anim-flash {
+    transform-origin: 400px 356px;
+    will-change: transform, opacity;
+    animation: gpuFlashPop 1.6s ease-out forwards;
+  }
+  .gpu-anim-bargroup {
+    will-change: transform, opacity;
+    animation: gpuBarRise 1.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  .gpu-anim-barfill {
+    transform-origin: 223px 554px;
+    will-change: transform;
+    animation: gpuBarHalfFill 2.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+</style>
+<script>
+(function activatePureGpuSplash() {
+  var splashTimer = null;
+  window.runStartupSplash = function() {
+    var modal = document.getElementById("startupSplashModal");
+    if (!modal) return;
+    if (splashTimer) clearTimeout(splashTimer);
+
+    modal.classList.remove("hidden");
+    modal.style.opacity = "1";
+
+    var redBox = document.getElementById("redBox");
+    var innerBorder = document.getElementById("innerBorder");
+    var triangleGrp = document.getElementById("triangleGrp");
+    var qaafGrp = document.getElementById("qaafGrp");
+    var impactFlash = document.getElementById("impactFlash");
+    var barGroup = document.getElementById("barGroup");
+    var barFill = document.getElementById("barFill");
+
+    if (redBox) { redBox.removeAttribute("transform"); redBox.setAttribute("class", "gpu-anim-redbox"); }
+    if (innerBorder) { innerBorder.setAttribute("class", "gpu-anim-border"); }
+    if (qaafGrp) { qaafGrp.removeAttribute("transform"); qaafGrp.setAttribute("class", "gpu-anim-qaaf"); }
+    if (triangleGrp) { triangleGrp.removeAttribute("transform"); triangleGrp.setAttribute("class", "gpu-anim-tri"); }
+    if (impactFlash) { impactFlash.removeAttribute("transform"); impactFlash.setAttribute("class", "gpu-anim-flash"); }
+    if (barGroup) { barGroup.removeAttribute("transform"); barGroup.setAttribute("class", "gpu-anim-bargroup"); }
+    if (barFill) {
+      barFill.setAttribute("x", "223");
+      barFill.setAttribute("width", "578");
+      barFill.setAttribute("class", "gpu-anim-barfill");
+    }
+
+    splashTimer = setTimeout(function() {
+      modal.style.opacity = "0";
+      setTimeout(function() { modal.classList.add("hidden"); }, 350);
+    }, 2500);
+  };
+
+  window.replayStartupSplash = window.runStartupSplash;
+  window.runStartupSplash();
 })();
 </script>
 
