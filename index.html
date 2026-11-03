@@ -1109,8 +1109,7 @@
           const thumbUrl = sh.customThumb || `https://i.ytimg.com/vi/${sh.ytId}/hqdefault.jpg`;
           shortsCardsHtml += `
             <div onclick="openVideoPlayer('${sh.id}')" class="w-40 sm:w-48 shrink-0 bg-[#12151c] rounded-2xl overflow-hidden border border-white/10 hover:border-red-500/60 transition cursor-pointer group relative aspect-[9/16] flex flex-col justify-end shadow-lg">
-              <img src="${categoryArtwork}" alt="" class="absolute inset-0 w-full h-full object-cover" />
-              <img src="${thumbUrl}" alt="" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition duration-300" onload="if(this.naturalWidth <= 120) { this.remove(); }" onerror="this.remove();" loading="lazy" />
+              <img src="${thumbUrl}" alt="" class="absolute inset-0 w-full h-full object-cover" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${categoryArtwork}';" />
               <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent"></div>
               <span class="absolute top-2.5 left-2.5 bg-red-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1 shadow">⚡ Short</span>
               <div class="relative z-10 p-3 text-left">
@@ -1146,8 +1145,7 @@
         card.className = `bg-[#131720]/95 hover:bg-[#1b212d] rounded-xl overflow-hidden border ${isPreferred ? 'border-emerald-500/60 shadow-lg shadow-emerald-950/30' : 'border-white/10'} transition group relative`;
         card.innerHTML = `
           <div onclick="openVideoPlayer('${video.id}')" class="relative aspect-video bg-slate-900 flex items-center justify-center overflow-hidden cursor-pointer">
-            <img src="${categoryArtwork}" alt="${video.title.replace(/"/g, '&quot;')}" class="absolute inset-0 w-full h-full object-cover opacity-100" />
-            <img src="${cardThumb}" alt="${video.title.replace(/"/g, '&quot;')}" class="absolute inset-0 w-full h-full object-cover opacity-95 group-hover:scale-105 transition duration-300" onload="if(this.naturalWidth <= 120) { this.remove(); }" onerror="this.remove();" loading="lazy" />
+            <img src="${cardThumb}" alt="" class="absolute inset-0 w-full h-full object-cover" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${categoryArtwork}';" />
 
             <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div class="w-12 h-12 rounded-full bg-red-600/95 group-hover:scale-110 transition flex items-center justify-center shadow-lg">
@@ -2973,7 +2971,6 @@
     syncPinDisplays();
     syncAccountUI();
     syncRegionalPromoBar();
-    renderVideos();
     renderGames();
     updateSupporterBadges();
     fetchHisnAlMuslimFromGitHub();
@@ -3820,8 +3817,6 @@
         }
       };
 
-      renderVideos();
-      window.renderAdminActiveVideosCatalog();
       updateNotifBadges();
     })();
   </script>
@@ -4895,7 +4890,6 @@
   };
 
   syncRegionalPromoBar();
-  renderVideos();
   checkCloudVersionAndSync();
 })();
 </script>
@@ -6238,7 +6232,6 @@
   }
 
   renderGames();
-  renderVideos();
 })();
 </script>
 <!-- QAAF TUBE v9.5 END -->
@@ -6422,7 +6415,7 @@
 
     evaluatedList.forEach(({ req, idx, ev }) => {
       if (adminReqColorFilter !== 'ALL' && ev.color !== adminReqColorFilter) return;
-      const safeTitle = (req.title || '').replace(/'/g, "\'");
+      const safeTitle = (req.title || '').replace(/'/g, "\\'");
       htmlOut += `
         <div class="border-2 ${ev.cardBorder} p-3 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-2 transition">
           <div class="min-w-0 flex-1 space-y-1">
@@ -7462,6 +7455,95 @@
 
   refreshSidebarUI();
   renderVideos();
+})();
+</script>
+
+<!-- QAAF MASTER PERFORMANCE & INSTANT SWIPE ENGINE -->
+<style>
+  * { -webkit-tap-highlight-color: transparent; }
+  .bg-islamic-family, .bg-islamic-kids {
+    background-image: none !important;
+    background-color: #080b11 !important;
+  }
+  #videoGrid > div {
+    content-visibility: auto;
+    contain-intrinsic-size: 250px;
+    will-change: auto;
+  }
+</style>
+<script>
+(function applyMasterPerformanceAndSwipeFix() {
+  // 1. Coalesce multiple synchronous renderVideos() calls into a single fast frame
+  var rawRender = window.renderVideos;
+  var renderScheduled = false;
+
+  window.renderVideosNow = function() {
+    if (rawRender) rawRender();
+  };
+
+  window.renderVideos = function() {
+    if (renderScheduled) return;
+    renderScheduled = true;
+    requestAnimationFrame(function() {
+      renderScheduled = false;
+      if (rawRender) rawRender();
+    });
+  };
+
+  // 2. Make the entire video player top bar, video edges, and title/channel area smoothly draggable downwards to minimize
+  var modalBox = document.getElementById("playerModalBox");
+  var topBar = document.getElementById("ytTopControlBar");
+  var scrollCont = document.getElementById("ytWatchScrollContainer");
+  var startY = 0;
+  var currentY = 0;
+  var dragging = false;
+
+  function onTouchStart(e) {
+    if (!e.touches || e.touches.length !== 1) return;
+    if (scrollCont && scrollCont.scrollTop > 5) return;
+    startY = e.touches[0].clientY;
+    currentY = startY;
+    dragging = true;
+  }
+
+  function onTouchMove(e) {
+    if (!dragging || !e.touches || e.touches.length !== 1) return;
+    currentY = e.touches[0].clientY;
+    var dy = currentY - startY;
+    var isFull = scrollCont && !scrollCont.classList.contains("hidden");
+    if (isFull && dy > 10 && (!scrollCont || scrollCont.scrollTop <= 0)) {
+      modalBox.style.transform = "translateY(" + Math.min(dy * 0.65, 200) + "px)";
+    }
+  }
+
+  function onTouchEnd() {
+    if (!dragging) return;
+    dragging = false;
+    var dy = currentY - startY;
+    var isFull = scrollCont && !scrollCont.classList.contains("hidden");
+    modalBox.style.transform = "";
+    if (isFull && dy > 50 && (!scrollCont || scrollCont.scrollTop <= 0)) {
+      window.minimizeToMiniPlayer();
+    } else if (!isFull && dy < -40) {
+      window.expandFromMiniPlayer();
+    }
+    startY = 0;
+    currentY = 0;
+  }
+
+  if (topBar) {
+    topBar.addEventListener("touchstart", onTouchStart, { passive: true });
+    topBar.addEventListener("touchmove", onTouchMove, { passive: true });
+    topBar.addEventListener("touchend", onTouchEnd, { passive: true });
+  }
+  if (scrollCont) {
+    scrollCont.addEventListener("touchstart", onTouchStart, { passive: true });
+    scrollCont.addEventListener("touchmove", onTouchMove, { passive: true });
+    scrollCont.addEventListener("touchend", onTouchEnd, { passive: true });
+  }
+
+  // Trigger one clean initial render
+  window.renderVideosNow();
 })();
 </script>
 
