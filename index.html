@@ -3373,7 +3373,7 @@
         if (modal && box && aspect) {
           modal.className = 'fixed bottom-12 right-3 z-40 w-72 sm:w-80 shadow-2xl pointer-events-auto';
           box.className = 'w-full bg-[#141414] rounded-2xl overflow-hidden border-2 border-emerald-500/60 shadow-2xl flex flex-col';
-          aspect.className = 'relative aspect-video h-40 bg-black overflow-hidden flex items-center justify-center';
+          aspect.className = 'relative w-full aspect-video bg-black overflow-hidden flex items-center justify-center';
           if (scrollWrap) scrollWrap.classList.add('hidden');
           if (minBtn) minBtn.classList.add('hidden');
           if (miniTitle) {
@@ -4743,10 +4743,10 @@
         const originParam = window.location.protocol.startsWith('http') ? `&origin=${encodeURIComponent(window.location.origin)}` : '';
         const embedUrl = `https://www.youtube-nocookie.com/embed/${video.ytId}?autoplay=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&vq=hd1080${originParam}`;
         // Use location.replace so iframe NEVER adds a blank history state that turns black on Back!
-        if (ytIframe.contentWindow) {
-          ytIframe.contentWindow.location.replace(embedUrl);
-        } else {
-          ytIframe.src = embedUrl;
+        // Recreate iframe cleanly so browser Back button NEVER navigates iframe back to about:blank!
+        const parentCont = document.getElementById('ytPlayerContainer');
+        if (parentCont) {
+          parentCont.innerHTML = `<iframe id="ytIframe" class="w-full h-full" src="${embedUrl}" title="QAAF YouTube Player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`;
         }
       }
     } else {
@@ -4766,43 +4766,19 @@
     }
   };
 
-  // Handle Mobile Hardware / Browser Back Button Seamlessly
-  let qaafBackTrapTimer = null;
-  const origMinFn = window.minimizeToMiniPlayer;
-  window.minimizeToMiniPlayer = function() {
-    if (origMinFn) origMinFn();
-    // Keep YouTube playing when minimized on mobile
-    [50, 200, 500, 900].forEach(ms => {
-      setTimeout(() => { if (typeof sendYouTubeCommand === 'function') sendYouTubeCommand('playVideo'); }, ms);
-    });
-  };
-
-  const origExpFn = window.expandFromMiniPlayer;
-  window.expandFromMiniPlayer = function() {
-    if (origExpFn) origExpFn();
-    try { history.pushState({ qaafFullWatch: true }, ''); } catch (e) {}
-    [50, 250].forEach(ms => {
-      setTimeout(() => { if (typeof sendYouTubeCommand === 'function') sendYouTubeCommand('playVideo'); }, ms);
-    });
-  };
-
-  window.addEventListener('popstate', function(e) {
+  // Handle Mobile Hardware / Browser Back Button
+  window.addEventListener('popstate', function() {
     const modal = document.getElementById('playerModal');
-    if (!modal || modal.classList.contains('hidden')) return;
-
-    const scrollWrap = document.getElementById('ytWatchScrollContainer');
-    const isCurrentlyFull = scrollWrap && !scrollWrap.classList.contains('hidden');
-
-    if (isCurrentlyFull && typeof window.minimizeToMiniPlayer === 'function') {
-      window.minimizeToMiniPlayer();
-      // Push state back so the page stays alive while Mini-Player runs in the corner
-      try { history.pushState({ qaafMiniPlayer: true }, ''); } catch (err) {}
-    } else {
-      // If already in Mini-Player, keep it playing unless user taps ✕ Close
-      [100, 300].forEach(ms => {
-        setTimeout(() => { if (typeof sendYouTubeCommand === 'function') sendYouTubeCommand('playVideo'); }, ms);
-      });
-      try { history.pushState({ qaafMiniPlayer: true }, ''); } catch (err) {}
+    if (modal && !modal.classList.contains('hidden')) {
+      const scrollWrap = document.getElementById('ytWatchScrollContainer');
+      const isCurrentlyFull = scrollWrap && !scrollWrap.classList.contains('hidden');
+      if (isCurrentlyFull && typeof window.minimizeToMiniPlayer === 'function') {
+        // Minimize to corner Mini-Player just like YouTube!
+        window.minimizeToMiniPlayer();
+        try { history.pushState({ qaafMiniPlayer: true }, ''); } catch (e) {}
+      } else {
+        closeVideoPlayer();
+      }
     }
   });
 
@@ -6473,6 +6449,131 @@
   window.renderAdminParentRequests();
 })();
 </script>
+<!-- QAAF SAFE SPEED OPTIMIZER & SWIPE-DOWN MINI-PLAYER -->
+<style>
+  #videoGrid > div {
+    content-visibility: auto;
+    contain-intrinsic-size: 260px;
+  }
+  .bg-islamic-family, .bg-islamic-kids {
+    background-attachment: scroll !important;
+  }
+  #playerModalBox {
+    touch-action: pan-y;
+    transition: transform 0.22s ease-out;
+  }
+</style>
+<script>
+(function enableSpeedBoostAndSwipeMinimize() {
+  // A. Debounce renderVideos during startup so it doesn't run 7 times in a row and slow down the phone
+  let isStartupPhase = true;
+  let startupTimer = null;
+  const realRenderVideos = window.renderVideos;
+
+  window.renderVideos = function() {
+    if (isStartupPhase) {
+      clearTimeout(startupTimer);
+      startupTimer = setTimeout(() => {
+        isStartupPhase = false;
+        if (realRenderVideos) realRenderVideos();
+      }, 60);
+      return;
+    }
+    if (realRenderVideos) realRenderVideos();
+  };
+
+  setTimeout(() => { isStartupPhase = false; }, 400);
+
+  // B. Ensure Mini-Player keeps video visible & playing when Back button or Minimize is pressed
+  const baseMin = window.minimizeToMiniPlayer;
+  window.minimizeToMiniPlayer = function() {
+    if (baseMin) baseMin();
+    const box = document.getElementById('playerModalBox');
+    if (box) box.style.transform = '';
+    [80, 280, 600].forEach(ms => {
+      setTimeout(() => {
+        if (typeof sendYouTubeCommand === 'function') sendYouTubeCommand('playVideo');
+      }, ms);
+    });
+  };
+
+  const baseExp = window.expandFromMiniPlayer;
+  window.expandFromMiniPlayer = function() {
+    if (baseExp) baseExp();
+    const box = document.getElementById('playerModalBox');
+    if (box) box.style.transform = '';
+    try { history.pushState({ qaafVideoOpen: true }, ''); } catch (e) {}
+    [80, 280].forEach(ms => {
+      setTimeout(() => {
+        if (typeof sendYouTubeCommand === 'function') sendYouTubeCommand('playVideo');
+      }, ms);
+    });
+  };
+
+  // C. YouTube-style Pull-Down / Swipe-Down Gesture on Player Top Bar & Info Area to Minimize
+  let touchStartY = 0;
+  let touchCurrentY = 0;
+  let isDraggingPlayer = false;
+
+  function attachSwipeHandlers() {
+    const topBar = document.getElementById('ytTopControlBar');
+    const infoBar = document.querySelector('#ytWatchScrollContainer > div:first-child');
+    const box = document.getElementById('playerModalBox');
+    if (!topBar || !box) return;
+
+    // Add a visual drag handle pill at the top center of player
+    if (!document.getElementById('ytSwipeDragHandle')) {
+      const handle = document.createElement('div');
+      handle.id = 'ytSwipeDragHandle';
+      handle.className = 'w-10 h-1 bg-white/30 rounded-full mx-auto my-0.5 pointer-events-none';
+      topBar.insertBefore(handle, topBar.children[1]);
+    }
+
+    [topBar, infoBar].forEach(targetEl => {
+      if (!targetEl) return;
+      targetEl.addEventListener('touchstart', function(e) {
+        if (!e.touches || e.touches.length !== 1) return;
+        touchStartY = e.touches[0].clientY;
+        touchCurrentY = touchStartY;
+        isDraggingPlayer = true;
+      }, { passive: true });
+
+      targetEl.addEventListener('touchmove', function(e) {
+        if (!isDraggingPlayer || !e.touches || e.touches.length !== 1) return;
+        touchCurrentY = e.touches[0].clientY;
+        const deltaY = touchCurrentY - touchStartY;
+        const scrollWrap = document.getElementById('ytWatchScrollContainer');
+        const isFull = scrollWrap && !scrollWrap.classList.contains('hidden');
+        if (isFull && deltaY > 10) {
+          box.style.transform = `translateY(${Math.min(deltaY * 0.55, 160)}px)`;
+        }
+      }, { passive: true });
+
+      targetEl.addEventListener('touchend', function() {
+        if (!isDraggingPlayer) return;
+        isDraggingPlayer = false;
+        const deltaY = touchCurrentY - touchStartY;
+        const scrollWrap = document.getElementById('ytWatchScrollContainer');
+        const isFull = scrollWrap && !scrollWrap.classList.contains('hidden');
+        box.style.transform = '';
+
+        if (isFull && deltaY > 65) {
+          // Swiped down -> Minimize to Mini-Player!
+          window.minimizeToMiniPlayer();
+        } else if (!isFull && deltaY < -45) {
+          // Swiped up on Mini-Player -> Expand to Full Player!
+          window.expandFromMiniPlayer();
+        }
+        touchStartY = 0;
+        touchCurrentY = 0;
+      }, { passive: true });
+    });
+  }
+
+  attachSwipeHandlers();
+})();
+</script>
+
 </body>
 
 
