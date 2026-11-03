@@ -728,7 +728,7 @@
     <div class="bg-[#181818] border border-slate-700 rounded-2xl max-w-lg w-full p-5 shadow-2xl max-h-[92vh] overflow-y-auto">
       <div id="pinStepView" class="text-center">
         <h3 class="text-base font-bold text-white">🔒 Enter 6-Digit Parent PIN</h3>
-        <p class="text-xs text-slate-400 mt-1 mb-4">Current Active PIN: <strong id="currentPinHint" class="text-emerald-400">123456</strong></p>
+        <p class="text-xs text-slate-400 mt-1 mb-4">Security Status: <strong id="currentPinHint" class="text-emerald-400">•••••• (Protected)</strong></p>
         <input id="pinInput" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" class="w-48 text-center text-2xl tracking-[0.4em] bg-black border border-slate-600 rounded-xl py-2.5 text-white" />
         <p id="pinError" class="text-xs text-red-400 mt-2 hidden">❌ Incorrect 6-Digit PIN!</p>
         <div class="flex justify-center gap-2 mt-5">
@@ -2805,8 +2805,12 @@
     function requestParentGameInstall(id) { pendingGameIdToAuthorize = id; openParentalGate('reinstall_game'); }
 
     function syncPinDisplays() {
-      document.getElementById('currentPinHint').innerText = parentPin;
-      document.getElementById('settingsPinDisplay').innerText = parentPin;
+      const hintEl = document.getElementById('currentPinHint');
+      if (hintEl) {
+        hintEl.innerHTML = `•••••• (Protected) • <button type="button" onclick="if(window.toggleForgotPinBox) window.toggleForgotPinBox();" class="text-amber-300 underline font-bold ml-1">❓ Forgot PIN?</button>`;
+      }
+      const settingsPinEl = document.getElementById('settingsPinDisplay');
+      if (settingsPinEl) settingsPinEl.innerText = parentPin;
     }
 
     function openParentalGate(purpose) {
@@ -3550,7 +3554,7 @@
           this.classList.add('hidden');
           renderVideos();
         });
-        document.getElementById('qaafNotifBellBtn').addEventListener('click', openUserNotificationsModal);
+        document.getElementById('qaafNotifBellBtn').addEventListener('click', function() { if (window.openUserNotificationsModal) window.openUserNotificationsModal(); });
       }
 
       if (!document.getElementById('userNotifModal')) {
@@ -6238,7 +6242,215 @@
 })();
 </script>
 <!-- QAAF TUBE v9.5 END -->
+
+<script>
+(function activateSmartThreeColorRequestScanner() {
+  // Ensure PIN is hidden immediately on load
+  if (typeof syncPinDisplays === 'function') syncPinDisplays();
+
+  const RED_FORBIDDEN_WORDS = [
+    'music', 'musical', 'song', 'dance', 'movie', 'concert', 'remix', 'dj', 'bollywood', 'hollywood',
+    'qawwali', 'qawali', 'urs', 'chadar poshi', 'matam', 'noha', 'majlis', 'aamil baba', 'kala jadu',
+    'گانا', 'موسیقی', 'قوالی', 'عرس', 'چادر پوشی', 'ماتم', 'نوحہ', 'مجلس', 'عامل بابا', 'کالا جادو', 'ڈانس', 'فلم'
+  ];
+
+  const YELLOW_SENSITIVE_WORDS = [
+    'taweez', 'taveez', 'mazar', 'dargah', 'shirk', 'biddat', 'bidah', 'shia', 'ahle tashi',
+    'firqa', 'aqeedah', 'aqaid', 'debate', 'exposed', 'تعویذ', 'مزار', 'درگاہ', 'شرک', 'بدعت',
+    'شیعہ', 'فرقہ', 'عقیدہ', 'مناظرہ'
+  ];
+
+  const GREEN_ISLAMIC_KEYWORDS = [
+    'quran', 'surah', 'ayah', 'ayat', 'tilawat', 'recitation', 'tajweed', 'qari', 'allah', 'prophet',
+    'nabi', 'rasool', 'muhammad', 'seerah', 'hadith', 'hadees', 'sunnah', 'dua', 'azkar', 'namaz',
+    'salah', 'wudu', 'ramadan', 'hajj', 'umrah', 'makkah', 'madinah', 'masjid', 'islam', 'islamic',
+    'muslim', 'iman', 'halal', 'bayan', 'khutba', 'tafseer', 'tafsir', 'mufti', 'sheikh', 'shaykh',
+    'molana', 'maulana', 'ulama', 'scholar', 'dr zakir', 'farhat hashmi', 'tariq masood', 'shamail',
+    'youth club', 'omar & hana', 'omar and hana', 'noorify', 'youqaria', 'moral vision', 'abdul bari',
+    'ghulam rasool', 'gulam rasool', 'kids land', 'tiny mumins', 'freequran', 'islah', 'tarbiah',
+    'dar ul ahsan', 'paigham', 'iqra', 'lisan ul quran', 'dibirov', 'zaid patel', 'قرآن', 'سورۃ',
+    'سورہ', 'تلاوت', 'تجوید', 'قاری', 'اللہ', 'نبی', 'رسول', 'حدیث', 'سنت', 'دعا', 'نماز', 'وضو',
+    'رمضان', 'حج', 'مکہ', 'مدینہ', 'مسجد', 'اسلام', 'اسلامی', 'مسلمان', 'ایمان', 'حلال', 'بیان',
+    'خطبہ', 'تفسیر', 'مفتی', 'شیخ', 'مولانا', 'علماء', 'اخلاقی', 'تربیت', 'قصص', 'انبیاء'
+  ];
+
+  window.evaluateRequestColorCategory = function(req) {
+    const text = (`${req.title || ''} ${req.channel || ''}`).toLowerCase();
+
+    // 1. Check RED (Forbidden Music / Shirk / Un-Islamic terms)
+    for (const rw of RED_FORBIDDEN_WORDS) {
+      if (text.includes(rw)) {
+        return {
+          color: 'RED',
+          badgeClass: 'bg-rose-500/20 border-rose-500 text-rose-300',
+          cardBorder: 'border-rose-500/70 bg-rose-950/20',
+          label: `🔴 RED (System Rejected) — Forbidden Term Detected: "${rw}"`
+        };
+      }
+    }
+
+    // 2. Check YELLOW (Sensitive Aqeedah / Sectarian terms)
+    for (const yw of YELLOW_SENSITIVE_WORDS) {
+      if (text.includes(yw)) {
+        return {
+          color: 'YELLOW',
+          badgeClass: 'bg-amber-500/20 border-amber-400 text-amber-300',
+          cardBorder: 'border-amber-500/70 bg-amber-950/20',
+          label: `🟡 YELLOW (Observation) — Sensitive Topic: "${yw}" (Admin Check Required)`
+        };
+      }
+    }
+
+    // 3. Check GREEN (Matches Islamic / Quran / Moral Kids keywords)
+    for (const gw of GREEN_ISLAMIC_KEYWORDS) {
+      if (text.includes(gw)) {
+        return {
+          color: 'GREEN',
+          badgeClass: 'bg-emerald-500/20 border-emerald-400 text-emerald-300',
+          cardBorder: 'border-emerald-500/70 bg-emerald-950/15',
+          label: `🟢 GREEN (System Approved) — Verified Islamic / Halal Match ("${gw}")`
+        };
+      }
+    }
+
+    // 4. Otherwise YELLOW (Off-Topic / Non-Islamic like Medical, Tech, General)
+    return {
+      color: 'YELLOW',
+      badgeClass: 'bg-amber-500/20 border-amber-400 text-amber-300',
+      cardBorder: 'border-amber-500/70 bg-amber-950/20',
+      label: `🟡 YELLOW (Off-Topic Warning) — No Islamic Keywords Found (Verify if Relevant)`
+    };
+  };
+
+  let adminReqColorFilter = 'ALL';
+  window.setAdminReqColorFilter = function(colorKey) {
+    adminReqColorFilter = colorKey;
+    window.renderAdminParentRequests();
+  };
+
+  window.adminBatchApproveAllGreen = function() {
+    let count = 0;
+    const remaining = [];
+    parentRequestsQueue.forEach(req => {
+      const ev = window.evaluateRequestColorCategory(req);
+      if (ev.color === 'GREEN') {
+        videosData.unshift({
+          id: 'v_approved_' + Date.now() + '_' + count,
+          title: req.title,
+          channel: req.channel,
+          lang: req.lang || 'ur',
+          region: (req.lang || 'ur').toUpperCase(),
+          category: req.category || 'kids_cartoon',
+          kidsSafe: (req.category !== 'bayan'),
+          ytId: req.ytId,
+          isCustomAdded: true,
+          duration: '12:00',
+          views: 250,
+          createdAt: Math.floor(Date.now() / 1000)
+        });
+        count++;
+      } else {
+        remaining.push(req);
+      }
+    });
+    if (count === 0) {
+      alert('No GREEN requests to approve.');
+      return;
+    }
+    parentRequestsQueue = remaining;
+    localStorage.setItem('qaaf_parent_requests', JSON.stringify(parentRequestsQueue));
+    localStorage.setItem('qaaf_videos_data', JSON.stringify(videosData));
+    window.renderAdminParentRequests();
+    renderVideos();
+    if (window.qaafCloudSync) qaafCloudSync.pushState(`Approved ${count} Green Requests`);
+    showSyncToast(`✅ Approved ${count} Green Islamic request(s)!`);
+  };
+
+  window.adminBatchRejectNonGreen = function() {
+    const before = parentRequestsQueue.length;
+    parentRequestsQueue = parentRequestsQueue.filter(req => window.evaluateRequestColorCategory(req).color === 'GREEN');
+    const removed = before - parentRequestsQueue.length;
+    if (removed === 0) {
+      alert('No Yellow or Red requests to remove.');
+      return;
+    }
+    localStorage.setItem('qaaf_parent_requests', JSON.stringify(parentRequestsQueue));
+    window.renderAdminParentRequests();
+    if (window.qaafCloudSync) qaafCloudSync.pushState(`Rejected ${removed} Off-Topic/Red Requests`);
+    showSyncToast(`🗑️ Removed ${removed} Yellow/Red request(s)!`);
+  };
+
+  window.renderAdminParentRequests = function() {
+    const container = document.getElementById('adminParentRequestsList');
+    const qLen = (parentRequestsQueue && parentRequestsQueue.length) || 0;
+    const badge = document.getElementById('adminReqCountBadge');
+    if (badge) badge.innerText = qLen;
+    const sideReq = document.getElementById('admSidebarReqBadge');
+    if (sideReq) sideReq.innerText = qLen;
+    const headerBadge = document.getElementById('adminFlagCountBadge');
+    if (headerBadge) headerBadge.innerText = flaggedVideosQueue.length + qLen;
+
+    if (!container) return;
+    if (qLen === 0) {
+      container.innerHTML = `<p class="text-slate-400 py-3 text-center">✅ No pending parent requests.</p>`;
+      return;
+    }
+
+    let greenCount = 0, yellowCount = 0, redCount = 0;
+    const evaluatedList = parentRequestsQueue.map((req, idx) => {
+      const ev = window.evaluateRequestColorCategory(req);
+      if (ev.color === 'GREEN') greenCount++;
+      else if (ev.color === 'YELLOW') yellowCount++;
+      else redCount++;
+      return { req, idx, ev };
+    });
+
+    let htmlOut = `
+      <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-2.5 mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div class="flex flex-wrap items-center gap-1.5">
+          <button type="button" onclick="setAdminReqColorFilter('ALL')" class="px-2.5 py-1 rounded-lg text-[11px] font-extrabold ${adminReqColorFilter === 'ALL' ? 'bg-white text-black' : 'bg-slate-800 text-slate-300'}">All (${qLen})</button>
+          <button type="button" onclick="setAdminReqColorFilter('GREEN')" class="px-2.5 py-1 rounded-lg text-[11px] font-extrabold ${adminReqColorFilter === 'GREEN' ? 'bg-emerald-500 text-black' : 'bg-emerald-950/60 border border-emerald-500/40 text-emerald-300'}">🟢 Green: Islamic (${greenCount})</button>
+          <button type="button" onclick="setAdminReqColorFilter('YELLOW')" class="px-2.5 py-1 rounded-lg text-[11px] font-extrabold ${adminReqColorFilter === 'YELLOW' ? 'bg-amber-400 text-black' : 'bg-amber-950/60 border border-amber-500/40 text-amber-300'}">🟡 Yellow: Off-Topic / Check (${yellowCount})</button>
+          <button type="button" onclick="setAdminReqColorFilter('RED')" class="px-2.5 py-1 rounded-lg text-[11px] font-extrabold ${adminReqColorFilter === 'RED' ? 'bg-rose-500 text-white' : 'bg-rose-950/60 border border-rose-500/40 text-rose-300'}">🔴 Red: Forbidden (${redCount})</button>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button type="button" onclick="adminBatchApproveAllGreen()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-extrabold shadow">✅ Approve All Green</button>
+          <button type="button" onclick="adminBatchRejectNonGreen()" class="bg-rose-600/80 hover:bg-rose-600 text-white px-2.5 py-1 rounded-lg text-[10px] font-extrabold shadow">🗑️ Clear Yellow/Red</button>
+        </div>
+      </div>
+    `;
+
+    evaluatedList.forEach(({ req, idx, ev }) => {
+      if (adminReqColorFilter !== 'ALL' && ev.color !== adminReqColorFilter) return;
+      const safeTitle = (req.title || '').replace(/'/g, "\'");
+      htmlOut += `
+        <div class="border-2 ${ev.cardBorder} p-3 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-2 transition">
+          <div class="min-w-0 flex-1 space-y-1">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="border ${ev.badgeClass} px-2.5 py-0.5 rounded-full text-[10px] font-extrabold shadow">
+                ${ev.label}
+              </span>
+            </div>
+            <p class="font-extrabold text-white text-xs sm:text-sm truncate">${req.title}</p>
+            <p class="text-[11px] text-slate-300">Channel: <strong class="text-blue-300">${req.channel}</strong> • Lang: ${(req.lang || 'GLOBAL').toUpperCase()} • Cat: ${req.category}</p>
+          </div>
+          <div class="flex flex-wrap gap-1.5 shrink-0">
+            <button type="button" onclick="adminPreviewRequestedVideo('${req.ytId}', '${safeTitle}')" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-[11px] font-bold shadow">▶ Listen / Preview</button>
+            <button type="button" onclick="adminHandleParentRequest(${idx}, 'approve')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-[11px] font-extrabold shadow">✅ Approve Live</button>
+            <button type="button" onclick="adminHandleParentRequest(${idx}, 'reject')" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-1.5 rounded-lg text-[11px] font-extrabold shadow">🚫 Reject</button>
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = htmlOut;
+  };
+
+  window.renderAdminParentRequests();
+})();
+</script>
 </body>
+
 
 
 
