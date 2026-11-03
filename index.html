@@ -353,7 +353,7 @@
         <!-- HISN AL-MUSLIM DUA OVERLAY -->
         <div id="duaAdOverlay" class="hidden absolute inset-0 z-40 bg-gradient-to-br from-emerald-950 via-slate-900 to-blue-950 flex flex-col items-center justify-between p-3 sm:p-5 text-center overflow-y-auto">
           <div class="bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold shrink-0">
-            🔇 Ad Muted • Hisn al-Muslim Daily Dua (<span id="duaLangBadge">EN</span>)
+            🕌 Hisn al-Muslim • Daily Sunnah Dua (<span id="duaLangBadge">EN</span>)
           </div>
           <div class="my-auto py-1 flex flex-col items-center max-w-xl w-full px-1">
             <h3 id="duaHeadingText" class="text-xs sm:text-base font-extrabold text-amber-300 mb-1"></h3>
@@ -7653,6 +7653,127 @@
 
   window.replayStartupSplash = window.runStartupSplash;
   window.runStartupSplash();
+})();
+</script>
+
+<!-- QAAF AUTOMATIC AD-TO-DUA ENGINE (AUTO NEXT DUA ON LONG/DOUBLE ADS & AUTO CLOSE) -->
+<script>
+(function initAutomaticAdToDuaEngine() {
+  var duaRotateInterval = null;
+  var duaAutoCloseTimer = null;
+
+  // Hide the manual skip button permanently so it works 100% automatically
+  var skipBtn = document.getElementById("skipAdBtn");
+  if (skipBtn) {
+    skipBtn.disabled = true;
+    skipBtn.onclick = null;
+    skipBtn.className = "bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 px-3.5 py-1.5 rounded-xl font-extrabold text-xs pointer-events-none";
+    skipBtn.innerText = "✨ Auto-Resuming Video...";
+  }
+
+  function clearDuaTimers() {
+    if (adCountdownTimer) { clearInterval(adCountdownTimer); adCountdownTimer = null; }
+    if (duaRotateInterval) { clearInterval(duaRotateInterval); duaRotateInterval = null; }
+    if (duaAutoCloseTimer) { clearTimeout(duaAutoCloseTimer); duaAutoCloseTimer = null; }
+  }
+
+  // Start showing Duas automatically while ad is active
+  window.startAutomaticDuaCover = function(estimatedDurationSecs) {
+    if (document.getElementById("playerModal").classList.contains("hidden")) return;
+    clearDuaTimers();
+
+    var overlay = document.getElementById("duaAdOverlay");
+    var statusPill = document.getElementById("skipAdBtn");
+    if (!overlay) return;
+
+    showRandomHisnDua();
+    overlay.classList.remove("hidden");
+    playCurrentDuaAudio();
+
+    // If the ad is long or a double ad, automatically advance to the next Dua every 6 seconds!
+    duaRotateInterval = setInterval(function() {
+      if (overlay.classList.contains("hidden")) {
+        clearDuaTimers();
+        return;
+      }
+      if (!("speechSynthesis" in window) || !window.speechSynthesis.speaking) {
+        showRandomHisnDua();
+        playCurrentDuaAudio();
+      }
+    }, 6000);
+
+    // If a duration is provided (or simulated), count down and auto-close without any user click
+    if (estimatedDurationSecs && estimatedDurationSecs > 0) {
+      var remaining = estimatedDurationSecs;
+      if (statusPill) statusPill.innerText = "🕌 Reciting Dua (" + remaining + "s)...";
+      adCountdownTimer = setInterval(function() {
+        remaining--;
+        if (remaining > 0) {
+          if (statusPill) statusPill.innerText = "🕌 Reciting Dua (" + remaining + "s)...";
+        } else {
+          clearInterval(adCountdownTimer);
+          adCountdownTimer = null;
+          // Wait if speech is finishing, then auto-close
+          if ("speechSynthesis" in window && window.speechSynthesis.speaking) {
+            if (statusPill) statusPill.innerText = "🔉 Completing Dua...";
+            var waitSpeech = setInterval(function() {
+              if (!window.speechSynthesis.speaking) {
+                clearInterval(waitSpeech);
+                window.finishAutomaticDuaCover();
+              }
+            }, 250);
+          } else {
+            window.finishAutomaticDuaCover();
+          }
+        }
+      }, 1000);
+    } else {
+      if (statusPill) statusPill.innerText = "🕌 Hisn al-Muslim Dua Active...";
+    }
+  };
+
+  window.finishAutomaticDuaCover = function() {
+    clearDuaTimers();
+    skipAdAndResume();
+  };
+
+  // Override triggerAdSimulation to use the new 100% automatic multi-Dua engine (default 10s to demonstrate auto-next Dua rotation)
+  window.triggerAdSimulation = function(customSecs) {
+    if (document.getElementById("playerModal").classList.contains("hidden")) {
+      openVideoPlayer(videosData[0] ? videosData[0].id : "v1");
+    }
+    if (activePlayerEngine === "youtube") {
+      wasYoutubePlayingBeforeAd = true;
+      sendYouTubeCommand("mute");
+    }
+    window.startAutomaticDuaCover(customSecs || 10);
+  };
+
+  var origSkipResume = window.skipAdAndResume;
+  window.skipAdAndResume = function() {
+    clearDuaTimers();
+    if (activePlayerEngine === "youtube") {
+      sendYouTubeCommand("unMute");
+      sendYouTubeCommand("playVideo");
+    }
+    if (origSkipResume) origSkipResume();
+  };
+
+  // Listen for real-time Ad Start / Ad End signals from React Native WebView Injected Sensor or YouTube IFrame messages
+  window.addEventListener("message", function(e) {
+    if (!e.data) return;
+    var data = e.data;
+    if (typeof data === "string") {
+      try { data = JSON.parse(data); } catch (err) { return; }
+    }
+    // 1. Direct signal from our React Native WebView internal ad sensor
+    if (data.type === "QAAF_YT_AD_STARTED") {
+      sendYouTubeCommand("mute");
+      window.startAutomaticDuaCover(0); // stays open as long as ad runs, rotating Duas every 6s
+    } else if (data.type === "QAAF_YT_AD_ENDED") {
+      window.finishAutomaticDuaCover();
+    }
+  });
 })();
 </script>
 
