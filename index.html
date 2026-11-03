@@ -110,45 +110,7 @@
 <body id="appBody" class="bg-islamic-family min-h-screen flex flex-col justify-between pb-28 transition-colors duration-500">
 
   <!-- STARTUP LOGO ANIMATION SPLASH SCREEN -->
-  <div id="startupSplashModal" class="fixed inset-0 z-[100] bg-[#050507] flex flex-col items-center justify-center p-6 transition-opacity duration-500" dir="ltr">
-    <div class="relative flex flex-col items-center">
-      <svg id="splashSvgNode" class="w-48 sm:w-60 h-auto drop-shadow-2xl overflow-visible" viewBox="0 0 500 350" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="splashQaafGrad" x1="385" y1="65" x2="145" y2="285" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stop-color="#00FF7B"/>
-            <stop offset="42%" stop-color="#00DF89"/>
-            <stop offset="72%" stop-color="#0099DF"/>
-            <stop offset="100%" stop-color="#1E78FF"/>
-          </linearGradient>
-        </defs>
-        <g class="anim-red-box">
-          <path d="M 480,175 C 480,238 475,278 463,296 C 450,315 415,323 250,323 C 85,323 50,315 37,296 C 25,278 20,238 20,175 C 20,112 25,72 37,54 C 50,35 85,27 250,27 C 415,27 450,35 463,54 C 475,72 480,112 480,175 Z" fill="#EE1D23"/>
-        </g>
-        <g class="anim-triangle-left">
-          <polygon points="170,118 170,256 290,187" fill="#FFFFFF"/>
-        </g>
-        <g class="anim-qaaf-right">
-          <g fill="#FFFFFF">
-            <path d="M 264,104 L 303,64 L 335,88 L 348,64 L 392,94 L 368,125 L 331,102 L 302,129 Z"/>
-            <path fill-rule="evenodd" clip-rule="evenodd" d="M 342,202 C 320,202 292,199 281,182 C 271,166 280,127 318,123 C 356,119 385,147 386,192 C 387,238 348,278 282,300 C 218,321 156,306 142,265 C 134,242 142,212 156,191 C 158,188 161,190 159,194 C 148,217 148,242 162,257 C 182,278 232,275 282,256 C 332,237 368,208 369,184 C 371,196 364,213 356,222 C 363,210 364,198 359,193 C 354,199 348,202 342,202 Z M 326,151 C 311,151 304,160 307,168 C 310,175 327,176 346,174 C 343,159 336,151 326,151 Z"/>
-          </g>
-          <g class="anim-qaaf-color-cycle">
-            <path d="M 264,104 L 303,64 L 335,88 L 348,64 L 392,94 L 368,125 L 331,102 L 302,129 Z" fill="#00FF7B"/>
-            <path fill-rule="evenodd" clip-rule="evenodd" d="M 342,202 C 320,202 292,199 281,182 C 271,166 280,127 318,123 C 356,119 385,147 386,192 C 387,238 348,278 282,300 C 218,321 156,306 142,265 C 134,242 142,212 156,191 C 158,188 161,190 159,194 C 148,217 148,242 162,257 C 182,278 232,275 282,256 C 332,237 368,208 369,184 C 371,196 364,213 356,222 C 363,210 364,198 359,193 C 354,199 348,202 342,202 Z M 326,151 C 311,151 304,160 307,168 C 310,175 327,176 346,174 C 343,159 336,151 326,151 Z" fill="url(#splashQaafGrad)"/>
-          </g>
-        </g>
-      </svg>
-      <div class="mt-3 text-center">
-        <div class="text-2xl font-extrabold tracking-tight flex items-center justify-center gap-1.5">
-          <span class="text-white">QAAF</span><span class="text-slate-600 font-light">|</span><span class="text-emerald-400">Tube</span>
-        </div>
-        <p class="text-xs text-slate-400 mt-1">Muslim Family & Kids Hub • v8.6 HD</p>
-      </div>
-      <div class="w-44 h-1 bg-slate-800 rounded-full overflow-hidden mt-4">
-        <div id="splashProgressBar" class="h-full bg-gradient-to-r from-emerald-400 to-blue-500 w-0 transition-all duration-300"></div>
-      </div>
-    </div>
-  </div>
+  <div id="startupSplashModal" class="fixed inset-0 z-[100] bg-[#050507] flex flex-col items-center justify-center p-6 transition-opacity duration-500" dir="ltr"></div>
 
   <!-- TOP SIMULATOR TEST BAR -->
   <div class="bg-slate-900/95 border-b border-slate-800 px-2.5 py-1 flex flex-wrap items-center justify-between gap-1.5 text-[11px]" dir="ltr">
@@ -2905,13 +2867,7 @@
 
     function closeParentModal() { document.getElementById('parentModal').classList.add('hidden'); }
 
-    function runStartupSplash() {
-      const modal = document.getElementById('startupSplashModal');
-      const bar = document.getElementById('splashProgressBar');
-      modal.classList.remove('hidden');
-      modal.style.opacity = '1';
-      bar.style.width = '25%';
-      setTimeout(() => { bar.style.width = '80%'; }, 600);
+    function runStartupSplash() {}, 600);
       setTimeout(() => { bar.style.width = '100%'; }, 1500);
       setTimeout(() => { modal.style.opacity = '0'; setTimeout(() => modal.classList.add('hidden'), 400); }, 2000);
     }
@@ -4757,7 +4713,131 @@
   window.runStartupSplash();
 })();
 </script>
+
+<script>
+(function fixAutoSkipDuaAndBackMinimize() {
+  // A. FIX DUA AD: AUTO-SKIP AUTOMATICALLY WHEN 5s TIMER (OR DUA AUDIO) FINISHES
+  window.triggerAdSimulation = function() {
+    if (document.getElementById('playerModal').classList.contains('hidden')) openVideoPlayer(videosData[0]?.id || 'v1');
+
+    const safeAudio = document.getElementById('safePlayerAudio');
+    if (activePlayerEngine === 'safe') {
+      if ((safeAudio && !safeAudio.paused) || isHalalVoiceSpeaking) {
+        wasSafePlayingBeforeAd = true;
+        if (safeAudio) safeAudio.pause();
+        stopHalalVoiceRecitation();
+      } else {
+        wasSafePlayingBeforeAd = false;
+      }
+    } else if (activePlayerEngine === 'youtube') {
+      wasYoutubePlayingBeforeAd = true;
+      sendYouTubeCommand('pauseVideo');
+    }
+
+    showRandomHisnDua();
+    const overlay = document.getElementById('duaAdOverlay');
+    const skipBtn = document.getElementById('skipAdBtn');
+    overlay.classList.remove('hidden');
+
+    let secs = 5;
+    skipBtn.disabled = false;
+    skipBtn.className = "bg-emerald-600/80 hover:bg-emerald-500 text-white px-4 py-1.5 rounded-xl font-bold text-xs shadow";
+    skipBtn.innerText = `⏳ Auto-Resuming in ${secs}s...`;
+
+    if (adCountdownTimer) clearInterval(adCountdownTimer);
+    adCountdownTimer = setInterval(() => {
+      secs--;
+      if (secs > 0) {
+        skipBtn.innerText = `⏳ Auto-Resuming in ${secs}s...`;
+      } else {
+        clearInterval(adCountdownTimer);
+        // If Dua audio is currently being recited, wait for recitation to finish then auto-skip
+        if ('speechSynthesis' in window && window.speechSynthesis.speaking) {
+          skipBtn.innerText = "🔉 Finishing Dua Audio...";
+          const checkSpeech = setInterval(() => {
+            if (!window.speechSynthesis.speaking) {
+              clearInterval(checkSpeech);
+              skipAdAndResume();
+            }
+          }, 300);
+        } else {
+          // Automatically skip and resume video without needing any click!
+          skipAdAndResume();
+        }
+      }
+    }, 1000);
+  };
+
+  // B. PREVENT BLACK SCREEN ON BACK & MINIMIZE TO YOUTUBE MINI-PLAYER ON BACK BUTTON
+  window.loadVideoInActiveEngine = function(videoId) {
+    const video = videosData.find(v => v.id === videoId) || videosData[0];
+    const ytIframe = document.getElementById('ytIframe');
+    if (activePlayerEngine === 'youtube') {
+      stopSafeCanvasPlayer();
+      if (ytIframe) {
+        const originParam = window.location.protocol.startsWith('http') ? `&origin=${encodeURIComponent(window.location.origin)}` : '';
+        const embedUrl = `https://www.youtube-nocookie.com/embed/${video.ytId}?autoplay=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&vq=hd1080${originParam}`;
+        // Use location.replace so iframe NEVER adds a blank history state that turns black on Back!
+        if (ytIframe.contentWindow) {
+          ytIframe.contentWindow.location.replace(embedUrl);
+        } else {
+          ytIframe.src = embedUrl;
+        }
+      }
+    } else {
+      if (ytIframe && ytIframe.contentWindow) ytIframe.contentWindow.location.replace('about:blank');
+      startSafeCanvasPlayer(video);
+    }
+  };
+
+  // Push history state when opening video player so Mobile Hardware Back button minimizes it
+  const prevOpenPlayer = window.openVideoPlayer;
+  window.openVideoPlayer = function(videoId) {
+    const modal = document.getElementById('playerModal');
+    const wasHidden = modal && modal.classList.contains('hidden');
+    if (prevOpenPlayer) prevOpenPlayer(videoId);
+    if (wasHidden) {
+      try { history.pushState({ qaafVideoOpen: true }, ''); } catch (e) {}
+    }
+  };
+
+  // Handle Mobile Hardware / Browser Back Button
+  window.addEventListener('popstate', function() {
+    const modal = document.getElementById('playerModal');
+    if (modal && !modal.classList.contains('hidden')) {
+      const scrollWrap = document.getElementById('ytWatchScrollContainer');
+      const isCurrentlyFull = scrollWrap && !scrollWrap.classList.contains('hidden');
+      if (isCurrentlyFull && typeof window.minimizeToMiniPlayer === 'function') {
+        // Minimize to corner Mini-Player just like YouTube!
+        window.minimizeToMiniPlayer();
+        try { history.pushState({ qaafMiniPlayer: true }, ''); } catch (e) {}
+      } else {
+        closeVideoPlayer();
+      }
+    }
+  });
+
+  // Also wire the bottom bar "◀ Back" button to minimize the video if open
+  const prevHardwareNav = window.testHardwareNav;
+  window.testHardwareNav = function(btnName) {
+    const modal = document.getElementById('playerModal');
+    if (btnName === 'Back Button' && modal && !modal.classList.contains('hidden')) {
+      const scrollWrap = document.getElementById('ytWatchScrollContainer');
+      const isCurrentlyFull = scrollWrap && !scrollWrap.classList.contains('hidden');
+      if (isCurrentlyFull && typeof window.minimizeToMiniPlayer === 'function') {
+        window.minimizeToMiniPlayer();
+        return;
+      } else {
+        closeVideoPlayer();
+        return;
+      }
+    }
+    if (prevHardwareNav) prevHardwareNav(btnName);
+  };
+})();
+</script>
 </body>
+
 
 
 
