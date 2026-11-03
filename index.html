@@ -6449,6 +6449,578 @@
   window.renderAdminParentRequests();
 })();
 </script>
+<!-- QAAF TUBE v9.8 VISIBLE PLAYLIST, HISTORY, KIDS TIMER & BACK MINI-PLAYER -->
+<script>
+(function initQaafVisibleBarAndTimer() {
+  window.parentPlaylistIds = JSON.parse(localStorage.getItem('qaaf_parent_playlist') || '[]');
+  window.kidsPlaylistIds = JSON.parse(localStorage.getItem('qaaf_kids_playlist') || '[]');
+  window.parentHistoryIds = JSON.parse(localStorage.getItem('qaaf_parent_history') || '[]');
+  window.kidsHistoryIds = JSON.parse(localStorage.getItem('qaaf_kids_history') || '[]');
+
+  window.getActivePlaylist = function() {
+    return isKidsLocked ? window.kidsPlaylistIds : window.parentPlaylistIds;
+  };
+  window.getActiveHistory = function() {
+    return isKidsLocked ? window.kidsHistoryIds : window.parentHistoryIds;
+  };
+
+  window.toggleVideoInPlaylist = function(videoId, event) {
+    if (event) event.stopPropagation();
+    if (!videoId) return;
+    if (isKidsLocked) {
+      if (window.kidsPlaylistIds.includes(videoId)) {
+        window.kidsPlaylistIds = window.kidsPlaylistIds.filter(function(id) { return id !== videoId; });
+        showSyncToast('📋 Removed from Kids Playlist');
+      } else {
+        window.kidsPlaylistIds.unshift(videoId);
+        showSyncToast('✅ Added to Kids Playlist!');
+      }
+      localStorage.setItem('qaaf_kids_playlist', JSON.stringify(window.kidsPlaylistIds));
+    } else {
+      if (window.parentPlaylistIds.includes(videoId)) {
+        window.parentPlaylistIds = window.parentPlaylistIds.filter(function(id) { return id !== videoId; });
+        showSyncToast('📋 Removed from Parent Playlist');
+      } else {
+        window.parentPlaylistIds.unshift(videoId);
+        showSyncToast('✅ Added to Parent Playlist!');
+      }
+      localStorage.setItem('qaaf_parent_playlist', JSON.stringify(window.parentPlaylistIds));
+    }
+    updateQuickAccessCounts();
+    renderVideos();
+  };
+
+  window.recordVideoInHistory = function(videoId) {
+    if (!videoId) return;
+    if (isKidsLocked) {
+      window.kidsHistoryIds = [videoId].concat(window.kidsHistoryIds.filter(function(id) { return id !== videoId; })).slice(0, 60);
+      localStorage.setItem('qaaf_kids_history', JSON.stringify(window.kidsHistoryIds));
+    } else {
+      window.parentHistoryIds = [videoId].concat(window.parentHistoryIds.filter(function(id) { return id !== videoId; })).slice(0, 60);
+      localStorage.setItem('qaaf_parent_history', JSON.stringify(window.parentHistoryIds));
+    }
+    updateQuickAccessCounts();
+  };
+
+  window.clearActiveHistory = function() {
+    var modeLabel = isKidsLocked ? 'Kids' : 'Parent';
+    if (!confirm('Clear all ' + modeLabel + ' Watch History?')) return;
+    if (isKidsLocked) {
+      window.kidsHistoryIds = [];
+      localStorage.setItem('qaaf_kids_history', '[]');
+    } else {
+      window.parentHistoryIds = [];
+      localStorage.setItem('qaaf_parent_history', '[]');
+    }
+    updateQuickAccessCounts();
+    renderVideos();
+    showSyncToast('🗑️ ' + modeLabel + ' Watch History cleared!');
+  };
+
+  window.clearActivePlaylist = function() {
+    var modeLabel = isKidsLocked ? 'Kids' : 'Parent';
+    if (!confirm('Clear all videos from ' + modeLabel + ' Playlist?')) return;
+    if (isKidsLocked) {
+      window.kidsPlaylistIds = [];
+      localStorage.setItem('qaaf_kids_playlist', '[]');
+    } else {
+      window.parentPlaylistIds = [];
+      localStorage.setItem('qaaf_parent_playlist', '[]');
+    }
+    updateQuickAccessCounts();
+    renderVideos();
+    showSyncToast('🗑️ ' + modeLabel + ' Playlist cleared!');
+  };
+
+  var searchWrap = document.getElementById('qaafSearchBarWrapper');
+  if (searchWrap && !document.getElementById('qaafQuickLibraryBar')) {
+    var qBar = document.createElement('div');
+    qBar.id = 'qaafQuickLibraryBar';
+    qBar.className = 'mb-3.5 grid grid-cols-2 sm:grid-cols-4 gap-2';
+    qBar.dir = 'ltr';
+    qBar.innerHTML =
+      '<button type="button" id="qBtn_playlist" onclick="setSortFilter(\'playlist\')" class="bg-[#151c28] hover:bg-emerald-950 border border-emerald-500/40 text-emerald-300 py-2 px-3 rounded-xl text-xs font-extrabold flex items-center justify-between shadow transition">' +
+        '<span class="flex items-center gap-1.5"><span>📋</span> <span id="qLabel_playlist">My Playlist</span></span>' +
+        '<span id="qCount_playlist" class="bg-emerald-500 text-black px-2 py-0.5 rounded-full text-[10px] font-extrabold">0</span>' +
+      '</button>' +
+      '<button type="button" id="qBtn_history" onclick="setSortFilter(\'history\')" class="bg-[#151c28] hover:bg-amber-950 border border-amber-500/40 text-amber-300 py-2 px-3 rounded-xl text-xs font-extrabold flex items-center justify-between shadow transition">' +
+        '<span class="flex items-center gap-1.5"><span>📜</span> <span id="qLabel_history">History</span></span>' +
+        '<span id="qCount_history" class="bg-amber-400 text-black px-2 py-0.5 rounded-full text-[10px] font-extrabold">0</span>' +
+      '</button>' +
+      '<button type="button" id="qBtn_favorites" onclick="setSortFilter(\'favorites\')" class="bg-[#151c28] hover:bg-rose-950 border border-rose-500/40 text-rose-300 py-2 px-3 rounded-xl text-xs font-extrabold flex items-center justify-between shadow transition">' +
+        '<span class="flex items-center gap-1.5"><span>❤️</span> <span>Favorites</span></span>' +
+        '<span id="qCount_favorites" class="bg-rose-500 text-white px-2 py-0.5 rounded-full text-[10px] font-extrabold">0</span>' +
+      '</button>' +
+      '<button type="button" id="qBtn_kidsTimer" onclick="openKidsLockOrTimer()" class="bg-gradient-to-r from-blue-900 to-indigo-900 hover:from-blue-700 hover:to-indigo-700 border border-blue-400/50 text-white py-2 px-3 rounded-xl text-xs font-extrabold flex items-center justify-between shadow transition">' +
+        '<span class="flex items-center gap-1.5"><span>⏰</span> <span id="qLabel_kidsTimer">Kids Lock & Timer</span></span>' +
+        '<span class="bg-blue-500/30 border border-blue-300/40 px-1.5 py-0.5 rounded text-[10px]">Set</span>' +
+      '</button>';
+    searchWrap.parentNode.insertBefore(qBar, searchWrap.nextSibling);
+  }
+
+  var playerFavBtn = document.querySelector('#playerModal button[onclick*="toggleFavoriteVideo"]');
+  if (playerFavBtn && !document.getElementById('playerAddPlaylistBtn')) {
+    var pPlBtn = document.createElement('button');
+    pPlBtn.id = 'playerAddPlaylistBtn';
+    pPlBtn.type = 'button';
+    pPlBtn.onclick = function(e) { toggleVideoInPlaylist(currentPlayingVideoId, e); };
+    pPlBtn.className = 'bg-emerald-600/30 hover:bg-emerald-600 border border-emerald-500/50 text-emerald-300 hover:text-white px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1 transition';
+    pPlBtn.innerHTML = '<span>➕</span> <span>Add to Playlist</span>';
+    playerFavBtn.parentNode.insertBefore(pPlBtn, playerFavBtn.nextSibling);
+  }
+
+  window.updateQuickAccessCounts = function() {
+    var plCount = document.getElementById('qCount_playlist');
+    var hiCount = document.getElementById('qCount_history');
+    var faCount = document.getElementById('qCount_favorites');
+    var plLbl = document.getElementById('qLabel_playlist');
+    var hiLbl = document.getElementById('qLabel_history');
+    var ktLbl = document.getElementById('qLabel_kidsTimer');
+
+    if (plCount) plCount.innerText = getActivePlaylist().length;
+    if (hiCount) hiCount.innerText = getActiveHistory().length;
+    if (faCount) faCount.innerText = favoriteVideoIds.length;
+    if (plLbl) plLbl.innerText = isKidsLocked ? 'Kids Playlist' : 'My Playlist';
+    if (hiLbl) hiLbl.innerText = isKidsLocked ? 'Kids History' : 'Watch History';
+    if (ktLbl) {
+      if (isKidsLocked && window.kidsTimerRemainingSecs > 0) {
+        ktLbl.innerText = 'Time: ' + formatTimerMMSS(window.kidsTimerRemainingSecs);
+      } else if (isKidsLocked) {
+        ktLbl.innerText = 'Unlock Kids Mode';
+      } else {
+        ktLbl.innerText = 'Kids Lock & Timer';
+      }
+    }
+  };
+
+  var prevRenderVids = window.renderVideos;
+  window.renderVideos = function() {
+    updateQuickAccessCounts();
+
+    var isPlFilter = (currentSortFilter === 'playlist');
+    var isHistFilter = (currentSortFilter === 'history');
+
+    if (isPlFilter || isHistFilter) {
+      var targetIds = isPlFilter ? getActivePlaylist() : getActiveHistory();
+      var backupVids = videosData.slice();
+      var backupSort = currentSortFilter;
+      var backupCat = currentCategory;
+      var backupStrict = strictLanguageOnly;
+
+      currentCategory = 'all';
+      strictLanguageOnly = false;
+      currentSortFilter = 'default';
+
+      var ordered = [];
+      targetIds.forEach(function(id) {
+        var found = backupVids.find(function(v) { return v.id === id; });
+        if (found && (!isKidsLocked || found.kidsSafe) && !blockedVideoIds.includes(found.id) && !bannedChannels.includes(found.channel)) {
+          ordered.push(found);
+        }
+      });
+
+      videosData = ordered;
+      if (prevRenderVids) prevRenderVids();
+
+      videosData = backupVids;
+      currentSortFilter = backupSort;
+      currentCategory = backupCat;
+      strictLanguageOnly = backupStrict;
+
+      var grid = document.getElementById('videoGrid');
+      if (grid) {
+        var modeTitle = isKidsLocked ? '🧒 Kids' : '👨‍👩‍👧 Parent';
+        var viewTitle = isPlFilter ? (modeTitle + ' Playlist') : (modeTitle + ' Watch History');
+        var clearFn = isPlFilter ? 'clearActivePlaylist()' : 'clearActiveHistory()';
+
+        var bannerEl = document.getElementById('plHistHeaderBanner');
+        if (!bannerEl) {
+          bannerEl = document.createElement('div');
+          bannerEl.id = 'plHistHeaderBanner';
+          grid.parentNode.insertBefore(bannerEl, grid);
+        }
+        bannerEl.className = 'mb-4 bg-slate-900/95 border-2 border-emerald-500/50 rounded-2xl p-3.5 flex flex-wrap items-center justify-between gap-2 shadow-lg';
+        bannerEl.innerHTML =
+          '<div class="flex items-center gap-2">' +
+            '<span class="text-xl">' + (isPlFilter ? '📋' : '📜') + '</span>' +
+            '<div>' +
+              '<h4 class="text-xs sm:text-sm font-extrabold text-white">' + viewTitle + ' (' + ordered.length + ' Videos)</h4>' +
+              '<p class="text-[10px] text-emerald-400 font-bold">Separate ' + (isKidsLocked ? 'Kids Mode' : 'Parent Mode') + ' List</p>' +
+            '</div>' +
+          '</div>' +
+          '<div class="flex items-center gap-2">' +
+            (ordered.length > 0 ? '<button type="button" onclick="' + clearFn + '" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-1.5 rounded-xl text-xs font-extrabold shadow">🗑️ Clear List</button>' : '') +
+            '<button type="button" onclick="setSortFilter(\'default\')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-xl text-xs font-extrabold shadow">⬅️ Show All Videos</button>' +
+          '</div>';
+        bannerEl.classList.remove('hidden');
+
+        if (ordered.length === 0) {
+          grid.innerHTML =
+            '<div class="col-span-full bg-[#121620] border border-slate-700 rounded-2xl p-8 text-center my-2">' +
+              '<div class="text-4xl mb-2">' + (isPlFilter ? '📋' : '📜') + '</div>' +
+              '<h4 class="text-sm sm:text-base font-extrabold text-white mb-1">Your ' + viewTitle + ' is Empty</h4>' +
+              '<p class="text-xs text-slate-400 mb-4">' + (isPlFilter ? 'Tap the green "+ Playlist" button on any video card to save videos here!' : 'Any video you play will automatically be saved in your Watch History.') + '</p>' +
+              '<button type="button" onclick="setSortFilter(\'default\')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-xl text-xs font-extrabold shadow">🎬 Back to All Videos</button>' +
+            '</div>';
+        }
+      }
+    } else {
+      var bannerEl2 = document.getElementById('plHistHeaderBanner');
+      if (bannerEl2) bannerEl2.classList.add('hidden');
+      if (prevRenderVids) prevRenderVids();
+    }
+
+    var activePl = getActivePlaylist();
+    document.querySelectorAll('#videoGrid > div').forEach(function(card) {
+      var favBtnEl = card.querySelector('button[onclick*="toggleFavoriteVideo"]');
+      if (!favBtnEl) return;
+      var m = favBtnEl.getAttribute('onclick').match(/'([^']+)'/);
+      if (!m || !m[1]) return;
+      var vidId = m[1];
+      var inPl = activePl.includes(vidId);
+
+      if (!card.querySelector('.card-pl-top-btn')) {
+        var topBtn = document.createElement('button');
+        topBtn.type = 'button';
+        topBtn.className = 'card-pl-top-btn w-7 h-7 rounded-full ' + (inPl ? 'bg-emerald-500 text-black' : 'bg-black/80 hover:bg-emerald-600 text-emerald-300') + ' flex items-center justify-center text-xs font-extrabold shadow border border-emerald-400/40 transition';
+        topBtn.title = inPl ? 'Saved in Playlist' : 'Add to Playlist';
+        topBtn.innerHTML = inPl ? '✔' : '➕';
+        topBtn.onclick = function(e) { toggleVideoInPlaylist(vidId, e); };
+        favBtnEl.parentNode.insertBefore(topBtn, favBtnEl);
+      }
+
+      var bottomRow = card.querySelector('.p-3 .flex.items-center.justify-between');
+      if (bottomRow && !bottomRow.querySelector('.card-pl-bottom-btn')) {
+        var botBtn = document.createElement('button');
+        botBtn.type = 'button';
+        botBtn.className = 'card-pl-bottom-btn ' + (inPl ? 'bg-emerald-500 text-black' : 'bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/40') + ' px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold transition shrink-0';
+        botBtn.innerHTML = inPl ? '✔ In Playlist' : '➕ Playlist';
+        botBtn.onclick = function(e) { toggleVideoInPlaylist(vidId, e); };
+        bottomRow.appendChild(botBtn);
+      }
+    });
+  };
+
+  window.kidsTimerInterval = null;
+  window.kidsTimerRemainingSecs = 0;
+  window.isKidsTimeExpiredLock = false;
+
+  if (!document.getElementById('kidsTimerSetupModal')) {
+    var tmModal = document.createElement('div');
+    tmModal.id = 'kidsTimerSetupModal';
+    tmModal.className = 'fixed inset-0 z-50 hidden bg-black/90 backdrop-blur-sm flex items-center justify-center p-4';
+    tmModal.dir = 'ltr';
+    tmModal.innerHTML =
+      '<div class="bg-[#151922] border-2 border-blue-500/50 rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-4">' +
+        '<div class="flex items-center justify-between border-b border-slate-800 pb-3">' +
+          '<div class="flex items-center gap-2">' +
+            '<span class="text-2xl">⏰</span>' +
+            '<div>' +
+              '<h3 class="text-sm sm:text-base font-extrabold text-white">Kids Mode &amp; Screen Timer</h3>' +
+              '<p class="text-[11px] text-slate-300">Select time limit before locking phone for kids</p>' +
+            '</div>' +
+          '</div>' +
+          '<button type="button" onclick="document.getElementById(\'kidsTimerSetupModal\').classList.add(\'hidden\')" class="bg-slate-800 text-slate-300 px-2.5 py-1 rounded-lg text-xs font-bold">✕</button>' +
+        '</div>' +
+        '<div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs font-extrabold">' +
+          '<button type="button" onclick="startKidsModeWithTimer(0)" class="bg-slate-800 hover:bg-emerald-600 text-white py-3 px-2 rounded-xl border border-slate-600 transition flex flex-col items-center gap-1">' +
+            '<span class="text-lg">♾️</span><span>No Time Limit</span>' +
+          '</button>' +
+          '<button type="button" onclick="startKidsModeWithTimer(15)" class="bg-blue-950 hover:bg-blue-600 text-blue-200 hover:text-white py-3 px-2 rounded-xl border border-blue-500/40 transition flex flex-col items-center gap-1">' +
+            '<span class="text-lg">⏱️ 15m</span><span>15 Minutes</span>' +
+          '</button>' +
+          '<button type="button" onclick="startKidsModeWithTimer(30)" class="bg-blue-950 hover:bg-blue-600 text-blue-200 hover:text-white py-3 px-2 rounded-xl border border-blue-500/40 transition flex flex-col items-center gap-1">' +
+            '<span class="text-lg">⏱️ 30m</span><span>30 Minutes</span>' +
+          '</button>' +
+          '<button type="button" onclick="startKidsModeWithTimer(45)" class="bg-blue-950 hover:bg-blue-600 text-blue-200 hover:text-white py-3 px-2 rounded-xl border border-blue-500/40 transition flex flex-col items-center gap-1">' +
+            '<span class="text-lg">⏱️ 45m</span><span>45 Minutes</span>' +
+          '</button>' +
+          '<button type="button" onclick="startKidsModeWithTimer(60)" class="bg-emerald-950 hover:bg-emerald-600 text-emerald-200 hover:text-white py-3 px-2 rounded-xl border border-emerald-500/40 transition flex flex-col items-center gap-1">' +
+            '<span class="text-lg">🕐 1 Hr</span><span>60 Minutes</span>' +
+          '</button>' +
+          '<button type="button" onclick="startKidsModeWithTimer(120)" class="bg-emerald-950 hover:bg-emerald-600 text-emerald-200 hover:text-white py-3 px-2 rounded-xl border border-emerald-500/40 transition flex flex-col items-center gap-1">' +
+            '<span class="text-lg">🕑 2 Hrs</span><span>120 Minutes</span>' +
+          '</button>' +
+        '</div>' +
+        '<div class="bg-black/70 border border-slate-700 rounded-xl p-3 flex items-center gap-2">' +
+          '<input id="customKidsTimerMins" type="number" min="1" max="480" placeholder="Custom minutes (e.g. 10)" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white" />' +
+          '<button type="button" onclick="startKidsModeCustomMins()" class="bg-amber-500 hover:bg-amber-400 text-black px-4 py-2 rounded-lg text-xs font-extrabold shrink-0 shadow">Start Custom</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(tmModal);
+  }
+
+  if (!document.getElementById('kidsTimeUpLockOverlay')) {
+    var lockOv = document.createElement('div');
+    lockOv.id = 'kidsTimeUpLockOverlay';
+    lockOv.className = 'fixed inset-0 z-[95] hidden bg-[#04060b] flex flex-col items-center justify-center p-6 text-center select-none';
+    lockOv.dir = 'ltr';
+    lockOv.innerHTML =
+      '<div class="max-w-md w-full bg-[#0e131d] border-2 border-amber-500/70 rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col items-center">' +
+        '<div class="w-20 h-20 rounded-full bg-amber-500/20 border-2 border-amber-400 flex items-center justify-center text-4xl mb-4 animate-bounce">🌙</div>' +
+        '<h2 class="text-xl sm:text-2xl font-extrabold text-white mb-1">Screen Time Finished!</h2>' +
+        '<p class="text-sm font-bold text-amber-300 mb-2" dir="rtl">بچے کا مقررہ وقت مکمل ہو چکا ہے!</p>' +
+        '<p class="text-xs text-slate-400 mb-6">Videos and games are now locked. Please hand the device to your parents.</p>' +
+        '<div class="w-full bg-black/80 border border-slate-800 rounded-2xl p-4 space-y-3">' +
+          '<label class="block text-xs font-extrabold text-emerald-400">🔒 Enter 6-Digit Parent PIN to Unlock:</label>' +
+          '<input id="timeUpParentPinInput" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" class="w-44 mx-auto block text-center text-2xl tracking-[0.4em] bg-slate-950 border border-slate-700 rounded-xl py-2 text-white" />' +
+          '<p id="timeUpPinError" class="text-xs font-bold text-rose-400 hidden">❌ Incorrect Parent PIN!</p>' +
+          '<div class="flex flex-col sm:flex-row gap-2 pt-1">' +
+            '<button type="button" onclick="unlockTimeUpOverlay(\'exit_kids\')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl text-xs font-extrabold shadow">🔓 Unlock to Family Mode</button>' +
+            '<button type="button" onclick="unlockTimeUpOverlay(\'add_15m\')" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-xl text-xs font-extrabold shadow">⏱️ +15 Mins for Child</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(lockOv);
+  }
+
+  window.formatTimerMMSS = function(totalSecs) {
+    var hrs = Math.floor(totalSecs / 3600);
+    var mins = Math.floor((totalSecs % 3600) / 60);
+    var secs = totalSecs % 60;
+    if (hrs > 0) {
+      return hrs + ':' + (mins < 10 ? '0' : '') + mins + ':' + (secs < 10 ? '0' : '') + secs;
+    }
+    return mins + ':' + (secs < 10 ? '0' : '') + secs;
+  };
+
+  function updateHeaderTimerBadge() {
+    var kmBadge = document.getElementById('kidsModeOnHeaderBadge');
+    updateQuickAccessCounts();
+    if (!kmBadge) return;
+    if (!isKidsLocked) {
+      kmBadge.classList.add('hidden');
+      kmBadge.classList.remove('flex');
+      return;
+    }
+    kmBadge.classList.remove('hidden');
+    kmBadge.classList.add('flex');
+    if (window.kidsTimerRemainingSecs > 0) {
+      kmBadge.innerHTML = '<span>⏰</span> <span>' + formatTimerMMSS(window.kidsTimerRemainingSecs) + '</span>';
+    } else {
+      kmBadge.innerHTML = '<span>🔐</span> <span>Kids Mode ON</span>';
+    }
+  }
+
+  function triggerKidsTimeUpLockdown() {
+    if (window.kidsTimerInterval) {
+      clearInterval(window.kidsTimerInterval);
+      window.kidsTimerInterval = null;
+    }
+    window.kidsTimerRemainingSecs = 0;
+    window.isKidsTimeExpiredLock = true;
+    if (typeof closeVideoPlayer === 'function') closeVideoPlayer();
+    if (typeof closeMiniGame === 'function') closeMiniGame();
+    if (typeof closeStandaloneGameModal === 'function') closeStandaloneGameModal();
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+
+    var lockOv = document.getElementById('kidsTimeUpLockOverlay');
+    var pinInp = document.getElementById('timeUpParentPinInput');
+    var errEl = document.getElementById('timeUpPinError');
+    if (pinInp) pinInp.value = '';
+    if (errEl) errEl.classList.add('hidden');
+    if (lockOv) lockOv.classList.remove('hidden');
+  }
+
+  window.unlockTimeUpOverlay = function(actionType) {
+    var pinInp = document.getElementById('timeUpParentPinInput');
+    var errEl = document.getElementById('timeUpPinError');
+    var entered = (pinInp ? pinInp.value : '').trim();
+    if (entered !== parentPin) {
+      if (errEl) errEl.classList.remove('hidden');
+      return;
+    }
+    if (errEl) errEl.classList.add('hidden');
+    window.isKidsTimeExpiredLock = false;
+    document.getElementById('kidsTimeUpLockOverlay').classList.add('hidden');
+
+    if (actionType === 'add_15m') {
+      activateKidsCountdown(15);
+      showSyncToast('⏱️ Added 15 minutes of Kids Screen Time!');
+    } else {
+      document.getElementById('pinInput').value = parentPin;
+      pendingParentPurpose = 'unlock';
+      verifyPinCode();
+    }
+  };
+
+  function activateKidsCountdown(minutes) {
+    if (window.kidsTimerInterval) {
+      clearInterval(window.kidsTimerInterval);
+      window.kidsTimerInterval = null;
+    }
+    if (!minutes || minutes <= 0) {
+      window.kidsTimerRemainingSecs = 0;
+      updateHeaderTimerBadge();
+      return;
+    }
+    window.kidsTimerRemainingSecs = Math.floor(minutes * 60);
+    updateHeaderTimerBadge();
+
+    window.kidsTimerInterval = setInterval(function() {
+      if (!isKidsLocked) {
+        clearInterval(window.kidsTimerInterval);
+        window.kidsTimerInterval = null;
+        return;
+      }
+      window.kidsTimerRemainingSecs--;
+      updateHeaderTimerBadge();
+      if (window.kidsTimerRemainingSecs <= 0) {
+        triggerKidsTimeUpLockdown();
+      }
+    }, 1000);
+  }
+
+  function enterKidsModeDirectly() {
+    isKidsLocked = true;
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(function() {});
+    }
+    document.getElementById('appBody').className = 'bg-islamic-kids min-h-screen flex flex-col justify-between pb-12 transition-colors duration-500';
+    document.getElementById('brandSuffix').innerHTML = '<span class="kids-letters font-extrabold"><span>K</span><span>i</span><span>d</span><span>s</span></span>';
+    document.getElementById('lockIcon').innerText = '🔐';
+    document.getElementById('parentPanelBtn').classList.add('hidden');
+    document.getElementById('accountBtn').classList.add('hidden');
+    document.getElementById('superAdminHeaderBtn').classList.add('hidden');
+    document.getElementById('langDropdownContainer').classList.add('hidden');
+    document.getElementById('kidsContentSwitcher').classList.remove('hidden');
+    document.getElementById('kidsContentSwitcher').classList.add('flex');
+    document.querySelectorAll('.family-only-chip').forEach(function(el) { el.classList.add('hidden'); });
+    if (currentCategory === 'bayan') currentCategory = 'all';
+    syncRegionalPromoBar();
+    updateHeaderTimerBadge();
+    renderVideos();
+  }
+
+  window.openKidsLockOrTimer = function() {
+    if (!isKidsLocked) {
+      document.getElementById('kidsTimerSetupModal').classList.remove('hidden');
+    } else {
+      openParentalGate('unlock');
+    }
+  };
+
+  window.toggleKidsMode = function() {
+    window.openKidsLockOrTimer();
+  };
+
+  window.startKidsModeWithTimer = function(minutes) {
+    document.getElementById('kidsTimerSetupModal').classList.add('hidden');
+    enterKidsModeDirectly();
+    activateKidsCountdown(minutes);
+    if (minutes > 0) {
+      showSyncToast('⏰ Kids Mode Locked for ' + minutes + ' minutes!');
+    } else {
+      showSyncToast('🔒 Kids Mode Locked!');
+    }
+  };
+
+  window.startKidsModeCustomMins = function() {
+    var val = parseInt(document.getElementById('customKidsTimerMins').value || '0', 10);
+    if (!val || val <= 0) {
+      alert('Please enter valid minutes (e.g. 10).');
+      return;
+    }
+    window.startKidsModeWithTimer(val);
+  };
+
+  var baseVerifyPin = window.verifyPinCode;
+  window.verifyPinCode = function() {
+    var wasUnlock = (pendingParentPurpose === 'unlock');
+    if (baseVerifyPin) baseVerifyPin();
+    if (wasUnlock && !isKidsLocked) {
+      if (window.kidsTimerInterval) {
+        clearInterval(window.kidsTimerInterval);
+        window.kidsTimerInterval = null;
+      }
+      window.kidsTimerRemainingSecs = 0;
+      window.isKidsTimeExpiredLock = false;
+      updateHeaderTimerBadge();
+      renderVideos();
+    }
+  };
+
+  window.qaafVideoState = 'closed';
+
+  var origLoadEngine = window.loadVideoInActiveEngine;
+  window.loadVideoInActiveEngine = function(videoId) {
+    var video = videosData.find(function(v) { return v.id === videoId; }) || videosData[0];
+    var ytCont = document.getElementById('ytPlayerContainer');
+    if (activePlayerEngine === 'youtube' && ytCont) {
+      stopSafeCanvasPlayer();
+      var originParam = window.location.protocol.startsWith('http') ? '&origin=' + encodeURIComponent(window.location.origin) : '';
+      var embedUrl = 'https://www.youtube-nocookie.com/embed/' + video.ytId + '?autoplay=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&vq=hd1080' + originParam;
+      ytCont.innerHTML = '<iframe id="ytIframe" class="w-full h-full" src="' + embedUrl + '" title="QAAF YouTube Player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>';
+    } else if (origLoadEngine) {
+      origLoadEngine(videoId);
+    }
+  };
+
+  function keepVideoPlayingOnResize() {
+    if (activePlayerEngine === 'youtube') {
+      sendYouTubeCommand('playVideo');
+      setTimeout(function() { sendYouTubeCommand('playVideo'); }, 150);
+      setTimeout(function() { sendYouTubeCommand('playVideo'); }, 450);
+    }
+  }
+
+  var origMinimize = window.minimizeToMiniPlayer;
+  window.minimizeToMiniPlayer = function() {
+    window.qaafVideoState = 'mini';
+    if (origMinimize) origMinimize();
+    keepVideoPlayingOnResize();
+  };
+
+  var origExpand = window.expandFromMiniPlayer;
+  window.expandFromMiniPlayer = function() {
+    window.qaafVideoState = 'full';
+    if (origExpand) origExpand();
+    keepVideoPlayingOnResize();
+  };
+
+  var origOpen = window.openVideoPlayer;
+  window.openVideoPlayer = function(videoId) {
+    if (window.isKidsTimeExpiredLock) return;
+    recordVideoInHistory(videoId);
+    var wasClosed = (window.qaafVideoState === 'closed');
+    if (origOpen) origOpen(videoId);
+    window.qaafVideoState = 'full';
+    if (wasClosed) {
+      try {
+        history.pushState({ qaafLayer: 'mini' }, '');
+        history.pushState({ qaafLayer: 'full' }, '');
+      } catch (e) {}
+    } else {
+      try {
+        history.pushState({ qaafLayer: 'full' }, '');
+      } catch (e) {}
+    }
+  };
+
+  var origClose = window.closeVideoPlayer;
+  window.closeVideoPlayer = function() {
+    window.qaafVideoState = 'closed';
+    if (origClose) origClose();
+  };
+
+  window.addEventListener('popstate', function() {
+    var modal = document.getElementById('playerModal');
+    if (!modal || modal.classList.contains('hidden')) {
+      window.qaafVideoState = 'closed';
+      return;
+    }
+    if (window.qaafVideoState === 'full') {
+      window.minimizeToMiniPlayer();
+    } else if (window.qaafVideoState === 'mini') {
+      window.closeVideoPlayer();
+    }
+  }, true);
+
+  updateQuickAccessCounts();
+  renderVideos();
+})();
+</script>
+
 </body>
 
 
