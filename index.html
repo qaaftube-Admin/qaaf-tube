@@ -1369,7 +1369,7 @@
           localStorage.setItem('qaaf_parent_requests', JSON.stringify(parentRequestsQueue));
           renderAdminParentRequests();
         }
-        if (Array.isArray(payload.videosData) && payload.videosData.length > 0) {
+        if (Array.isArray(payload.videosData)) {
           let scrubbed = false;
           videosData = payload.videosData.map(v => {
             const res = sanitizeVideoItem(v);
@@ -1468,16 +1468,14 @@
           clearTimeout(timeoutId);
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const cloudData = await res.json();
-          if (cloudData && typeof cloudData === 'object' && cloudData.videosData) {
+          if (cloudData && typeof cloudData === 'object') {
+            if (!Array.isArray(cloudData.videosData)) cloudData.videosData = [];
             this.applyIncomingState(cloudData, silent ? 'none' : 'cloud');
             const nowTime = new Date().toLocaleTimeString();
             localStorage.setItem('qaaf_cloud_last_synced', nowTime);
             localStorage.setItem('qaaf_cloud_last_sync_ts', Date.now().toString());
             this.updateStatusBadge('connected');
             if (!silent) showSyncToast('✅ Pulled latest state from Firebase Cloud!');
-          } else {
-            await this.pushState('Initial Live Cloud Seed');
-            this.updateStatusBadge('connected');
           }
         } catch (err) {
           this.updateStatusBadge('offline');
@@ -10790,6 +10788,447 @@
 
   if (window.renderAdminActiveVideosCatalog) window.renderAdminActiveVideosCatalog();
   if (window.renderVideosNow) window.renderVideosNow();
+})();
+</script>
+
+<!-- QAAF V10.8 CHANNEL VS VIDEO VERIFIED, BY CHANNELS DIRECTORY (GREEN/YELLOW), NEW CATEGORIES & CLEAN SLATE -->
+<script>
+(function initQaafV108CategoriesAndChannelVerification() {
+  var CLEAN_SLATE_KEY = "qaaf_clean_slate_v108_empty";
+  window.verifiedChannelsList = JSON.parse(localStorage.getItem("qaaf_verified_channels") || "[]");
+  window.isByChannelsPanelOpen = false;
+
+  // 1. Force one-time complete wipe of any leftover cached videos on this browser
+  if (localStorage.getItem("qaaf_slate_v108") !== CLEAN_SLATE_KEY) {
+    videosData = [];
+    window.verifiedChannelsList = [];
+    localStorage.setItem("qaaf_videos_data", "[]");
+    localStorage.setItem("qaaf_verified_channels", "[]");
+    localStorage.setItem("qaaf_slate_v108", CLEAN_SLATE_KEY);
+    window.qaafActiveSearchQuery = "";
+    var sInp = document.getElementById("qaafSearchInput");
+    if (sInp) sInp.value = "";
+  }
+
+  // Sync verifiedChannelsList with Firebase Cloud
+  if (window.qaafCloudSync) {
+    var origGetPayload = window.qaafCloudSync.getStatePayload.bind(window.qaafCloudSync);
+    window.qaafCloudSync.getStatePayload = function() {
+      var data = origGetPayload();
+      data.verifiedChannelsList = window.verifiedChannelsList;
+      return data;
+    };
+
+    var origApply = window.qaafCloudSync.applyIncomingState.bind(window.qaafCloudSync);
+    window.qaafCloudSync.applyIncomingState = function(payload, source) {
+      if (payload && typeof payload === "object") {
+        if (!Array.isArray(payload.videosData)) payload.videosData = [];
+        if (Array.isArray(payload.verifiedChannelsList)) {
+          window.verifiedChannelsList = payload.verifiedChannelsList;
+          localStorage.setItem("qaaf_verified_channels", JSON.stringify(window.verifiedChannelsList));
+        }
+      }
+      origApply(payload, source);
+    };
+  }
+
+  window.isChannelFullyVerified = function(chName, videoObj) {
+    if (!chName) return false;
+    if (window.verifiedChannelsList && window.verifiedChannelsList.indexOf(chName) !== -1) return true;
+    if (videoObj && videoObj.channelVerified === true) return true;
+    return false;
+  };
+
+  window.adminToggleChannelVerifiedStatus = function(chName, ev) {
+    if (ev) ev.stopPropagation();
+    if (!chName) return;
+    var idx = window.verifiedChannelsList.indexOf(chName);
+    var nowVerified = false;
+    if (idx === -1) {
+      window.verifiedChannelsList.push(chName);
+      nowVerified = true;
+    } else {
+      window.verifiedChannelsList.splice(idx, 1);
+      nowVerified = false;
+    }
+    videosData.forEach(function(v) {
+      if (v.channel === chName) v.channelVerified = nowVerified;
+    });
+    localStorage.setItem("qaaf_verified_channels", JSON.stringify(window.verifiedChannelsList));
+    localStorage.setItem("qaaf_videos_data", JSON.stringify(videosData));
+    renderVideos();
+    if (window.renderAdminActiveVideosCatalog) window.renderAdminActiveVideosCatalog();
+    if (window.qaafCloudSync) window.qaafCloudSync.pushState((nowVerified ? "Marked Channel Verified: " : "Marked Video-Only Verified: ") + chName);
+    showSyncToast(nowVerified ? ("🟢 '" + chName + "' is now Channel Verified!") : ("🟡 '" + chName + "' set to Video Verified Only."));
+  };
+
+  // =========================================================================
+  // 2. UPGRADE CATEGORY BARS & ADD "📺 BY CHANNELS" DIRECTORY (GREEN TOP, YELLOW BELOW)
+  // =========================================================================
+  var CATEGORY_META = {
+    all: { label: "All Videos", icon: "📋", familyOnly: false },
+    quran: { label: "Tilawat-e-Quran", icon: "🕋", familyOnly: false },
+    naat: { label: "Naat Sharif", icon: "🎤", familyOnly: false },
+    tarbiyah: { label: "Islamic Tarbiyah", icon: "🌿", familyOnly: false },
+    bayan: { label: "Islamic Bayanat", icon: "🎙️", familyOnly: true },
+    kids_tarbiyah: { label: "Kids Tarbiyah", icon: "📖", familyOnly: false },
+    kids_cartoon: { label: "Kids Cartoons", icon: "🌟", familyOnly: false }
+  };
+
+  // Update Top #categoryBar chips
+  var catBarLeft = document.querySelector("#categoryBar > div:first-child");
+  if (catBarLeft) {
+    catBarLeft.innerHTML =
+      '<button onclick="filterCategory(\'all\')" id="ui_catAll" class="cat-chip bg-white text-black px-3 py-1 rounded-lg text-xs font-bold shrink-0">📋 All Videos</button>' +
+      '<button onclick="filterCategory(\'quran\')" id="ui_catQuran" class="cat-chip bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0">🕋 Tilawat-e-Quran</button>' +
+      '<button onclick="filterCategory(\'naat\')" id="ui_catNaat" class="cat-chip bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0">🎤 Naat Sharif</button>' +
+      '<button onclick="filterCategory(\'tarbiyah\')" id="ui_catTarbiyah" class="cat-chip bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0">🌿 Islamic Tarbiyah</button>' +
+      '<button onclick="filterCategory(\'bayan\')" id="ui_catBayan" class="cat-chip family-only-chip bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0">🎙️ Islamic Bayanat</button>' +
+      '<button onclick="filterCategory(\'kids_tarbiyah\')" id="ui_catStories" class="cat-chip bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0">📖 Kids Tarbiyah</button>' +
+      '<button onclick="filterCategory(\'kids_cartoon\')" id="ui_catCartoon" class="cat-chip bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0">🌟 Kids Cartoons</button>';
+  }
+
+  window.filterCategory = function(cat) {
+    currentCategory = cat;
+    if (cat === "kids_tarbiyah") {
+      // Match both stories and kids_tarbiyah
+    }
+    document.querySelectorAll("#categoryBar .cat-chip").forEach(function(btn) {
+      var isAct = (btn.getAttribute("onclick") || "").indexOf("'" + cat + "'") !== -1;
+      btn.className = "cat-chip " + (btn.classList.contains("family-only-chip") ? "family-only-chip " : "") + (isAct ? "bg-emerald-500 text-black px-3 py-1 rounded-lg text-xs font-extrabold shrink-0 shadow" : "bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0") + (isKidsLocked && btn.classList.contains("family-only-chip") ? " hidden" : "");
+    });
+    renderVideos();
+  };
+
+  window.toggleByChannelsDirectory = function() {
+    window.isByChannelsPanelOpen = !window.isByChannelsPanelOpen;
+    renderTopicAndByChannelsBar();
+  };
+
+  var currentSelectedChannelName = "ALL";
+  var origSelCh = window.selectChannelFilter;
+  window.selectChannelFilter = function(chName) {
+    currentSelectedChannelName = chName || "ALL";
+    if (origSelCh) origSelCh(chName);
+  };
+
+  function renderTopicAndByChannelsBar() {
+    var bar = document.getElementById("qaafChannelsFilterBar");
+    if (!bar) return;
+
+    var visibleVids = (videosData || []).filter(function(v) {
+      if (!v || blockedVideoIds.indexOf(v.id) !== -1 || bannedChannels.indexOf(v.channel) !== -1) return false;
+      if (isKidsLocked && !v.kidsSafe) return false;
+      return true;
+    });
+
+    var allChs = Array.from(new Set(visibleVids.map(function(v) { return v.channel; })));
+    var greenVerifiedChs = [];
+    var yellowVideoOnlyChs = [];
+
+    allChs.forEach(function(ch) {
+      var sampleVid = visibleVids.find(function(v) { return v.channel === ch; });
+      if (window.isChannelFullyVerified(ch, sampleVid)) {
+        greenVerifiedChs.push(ch);
+      } else {
+        yellowVideoOnlyChs.push(ch);
+      }
+    });
+
+    var isAllTopics = (currentCategory === "all" && currentSelectedChannelName === "ALL");
+
+    var topRowHtml = '<div class="flex items-center justify-between gap-2 overflow-x-auto pb-1">';
+    topRowHtml += '<div class="flex items-center gap-1.5 shrink-0">';
+
+    topRowHtml += '<button type="button" onclick="currentCategory=\'all\'; selectChannelFilter(\'ALL\');" class="px-3 py-1.5 rounded-full text-xs font-extrabold shrink-0 transition ' + (isAllTopics ? 'bg-emerald-500 text-black shadow' : 'bg-slate-800 text-slate-200 hover:bg-slate-700') + '">📋 All (' + visibleVids.length + ')</button>';
+
+    var topicList = [
+      { key: "quran", label: "🕋 Tilawat-e-Quran", kidsOk: true },
+      { key: "naat", label: "🎤 Naat Sharif", kidsOk: true },
+      { key: "tarbiyah", label: "🌿 Islamic Tarbiyah", kidsOk: true },
+      { key: "bayan", label: "🎙️ Islamic Bayanat", kidsOk: false },
+      { key: "kids_tarbiyah", label: "📖 Kids Tarbiyah", kidsOk: true },
+      { key: "kids_cartoon", label: "🌟 Kids Cartoons", kidsOk: true }
+    ];
+
+    topicList.forEach(function(t) {
+      if (isKidsLocked && !t.kidsOk) return;
+      var isAct = (currentCategory === t.key);
+      topRowHtml += '<button type="button" onclick="filterCategory(\'' + t.key + '\')" class="px-3 py-1.5 rounded-full text-xs font-bold shrink-0 transition ' + (isAct ? 'bg-emerald-500 text-black shadow font-extrabold' : 'bg-[#1a1f2c] hover:bg-slate-800 text-slate-200 border border-slate-700/80') + '">' + t.label + '</button>';
+    });
+
+    topRowHtml += '</div>';
+
+    // "📺 By Channels" Toggle Button
+    var hasSelectedCh = (currentSelectedChannelName !== "ALL");
+    topRowHtml += '<button type="button" onclick="toggleByChannelsDirectory()" class="px-3.5 py-1.5 rounded-full text-xs font-extrabold shrink-0 transition flex items-center gap-1.5 shadow ' + (window.isByChannelsPanelOpen || hasSelectedCh ? 'bg-amber-500 text-black' : 'bg-blue-600 hover:bg-blue-500 text-white') + '"><span>📺</span> <span>By Channels (' + allChs.length + ')</span> <span>' + (window.isByChannelsPanelOpen ? '▴' : '▾') + '</span></button>';
+    topRowHtml += '</div>';
+
+    // Active Channel Filter Pill if a channel is selected
+    if (hasSelectedCh) {
+      var isSelGreen = greenVerifiedChs.indexOf(currentSelectedChannelName) !== -1;
+      topRowHtml += '<div class="mt-2 px-3 py-1.5 rounded-xl border flex items-center justify-between text-xs ' + (isSelGreen ? 'bg-emerald-950/50 border-emerald-500/50 text-emerald-300' : 'bg-amber-950/50 border-amber-500/50 text-amber-300') + '">';
+      topRowHtml += '<span class="font-extrabold">' + (isSelGreen ? '🟢 Channel Verified: ' : '🟡 Video Verified Only (Unverified Full Channel): ') + currentSelectedChannelName + '</span>';
+      topRowHtml += '<button type="button" onclick="selectChannelFilter(\'ALL\')" class="bg-black/60 hover:bg-rose-600 text-white px-2.5 py-0.5 rounded-lg text-[11px] font-bold">✕ Show All</button>';
+      topRowHtml += '</div>';
+    }
+
+    // Expandable "By Channels" Directory (Green Verified First, Yellow Video-Only Below)
+    if (window.isByChannelsPanelOpen) {
+      topRowHtml += '<div class="mt-2.5 pt-2.5 border-t border-slate-800 space-y-3">';
+
+      // 1. GREEN VERIFIED CHANNELS
+      topRowHtml += '<div>';
+      topRowHtml += '<p class="text-[11px] font-extrabold text-emerald-400 mb-1.5 flex items-center gap-1.5"><span>🟢</span> <span>Verified Channels (' + greenVerifiedChs.length + ') — Full Approved Channels</span></p>';
+      if (greenVerifiedChs.length === 0) {
+        topRowHtml += '<p class="text-[11px] text-slate-500 pl-2">No full verified channels added yet.</p>';
+      } else {
+        topRowHtml += '<div class="flex flex-wrap gap-1.5">';
+        greenVerifiedChs.forEach(function(ch) {
+          var cCount = visibleVids.filter(function(v) { return v.channel === ch; }).length;
+          var safeCh = ch.replace(/'/g, "\\'");
+          var isAct = (currentSelectedChannelName === ch);
+          topRowHtml += '<button type="button" onclick="selectChannelFilter(\'' + safeCh + '\')" class="px-3 py-1.5 rounded-xl text-xs font-extrabold transition flex items-center gap-1.5 border ' + (isAct ? 'bg-emerald-500 text-black border-emerald-300 shadow-lg' : 'bg-emerald-950/50 hover:bg-emerald-900/70 text-emerald-300 border-emerald-500/50') + '"><span>✅ ' + ch + '</span> <span class="text-[10px] bg-black/40 px-1.5 py-0.5 rounded-full">Verified (' + cCount + ')</span></button>';
+        });
+        topRowHtml += '</div>';
+      }
+      topRowHtml += '</div>';
+
+      // 2. YELLOW UNVERIFIED CHANNELS (ONLY SPECIFIC VIDEOS IN SYSTEM ARE VERIFIED)
+      topRowHtml += '<div>';
+      topRowHtml += '<p class="text-[11px] font-extrabold text-amber-400 mb-1.5 flex items-center gap-1.5"><span>🟡</span> <span>Selected Videos Only (' + yellowVideoOnlyChs.length + ') — Channel Not Verified, Only Listed Videos Approved</span></p>';
+      if (yellowVideoOnlyChs.length === 0) {
+        topRowHtml += '<p class="text-[11px] text-slate-500 pl-2">No single-video channels listed.</p>';
+      } else {
+        topRowHtml += '<div class="flex flex-wrap gap-1.5">';
+        yellowVideoOnlyChs.forEach(function(ch) {
+          var cCount = visibleVids.filter(function(v) { return v.channel === ch; }).length;
+          var safeCh = ch.replace(/'/g, "\\'");
+          var isAct = (currentSelectedChannelName === ch);
+          topRowHtml += '<button type="button" onclick="selectChannelFilter(\'' + safeCh + '\')" class="px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border ' + (isAct ? 'bg-amber-400 text-black border-amber-200 shadow-lg font-extrabold' : 'bg-amber-950/40 hover:bg-amber-900/60 text-amber-300 border-amber-500/50') + '"><span>🟡 ' + ch + '</span> <span class="text-[10px] bg-black/50 px-1.5 py-0.5 rounded-full">' + cCount + ' Video(s) Only</span></button>';
+        });
+        topRowHtml += '</div>';
+      }
+      topRowHtml += '</div>';
+
+      topRowHtml += '</div>';
+    }
+
+    bar.className = "mb-3.5 bg-[#10131a]/95 border border-slate-800 rounded-2xl p-3 flex flex-col";
+    bar.innerHTML = topRowHtml;
+  }
+
+  // =========================================================================
+  // 3. UPGRADE ADMIN & USER ADD-VIDEO FORMS WITH NEW CATEGORIES, AUDIENCE MODE & VERIFICATION TYPE
+  // =========================================================================
+  var NEW_CAT_OPTIONS_HTML =
+    '<option value="quran">🕋 Tilawat-e-Quran (تلاوتِ قرآن پاک)</option>' +
+    '<option value="naat">🎤 Naat Sharif (نعت شریف)</option>' +
+    '<option value="bayan">🎙️ Islamic Bayanat (اسلامی بیانات)</option>' +
+    '<option value="tarbiyah">🌿 Islamic Tarbiyah (اسلامی تربیت)</option>' +
+    '<option value="kids_tarbiyah">📖 Kids Tarbiyah &amp; Stories (بچوں کی تربیت)</option>' +
+    '<option value="kids_cartoon">🌟 Kids Cartoons (کڈز کارٹون)</option>';
+
+  ["adminVideoCat", "parentVideoCat", "quickReqVideoCat"].forEach(function(selId) {
+    var sel = document.getElementById(selId);
+    if (sel) sel.innerHTML = NEW_CAT_OPTIONS_HTML;
+  });
+
+  // Add Audience Selector (Kids Preferred / Kids + Family Both / Family Only) & Verification Type (Channel Verified vs Video Verified) in Admin Publish box
+  var adminCatSelect = document.getElementById("adminVideoCat");
+  if (adminCatSelect && !document.getElementById("adminVideoAudience")) {
+    var gridRow = adminCatSelect.parentNode;
+    gridRow.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 text-xs";
+
+    var audSelect = document.createElement("select");
+    audSelect.id = "adminVideoAudience";
+    audSelect.className = "bg-black border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-semibold";
+    audSelect.innerHTML =
+      '<option value="both_family_kids">👨‍👩‍👧‍👦 Kids + Family (Both Modes)</option>' +
+      '<option value="kids_preferred">🧒 Kids Preferred (Kids Priority)</option>' +
+      '<option value="family_only">🎙️ Family / Adult Only</option>';
+
+    var verSelect = document.createElement("select");
+    verSelect.id = "adminVerifyType";
+    verSelect.className = "bg-black border border-emerald-500/50 rounded-lg px-2.5 py-1.5 text-emerald-300 font-bold";
+    verSelect.innerHTML =
+      '<option value="video_verified">🟡 Video Verified Only</option>' +
+      '<option value="channel_verified">🟢 Full Channel Verified</option>';
+
+    // Auto-adjust Audience default when Category changes
+    adminCatSelect.addEventListener("change", function() {
+      var c = this.value;
+      if (c === "bayan") audSelect.value = "family_only";
+      else if (c === "kids_cartoon" || c === "kids_tarbiyah") audSelect.value = "kids_preferred";
+      else audSelect.value = "both_family_kids";
+    });
+
+    // Auto-select "Full Channel Verified" when a @Channel URL is typed
+    var ytUrlInp = document.getElementById("adminYtUrlInput");
+    if (ytUrlInp) {
+      ytUrlInp.addEventListener("input", function() {
+        var v = (this.value || "").trim();
+        if (v.indexOf("/@") !== -1 || v.indexOf("@") === 0 || v.indexOf("/channel/") !== -1) {
+          verSelect.value = "channel_verified";
+        } else {
+          verSelect.value = "video_verified";
+        }
+      });
+    }
+
+    var pushBtn = gridRow.querySelector('button[onclick*="adminAddGlobalVideo"]');
+    gridRow.insertBefore(audSelect, pushBtn);
+    gridRow.insertBefore(verSelect, pushBtn);
+  }
+
+  // Override Priority Score so Kids Preferred, Kids+Family, and Family Only rank properly
+  window.getModePriorityScore = function(video) {
+    var score = 0;
+    if (video.lang === preferredContentLang || video.lang === "global" || video.universalQuran) score += 55;
+    if (isKidsLocked) {
+      if (video.audienceMode === "kids_preferred" || video.category === "kids_cartoon" || video.category === "kids_tarbiyah") score += 45;
+      else if (video.audienceMode === "both_family_kids" || video.category === "quran" || video.category === "naat" || video.category === "tarbiyah") score += 30;
+    } else {
+      if (video.audienceMode === "family_only" || video.category === "bayan") score += 40;
+      else if (video.audienceMode === "both_family_kids" || video.category === "quran" || video.category === "naat" || video.category === "tarbiyah") score += 35;
+      else score += 15;
+    }
+    return score;
+  };
+
+  // Override adminAddGlobalVideo to save audienceMode and channelVerified / videoVerified status!
+  var prevAdminAdd = window.adminAddGlobalVideo;
+  window.adminAddGlobalVideo = function() {
+    var audEl = document.getElementById("adminVideoAudience");
+    var verEl = document.getElementById("adminVerifyType");
+    var audVal = audEl ? audEl.value : "both_family_kids";
+    var isChVerified = verEl ? (verEl.value === "channel_verified") : false;
+    var chName = (document.getElementById("adminChannelName") ? document.getElementById("adminChannelName").value : "").trim();
+
+    var beforeLen = videosData.length;
+    if (prevAdminAdd) prevAdminAdd();
+    var afterLen = videosData.length;
+
+    if (afterLen > beforeLen) {
+      var addedCount = afterLen - beforeLen;
+      for (var i = 0; i < addedCount; i++) {
+        var v = videosData[i];
+        if (v) {
+          v.audienceMode = audVal;
+          v.kidsSafe = (audVal !== "family_only");
+          v.channelVerified = isChVerified;
+          if (isChVerified && v.channel && window.verifiedChannelsList.indexOf(v.channel) === -1) {
+            window.verifiedChannelsList.push(v.channel);
+          }
+        }
+      }
+      localStorage.setItem("qaaf_verified_channels", JSON.stringify(window.verifiedChannelsList));
+      localStorage.setItem("qaaf_videos_data", JSON.stringify(videosData));
+      renderVideos();
+      if (window.renderAdminActiveVideosCatalog) window.renderAdminActiveVideosCatalog();
+      if (window.qaafCloudSync) window.qaafCloudSync.pushState("Published Video/Channel with Verification Status");
+    }
+  };
+
+  // =========================================================================
+  // 4. UPDATE VIDEO CARDS, PLAYER & ADMIN CATALOG TO SHOW "CHANNEL VERIFIED" VS "VIDEO VERIFIED"
+  // =========================================================================
+  var prevOpenPlayer = window.openVideoPlayer;
+  window.openVideoPlayer = function(videoId) {
+    if (prevOpenPlayer) prevOpenPlayer(videoId);
+    var video = videosData.find(function(v) { return v.id === videoId; });
+    if (!video) return;
+    var chEl = document.getElementById("playingChannelName");
+    var vwEl = document.getElementById("playingViewsText");
+    var isChVer = window.isChannelFullyVerified(video.channel, video);
+    if (chEl) {
+      chEl.innerHTML = isChVer
+        ? (video.channel + ' <span class="bg-emerald-500/20 border border-emerald-400 text-emerald-300 px-2 py-0.5 rounded-full text-[10px] font-extrabold ml-1">✅ Channel Verified</span>')
+        : (video.channel + ' <span class="bg-amber-500/20 border border-amber-400 text-amber-300 px-2 py-0.5 rounded-full text-[10px] font-extrabold ml-1">🟡 Video Verified</span>');
+    }
+    if (vwEl) {
+      vwEl.innerText = ((video.views || 1500) / 1000).toFixed(1) + "K views • " + (video.lang || "en").toUpperCase() + " • " + (isChVer ? "Verified Full Channel" : "Verified Single Video");
+    }
+  };
+
+  var prevRenderNow = window.renderVideosNow;
+  window.renderVideosNow = function() {
+    // Map kids_tarbiyah filter so legacy 'stories' also matches if needed
+    renderTopicAndByChannelsBar();
+    if (prevRenderNow) prevRenderNow();
+
+    var grid = document.getElementById("videoGrid");
+    if (grid && videosData.length === 0) {
+      grid.innerHTML =
+        '<div class="col-span-full bg-[#121620] border border-slate-800 rounded-2xl p-8 text-center my-4">' +
+          '<div class="text-3xl mb-2">🕌</div>' +
+          '<h4 class="text-sm sm:text-base font-extrabold text-white mb-1">Catalog is Clean &amp; Ready</h4>' +
+          '<p class="text-xs text-slate-400">No channels or videos are preloaded. Super Admin can now add Verified Channels or Videos from the Admin Console.</p>' +
+        '</div>';
+      return;
+    }
+
+    // Update every Video Card to show "🟢 Channel Verified" vs "🟡 Video Verified" and Audience Mode label!
+    document.querySelectorAll("#videoGrid > div").forEach(function(card) {
+      var flagBtn = card.querySelector('button[onclick*="openFlagModal"]');
+      if (!flagBtn) return;
+      var m = (flagBtn.getAttribute("onclick") || "").match(/'([^']+)'/);
+      if (!m || !m[1]) return;
+      var vidObj = videosData.find(function(x) { return x.id === m[1]; });
+      if (!vidObj) return;
+
+      var isChVer = window.isChannelFullyVerified(vidObj.channel, vidObj);
+      var chRow = card.querySelector(".p-3 .flex.items-center.justify-between");
+      if (chRow) {
+        var firstSpan = chRow.querySelector("span:first-child");
+        var lastSpan = chRow.querySelector("span:last-child");
+        if (firstSpan) {
+          firstSpan.className = isChVer ? "text-emerald-400 font-bold truncate" : "text-amber-300 font-semibold truncate";
+          firstSpan.innerHTML = isChVer
+            ? ("✅ " + vidObj.channel + ' <span class="text-[9px] bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 px-1.5 py-0.5 rounded ml-0.5">Channel Verified</span>')
+            : ("🟡 " + vidObj.channel + ' <span class="text-[9px] bg-amber-500/20 border border-amber-500/40 text-amber-300 px-1.5 py-0.5 rounded ml-0.5">Video Verified</span>');
+        }
+        if (lastSpan) {
+          var modeTxt = vidObj.audienceMode === "kids_preferred"
+            ? "🧒 Kids Preferred"
+            : (vidObj.audienceMode === "family_only" || !vidObj.kidsSafe ? "🎙️ Family Only" : "👨‍👩‍👧‍👦 Kids + Family");
+          lastSpan.innerText = modeTxt;
+        }
+      }
+    });
+  };
+
+  // Also add 1-click "🟢 Channel Verified / 🟡 Video Verified" toggle in Admin Active Channels Bar
+  var baseAdminCatalog = window.renderAdminActiveVideosCatalog;
+  window.renderAdminActiveVideosCatalog = function() {
+    if (baseAdminCatalog) baseAdminCatalog();
+    var listEl = document.getElementById("adminActiveVideosCatalogList");
+    if (!listEl) return;
+
+    var topBox = listEl.querySelector(".bg-slate-900\\/90");
+    if (topBox) {
+      var chWraps = topBox.querySelectorAll(".inline-flex");
+      chWraps.forEach(function(wrap) {
+        var btn = wrap.querySelector("button");
+        if (!btn || wrap.querySelector(".adm-ver-ch-btn")) return;
+        var m = (btn.getAttribute("onclick") || "").match(/'([^']+)'/);
+        if (!m || !m[1]) return;
+        var chName = m[1];
+        var isVer = window.isChannelFullyVerified(chName);
+
+        var verBtn = document.createElement("button");
+        verBtn.type = "button";
+        verBtn.className = "adm-ver-ch-btn px-2 py-1 text-[10px] font-extrabold border-l border-slate-700 transition " + (isVer ? "bg-emerald-900/70 text-emerald-300 hover:bg-amber-700 hover:text-white" : "bg-amber-900/60 text-amber-300 hover:bg-emerald-700 hover:text-white");
+        verBtn.innerText = isVer ? "🟢 Ch.Verified" : "🟡 Vid.Only";
+        verBtn.title = "Click to toggle between Full Channel Verified (Green) and Video Verified Only (Yellow)";
+        verBtn.onclick = function(e) { window.adminToggleChannelVerifiedStatus(chName, e); };
+        wrap.insertBefore(verBtn, wrap.lastElementChild);
+      });
+    }
+  };
+
+  window.renderVideosNow();
+  if (window.renderAdminActiveVideosCatalog) window.renderAdminActiveVideosCatalog();
 })();
 </script>
 
