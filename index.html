@@ -3533,7 +3533,7 @@
           </div>
           <button id="qaafNotifBellBtn" type="button" class="bg-[#181c26] hover:bg-slate-800 border border-slate-700 text-slate-200 px-3.5 py-2 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 shrink-0 shadow">
             <span>🔔</span>
-            <span>Request Status</span>
+            <span>Video Request</span>
             <span id="userNotifCountBadge" class="bg-emerald-600 text-white px-1.5 py-0.5 rounded-full text-[10px] font-extrabold">0</span>
           </button>
         `;
@@ -5584,7 +5584,7 @@
       </div>
       <button id="qaafNotifBellBtn" type="button" class="bg-[#181c26] hover:bg-slate-800 border border-slate-700 text-slate-200 px-3.5 py-2 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 shrink-0 shadow self-start sm:self-center">
         <span>🔔</span>
-        <span>Request Status</span>
+        <span>Video Request</span>
         <span id="userNotifCountBadge" class="bg-emerald-600 text-white px-1.5 py-0.5 rounded-full text-[10px] font-extrabold">0</span>
       </button>
     `;
@@ -7782,7 +7782,7 @@
 <script>
 (function enableCodeShieldAndFirebaseToken() {
   // A. Block Right-Click, F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U (View Source)
-  document.addEventListener("contextmenu", function(e) { e.preventDefault(); });
+  // Right-click enabled for opening videos in new tab
   document.addEventListener("keydown", function(e) {
     if (
       e.key === "F12" ||
@@ -9059,6 +9059,244 @@
       }, ms);
     });
   };
+})();
+</script>
+
+<!-- QAAF RIGHT-CLICK NEW TAB VIDEO LINKS & UNIFIED VIDEO REQUEST + STATUS MODAL -->
+<script>
+(function enableRightClickNewTabAndUnifiedRequestModal() {
+  // =========================================================================
+  // 1. UPGRADE VIDEO REQUEST BUTTON & MODAL (REQUEST FORM + STATUS IN ONE PLACE)
+  // =========================================================================
+  var reqBtn = document.getElementById("qaafNotifBellBtn");
+  if (reqBtn) {
+    var spans = reqBtn.querySelectorAll("span");
+    if (spans.length >= 2) {
+      spans[0].innerText = "📩";
+      spans[1].innerText = "Video Request";
+    }
+  }
+
+  var notifModal = document.getElementById("userNotifModal");
+  if (notifModal) {
+    notifModal.innerHTML =
+      '<div class="bg-[#16181d] border border-blue-500/40 rounded-2xl max-w-lg w-full p-4 sm:p-5 shadow-2xl max-h-[90vh] flex flex-col">' +
+        '<div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3 shrink-0">' +
+          '<div class="flex items-center gap-2">' +
+            '<span class="text-lg">📩</span>' +
+            '<div>' +
+              '<h3 class="text-sm sm:text-base font-extrabold text-white">Video &amp; Channel Request Center</h3>' +
+              '<p class="text-[10px] text-emerald-400 font-bold">Submit a new YouTube link &amp; track approval status</p>' +
+            '</div>' +
+          '</div>' +
+          '<button type="button" onclick="document.getElementById(\'userNotifModal\').classList.add(\'hidden\')" class="text-xs bg-slate-800 hover:bg-rose-600 px-3 py-1 rounded-xl text-slate-200 font-extrabold transition">✕ Close</button>' +
+        '</div>' +
+
+        '<div class="overflow-y-auto flex-1 space-y-4 pr-1">' +
+          '<!-- TOP PART: SUBMIT NEW VIDEO / CHANNEL REQUEST FORM -->' +
+          '<div class="bg-slate-900/95 p-3.5 rounded-xl border border-blue-500/40 space-y-2.5">' +
+            '<div class="flex items-center justify-between">' +
+              '<h4 class="text-xs font-extrabold text-blue-300">➕ Request New Channel or Video</h4>' +
+              '<span class="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-bold">🔍 Admin Music Check</span>' +
+            '</div>' +
+            '<p class="text-[11px] text-slate-400">Paste any YouTube Video or Channel link below. Admin will verify it is 100% music-free.</p>' +
+            '<div class="flex gap-2">' +
+              '<input id="quickReqYtUrlInput" type="text" placeholder="Paste YouTube Video URL or ID..." class="flex-1 bg-black border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:border-blue-500 focus:outline-none" />' +
+              '<button type="button" onclick="quickModalAutoFetchVideo()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-extrabold shrink-0 shadow">✨ Fetch</button>' +
+            '</div>' +
+            '<div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">' +
+              '<input id="quickReqVideoTitle" type="text" placeholder="Video / Cartoon / Bayan Title" class="bg-black border border-slate-700 rounded-lg px-3 py-1.5 text-white" />' +
+              '<input id="quickReqChannelName" type="text" placeholder="Channel Name" class="bg-black border border-slate-700 rounded-lg px-3 py-1.5 text-white" />' +
+            '</div>' +
+            '<div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">' +
+              '<select id="quickReqVideoLang" class="bg-black border border-slate-700 rounded-lg px-2 py-1.5 text-white">' +
+                '<option value="global">🌍 Global (All)</option>' +
+                '<option value="en">🇬🇧 English</option>' +
+                '<option value="ar">🇸🇦 Arabic</option>' +
+                '<option value="ur">🇵🇰 Urdu</option>' +
+                '<option value="hi">🇮🇳 Hindi</option>' +
+                '<option value="bn">🇧🇩 Bengali</option>' +
+                '<option value="tr">🇹🇷 Turkish</option>' +
+                '<option value="ms">🇲🇾 Malay</option>' +
+                '<option value="id">🇮🇩 Indonesian</option>' +
+              '</select>' +
+              '<select id="quickReqVideoCat" class="bg-black border border-slate-700 rounded-lg px-2 py-1.5 text-white">' +
+                '<option value="kids_cartoon">🌟 Kids Cartoon</option>' +
+                '<option value="stories">📖 Prophet Stories</option>' +
+                '<option value="quran">🕋 Quran / Naat</option>' +
+                '<option value="bayan">🎙️ Adult Bayan</option>' +
+              '</select>' +
+              '<button type="button" onclick="quickModalSubmitRequest()" class="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-extrabold py-1.5 shadow">📩 Send Request</button>' +
+            '</div>' +
+            '<p id="quickReqFeedbackMsg" class="text-[11px] font-bold hidden"></p>' +
+          '</div>' +
+
+          '<!-- BOTTOM PART: REQUEST STATUS LIST -->' +
+          '<div>' +
+            '<h4 class="text-xs font-extrabold text-emerald-400 mb-2 flex items-center gap-1.5"><span>🔔</span> <span>Submitted Requests &amp; Live Status</span></h4>' +
+            '<div id="userNotifModalList" class="space-y-2 text-xs"></div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+  }
+
+  window.quickModalAutoFetchVideo = async function() {
+    var urlInp = document.getElementById("quickReqYtUrlInput");
+    var fb = document.getElementById("quickReqFeedbackMsg");
+    var raw = (urlInp ? urlInp.value : "").trim();
+    var ytId = extractYouTubeId(raw);
+    if (!ytId) {
+      alert("Please paste a valid YouTube Video URL or 11-character ID.");
+      return;
+    }
+    if (fb) {
+      fb.classList.remove("hidden");
+      fb.className = "text-[11px] font-bold text-blue-300";
+      fb.innerText = "⏳ Fetching video title & channel...";
+    }
+    try {
+      var res = await fetch("https://noembed.com/embed?url=https://www.youtube.com/watch?v=" + ytId);
+      var data = await res.json();
+      if (data && data.title) {
+        document.getElementById("quickReqVideoTitle").value = data.title;
+        document.getElementById("quickReqChannelName").value = data.author_name || "YouTube Channel";
+        if (fb) {
+          fb.className = "text-[11px] font-bold text-emerald-400";
+          fb.innerText = "✨ Fetched! Now click 'Send Request' to submit.";
+        }
+      }
+    } catch (e) {
+      if (fb) {
+        fb.className = "text-[11px] font-bold text-amber-300";
+        fb.innerText = "✓ Video ID detected. Please type title & channel name.";
+      }
+    }
+  };
+
+  window.quickModalSubmitRequest = function() {
+    var urlInp = document.getElementById("quickReqYtUrlInput");
+    var titleInp = document.getElementById("quickReqVideoTitle");
+    var chInp = document.getElementById("quickReqChannelName");
+    var fb = document.getElementById("quickReqFeedbackMsg");
+
+    var ytId = extractYouTubeId(urlInp ? urlInp.value.trim() : "");
+    var title = titleInp ? titleInp.value.trim() : "";
+    var channel = (chInp && chInp.value.trim()) ? chInp.value.trim() : "Requested Channel";
+    var lang = document.getElementById("quickReqVideoLang").value;
+    var cat = document.getElementById("quickReqVideoCat").value;
+
+    if (!ytId || !title) {
+      alert("Please paste a valid YouTube link and click Fetch (or enter a title).");
+      return;
+    }
+
+    // Copy values into the main parent request inputs and invoke parentSubmitChannelRequest
+    var pUrl = document.getElementById("parentYtUrlInput");
+    var pTitle = document.getElementById("parentVideoTitle");
+    var pCh = document.getElementById("parentChannelName");
+    var pLang = document.getElementById("parentVideoLang");
+    var pCat = document.getElementById("parentVideoCat");
+
+    if (pUrl) pUrl.value = ytId;
+    if (pTitle) pTitle.value = title;
+    if (pCh) pCh.value = channel;
+    if (pLang) pLang.value = lang;
+    if (pCat) pCat.value = cat;
+
+    parentSubmitChannelRequest();
+
+    if (urlInp) urlInp.value = "";
+    if (titleInp) titleInp.value = "";
+    if (chInp) chInp.value = "";
+
+    if (fb) {
+      fb.classList.remove("hidden");
+      fb.className = "text-[11px] font-bold text-emerald-400";
+      fb.innerText = "✅ Request submitted! Check its live status below.";
+    }
+
+    // Refresh the status list inside this modal immediately
+    if (typeof window.openUserNotificationsModal === "function") {
+      window.openUserNotificationsModal();
+    }
+  };
+
+  // =========================================================================
+  // 2. ENABLE RIGHT-CLICK -> "OPEN LINK IN NEW TAB" ON ALL VIDEO & SHORT CARDS
+  // =========================================================================
+  function convertCardsToNewTabLinks() {
+    // Regular video cards
+    document.querySelectorAll("#videoGrid > div").forEach(function(card) {
+      var clickAreas = card.querySelectorAll('div[onclick*="openVideoPlayer"]');
+      clickAreas.forEach(function(divEl) {
+        if (divEl.dataset.linkedNewTab === "1") return;
+        var m = (divEl.getAttribute("onclick") || "").match(/'([^']+)'/);
+        if (!m || !m[1]) return;
+        var vidId = m[1];
+        divEl.dataset.linkedNewTab = "1";
+
+        // Add a transparent full-area <a> tag or wrap so Right-Click shows "Open link in new tab"
+        var linkOverlay = document.createElement("a");
+        linkOverlay.href = "?watch=" + encodeURIComponent(vidId);
+        linkOverlay.className = "block text-inherit no-underline";
+        linkOverlay.onclick = function(e) {
+          if (!e.ctrlKey && !e.metaKey && e.button === 0) {
+            e.preventDefault();
+            e.stopPropagation();
+            openVideoPlayer(vidId);
+          }
+        };
+
+        divEl.removeAttribute("onclick");
+        while (divEl.firstChild) {
+          linkOverlay.appendChild(divEl.firstChild);
+        }
+        divEl.appendChild(linkOverlay);
+      });
+    });
+
+    // Shorts shelf cards
+    document.querySelectorAll('#qaafShortsShelf div[onclick*="openVideoPlayer"]').forEach(function(shCard) {
+      if (shCard.dataset.linkedNewTab === "1") return;
+      var m = (shCard.getAttribute("onclick") || "").match(/'([^']+)'/);
+      if (!m || !m[1]) return;
+      var vidId = m[1];
+      shCard.dataset.linkedNewTab = "1";
+
+      var linkA = document.createElement("a");
+      linkA.href = "?watch=" + encodeURIComponent(vidId);
+      linkA.className = "absolute inset-0 z-20 block";
+      linkA.onclick = function(e) {
+        if (!e.ctrlKey && !e.metaKey && e.button === 0) {
+          e.preventDefault();
+          e.stopPropagation();
+          openVideoPlayer(vidId);
+        }
+      };
+      shCard.removeAttribute("onclick");
+      shCard.appendChild(linkA);
+    });
+  }
+
+  var prevRenderNow = window.renderVideosNow;
+  window.renderVideosNow = function() {
+    if (prevRenderNow) prevRenderNow();
+    convertCardsToNewTabLinks();
+  };
+  convertCardsToNewTabLinks();
+
+  // If opened in a new tab via ?watch=VIDEO_ID, skip splash and open that video immediately!
+  var urlParams = new URLSearchParams(window.location.search);
+  var watchVidId = urlParams.get("watch");
+  if (watchVidId) {
+    var splash = document.getElementById("startupSplashModal");
+    if (splash) splash.classList.add("hidden");
+    setTimeout(function() {
+      if (videosData.some(function(v) { return v.id === watchVidId; })) {
+        openVideoPlayer(watchVidId);
+      }
+    }, 250);
+  }
 })();
 </script>
 
