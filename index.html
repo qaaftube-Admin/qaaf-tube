@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>QAAF Tube v8.6 — Muslim Family & Kids Hub</title>
+  <title>QAAF Tube — Muslim Family & Kids Hub</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 716'%3E%3Crect width='1024' height='716' rx='160' fill='%23E51920'/%3E%3Cpolygon points='562,225 562,489 800,357' fill='%23FFFFFF'/%3E%3Ccircle cx='380' cy='360' r='140' stroke='%23FFFFFF' stroke-width='55' fill='none'/%3E%3C/svg%3E" />
 
   <!-- HIGH-SPEED YOUTUBE CDN & AUDIO PRECONNECT TAGS FOR INSTANT HD STREAMING -->
   <link rel="preconnect" href="https://www.youtube.com" crossorigin />
@@ -8584,7 +8585,10 @@
 <!-- QAAF V9.9 UNBREAKABLE REFRESH LOCK, 12H CLOCK FIX & KEYBOARD-SAFE PIN MODAL -->
 <style>
   /* 1. Disable mobile Pull-to-Refresh so dragging finger down never refreshes the page */
-  html, body {
+  html, body.bg-islamic-family {
+    overscroll-behavior-y: auto !important;
+  }
+  body.bg-islamic-kids {
     overscroll-behavior-y: none !important;
   }
   #kidsTimeUpLockOverlay {
@@ -8935,6 +8939,126 @@
   };
 
   window.upgradeDomEmojisToCustomSvg(document.body);
+})();
+</script>
+
+<!-- QAAF FAMILY REFRESH RESTORE & SMOOTH VIDEO VOLUME SLIDER -->
+<script>
+(function enableFamilyRefreshAndVolumeSlider() {
+  // A. Keep Pull-to-Refresh 100% enabled in Family Mode, and only disable it in Kids Mode
+  function syncOverscrollMode() {
+    if (isKidsLocked) {
+      document.documentElement.style.overscrollBehaviorY = "none";
+      document.body.style.overscrollBehaviorY = "none";
+    } else {
+      document.documentElement.style.overscrollBehaviorY = "auto";
+      document.body.style.overscrollBehaviorY = "auto";
+    }
+  }
+
+  setInterval(syncOverscrollMode, 400);
+  syncOverscrollMode();
+
+  // B. Add Smooth Volume Slider (0% to 100%) in Video Player Top Bar & Action Bar
+  var currentVol = parseInt(localStorage.getItem("qaaf_player_volume") || "100", 10);
+  var isVolMuted = false;
+
+  window.setQaafPlayerVolume = function(val) {
+    var v = Math.max(0, Math.min(100, parseInt(val, 10) || 0));
+    currentVol = v;
+    localStorage.setItem("qaaf_player_volume", String(v));
+
+    if (v === 0) {
+      isVolMuted = true;
+      if (typeof sendYouTubeCommand === "function") sendYouTubeCommand("mute");
+    } else {
+      isVolMuted = false;
+      if (typeof sendYouTubeCommand === "function") {
+        sendYouTubeCommand("unMute");
+        sendYouTubeCommand("setVolume", [v]);
+      }
+    }
+
+    var safeAud = document.getElementById("safePlayerAudio");
+    if (safeAud) {
+      safeAud.muted = (v === 0);
+      safeAud.volume = v / 100;
+    }
+
+    var sliderEl = document.getElementById("qaafVolumeRangeSlider");
+    var labelEl = document.getElementById("qaafVolumePctLabel");
+    var iconBtn = document.getElementById("qaafVolumeMuteBtn");
+    if (sliderEl && parseInt(sliderEl.value, 10) !== v) sliderEl.value = v;
+    if (labelEl) labelEl.innerText = v + "%";
+    if (iconBtn) iconBtn.innerText = v === 0 ? "🔇" : (v < 50 ? "🔉" : "🔊");
+  };
+
+  window.toggleQaafVolumeMute = function() {
+    if (!isVolMuted && currentVol > 0) {
+      isVolMuted = true;
+      if (typeof sendYouTubeCommand === "function") sendYouTubeCommand("mute");
+      var sliderEl = document.getElementById("qaafVolumeRangeSlider");
+      var labelEl = document.getElementById("qaafVolumePctLabel");
+      var iconBtn = document.getElementById("qaafVolumeMuteBtn");
+      if (sliderEl) sliderEl.value = 0;
+      if (labelEl) labelEl.innerText = "0%";
+      if (iconBtn) iconBtn.innerText = "🔇";
+    } else {
+      var restoreV = currentVol > 0 ? currentVol : 80;
+      window.setQaafPlayerVolume(restoreV);
+    }
+  };
+
+  function injectVolumeSliderControl() {
+    var topBar = document.getElementById("ytTopControlBar");
+    if (!topBar || document.getElementById("qaafVolumeControlBox")) return;
+
+    var rightCtrl = document.getElementById("miniPlayerControlsRight");
+    var volBox = document.createElement("div");
+    volBox.id = "qaafVolumeControlBox";
+    volBox.className = "flex items-center gap-1.5 bg-[#1c212b] border border-white/10 px-2.5 py-1 rounded-full";
+    volBox.innerHTML =
+      '<button type="button" id="qaafVolumeMuteBtn" onclick="toggleQaafVolumeMute()" class="text-xs leading-none">🔊</button>' +
+      '<input id="qaafVolumeRangeSlider" type="range" min="0" max="100" value="' + currentVol + '" oninput="setQaafPlayerVolume(this.value)" class="w-16 sm:w-24 h-1.5 accent-emerald-500 bg-slate-700 rounded-lg cursor-pointer" />' +
+      '<span id="qaafVolumePctLabel" class="text-[10px] font-extrabold text-emerald-400 w-7 text-right">' + currentVol + '%</span>';
+
+    if (rightCtrl) {
+      topBar.insertBefore(volBox, rightCtrl);
+    } else {
+      topBar.appendChild(volBox);
+    }
+  }
+
+  injectVolumeSliderControl();
+
+  // Hide volume slider when minimized to tiny corner player, show when expanded
+  var prevMin = window.minimizeToMiniPlayer;
+  window.minimizeToMiniPlayer = function() {
+    if (prevMin) prevMin();
+    var vb = document.getElementById("qaafVolumeControlBox");
+    if (vb) vb.classList.add("hidden");
+  };
+
+  var prevExp = window.expandFromMiniPlayer;
+  window.expandFromMiniPlayer = function() {
+    if (prevExp) prevExp();
+    var vb = document.getElementById("qaafVolumeControlBox");
+    if (vb) vb.classList.remove("hidden");
+  };
+
+  // Apply saved volume automatically whenever a video starts playing
+  var prevOpen = window.openVideoPlayer;
+  window.openVideoPlayer = function(videoId) {
+    if (prevOpen) prevOpen(videoId);
+    injectVolumeSliderControl();
+    var vb = document.getElementById("qaafVolumeControlBox");
+    if (vb) vb.classList.remove("hidden");
+    [500, 1200, 2200].forEach(function(ms) {
+      setTimeout(function() {
+        window.setQaafPlayerVolume(currentVol);
+      }, ms);
+    });
+  };
 })();
 </script>
 
