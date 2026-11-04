@@ -7812,6 +7812,13 @@
   // PART A: BLOCK YOUTUBE LOGO / TITLE CLICKS INSIDE PLAYER (NO ESCAPE TO YOUTUBE APP)
   // =========================================================================
   function injectYouTubeLogoShields() {
+    var ifr = document.getElementById("ytIframe");
+    if (ifr) ifr.setAttribute("sandbox", "allow-scripts allow-same-origin allow-presentation");
+    ["ytTopLinkBlocker", "ytBottomLogoBlocker", "ytBottomLeftBlocker"].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.remove();
+    });
+    return;
     var ytCont = document.getElementById("ytPlayerContainer");
     if (!ytCont) return;
 
@@ -8790,6 +8797,30 @@
       }
     });
   }
+})();
+</script>
+
+<!-- QAAF PLAYER CONTROLS UNLOCK (SEEKBAR, VOLUME & RESOLUTION SETTINGS 100% ACTIVE + SANDBOX YOUTUBE BLOCK) -->
+<script>
+(function unlockAllPlayerControlsWithSandbox() {
+  function cleanOverlaysAndEnforceSandbox() {
+    ["ytTopLinkBlocker", "ytBottomLogoBlocker", "ytBottomLeftBlocker"].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.remove();
+    });
+    var ifr = document.getElementById("ytIframe");
+    if (ifr) {
+      ifr.setAttribute("sandbox", "allow-scripts allow-same-origin allow-presentation");
+    }
+  }
+
+  var prevLoad = window.loadVideoInActiveEngine;
+  window.loadVideoInActiveEngine = function(videoId) {
+    if (prevLoad) prevLoad(videoId);
+    cleanOverlaysAndEnforceSandbox();
+  };
+
+  cleanOverlaysAndEnforceSandbox();
 })();
 </script>
 
