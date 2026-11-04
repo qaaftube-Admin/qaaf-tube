@@ -168,7 +168,7 @@
       <!-- COMPACT GLOBE "ENG ▾" DROPDOWN -->
       <div id="langDropdownContainer" class="relative shrink-0">
         <button onclick="toggleLangDropdown()" class="bg-[#272727] hover:bg-[#383838] border border-white/10 text-white px-1.5 sm:px-2 py-1 sm:py-1.5 rounded-full text-xs font-extrabold flex items-center gap-0.5 sm:gap-1 shrink-0">
-          <span>🌍</span><span id="shortLangCode">ENG</span><span class="text-[9px] sm:text-[10px] text-slate-300">▾</span>
+          <span id="shortLangCode">EN</span><span class="text-[9px] sm:text-[10px] text-slate-300">▾</span>
         </button>
 
         <div id="langDropdownMenu" class="hidden fixed sm:absolute left-2 right-2 sm:left-auto sm:right-0 top-16 sm:top-full sm:mt-2 sm:w-80 bg-[#16181d] border border-slate-700 rounded-2xl shadow-2xl p-4 z-50 text-xs">
@@ -336,7 +336,7 @@
 
         <!-- YOUTUBE IFRAME (NO BLOCKING OVERLAYS — VOLUME & SETTINGS GEAR 100% WORKING) -->
         <div id="ytPlayerContainer" class="absolute inset-0 w-full h-full">
-          <iframe id="ytIframe" class="w-full h-full" src="" title="QAAF YouTube Player" frameborder="0" sandbox="allow-scripts allow-same-origin allow-presentation" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+          <iframe id="ytIframe" class="w-full h-full" src="" title="QAAF YouTube Player" frameborder="0" sandbox="allow-scripts allow-same-origin allow-presentation" sandbox="allow-scripts allow-same-origin allow-presentation" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
         </div>
 
         <!-- FALLBACK SAFE CANVAS CONTAINER (HIDDEN BY DEFAULT) -->
@@ -855,29 +855,29 @@
 
  <script>
     const globalLanguagesList = [
-      { code: 'en', short: 'ENG', label: '🇬🇧 English (Default)', rtl: false, regionKey: 'US_UK' },
-      { code: 'ar', short: 'ARA', label: '🇸🇦 Arabic (العربية)', rtl: true, regionKey: 'AR' },
-      { code: 'ur', short: 'URD', label: '🇵🇰 Urdu (اردو)', rtl: true, regionKey: 'PK' },
-      { code: 'hi', short: 'HIN', label: '🇮🇳 Hindi (हिन्दी)', rtl: false, regionKey: 'GLOBAL' },
-      { code: 'bn', short: 'BEN', label: '🇧🇩 Bengali (বাংলা)', rtl: false, regionKey: 'BD' },
-      { code: 'tr', short: 'TUR', label: '🇹🇷 Turkish (Türkçe)', rtl: false, regionKey: 'GLOBAL' },
-      { code: 'ms', short: 'MSA', label: '🇲🇾 Malay (Bahasa Melayu)', rtl: false, regionKey: 'GLOBAL' },
-      { code: 'id', short: 'IND', label: '🇮🇩 Indonesian (Bahasa)', rtl: false, regionKey: 'GLOBAL' },
-      { code: 'fr', short: 'FRA', label: '🇫🇷 French (Français)', rtl: false, regionKey: 'US_UK' },
-      { code: 'de', short: 'DEU', label: '🇩🇪 German (Deutsch)', rtl: false, regionKey: 'US_UK' },
-      { code: 'it', short: 'ITA', label: '🇮🇹 Italian (Italiano)', rtl: false, regionKey: 'US_UK' },
-      { code: 'es', short: 'ESP', label: '🇪🇸 Spanish (Español)', rtl: false, regionKey: 'US_UK' },
-      { code: 'ru', short: 'RUS', label: '🇷🇺 Russian (Русский)', rtl: false, regionKey: 'GLOBAL' },
-      { code: 'fa', short: 'FAS', label: '🇮🇷 Persian (فارسی)', rtl: true, regionKey: 'GLOBAL' },
-      { code: 'ps', short: 'PUS', label: '🇦🇫 Pashto (پښتو)', rtl: true, regionKey: 'PK' },
-      { code: 'pa', short: 'PAN', label: '🇵🇰 Punjabi (پنجابی)', rtl: false, regionKey: 'PK' },
-      { code: 'sw', short: 'SWA', label: '🇰🇪 Swahili', rtl: false, regionKey: 'GLOBAL' },
-      { code: 'ha', short: 'HAU', label: '🇳🇬 Hausa', rtl: false, regionKey: 'GLOBAL' },
-      { code: 'so', short: 'SOM', label: '🇸🇴 Somali', rtl: false, regionKey: 'GLOBAL' },
-      { code: 'uz', short: 'UZB', label: '🇺🇿 Uzbek', rtl: false, regionKey: 'GLOBAL' },
-      { code: 'sq', short: 'SQI', label: '🇦🇱 Albanian', rtl: false, regionKey: 'GLOBAL' },
-      { code: 'bs', short: 'BOS', label: '🇧🇦 Bosnian', rtl: false, regionKey: 'GLOBAL' },
-      { code: 'zh', short: 'ZHO', label: '🇨🇳 Chinese', rtl: false, regionKey: 'GLOBAL' }
+      { code: 'en', short: 'EN', label: '🇬🇧 English (Default)', rtl: false, regionKey: 'US_UK' },
+      { code: 'ar', short: 'AR', label: '🇸🇦 Arabic (العربية)', rtl: true, regionKey: 'AR' },
+      { code: 'ur', short: 'UR', label: '🇵🇰 Urdu (اردو)', rtl: true, regionKey: 'PK' },
+      { code: 'hi', short: 'HI', label: '🇮🇳 Hindi (हिन्दी)', rtl: false, regionKey: 'GLOBAL' },
+      { code: 'bn', short: 'BN', label: '🇧🇩 Bengali (বাংলা)', rtl: false, regionKey: 'BD' },
+      { code: 'tr', short: 'TR', label: '🇹🇷 Turkish (Türkçe)', rtl: false, regionKey: 'GLOBAL' },
+      { code: 'ms', short: 'MS', label: '🇲🇾 Malay (Bahasa Melayu)', rtl: false, regionKey: 'GLOBAL' },
+      { code: 'id', short: 'ID', label: '🇮🇩 Indonesian (Bahasa)', rtl: false, regionKey: 'GLOBAL' },
+      { code: 'fr', short: 'FR', label: '🇫🇷 French (Français)', rtl: false, regionKey: 'US_UK' },
+      { code: 'de', short: 'DE', label: '🇩🇪 German (Deutsch)', rtl: false, regionKey: 'US_UK' },
+      { code: 'it', short: 'IT', label: '🇮🇹 Italian (Italiano)', rtl: false, regionKey: 'US_UK' },
+      { code: 'es', short: 'ES', label: '🇪🇸 Spanish (Español)', rtl: false, regionKey: 'US_UK' },
+      { code: 'ru', short: 'RU', label: '🇷🇺 Russian (Русский)', rtl: false, regionKey: 'GLOBAL' },
+      { code: 'fa', short: 'FA', label: '🇮🇷 Persian (فارسی)', rtl: true, regionKey: 'GLOBAL' },
+      { code: 'ps', short: 'PS', label: '🇦🇫 Pashto (پښتو)', rtl: true, regionKey: 'PK' },
+      { code: 'pa', short: 'PA', label: '🇵🇰 Punjabi (پنجابی)', rtl: false, regionKey: 'PK' },
+      { code: 'sw', short: 'SW', label: '🇰🇪 Swahili', rtl: false, regionKey: 'GLOBAL' },
+      { code: 'ha', short: 'HA', label: '🇳🇬 Hausa', rtl: false, regionKey: 'GLOBAL' },
+      { code: 'so', short: 'SO', label: '🇸🇴 Somali', rtl: false, regionKey: 'GLOBAL' },
+      { code: 'uz', short: 'UZ', label: '🇺🇿 Uzbek', rtl: false, regionKey: 'GLOBAL' },
+      { code: 'sq', short: 'SQ', label: '🇦🇱 Albanian', rtl: false, regionKey: 'GLOBAL' },
+      { code: 'bs', short: 'BS', label: '🇧🇦 Bosnian', rtl: false, regionKey: 'GLOBAL' },
+      { code: 'zh', short: 'ZH', label: '🇨🇳 Chinese', rtl: false, regionKey: 'GLOBAL' }
     ];
 
     // HISN AL-MUSLIM 15 ESSENTIAL MULTILINGUAL DUAS
@@ -1883,7 +1883,7 @@
       document.getElementById('customUILangBox').classList.add('hidden');
       const found = globalLanguagesList.find(l => l.code === val);
       currentAppUILang = val;
-      document.getElementById('shortLangCode').innerText = found ? found.short : val.toUpperCase().slice(0, 3);
+      document.getElementById('shortLangCode').innerText = found ? found.short : val.toUpperCase().slice(0, 2);
       document.getElementById('htmlRoot').dir = (found && found.rtl) ? 'rtl' : 'ltr';
     }
 
@@ -4741,7 +4741,7 @@
         // Recreate iframe cleanly so browser Back button NEVER navigates iframe back to about:blank!
         const parentCont = document.getElementById('ytPlayerContainer');
         if (parentCont) {
-          parentCont.innerHTML = `<iframe id="ytIframe" class="w-full h-full" src="${embedUrl}" title="QAAF YouTube Player" frameborder="0" sandbox="allow-scripts allow-same-origin allow-presentation" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`;
+          parentCont.innerHTML = `<iframe id="ytIframe" class="w-full h-full" src="${embedUrl}" title="QAAF YouTube Player" frameborder="0" sandbox="allow-scripts allow-same-origin allow-presentation" sandbox="allow-scripts allow-same-origin allow-presentation" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`;
         }
       }
     } else {
@@ -8138,6 +8138,439 @@
 
     listEl.innerHTML = htmlOut;
   };
+})();
+</script>
+
+<!-- QAAF V9.8 CLOCK TIMER FIX, COMPACT HEADER & ADMIN INLINE VIDEO PREVIEW + THUMBNAILS -->
+<style>
+  @media (max-width: 640px) {
+    #mainHeader { padding-left: 4px !important; padding-right: 4px !important; gap: 2px !important; }
+    #headerDrawerMenuBtn { width: 28px !important; height: 28px !important; margin-right: 2px !important; }
+    #mainHeader svg { height: 24px !important; }
+    #kidsLockBtn { padding: 4px 8px !important; }
+    #kidsModeOnHeaderBadge { padding: 2px 6px !important; font-size: 10px !important; }
+    #kidsContentSwitcher button { padding: 3px 6px !important; font-size: 9px !important; }
+  }
+</style>
+<script>
+(function applyTimerHeaderAndAdminPreviewFixes() {
+  // =========================================================================
+  // 1. FIX CLOCK SCHEDULE (12:08 TO 12:10 = 2 MINS, NO 12-HOUR AM/PM CONFUSION)
+  // =========================================================================
+  function computeSmartClockMinutes(startStr, endStr) {
+    var now = new Date();
+    var nowMins = now.getHours() * 60 + now.getMinutes();
+
+    var ep = (endStr || "10:30").split(":");
+    var endH = parseInt(ep[0], 10);
+    var endM = parseInt(ep[1], 10);
+    var endTotalMins = endH * 60 + endM;
+
+    if (startStr) {
+      var sp = startStr.split(":");
+      var startH = parseInt(sp[0], 10);
+      var startM = parseInt(sp[1], 10);
+      var startTotalMins = startH * 60 + startM;
+
+      // If parent set Start (e.g. 12:08) and End (e.g. 12:10), the intended duration is End - Start (2 mins)!
+      var spanMins = endTotalMins - startTotalMins;
+      if (spanMins < 0) spanMins += 1440;
+
+      // Check if Start Time is close to current time (either in 24h or 12h AM/PM format)
+      var diffFromNow24 = Math.abs(nowMins - startTotalMins);
+      var diffFromNow12 = Math.abs((nowMins % 720) - (startTotalMins % 720));
+      if (spanMins > 0 && spanMins <= 360 && (diffFromNow24 <= 30 || diffFromNow12 <= 30)) {
+        return spanMins;
+      }
+    }
+
+    // Also handle 12-hour AM/PM mismatch on End Time (e.g. selecting 12:10 PM when it is 00:08 AM midnight)
+    var diff24 = endTotalMins - nowMins;
+    if (diff24 <= 0) diff24 += 1440;
+
+    var diff12 = (endTotalMins % 720) - (nowMins % 720);
+    if (diff12 <= 0) diff12 += 720;
+
+    return Math.min(diff24, diff12);
+  }
+
+  // Persistent Real-Clock Watchdog that locks everything the exact second time expires
+  var hardLockWatchdog = null;
+
+  function stopAndDestroyAllMediaNow() {
+    try {
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(function() {});
+      } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+    } catch (e) {}
+
+    try {
+      var ytCont = document.getElementById("ytPlayerContainer");
+      if (ytCont) {
+        ytCont.innerHTML = '<iframe id="ytIframe" class="w-full h-full" src="about:blank" frameborder="0" sandbox="allow-scripts allow-same-origin allow-presentation"></iframe>';
+      }
+      if (typeof closeVideoPlayer === "function") closeVideoPlayer();
+      if (typeof closeMiniGame === "function") closeMiniGame();
+      if (typeof closeStandaloneGameModal === "function") closeStandaloneGameModal();
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    } catch (e) {}
+  }
+
+  window.triggerHardKidsLockScreenNow = function() {
+    if (window.kidsTimerInterval) {
+      clearInterval(window.kidsTimerInterval);
+      window.kidsTimerInterval = null;
+    }
+    window.isKidsTimeExpiredLock = true;
+    window.kidsTimerRemainingSecs = 0;
+    localStorage.setItem("qaaf_kids_locked_state", "true");
+    localStorage.setItem("qaaf_kids_time_expired", "true");
+    localStorage.removeItem("qaaf_kids_timer_end_ts");
+
+    stopAndDestroyAllMediaNow();
+
+    var kmBadge = document.getElementById("kidsModeOnHeaderBadge");
+    if (kmBadge) {
+      kmBadge.classList.remove("hidden");
+      kmBadge.classList.add("flex");
+      kmBadge.innerHTML = "<span>🔒</span> <span>Locked</span>";
+    }
+
+    var lockOv = document.getElementById("kidsTimeUpLockOverlay");
+    if (lockOv) {
+      var inp = document.getElementById("timeUpParentPinInput");
+      var err = document.getElementById("timeUpPinError");
+      if (inp) inp.value = "";
+      if (err) err.classList.add("hidden");
+      lockOv.classList.remove("hidden");
+    }
+  };
+
+  function runHardLockWatchdog() {
+    if (hardLockWatchdog) clearInterval(hardLockWatchdog);
+    hardLockWatchdog = setInterval(function() {
+      // Kill any legacy interval so it never fights with our real-clock timer
+      if (window.kidsTimerInterval) {
+        clearInterval(window.kidsTimerInterval);
+        window.kidsTimerInterval = null;
+      }
+
+      if (!isKidsLocked) return;
+
+      if (localStorage.getItem("qaaf_kids_time_expired") === "true") {
+        var lockOv = document.getElementById("kidsTimeUpLockOverlay");
+        if (lockOv && lockOv.classList.contains("hidden")) {
+          window.triggerHardKidsLockScreenNow();
+        }
+        var pModal = document.getElementById("playerModal");
+        if (pModal && !pModal.classList.contains("hidden")) {
+          stopAndDestroyAllMediaNow();
+        }
+        return;
+      }
+
+      var endTs = parseInt(localStorage.getItem("qaaf_kids_timer_end_ts") || "0", 10);
+      var kmBadge = document.getElementById("kidsModeOnHeaderBadge");
+      if (!endTs || endTs <= 0) {
+        if (kmBadge) {
+          kmBadge.classList.remove("hidden");
+          kmBadge.classList.add("flex");
+          kmBadge.innerHTML = "<span>🔐</span> <span>Kids ON</span>";
+        }
+        return;
+      }
+
+      var remSecs = Math.ceil((endTs - Date.now()) / 1000);
+      if (remSecs <= 0) {
+        window.triggerHardKidsLockScreenNow();
+      } else {
+        window.kidsTimerRemainingSecs = remSecs;
+        if (kmBadge) {
+          kmBadge.classList.remove("hidden");
+          kmBadge.classList.add("flex");
+          kmBadge.innerHTML = "<span>⏰</span> <span>" + formatTimerMMSS(remSecs) + "</span>";
+        }
+      }
+    }, 500);
+  }
+
+  var origStartTimer = window.startKidsModeWithTimer;
+  window.startKidsModeWithTimer = function(minutes) {
+    window.isKidsTimeExpiredLock = false;
+    localStorage.removeItem("qaaf_kids_time_expired");
+    localStorage.setItem("qaaf_kids_locked_state", "true");
+
+    if (minutes && minutes > 0) {
+      var endTimestamp = Date.now() + Math.round(minutes * 60 * 1000);
+      localStorage.setItem("qaaf_kids_timer_end_ts", String(endTimestamp));
+    } else {
+      localStorage.removeItem("qaaf_kids_timer_end_ts");
+    }
+
+    if (origStartTimer) origStartTimer(minutes);
+    if (window.kidsTimerInterval) {
+      clearInterval(window.kidsTimerInterval);
+      window.kidsTimerInterval = null;
+    }
+    runHardLockWatchdog();
+  };
+
+  // Re-wire Clock Schedule Button to use smart Start-to-End calculation
+  var startClockBtn = document.getElementById("startClockSchedBtn");
+  if (startClockBtn) {
+    startClockBtn.onclick = function() {
+      var stStr = document.getElementById("kidsClockStartInput").value || "09:00";
+      var enStr = document.getElementById("kidsClockEndInput").value || "10:30";
+      var mins = computeSmartClockMinutes(stStr, enStr);
+      window.startKidsModeWithTimer(mins);
+      showSyncToast("⏰ Kids Lock Timer set for " + Math.round(mins) + " min(s)!");
+    };
+  }
+
+  // Re-wire Time-Up Unlock buttons
+  var btnExit = document.getElementById("unlockExitKidsBtn");
+  var btnAdd15 = document.getElementById("unlockAdd15mBtn");
+  function processTimeUpPin(action) {
+    var entered = (document.getElementById("timeUpParentPinInput").value || "").trim();
+    if (entered !== parentPin) {
+      document.getElementById("timeUpPinError").classList.remove("hidden");
+      return;
+    }
+    document.getElementById("timeUpPinError").classList.add("hidden");
+    window.isKidsTimeExpiredLock = false;
+    localStorage.removeItem("qaaf_kids_time_expired");
+    document.getElementById("kidsTimeUpLockOverlay").classList.add("hidden");
+
+    if (action === "add_15m") {
+      window.startKidsModeWithTimer(15);
+      showSyncToast("⏱️ Added 15 minutes for child!");
+    } else {
+      localStorage.removeItem("qaaf_kids_locked_state");
+      localStorage.removeItem("qaaf_kids_timer_end_ts");
+      document.getElementById("pinInput").value = parentPin;
+      pendingParentPurpose = "unlock";
+      verifyPinCode();
+    }
+  }
+  if (btnExit) btnExit.onclick = function() { processTimeUpPin("exit_kids"); };
+  if (btnAdd15) btnAdd15.onclick = function() { processTimeUpPin("add_15m"); };
+
+  var origVerifyPin = window.verifyPinCode;
+  window.verifyPinCode = function() {
+    var entered = (document.getElementById("pinInput").value || "").trim();
+    if (pendingParentPurpose === "unlock" && entered === parentPin) {
+      localStorage.removeItem("qaaf_kids_locked_state");
+      localStorage.removeItem("qaaf_kids_timer_end_ts");
+      localStorage.removeItem("qaaf_kids_time_expired");
+      window.isKidsTimeExpiredLock = false;
+    }
+    if (origVerifyPin) origVerifyPin();
+  };
+
+  // Restore Kids Mode & Timer if page is refreshed
+  if (localStorage.getItem("qaaf_kids_locked_state") === "true") {
+    if (!isKidsLocked) {
+      window.startKidsModeWithTimer(0);
+    }
+    runHardLockWatchdog();
+    if (localStorage.getItem("qaaf_kids_time_expired") === "true") {
+      window.triggerHardKidsLockScreenNow();
+    }
+  }
+
+  // =========================================================================
+  // 2. ADMIN INLINE VIDEO PREVIEW PLAYER + THUMBNAILS + VIEWS IN FLAGS & CATALOG
+  // =========================================================================
+  function ensureAdminInlinePlayerBox() {
+    var rightWorkspace = document.querySelector("#adminDashboardModal .flex-1.overflow-y-auto");
+    if (!rightWorkspace || document.getElementById("adminInlinePlayerBox")) return;
+
+    var playerBox = document.createElement("div");
+    playerBox.id = "adminInlinePlayerBox";
+    playerBox.className = "hidden bg-[#141924] border-2 border-emerald-500/60 rounded-2xl p-3 mb-4 shadow-2xl";
+    playerBox.innerHTML =
+      '<div class="flex items-center justify-between mb-2">' +
+        '<div class="min-w-0 pr-2">' +
+          '<span class="text-[10px] font-extrabold text-emerald-400 uppercase tracking-wider block">👑 Admin Instant Video Inspector</span>' +
+          '<h5 id="adminInlinePlayerTitle" class="text-xs sm:text-sm font-extrabold text-white truncate">Playing Video...</h5>' +
+        '</div>' +
+        '<button type="button" onclick="closeAdminInlinePlayer()" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-1 rounded-xl text-xs font-extrabold shrink-0 shadow">✕ Close Player</button>' +
+      '</div>' +
+      '<div class="relative w-full aspect-video max-h-[260px] bg-black rounded-xl overflow-hidden border border-white/10">' +
+        '<iframe id="adminInlineYtIframe" class="w-full h-full" src="about:blank" frameborder="0" sandbox="allow-scripts allow-same-origin allow-presentation" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>' +
+      '</div>';
+
+    rightWorkspace.insertBefore(playerBox, rightWorkspace.firstChild);
+  }
+
+  window.playVideoInsideAdminModal = function(ytId, title) {
+    ensureAdminInlinePlayerBox();
+    var box = document.getElementById("adminInlinePlayerBox");
+    var ifr = document.getElementById("adminInlineYtIframe");
+    var tEl = document.getElementById("adminInlinePlayerTitle");
+    if (!box || !ifr) return;
+    if (tEl) tEl.innerText = title || ("Video ID: " + ytId);
+    var originParam = window.location.protocol.startsWith("http") ? ("&origin=" + encodeURIComponent(window.location.origin)) : "";
+    ifr.src = "https://www.youtube-nocookie.com/embed/" + ytId + "?autoplay=1&rel=0&modestbranding=1&playsinline=1" + originParam;
+    box.classList.remove("hidden");
+    box.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  window.closeAdminInlinePlayer = function() {
+    var box = document.getElementById("adminInlinePlayerBox");
+    var ifr = document.getElementById("adminInlineYtIframe");
+    if (ifr) ifr.src = "about:blank";
+    if (box) box.classList.add("hidden");
+  };
+
+  var origCloseAdmin = window.closeAdminModal;
+  window.closeAdminModal = function() {
+    window.closeAdminInlinePlayer();
+    if (origCloseAdmin) origCloseAdmin();
+  };
+
+  // Upgrade 1: Admin Flagged Videos Queue with Thumbnail, Views, Play/Preview button, Approve/Keep, Block Video, Ban Channel
+  window.renderAdminFlaggedQueue = function() {
+    var container = document.getElementById("adminFlaggedList");
+    var badge = document.getElementById("adminFlagCountBadge");
+    if (badge) badge.innerText = flaggedVideosQueue.length + ((window.parentRequestsQueue && window.parentRequestsQueue.length) || 0);
+    var sideBadge = document.getElementById("admSidebarFlagBadge");
+    if (sideBadge) sideBadge.innerText = flaggedVideosQueue.length;
+    if (!container) return;
+
+    if (flaggedVideosQueue.length === 0) {
+      container.innerHTML = '<p class="text-slate-400 py-3 text-center">✅ No flagged videos pending review.</p>';
+      return;
+    }
+
+    var html = "";
+    flaggedVideosQueue.forEach(function(item, idx) {
+      var vObj = videosData.find(function(x) { return x.id === item.videoId; });
+      var ytId = (vObj && vObj.ytId) || item.ytId || "R_NELndtqtE";
+      var viewsCount = vObj && vObj.views ? ((vObj.views / 1000).toFixed(1) + "K views") : "Active Video";
+      var thumbUrl = (vObj && vObj.customThumb) || ("https://i.ytimg.com/vi/" + ytId + "/hqdefault.jpg");
+      var safeTitle = (item.title || "Flagged Video").replace(/'/g, "\\'");
+
+      html += '<div class="bg-black/75 border border-rose-500/40 p-3 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">';
+      html += '<div class="flex items-center gap-3 min-w-0 flex-1">';
+      html += '<div onclick="playVideoInsideAdminModal(\'' + ytId + '\', \'' + safeTitle + '\')" class="relative w-24 h-14 rounded-lg overflow-hidden border border-white/15 shrink-0 cursor-pointer group bg-slate-900">';
+      html += '<img src="' + thumbUrl + '" alt="" class="w-full h-full object-cover group-hover:scale-105 transition" onerror="this.style.display=\'none\'" />';
+      html += '<div class="absolute inset-0 bg-black/40 flex items-center justify-center"><span class="w-7 h-7 rounded-full bg-red-600 text-white flex items-center justify-center text-xs shadow">▶</span></div>';
+      html += '</div>';
+      html += '<div class="min-w-0 flex-1">';
+      html += '<p class="font-extrabold text-white text-xs sm:text-sm truncate">' + item.title + '</p>';
+      html += '<p class="text-[11px] text-slate-300 mt-0.5">Channel: <strong class="text-amber-300">' + item.channel + '</strong> • <span class="text-emerald-400 font-bold">👁️ ' + viewsCount + '</span></p>';
+      html += '<p class="text-[11px] text-rose-400 font-bold mt-0.5">🚩 Reason: ' + item.reason + '</p>';
+      html += '</div></div>';
+
+      html += '<div class="flex flex-wrap items-center gap-1.5 shrink-0">';
+      html += '<button type="button" onclick="playVideoInsideAdminModal(\'' + ytId + '\', \'' + safeTitle + '\')" class="bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1.5 rounded-lg text-[11px] font-extrabold shadow">▶ Play / Check</button>';
+      html += '<button type="button" onclick="adminModerateFlag(' + idx + ', \'dismiss\')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg text-[11px] font-extrabold shadow">✅ Approve (Keep)</button>';
+      html += '<button type="button" onclick="adminModerateFlag(' + idx + ', \'block_video\')" class="bg-amber-600 hover:bg-amber-500 text-white px-2.5 py-1.5 rounded-lg text-[11px] font-extrabold shadow">🗑️ Remove Video</button>';
+      html += '<button type="button" onclick="adminModerateFlag(' + idx + ', \'ban_channel\')" class="bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1.5 rounded-lg text-[11px] font-extrabold shadow">⛔ Ban Channel</button>';
+      html += '</div></div>';
+    });
+
+    container.innerHTML = html;
+  };
+
+  // Also make Parent Requests "▶ Listen / Preview" play right inside Admin Modal!
+  window.adminPreviewRequestedVideo = function(ytId, title) {
+    window.playVideoInsideAdminModal(ytId, title);
+  };
+
+  // Upgrade 2: Admin Active Videos & Channels Catalog with Channel Views, Video Thumbnails, Views & Inline Play
+  window.adminSelectedCatalogChannel = "ALL";
+  window.adminFilterCatalogByChannel = function(chName) {
+    window.adminSelectedCatalogChannel = chName || "ALL";
+    window.renderAdminActiveVideosCatalog();
+  };
+
+  window.renderAdminActiveVideosCatalog = function() {
+    var listEl = document.getElementById("adminActiveVideosCatalogList");
+    var countBadge = document.getElementById("admVideosCountBadge");
+    if (countBadge) countBadge.innerText = videosData.length;
+    if (!listEl) return;
+
+    var uniqueChs = Array.from(new Set(videosData.map(function(v) { return v.channel; })));
+    var activeCh = window.adminSelectedCatalogChannel || "ALL";
+    if (activeCh !== "ALL" && uniqueChs.indexOf(activeCh) === -1) {
+      activeCh = "ALL";
+      window.adminSelectedCatalogChannel = "ALL";
+    }
+
+    var htmlOut = "";
+
+    // Top Active Channels Bar with Total Channel Views & Video Count
+    if (uniqueChs.length > 0) {
+      htmlOut += '<div class="bg-slate-900/90 border border-slate-700/80 rounded-xl p-3 mb-3">';
+      htmlOut += '<div class="flex items-center justify-between mb-2">';
+      htmlOut += '<p class="text-[11px] font-extrabold text-amber-300">📺 Active Channels (' + uniqueChs.length + ') — Tap any channel to inspect its videos &amp; views:</p>';
+      if (activeCh !== "ALL") {
+        htmlOut += '<button type="button" onclick="adminFilterCatalogByChannel(\'ALL\')" class="bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold shadow">🔄 Show All (' + videosData.length + ')</button>';
+      }
+      htmlOut += '</div>';
+      htmlOut += '<div class="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto p-0.5">';
+
+      var isAll = (activeCh === "ALL");
+      htmlOut += '<button type="button" onclick="adminFilterCatalogByChannel(\'ALL\')" class="px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition ' + (isAll ? 'bg-emerald-500 text-black shadow' : 'bg-slate-800 text-slate-300 hover:bg-slate-700') + '">📋 All Videos (' + videosData.length + ')</button>';
+
+      uniqueChs.forEach(function(ch) {
+        var chVids = videosData.filter(function(v) { return v.channel === ch; });
+        var totalChViews = chVids.reduce(function(acc, v) { return acc + (v.views || 0); }, 0);
+        var safeCh = (ch || "").replace(/'/g, "\\'");
+        var isSel = (activeCh === ch);
+        htmlOut += '<div class="inline-flex items-center rounded-lg overflow-hidden border ' + (isSel ? 'border-emerald-400 bg-emerald-950/60' : 'border-slate-700 bg-black') + '">';
+        htmlOut += '<button type="button" onclick="adminFilterCatalogByChannel(\'' + safeCh + '\')" class="px-2.5 py-1 text-[11px] font-bold ' + (isSel ? 'text-emerald-300' : 'text-slate-200 hover:text-white') + ' transition">📺 ' + ch + ' (' + chVids.length + ' • 👁️ ' + (totalChViews / 1000).toFixed(1) + 'K)</button>';
+        htmlOut += '<button type="button" onclick="adminBanAndRemoveChannel(\'' + safeCh + '\', event)" class="px-2 py-1 bg-rose-950/60 hover:bg-red-600 text-rose-300 hover:text-white text-[10px] font-extrabold border-l border-slate-700 transition" title="Ban Channel">⛔</button>';
+        htmlOut += '</div>';
+      });
+      htmlOut += '</div></div>';
+    }
+
+    if (bannedChannels.length > 0) {
+      htmlOut += '<div class="bg-rose-950/20 border border-rose-500/30 rounded-xl p-2.5 mb-3">';
+      htmlOut += '<p class="text-[10px] font-bold text-rose-300 mb-1.5">⛔ Banned Channels (Click to Unban):</p>';
+      htmlOut += '<div class="flex flex-wrap gap-1.5">';
+      bannedChannels.forEach(function(bch) {
+        var safeBch = (bch || "").replace(/'/g, "\\'");
+        htmlOut += '<button type="button" onclick="adminUnbanChannel(\'' + safeBch + '\')" class="bg-black/70 border border-rose-500/40 text-rose-200 px-2 py-0.5 rounded text-[10px] font-bold hover:bg-emerald-950">🔄 Unban: ' + bch + '</button>';
+      });
+      htmlOut += '</div></div>';
+    }
+
+    var filteredVids = activeCh === "ALL" ? videosData : videosData.filter(function(v) { return v.channel === activeCh; });
+
+    filteredVids.forEach(function(v) {
+      var safeCh = (v.channel || "").replace(/'/g, "\\'");
+      var safeTitle = (v.title || "").replace(/'/g, "\\'");
+      var thumb = v.customThumb || ("https://i.ytimg.com/vi/" + v.ytId + "/hqdefault.jpg");
+      var vViews = ((v.views || 1500) / 1000).toFixed(1) + "K views";
+
+      htmlOut += '<div class="bg-black/65 border border-slate-800 hover:border-slate-600 p-2.5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 transition">';
+      htmlOut += '<div onclick="playVideoInsideAdminModal(\'' + v.ytId + '\', \'' + safeTitle + '\')" class="min-w-0 flex-1 flex items-center gap-3 cursor-pointer group" title="Click to Play & Inspect Video">';
+      htmlOut += '<div class="relative w-20 h-12 rounded-lg overflow-hidden border border-white/15 shrink-0 bg-slate-900">';
+      htmlOut += '<img src="' + thumb + '" alt="" class="w-full h-full object-cover group-hover:scale-105 transition" onerror="this.style.display=\'none\'" />';
+      htmlOut += '<div class="absolute inset-0 bg-black/30 flex items-center justify-center"><span class="w-6 h-6 rounded-full bg-red-600/90 text-white flex items-center justify-center text-[10px]">▶</span></div>';
+      htmlOut += '</div>';
+      htmlOut += '<div class="min-w-0 flex-1">';
+      htmlOut += '<p class="font-bold text-white group-hover:text-emerald-400 truncate transition">' + v.title + '</p>';
+      htmlOut += '<p class="text-[10px] text-slate-400">Channel: <strong class="text-amber-300">' + v.channel + '</strong> • <span class="text-emerald-400 font-bold">👁️ ' + vViews + '</span> • ' + (v.lang || "en").toUpperCase() + '</p>';
+      htmlOut += '</div></div>';
+      htmlOut += '<div class="flex items-center gap-1.5 shrink-0">';
+      htmlOut += '<button type="button" onclick="playVideoInsideAdminModal(\'' + v.ytId + '\', \'' + safeTitle + '\')" class="bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-extrabold shadow">▶ Play</button>';
+      htmlOut += '<button type="button" onclick="adminBanAndRemoveChannel(\'' + safeCh + '\', event)" class="bg-amber-600/20 hover:bg-red-600 border border-amber-500/40 text-amber-300 hover:text-white px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition">⛔ Ban Channel</button>';
+      htmlOut += '<button type="button" onclick="adminDeleteVideoCard(\'' + v.id + '\', event)" class="bg-rose-600/20 hover:bg-rose-600 border border-rose-500/40 text-rose-300 hover:text-white px-2.5 py-1 rounded-lg text-[10px] font-bold transition">🗑️ Remove</button>';
+      htmlOut += '</div></div>';
+    });
+
+    listEl.innerHTML = htmlOut;
+  };
+
+  window.renderAdminFlaggedQueue();
+  window.renderAdminActiveVideosCatalog();
 })();
 </script>
 
