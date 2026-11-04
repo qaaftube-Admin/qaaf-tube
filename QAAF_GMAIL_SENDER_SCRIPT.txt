@@ -1,0 +1,41 @@
+// ============================================================================
+// QAAF TUBE OFFICIAL GMAIL PASSWORD RESET SENDER (RUNS 24/7 ON GOOGLE CLOUD)
+// ============================================================================
+// HOW TO ACTIVATE IN 1 MINUTE:
+// 1. Login to https://script.google.com with your official qaaftube@gmail.com account
+// 2. Click "New Project", paste this code, and click "Deploy" -> "New deployment"
+// 3. Select type: "Web app", Who has access: "Anyone", and click "Deploy"
+// 4. Copy the Web App URL and paste it in QAAF Tube Admin Panel -> Users & Pro tab!
+// ============================================================================
+
+function doPost(e) {
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var toEmail = data.email;
+    var resetLink = data.resetLink;
+    var userName = data.name || toEmail;
+
+    var subject = "QAAF Tube — Password Reset Request";
+    var htmlBody =
+      "<div style='font-family:sans-serif;max-width:500px;margin:auto;padding:24px;background:#0f131a;color:#ffffff;border-radius:16px;border:1px solid #10b981;'>" +
+        "<h2 style='color:#10b981;margin-top:0;'>QAAF Tube — Muslim Family & Kids Hub</h2>" +
+        "<p style='color:#e2e8f0;font-size:14px;'>Assalamu Alaikum <strong>" + userName + "</strong>,</p>" +
+        "<p style='color:#cbd5e1;font-size:14px;'>We received a request to reset the password for your QAAF Tube account (" + toEmail + ").</p>" +
+        "<div style='text-align:center;margin:28px 0;'>" +
+          "<a href='" + resetLink + "' style='background:#10b981;color:#000000;padding:12px 28px;border-radius:10px;text-decoration:none;font-weight:bold;font-size:14px;display:inline-block;'>Reset My Password Now</a>" +
+        "</div>" +
+        "<p style='color:#94a3b8;font-size:12px;'>Or copy and paste this link in your browser:<br/><a href='" + resetLink + "' style='color:#38bdf8;'>" + resetLink + "</a></p>" +
+      "</div>";
+
+    MailApp.sendEmail({
+      to: toEmail,
+      subject: subject,
+      htmlBody: htmlBody,
+      name: "QAAF Tube Support"
+    });
+
+    return ContentService.createTextOutput(JSON.stringify({ status: "sent" })).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
