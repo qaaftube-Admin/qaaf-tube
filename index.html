@@ -9376,6 +9376,80 @@
 })();
 </script>
 
+<!-- QAAF LOGO HOME BUTTON & FAMILY-ONLY RIGHT-CLICK NEW TAB LOCK -->
+<script>
+(function setupLogoHomeButtonAndKidsRightClickLock() {
+  // =========================================================================
+  // 1. BLOCK RIGHT-CLICK & NEW TAB LINKS IN KIDS MODE (ALLOW ONLY IN FAMILY MODE)
+  // =========================================================================
+  document.addEventListener("contextmenu", function(e) {
+    if (isKidsLocked) {
+      e.preventDefault();
+      return false;
+    }
+  });
+
+  function syncCardLinksForCurrentMode() {
+    document.querySelectorAll("#videoGrid a[href*='?watch='], #qaafShortsShelf a[href*='?watch=']").forEach(function(aTag) {
+      if (isKidsLocked) {
+        aTag.dataset.savedHref = aTag.getAttribute("href") || "";
+        aTag.removeAttribute("href");
+      } else if (!aTag.getAttribute("href") && aTag.dataset.savedHref) {
+        aTag.setAttribute("href", aTag.dataset.savedHref);
+      }
+    });
+  }
+
+  // Also prevent Ctrl+Click or Middle-Click from opening a new tab when Kids Mode is active
+  document.addEventListener("click", function(e) {
+    if (isKidsLocked && (e.ctrlKey || e.metaKey || e.button === 1)) {
+      e.preventDefault();
+    }
+  }, true);
+
+  var prevRenderNow = window.renderVideosNow;
+  window.renderVideosNow = function() {
+    if (prevRenderNow) prevRenderNow();
+    syncCardLinksForCurrentMode();
+  };
+  setInterval(syncCardLinksForCurrentMode, 500);
+
+  // =========================================================================
+  // 2. MAKE QAAF TUBE HEADER LOGO & BRAND NAME WORK AS HOME REFRESH BUTTON
+  // =========================================================================
+  var headerLeft = document.querySelector("#mainHeader > div:first-child");
+  if (headerLeft) {
+    var logoSvg = headerLeft.querySelector("svg");
+    var brandText = headerLeft.querySelector("div.font-extrabold");
+
+    function goToHomeAndRefresh(e) {
+      if (e) e.stopPropagation();
+      if (window.isKidsTimeExpiredLock) return;
+      // Skip the startup splash animation on logo-refresh so the Home screen opens instantaneously
+      sessionStorage.setItem("qaaf_skip_splash_once", "1");
+      window.location.href = window.location.pathname;
+    }
+
+    [logoSvg, brandText].forEach(function(el) {
+      if (!el) return;
+      el.style.cursor = "pointer";
+      el.title = "QAAF Tube Home";
+      el.onclick = goToHomeAndRefresh;
+    });
+  }
+
+  // If page was refreshed via clicking the Home Logo, skip the 2.5s splash screen for instant Home load
+  if (sessionStorage.getItem("qaaf_skip_splash_once") === "1") {
+    sessionStorage.removeItem("qaaf_skip_splash_once");
+    var splash = document.getElementById("startupSplashModal");
+    if (splash) {
+      splash.style.opacity = "0";
+      splash.classList.add("hidden");
+    }
+  }
+})();
+</script>
+
 </body>
 
 
