@@ -312,7 +312,7 @@
         <!-- Option B: Moving Marquee / Ticker Text with Clickable Link -->
         <div id="promoTickerWrapper" class="w-full overflow-hidden relative flex items-center">
           <a id="promoTickerLink" href="#" target="_blank" rel="noopener noreferrer" class="promo-ticker-rtl text-slate-100 hover:text-amber-300 font-semibold tracking-wide">
-            📢 For Promotion & Sponsorship on QAAF Tube Contact Us: qaaftube@gmail.com
+            📢 For Promotion & Sponsorship on QAAF Tube Contact Us: contactqaaftube@gmail.com
           </a>
         </div>
       </div>
@@ -799,7 +799,7 @@
         <div class="bg-slate-900/90 p-3.5 rounded-xl border border-blue-500/40 space-y-2.5">
           <div class="flex items-center justify-between">
             <h4 class="text-xs font-extrabold text-blue-300">📩 Request New Channel / Video to Admin</h4>
-            <span class="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-bold">🔍 Admin Music Check</span>
+            
           </div>
           <p class="text-[11px] text-slate-400">Paste a YouTube link below. QAAF Admin will verify it is 100% music-free before adding it.</p>
           <div class="flex gap-2">
@@ -9113,7 +9113,7 @@
           '<div class="bg-slate-900/95 p-3.5 rounded-xl border border-blue-500/40 space-y-2.5">' +
             '<div class="flex items-center justify-between">' +
               '<h4 class="text-xs font-extrabold text-blue-300">➕ Request New Channel or Video</h4>' +
-              '<span class="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-bold">🔍 Admin Music Check</span>' +
+              '' +
             '</div>' +
             '<p class="text-[11px] text-slate-400">Paste any YouTube Video or Channel link below. Admin will verify it is 100% music-free.</p>' +
             '<div class="flex gap-2">' +
@@ -10356,6 +10356,341 @@
 
   syncAccountUI();
   if (window.renderAdminUsersTable) window.renderAdminUsersTable();
+})();
+</script>
+
+<!-- QAAF V10.5 LIVE CLOUD MERGE SYNC, STATIC ZERO-ANIMATION LOGO, DEFAULT PROMO TICKER & EMAIL-ONLY CONTACT -->
+<style>
+  /* Disable all startup logo keyframe animations — show static complete logo only */
+  .gpu-anim-redbox, .gpu-anim-border, .gpu-anim-qaaf, .gpu-anim-tri, .gpu-anim-flash, .gpu-anim-bargroup, .gpu-anim-barfill {
+    animation: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+  #impactFlash {
+    opacity: 0 !important;
+  }
+</style>
+<script>
+(function initQaafV105MasterFixes() {
+  var DEFAULT_PROMO_TEXT = "📢 For Promotion & Sponsorship on QAAF Tube Contact Us: contactqaaftube@gmail.com";
+  var DEFAULT_PROMO_LINK = "mailto:contactqaaftube@gmail.com?subject=Promotion%20%26%20Sponsorship%20on%20QAAF%20Tube";
+
+  // =========================================================================
+  // 1. STATIC LOGO ONLY & INSTANT PAGE OPEN (NO STARTUP ANIMATION DELAY)
+  // =========================================================================
+  var splashModal = document.getElementById("startupSplashModal");
+  if (splashModal) {
+    splashModal.style.opacity = "0";
+    splashModal.classList.add("hidden");
+  }
+  window.runStartupSplash = function(isManualReplay) {
+    var modal = document.getElementById("startupSplashModal");
+    if (!modal) return;
+    if (!isManualReplay) {
+      modal.style.opacity = "0";
+      modal.classList.add("hidden");
+      return;
+    }
+    modal.classList.remove("hidden");
+    modal.style.opacity = "1";
+    setTimeout(function() {
+      modal.style.opacity = "0";
+      setTimeout(function() { modal.classList.add("hidden"); }, 150);
+    }, 600);
+  };
+
+  // =========================================================================
+  // 2. REGIONAL PROMO BAR: ALWAYS ON BY DEFAULT IN FAMILY MODE (contactqaaftube@gmail.com),
+  //    HIDDEN IN KIDS MODE, AND REGION-SPECIFIC WHEN CUSTOM SPONSOR AD IS SET
+  // =========================================================================
+  isPromoBarEnabled = localStorage.getItem("qaaf_promo_bar_enabled") !== "false";
+  var promoToggleEl = document.getElementById("adminPromoVisibleToggle");
+  if (promoToggleEl) promoToggleEl.checked = isPromoBarEnabled;
+
+  window.syncRegionalPromoBar = function() {
+    var bar = document.getElementById("regionalPromoBar");
+    if (!bar) return;
+
+    // Always hide in Kids Mode or if Admin explicitly unchecked Show Bar
+    if (isKidsLocked || !isPromoBarEnabled) {
+      bar.classList.add("hidden");
+      return;
+    }
+
+    bar.classList.remove("hidden");
+
+    var found = globalLanguagesList.find(function(l) { return l.code === preferredContentLang; });
+    var regionKey = (found && found.regionKey) ? found.regionKey : "GLOBAL";
+    var customRegionPromo = regionalPromos && regionalPromos[regionKey];
+    var globalPromo = regionalPromos && regionalPromos.GLOBAL;
+
+    var activePromo = null;
+    if (customRegionPromo && ((customRegionPromo.text && customRegionPromo.text.trim() !== "") || (customRegionPromo.imgUrl && customRegionPromo.imgUrl.trim() !== ""))) {
+      activePromo = customRegionPromo;
+    } else if (globalPromo && ((globalPromo.text && globalPromo.text.trim() !== "") || (globalPromo.imgUrl && globalPromo.imgUrl.trim() !== ""))) {
+      activePromo = globalPromo;
+    } else {
+      // Default fallback in all regions where no custom sponsor ad is set!
+      activePromo = {
+        text: DEFAULT_PROMO_TEXT,
+        imgUrl: "",
+        linkUrl: DEFAULT_PROMO_LINK,
+        dir: "rtl"
+      };
+    }
+
+    var tagEl = document.getElementById("promoRegionTag");
+    if (tagEl) tagEl.innerText = "📢 SPONSOR";
+
+    var imgLinkEl = document.getElementById("promoImageBannerLink");
+    var imgEl = document.getElementById("promoImageBannerEl");
+    var tickerWrap = document.getElementById("promoTickerWrapper");
+    var tickerLink = document.getElementById("promoTickerLink");
+
+    if (activePromo.imgUrl && activePromo.imgUrl.trim() !== "") {
+      imgEl.src = activePromo.imgUrl.trim();
+      imgLinkEl.href = activePromo.linkUrl || DEFAULT_PROMO_LINK;
+      imgLinkEl.classList.remove("hidden");
+      tickerWrap.classList.add("hidden");
+    } else {
+      imgLinkEl.classList.add("hidden");
+      tickerWrap.classList.remove("hidden");
+      tickerLink.innerText = (activePromo.text && activePromo.text.trim() !== "") ? activePromo.text.trim() : DEFAULT_PROMO_TEXT;
+      tickerLink.href = (activePromo.linkUrl && activePromo.linkUrl !== "#") ? activePromo.linkUrl : DEFAULT_PROMO_LINK;
+      tickerLink.className = (activePromo.dir === "ltr" ? "promo-ticker-ltr" : "promo-ticker-rtl") + " text-slate-100 hover:text-amber-300 font-semibold tracking-wide";
+    }
+  };
+
+  window.syncRegionalPromoBar();
+
+  // =========================================================================
+  // 3. REMOVE PHONE/WHATSAPP FROM PUBLIC PRO MODAL & ADMIN — USE EMAIL ONLY (contactqaaftube@gmail.com)
+  // =========================================================================
+  window.contactAdminForProViaEmail = function() {
+    var uEmail = currentUserEmail || "My Account";
+    var subj = "Supporter Pro Activation Request — " + uEmail;
+    var body = "Assalamu Alaikum QAAF Tube Team,\n\nI would like to activate Supporter Pro for my QAAF Tube account:\nAccount Email: " + uEmail + "\n\nPlease share the payment details.\nJazakAllah Khair!";
+    window.location.href = "mailto:contactqaaftube@gmail.com?subject=" + encodeURIComponent(subj) + "&body=" + encodeURIComponent(body);
+  };
+
+  // Update Pro Upgrade Modal to show Email-Only Contact (no WhatsApp/phone number)
+  var proModal = document.getElementById("proUpgradeContactModal");
+  if (proModal) {
+    var waBtn = proModal.querySelector('button[onclick*="contactAdminForProViaWhatsApp"]');
+    if (waBtn) waBtn.remove();
+    var emBtn = proModal.querySelector('button[onclick*="contactAdminForProViaEmail"]');
+    if (emBtn) {
+      emBtn.className = "w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl text-xs font-extrabold shadow-lg flex items-center justify-center gap-2";
+      emBtn.innerHTML = "<span>📧</span> <span>Email Us (contactqaaftube@gmail.com) to Activate Pro</span>";
+    }
+  }
+
+  // Hide WhatsApp phone box inside Admin Users & Pro tab
+  var waAdminInput = document.getElementById("adminWhatsAppInput");
+  if (waAdminInput && waAdminInput.closest(".bg-\\[\\#141821\\]")) {
+    waAdminInput.closest(".bg-\\[\\#141821\\]").classList.add("hidden");
+  }
+
+  // Update Sponsor Contact Modal to use Email-Only placeholder & also send to Admin/Firebase
+  var spContactInput = document.getElementById("sponsorContactEmail");
+  if (spContactInput) spContactInput.placeholder = "Your Contact Email Address";
+
+  // =========================================================================
+  // 4. FIX UNIFIED REQUEST QUEUE & CLOUD MERGE SYNC (NO OVERWRITING OTHER DEVICES' REQUESTS OR USERS!)
+  // =========================================================================
+  function syncRequestQueueReferences(newList) {
+    if (Array.isArray(newList)) {
+      parentRequestsQueue = newList;
+      window.parentRequestsQueue = newList;
+      localStorage.setItem("qaaf_parent_requests", JSON.stringify(newList));
+    } else {
+      window.parentRequestsQueue = parentRequestsQueue;
+    }
+  }
+  syncRequestQueueReferences(parentRequestsQueue);
+
+  // Merge helper: combines two arrays of objects by unique key so no device ever erases another device's items
+  function mergeArraysByKey(localArr, cloudArr, keyName) {
+    var map = {};
+    var result = [];
+    (localArr || []).concat(cloudArr || []).forEach(function(item) {
+      if (!item) return;
+      var k = item[keyName] || item.ytId || item.videoId || item.title || JSON.stringify(item);
+      if (!map[k]) {
+        map[k] = true;
+        result.push(item);
+      }
+    });
+    return result;
+  }
+
+  // Upgrade qaafCloudSync.pushState so before pushing, it fetches & merges cloud Requests, Flags, and Users!
+  if (window.qaafCloudSync) {
+    window.qaafCloudSync.pushState = async function(actionLabel) {
+      syncRequestQueueReferences(parentRequestsQueue);
+      var endpoint = this.getEndpointUrl();
+      var isDeletionAction = actionLabel && (
+        actionLabel.indexOf("Approved") !== -1 ||
+        actionLabel.indexOf("Rejected") !== -1 ||
+        actionLabel.indexOf("Removed") !== -1 ||
+        actionLabel.indexOf("Deleted") !== -1 ||
+        actionLabel.indexOf("Banned") !== -1 ||
+        actionLabel.indexOf("Purged") !== -1 ||
+        actionLabel.indexOf("Cleared") !== -1
+      );
+
+      // If this is a user adding a Request, Flag, or Account, pull & merge cloud items first so we NEVER overwrite another user's submission!
+      if (endpoint && !isDeletionAction) {
+        try {
+          var getRes = await fetch(endpoint + "?t=" + Date.now());
+          if (getRes.ok) {
+            var cloudState = await getRes.json();
+            if (cloudState && typeof cloudState === "object") {
+              if (Array.isArray(cloudState.parentRequestsQueue)) {
+                var mergedReqs = mergeArraysByKey(parentRequestsQueue, cloudState.parentRequestsQueue, "reqId");
+                syncRequestQueueReferences(mergedReqs);
+              }
+              if (Array.isArray(cloudState.flaggedVideosQueue)) {
+                flaggedVideosQueue = mergeArraysByKey(flaggedVideosQueue, cloudState.flaggedVideosQueue, "videoId");
+                localStorage.setItem("qaaf_flagged_queue", JSON.stringify(flaggedVideosQueue));
+              }
+              if (cloudState.registeredUsersMap && typeof cloudState.registeredUsersMap === "object") {
+                Object.keys(cloudState.registeredUsersMap).forEach(function(uk) {
+                  if (!window.registeredUsersMap[uk]) {
+                    window.registeredUsersMap[uk] = cloudState.registeredUsersMap[uk];
+                  }
+                });
+                localStorage.setItem("qaaf_registered_users", JSON.stringify(window.registeredUsersMap));
+              }
+            }
+          }
+        } catch (e) {}
+      }
+
+      var payload = this.getStatePayload();
+      payload.parentRequestsQueue = parentRequestsQueue;
+      payload.registeredUsersMap = window.registeredUsersMap;
+
+      localStorage.setItem("qaaf_videos_data", JSON.stringify(payload.videosData));
+      localStorage.setItem("qaaf_flagged_queue", JSON.stringify(payload.flaggedVideosQueue));
+      localStorage.setItem("qaaf_parent_requests", JSON.stringify(payload.parentRequestsQueue));
+      localStorage.setItem("qaaf_blocked_videos", JSON.stringify(payload.blockedVideoIds));
+      localStorage.setItem("qaaf_banned_channels", JSON.stringify(payload.bannedChannels));
+      localStorage.setItem("qaaf_regional_promos_v7", JSON.stringify(payload.regionalPromos));
+      localStorage.setItem("qaaf_promo_bar_enabled", payload.isPromoBarEnabled.toString());
+
+      if (endpoint) {
+        try {
+          this.isSyncing = true;
+          this.updateStatusBadge("syncing");
+          await fetch(endpoint, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          var nowTime = new Date().toLocaleTimeString();
+          localStorage.setItem("qaaf_cloud_last_synced", nowTime);
+          localStorage.setItem("qaaf_cloud_last_sync_ts", Date.now().toString());
+          localStorage.setItem("qaaf_cloud_updated_at", payload.updatedAt.toString());
+          this.updateStatusBadge("connected");
+        } catch (err) {
+          this.updateStatusBadge("offline");
+        } finally {
+          this.isSyncing = false;
+        }
+      }
+    };
+  }
+
+  // Fix parentSubmitChannelRequest so it updates BOTH parentRequestsQueue and window.parentRequestsQueue and refreshes UI immediately
+  window.parentSubmitChannelRequest = function() {
+    var urlInput = document.getElementById("parentYtUrlInput");
+    var titleInput = document.getElementById("parentVideoTitle");
+    var channelInput = document.getElementById("parentChannelName");
+    var fb = document.getElementById("parentRequestFeedback");
+
+    var ytId = extractYouTubeId(urlInput ? urlInput.value.trim() : "");
+    var title = titleInput ? titleInput.value.trim() : "";
+    var channel = (channelInput && channelInput.value.trim()) ? channelInput.value.trim() : "Requested Channel";
+    var lang = document.getElementById("parentVideoLang") ? document.getElementById("parentVideoLang").value : "global";
+    var cat = document.getElementById("parentVideoCat") ? document.getElementById("parentVideoCat").value : "kids_cartoon";
+
+    if (!ytId || !title) {
+      alert("Please paste a valid YouTube link and fetch/enter a title.");
+      return;
+    }
+
+    var newReq = {
+      reqId: "req_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6),
+      ytId: ytId,
+      title: title,
+      channel: channel,
+      lang: lang,
+      category: cat,
+      requestedBy: currentUserEmail || "Family User",
+      requestedAt: new Date().toLocaleString()
+    };
+
+    parentRequestsQueue.unshift(newReq);
+    syncRequestQueueReferences(parentRequestsQueue);
+
+    if (urlInput) urlInput.value = "";
+    if (titleInput) titleInput.value = "";
+    if (channelInput) channelInput.value = "";
+
+    if (fb) {
+      fb.classList.remove("hidden");
+      fb.className = "text-[11px] font-bold text-emerald-400";
+      fb.innerText = "✅ Request sent! See its live status in the list below.";
+    }
+
+    renderAdminParentRequests();
+    if (typeof window.openUserNotificationsModal === "function") {
+      window.openUserNotificationsModal();
+    }
+    var uBadge = document.getElementById("userNotifCountBadge");
+    if (uBadge) uBadge.innerText = parentRequestsQueue.length;
+
+    if (window.qaafCloudSync) {
+      window.qaafCloudSync.pushState("New Video Request Submitted");
+    }
+  };
+
+  // Whenever Admin Modal or Video Request Modal is opened, immediately pull fresh data from Firebase Cloud!
+  var prevOpenAdmModal = window.openAdminModal;
+  window.openAdminModal = function() {
+    if (prevOpenAdmModal) prevOpenAdmModal();
+    if (window.qaafCloudSync) {
+      window.qaafCloudSync.pullFromCloud(true).then(function() {
+        syncRequestQueueReferences(parentRequestsQueue);
+        renderAdminParentRequests();
+        renderAdminFlaggedQueue();
+        if (window.renderAdminUsersTable) window.renderAdminUsersTable();
+      });
+    }
+  };
+
+  var prevOpenUserNotif = window.openUserNotificationsModal;
+  window.openUserNotificationsModal = function() {
+    syncRequestQueueReferences(parentRequestsQueue);
+    if (prevOpenUserNotif) prevOpenUserNotif();
+    var uBadge = document.getElementById("userNotifCountBadge");
+    if (uBadge) uBadge.innerText = parentRequestsQueue.length;
+  };
+
+  var bellBtnEl = document.getElementById("qaafNotifBellBtn");
+  if (bellBtnEl) {
+    bellBtnEl.onclick = function() {
+      window.openUserNotificationsModal();
+      if (window.qaafCloudSync) {
+        window.qaafCloudSync.pullFromCloud(true).then(function() {
+          syncRequestQueueReferences(parentRequestsQueue);
+          if (prevOpenUserNotif) prevOpenUserNotif();
+        });
+      }
+    };
+  }
 })();
 </script>
 

@@ -1,11 +1,11 @@
 // ============================================================================
-// QAAF TUBE OFFICIAL GMAIL PASSWORD RESET SENDER (RUNS 24/7 ON GOOGLE CLOUD)
+// QAAF TUBE OFFICIAL PASSWORD RESET SENDER (contactqaaftube@gmail.com)
 // ============================================================================
-// HOW TO ACTIVATE IN 1 MINUTE:
-// 1. Login to https://script.google.com with your official qaaftube@gmail.com account
-// 2. Click "New Project", paste this code, and click "Deploy" -> "New deployment"
-// 3. Select type: "Web app", Who has access: "Anyone", and click "Deploy"
-// 4. Copy the Web App URL and paste it in QAAF Tube Admin Panel -> Users & Pro tab!
+// 1. Login to https://script.google.com using contactqaaftube@gmail.com
+// 2. Click "New Project", erase existing lines, and paste this entire code
+// 3. Click "Deploy" -> "New deployment" -> Select type: "Web app"
+// 4. Set "Who has access" to "Anyone" and click "Deploy"
+// 5. Copy the Web App URL and paste it in QAAF Tube Admin Panel -> Users & Pro tab!
 // ============================================================================
 
 function doPost(e) {
@@ -15,23 +15,26 @@ function doPost(e) {
     var resetLink = data.resetLink;
     var userName = data.name || toEmail;
 
-    var subject = "QAAF Tube — Password Reset Request";
+    var subject = "Reset Password (No-Reply) — QAAF Tube";
     var htmlBody =
       "<div style='font-family:sans-serif;max-width:500px;margin:auto;padding:24px;background:#0f131a;color:#ffffff;border-radius:16px;border:1px solid #10b981;'>" +
-        "<h2 style='color:#10b981;margin-top:0;'>QAAF Tube — Muslim Family & Kids Hub</h2>" +
+        "<h2 style='color:#10b981;margin-top:0;'>Reset Password (No-Reply)</h2>" +
         "<p style='color:#e2e8f0;font-size:14px;'>Assalamu Alaikum <strong>" + userName + "</strong>,</p>" +
-        "<p style='color:#cbd5e1;font-size:14px;'>We received a request to reset the password for your QAAF Tube account (" + toEmail + ").</p>" +
+        "<p style='color:#cbd5e1;font-size:14px;'>Click the button below to reset your password for your QAAF Tube account (" + toEmail + "):</p>" +
         "<div style='text-align:center;margin:28px 0;'>" +
-          "<a href='" + resetLink + "' style='background:#10b981;color:#000000;padding:12px 28px;border-radius:10px;text-decoration:none;font-weight:bold;font-size:14px;display:inline-block;'>Reset My Password Now</a>" +
+          "<a href='" + resetLink + "' style='background:#10b981;color:#000000;padding:12px 28px;border-radius:10px;text-decoration:none;font-weight:bold;font-size:14px;display:inline-block;'>Reset Password Now</a>" +
         "</div>" +
-        "<p style='color:#94a3b8;font-size:12px;'>Or copy and paste this link in your browser:<br/><a href='" + resetLink + "' style='color:#38bdf8;'>" + resetLink + "</a></p>" +
+        "<p style='color:#94a3b8;font-size:12px;'>Or open this link in your browser:<br/><a href='" + resetLink + "' style='color:#38bdf8;'>" + resetLink + "</a></p>" +
+        "<hr style='border:0;border-top:1px solid #1e293b;margin:20px 0;'/>" +
+        "<p style='color:#64748b;font-size:11px;margin:0;'>This is an automated No-Reply message from QAAF Tube. Please do not reply to this email.</p>" +
       "</div>";
 
     MailApp.sendEmail({
       to: toEmail,
       subject: subject,
       htmlBody: htmlBody,
-      name: "QAAF Tube Support"
+      name: "Reset Password - QAAF Tube (No-Reply)",
+      noReply: true
     });
 
     return ContentService.createTextOutput(JSON.stringify({ status: "sent" })).setMimeType(ContentService.MimeType.JSON);
