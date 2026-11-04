@@ -10142,6 +10142,223 @@
 })();
 </script>
 
+<!-- QAAF V10.4 ROLE-BASED MONITOR / MODERATOR SYSTEM (LIMITED TO VIDEO & CHANNEL MODERATION ONLY) -->
+<script>
+(function initQaafMonitorRoleSystem() {
+  // 1. Check if the currently logged-in user is an assigned Monitor
+  window.isMonitorUser = function() {
+    if (!currentUserEmail || isSuperAdmin()) return false;
+    var uKey = currentUserEmail.toLowerCase().trim();
+    var uObj = window.registeredUsersMap && window.registeredUsersMap[uKey];
+    return !!(uObj && uObj.isMonitor === true);
+  };
+
+  window.hasModerationAccess = function() {
+    return isSuperAdmin() || window.isMonitorUser();
+  };
+
+  // 2. Update Header Button & Account Badge for Monitors vs Super Admin
+  var origSyncAccountUI = window.syncAccountUI;
+  window.syncAccountUI = function() {
+    if (origSyncAccountUI) origSyncAccountUI();
+    var adminBtn = document.getElementById("superAdminHeaderBtn");
+    var roleBadge = document.getElementById("activeAccountRoleBadge");
+    var label = document.getElementById("accountBtnLabel");
+
+    if (!currentUserEmail) return;
+
+    if (window.isMonitorUser()) {
+      if (label) label.innerText = "Monitor";
+      if (roleBadge) {
+        roleBadge.className = "text-xs font-extrabold text-sky-400";
+        roleBadge.innerText = "🛡️ Official Content Monitor (Moderation Access)";
+      }
+      if (adminBtn && !isKidsLocked) {
+        adminBtn.classList.remove("hidden", "bg-amber-500", "hover:bg-amber-400", "text-black");
+        adminBtn.classList.add("flex", "bg-sky-600", "hover:bg-sky-500", "text-white");
+        var spans = adminBtn.querySelectorAll("span");
+        if (spans.length >= 2) {
+          spans[0].innerText = "🛡️";
+          spans[1].innerText = "Monitor";
+        }
+      }
+    } else if (isSuperAdmin()) {
+      if (adminBtn) {
+        adminBtn.classList.remove("bg-sky-600", "hover:bg-sky-500", "text-white");
+        adminBtn.classList.add("bg-amber-500", "hover:bg-amber-400", "text-black");
+        var spans2 = adminBtn.querySelectorAll("span");
+        if (spans2.length >= 2) {
+          spans2[0].innerText = "👑";
+          spans2[1].innerText = "Admin";
+        }
+      }
+    }
+  };
+
+  // 3. Enforce Strict Tab Restrictions when a Monitor opens the Console
+  var RESTRICTED_FOR_MONITOR = ["sponsors", "cloud", "security", "users"];
+
+  function applyMonitorConsoleRestrictions() {
+    var isMon = window.isMonitorUser() && !isSuperAdmin();
+    var headerTitle = document.querySelector("#adminDashboardModal h3");
+    var headerSub = document.querySelector("#adminDashboardModal h3 + p");
+
+    if (isMon) {
+      if (headerTitle) headerTitle.innerText = "🛡️ QAAF Tube Monitor Console";
+      if (headerSub) headerSub.innerText = "Content Moderation Mode • Check Requests, Flags & Videos";
+    } else if (isSuperAdmin()) {
+      if (headerTitle) headerTitle.innerText = "👑 QAAF Tube Admin Console";
+      if (headerSub) headerSub.innerText = "qaaftube.com • Super Admin Full Management Center";
+    }
+
+    RESTRICTED_FOR_MONITOR.forEach(function(tabKey) {
+      var tabBtn = document.getElementById("admTabBtn_" + tabKey);
+      var tabPane = document.getElementById("admPane_" + tabKey);
+      if (isMon) {
+        if (tabBtn) tabBtn.classList.add("hidden");
+        if (tabPane) tabPane.classList.add("hidden");
+      } else {
+        if (tabBtn) tabBtn.classList.remove("hidden");
+      }
+    });
+
+    if (isMon) {
+      // Ensure Monitor lands on Publish & Videos or Parent Requests tab
+      switchAdminTab("requests");
+    }
+  }
+
+  var prevSwitchAdminTab = window.switchAdminTab;
+  window.switchAdminTab = function(tabKey) {
+    if (window.isMonitorUser() && !isSuperAdmin() && RESTRICTED_FOR_MONITOR.indexOf(tabKey) !== -1) {
+      alert("🔒 Access Restricted: Monitors can only manage Videos, Parent Requests, and Reported Flags.");
+      return;
+    }
+    if (prevSwitchAdminTab) prevSwitchAdminTab(tabKey);
+  };
+
+  var prevOpenAdminModal = window.openAdminModal;
+  window.openAdminModal = function() {
+    if (!window.hasModerationAccess()) {
+      alert("🔒 Unauthorized access.");
+      return;
+    }
+    if (prevOpenAdminModal) prevOpenAdminModal();
+    applyMonitorConsoleRestrictions();
+  };
+
+  // 4. Add "🛡️ Make Monitor / Remove Monitor" & Quick Monitor Creator inside Super Admin's Users & Pro Tab
+  window.adminToggleUserMonitorRole = function(uKey) {
+    if (!isSuperAdmin()) return;
+    var u = window.registeredUsersMap[uKey];
+    if (!u) return;
+    u.isMonitor = !u.isMonitor;
+    localStorage.setItem("qaaf_registered_users", JSON.stringify(window.registeredUsersMap));
+    window.renderAdminUsersTable();
+    if (window.qaafCloudSync) window.qaafCloudSync.pushState((u.isMonitor ? "Assigned Monitor: " : "Removed Monitor: ") + uKey);
+    showSyncToast(u.isMonitor ? ("🛡️ " + uKey + " is now a Content Monitor!") : ("🔒 Removed Monitor role from " + uKey));
+  };
+
+  window.adminQuickCreateMonitorAccount = function() {
+    if (!isSuperAdmin()) return;
+    var nameInp = document.getElementById("quickMonNameInput");
+    var emailInp = document.getElementById("quickMonEmailInput");
+    var passInp = document.getElementById("quickMonPassInput");
+
+    var name = (nameInp ? nameInp.value : "").trim() || "QAAF Monitor";
+    var uKey = (emailInp ? emailInp.value : "").trim().toLowerCase();
+    var pass = (passInp ? passInp.value : "").trim();
+
+    if (!uKey || !pass) {
+      alert("Please enter an Email/Username and Password for the new Monitor.");
+      return;
+    }
+
+    window.registeredUsersMap[uKey] = {
+      name: name,
+      userKey: uKey,
+      pass: pass,
+      recWord: "makkah",
+      pin: "123456",
+      isPro: true,
+      isMonitor: true,
+      createdAt: new Date().toLocaleDateString()
+    };
+
+    localStorage.setItem("qaaf_registered_users", JSON.stringify(window.registeredUsersMap));
+    if (nameInp) nameInp.value = "";
+    if (emailInp) emailInp.value = "";
+    if (passInp) passInp.value = "";
+
+    window.renderAdminUsersTable();
+    if (window.qaafCloudSync) window.qaafCloudSync.pushState("Created Monitor Account: " + uKey);
+    showSyncToast("🛡️ Created Monitor Account: " + uKey);
+  };
+
+  // Upgrade renderAdminUsersTable to include Quick Monitor Creator & "🛡️ Make Monitor" button on every user row
+  var baseRenderUsers = window.renderAdminUsersTable;
+  window.renderAdminUsersTable = function() {
+    if (baseRenderUsers) baseRenderUsers();
+
+    var usersPane = document.getElementById("admPane_users");
+    var tableCont = document.getElementById("adminUsersTableContainer");
+    if (usersPane && tableCont && !document.getElementById("quickCreateMonitorCard")) {
+      var monCard = document.createElement("div");
+      monCard.id = "quickCreateMonitorCard";
+      monCard.className = "bg-[#141821] border border-sky-500/40 rounded-2xl p-3.5 space-y-2.5 text-xs";
+      monCard.innerHTML =
+        '<div class="flex items-center justify-between">' +
+          '<label class="font-extrabold text-sky-300">🛡️ Add New Monitor (Moderator for Video Requests &amp; Flags Only):</label>' +
+          '<span class="text-[10px] bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded-full font-bold">Limited Access</span>' +
+        '</div>' +
+        '<div class="grid grid-cols-1 sm:grid-cols-4 gap-2">' +
+          '<input id="quickMonNameInput" type="text" placeholder="Monitor Name" class="bg-black border border-slate-700 rounded-xl px-3 py-1.5 text-white" />' +
+          '<input id="quickMonEmailInput" type="text" placeholder="Email or Username" class="bg-black border border-slate-700 rounded-xl px-3 py-1.5 text-white" />' +
+          '<input id="quickMonPassInput" type="text" placeholder="Password" class="bg-black border border-slate-700 rounded-xl px-3 py-1.5 text-white" />' +
+          '<button type="button" onclick="adminQuickCreateMonitorAccount()" class="bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-extrabold py-1.5 shadow">➕ Create Monitor</button>' +
+        '</div>';
+      usersPane.insertBefore(monCard, tableCont);
+    }
+
+    // Inject "🛡️ Make Monitor / Remove Monitor" button into each user card in adminUsersTableContainer
+    if (!tableCont) return;
+    var keys = Object.keys(window.registeredUsersMap || {});
+    var cards = tableCont.children;
+    keys.forEach(function(uKey, idx) {
+      var u = window.registeredUsersMap[uKey];
+      var cardEl = cards[idx];
+      if (!u || !cardEl || cardEl.querySelector(".adm-mon-toggle-btn")) return;
+
+      var safeKey = uKey.replace(/'/g, "\\'");
+      var isMon = !!u.isMonitor;
+
+      // Add Monitor badge next to name if active
+      var nameRow = cardEl.querySelector(".flex.items-center.gap-2");
+      if (nameRow && isMon) {
+        var mBadge = document.createElement("span");
+        mBadge.className = "bg-sky-500 text-black px-2 py-0.5 rounded-full text-[10px] font-extrabold";
+        mBadge.innerText = "🛡️ MONITOR";
+        nameRow.appendChild(mBadge);
+      }
+
+      // Add toggle button in action row
+      var btnGroup = cardEl.querySelector(".flex.flex-wrap.items-center.gap-1\\.5");
+      if (btnGroup) {
+        var monBtn = document.createElement("button");
+        monBtn.type = "button";
+        monBtn.className = "adm-mon-toggle-btn px-3 py-1.5 rounded-xl text-[11px] font-extrabold shadow transition " + (isMon ? "bg-sky-500 text-black hover:bg-sky-400" : "bg-slate-800 hover:bg-sky-600 text-sky-300 hover:text-white border border-sky-500/40");
+        monBtn.innerText = isMon ? "🛡️ Remove Monitor" : "🛡️ Make Monitor";
+        monBtn.onclick = function() { window.adminToggleUserMonitorRole(uKey); };
+        btnGroup.insertBefore(monBtn, btnGroup.firstChild);
+      }
+    });
+  };
+
+  syncAccountUI();
+  if (window.renderAdminUsersTable) window.renderAdminUsersTable();
+})();
+</script>
+
 </body>
 
 
