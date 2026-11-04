@@ -9570,7 +9570,7 @@
 (function initQaafV103AuthAndUsersSystem() {
   window.registeredUsersMap = JSON.parse(localStorage.getItem("qaaf_registered_users") || "{}");
   window.adminWhatsAppNumber = localStorage.getItem("qaaf_admin_whatsapp") || "";
-  window.qaafOfficialMailerUrl = localStorage.getItem("qaaf_official_mailer_url") || "";
+  window.qaafOfficialMailerUrl = localStorage.getItem("qaaf_official_mailer_url") || "https://script.google.com/macros/s/AKfycbz17x-IpU-5ownx5rg7eaKAMer9Yx2gR1Uh_iZnYrpQDSmG5B2ZDSwPbCCySldPW7nsyw/exec";
 
   // =========================================================================
   // 1. SYNC USERS, PRO STATUS & MAILER URL WITH FIREBASE CLOUD
@@ -10359,7 +10359,7 @@
 })();
 </script>
 
-<!-- QAAF V10.5 LIVE CLOUD MERGE SYNC, STATIC ZERO-ANIMATION LOGO, DEFAULT PROMO TICKER & EMAIL-ONLY CONTACT -->
+<!-- QAAF V10.5 LIVE CLOUD MERGE SYNC, STATIC ZERO-ANIMATION LOGO, OFFICIAL GMAIL NO-REPLY SENDER & DEFAULT PROMO TICKER -->
 <style>
   /* Disable all startup logo keyframe animations — show static complete logo only */
   .gpu-anim-redbox, .gpu-anim-border, .gpu-anim-qaaf, .gpu-anim-tri, .gpu-anim-flash, .gpu-anim-bargroup, .gpu-anim-barfill {
@@ -10373,6 +10373,10 @@
 </style>
 <script>
 (function initQaafV105MasterFixes() {
+  var OFFICIAL_GMAIL_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz17x-IpU-5ownx5rg7eaKAMer9Yx2gR1Uh_iZnYrpQDSmG5B2ZDSwPbCCySldPW7nsyw/exec";
+  window.qaafOfficialMailerUrl = OFFICIAL_GMAIL_SCRIPT_URL;
+  localStorage.setItem("qaaf_official_mailer_url", OFFICIAL_GMAIL_SCRIPT_URL);
+
   var DEFAULT_PROMO_TEXT = "📢 For Promotion & Sponsorship on QAAF Tube Contact Us: contactqaaftube@gmail.com";
   var DEFAULT_PROMO_LINK = "mailto:contactqaaftube@gmail.com?subject=Promotion%20%26%20Sponsorship%20on%20QAAF%20Tube";
 
@@ -10401,7 +10405,67 @@
   };
 
   // =========================================================================
-  // 2. REGIONAL PROMO BAR: ALWAYS ON BY DEFAULT IN FAMILY MODE (contactqaaftube@gmail.com),
+  // 2. SECURE OFFICIAL EMAIL RESET SENDER (SENDS ONLY TO USER'S GMAIL INBOX)
+  // =========================================================================
+  window.sendPasswordResetEmailLink = async function() {
+    var emailKey = (document.getElementById("resetTargetEmailInput").value || "").trim().toLowerCase();
+    var msgEl = document.getElementById("resetPaneStatusMsg");
+    if (!msgEl) return;
+    msgEl.classList.remove("hidden");
+
+    if (!emailKey || emailKey.indexOf("@") === -1) {
+      msgEl.className = "text-[11px] font-bold text-rose-400";
+      msgEl.innerText = "⚠️ Please enter your registered Email address in box #1 above.";
+      return;
+    }
+
+    var u = window.registeredUsersMap && window.registeredUsersMap[emailKey];
+    if (!u) {
+      msgEl.className = "text-[11px] font-bold text-rose-400";
+      msgEl.innerText = "❌ No account found with this Email. Click Sign Up to create one.";
+      return;
+    }
+
+    if (!u.resetToken) {
+      u.resetToken = "rst_" + Math.random().toString(36).substring(2, 10) + Date.now().toString(36).slice(-4);
+    }
+    u.resetRequestedAt = new Date().toLocaleString();
+    localStorage.setItem("qaaf_registered_users", JSON.stringify(window.registeredUsersMap));
+
+    var baseUrl = window.location.origin + window.location.pathname;
+    var resetLink = baseUrl + "?reset_account=" + encodeURIComponent(emailKey) + "&reset_token=" + encodeURIComponent(u.resetToken);
+
+    if (window.qaafCloudSync) {
+      window.qaafCloudSync.pushState("Password Reset Email Requested: " + emailKey);
+    }
+
+    msgEl.className = "text-[11px] font-bold text-blue-300";
+    msgEl.innerText = "⏳ Sending 'Reset Password (No-Reply)' email to " + emailKey + "...";
+
+    try {
+      await fetch(OFFICIAL_GMAIL_SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          email: emailKey,
+          name: u.name || emailKey,
+          resetLink: resetLink
+        })
+      });
+      msgEl.className = "text-[11px] font-bold text-emerald-400 leading-relaxed";
+      msgEl.innerHTML = "✅ <strong>Reset Password (No-Reply)</strong> email has been sent to <strong>" + emailKey + "</strong>! Please check your email inbox (and Spam/Promotions folder) and click the <strong>Reset Password Now</strong> button.";
+    } catch (e) {
+      msgEl.className = "text-[11px] font-bold text-rose-400";
+      msgEl.innerText = "⚠️ Network error while sending email. Please check your internet connection and try again.";
+    }
+  };
+
+  var mailerInp = document.getElementById("adminMailerUrlInput");
+  if (mailerInp) mailerInp.value = OFFICIAL_GMAIL_SCRIPT_URL;
+
+  // =========================================================================
+  // 3. REGIONAL PROMO BAR: ALWAYS ON BY DEFAULT IN FAMILY MODE (contactqaaftube@gmail.com),
   //    HIDDEN IN KIDS MODE, AND REGION-SPECIFIC WHEN CUSTOM SPONSOR AD IS SET
   // =========================================================================
   isPromoBarEnabled = localStorage.getItem("qaaf_promo_bar_enabled") !== "false";
@@ -10412,7 +10476,6 @@
     var bar = document.getElementById("regionalPromoBar");
     if (!bar) return;
 
-    // Always hide in Kids Mode or if Admin explicitly unchecked Show Bar
     if (isKidsLocked || !isPromoBarEnabled) {
       bar.classList.add("hidden");
       return;
@@ -10431,7 +10494,6 @@
     } else if (globalPromo && ((globalPromo.text && globalPromo.text.trim() !== "") || (globalPromo.imgUrl && globalPromo.imgUrl.trim() !== ""))) {
       activePromo = globalPromo;
     } else {
-      // Default fallback in all regions where no custom sponsor ad is set!
       activePromo = {
         text: DEFAULT_PROMO_TEXT,
         imgUrl: "",
@@ -10465,7 +10527,7 @@
   window.syncRegionalPromoBar();
 
   // =========================================================================
-  // 3. REMOVE PHONE/WHATSAPP FROM PUBLIC PRO MODAL & ADMIN — USE EMAIL ONLY (contactqaaftube@gmail.com)
+  // 4. REMOVE PHONE/WHATSAPP FROM PUBLIC PRO MODAL & ADMIN — USE EMAIL ONLY (contactqaaftube@gmail.com)
   // =========================================================================
   window.contactAdminForProViaEmail = function() {
     var uEmail = currentUserEmail || "My Account";
@@ -10474,7 +10536,6 @@
     window.location.href = "mailto:contactqaaftube@gmail.com?subject=" + encodeURIComponent(subj) + "&body=" + encodeURIComponent(body);
   };
 
-  // Update Pro Upgrade Modal to show Email-Only Contact (no WhatsApp/phone number)
   var proModal = document.getElementById("proUpgradeContactModal");
   if (proModal) {
     var waBtn = proModal.querySelector('button[onclick*="contactAdminForProViaWhatsApp"]');
@@ -10486,18 +10547,16 @@
     }
   }
 
-  // Hide WhatsApp phone box inside Admin Users & Pro tab
   var waAdminInput = document.getElementById("adminWhatsAppInput");
   if (waAdminInput && waAdminInput.closest(".bg-\\[\\#141821\\]")) {
     waAdminInput.closest(".bg-\\[\\#141821\\]").classList.add("hidden");
   }
 
-  // Update Sponsor Contact Modal to use Email-Only placeholder & also send to Admin/Firebase
   var spContactInput = document.getElementById("sponsorContactEmail");
   if (spContactInput) spContactInput.placeholder = "Your Contact Email Address";
 
   // =========================================================================
-  // 4. FIX UNIFIED REQUEST QUEUE & CLOUD MERGE SYNC (NO OVERWRITING OTHER DEVICES' REQUESTS OR USERS!)
+  // 5. UNIFIED REQUEST QUEUE & CLOUD MERGE SYNC (NO OVERWRITING OTHER DEVICES' REQUESTS OR USERS!)
   // =========================================================================
   function syncRequestQueueReferences(newList) {
     if (Array.isArray(newList)) {
@@ -10510,7 +10569,6 @@
   }
   syncRequestQueueReferences(parentRequestsQueue);
 
-  // Merge helper: combines two arrays of objects by unique key so no device ever erases another device's items
   function mergeArraysByKey(localArr, cloudArr, keyName) {
     var map = {};
     var result = [];
@@ -10525,7 +10583,6 @@
     return result;
   }
 
-  // Upgrade qaafCloudSync.pushState so before pushing, it fetches & merges cloud Requests, Flags, and Users!
   if (window.qaafCloudSync) {
     window.qaafCloudSync.pushState = async function(actionLabel) {
       syncRequestQueueReferences(parentRequestsQueue);
@@ -10540,7 +10597,6 @@
         actionLabel.indexOf("Cleared") !== -1
       );
 
-      // If this is a user adding a Request, Flag, or Account, pull & merge cloud items first so we NEVER overwrite another user's submission!
       if (endpoint && !isDeletionAction) {
         try {
           var getRes = await fetch(endpoint + "?t=" + Date.now());
@@ -10603,7 +10659,6 @@
     };
   }
 
-  // Fix parentSubmitChannelRequest so it updates BOTH parentRequestsQueue and window.parentRequestsQueue and refreshes UI immediately
   window.parentSubmitChannelRequest = function() {
     var urlInput = document.getElementById("parentYtUrlInput");
     var titleInput = document.getElementById("parentVideoTitle");
@@ -10657,7 +10712,6 @@
     }
   };
 
-  // Whenever Admin Modal or Video Request Modal is opened, immediately pull fresh data from Firebase Cloud!
   var prevOpenAdmModal = window.openAdminModal;
   window.openAdminModal = function() {
     if (prevOpenAdmModal) prevOpenAdmModal();
