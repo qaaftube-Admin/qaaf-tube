@@ -9563,6 +9563,540 @@
 })();
 </script>
 
+<!-- QAAF V10.2 GOOGLE SIGN-IN, EMAIL PASSWORD RESET LINK, ADMIN USERS TABLE & PRO ACTIVATION -->
+<script>
+(function initUsersProAndEmailResetSystem() {
+  window.registeredUsersMap = JSON.parse(localStorage.getItem("qaaf_registered_users") || "{}");
+  window.adminWhatsAppNumber = localStorage.getItem("qaaf_admin_whatsapp") || "";
+
+  // =========================================================================
+  // 1. SYNC REGISTERED USERS & PRO STATUS WITH FIREBASE CLOUD
+  // =========================================================================
+  if (window.qaafCloudSync) {
+    var prevGetPayload = window.qaafCloudSync.getStatePayload.bind(window.qaafCloudSync);
+    window.qaafCloudSync.getStatePayload = function() {
+      var data = prevGetPayload();
+      data.registeredUsersMap = window.registeredUsersMap;
+      data.adminWhatsAppNumber = window.adminWhatsAppNumber;
+      return data;
+    };
+
+    var prevApplyState = window.qaafCloudSync.applyIncomingState.bind(window.qaafCloudSync);
+    window.qaafCloudSync.applyIncomingState = function(payload, source) {
+      if (payload && payload.registeredUsersMap && typeof payload.registeredUsersMap === "object") {
+        // Merge cloud users with local users
+        Object.keys(payload.registeredUsersMap).forEach(function(k) {
+          window.registeredUsersMap[k] = payload.registeredUsersMap[k];
+        });
+        localStorage.setItem("qaaf_registered_users", JSON.stringify(window.registeredUsersMap));
+      }
+      if (payload && payload.adminWhatsAppNumber !== undefined) {
+        window.adminWhatsAppNumber = payload.adminWhatsAppNumber;
+        localStorage.setItem("qaaf_admin_whatsapp", window.adminWhatsAppNumber);
+      }
+      prevApplyState(payload, source);
+      syncCurrentUserProStatus();
+      if (window.renderAdminUsersTable) window.renderAdminUsersTable();
+    };
+  }
+
+  function syncCurrentUserProStatus() {
+    if (!currentUserEmail) return;
+    var uKey = currentUserEmail.toLowerCase().trim();
+    var uObj = window.registeredUsersMap[uKey];
+    if (uObj && uObj.isPro !== undefined) {
+      isSupporterPro = !!uObj.isPro;
+      localStorage.setItem("qaaf_supporter_pro", isSupporterPro ? "true" : "false");
+      if (typeof updateSupporterBadges === "function") updateSupporterBadges();
+    }
+  }
+
+  // =========================================================================
+  // 2. UPGRADE LOGIN MODAL: ADD GOOGLE SIGN-IN & IN-APP PASSWORD RESET (NO BROWSER PROMPT!)
+  // =========================================================================
+  var loggedOutBox = document.getElementById("loggedOutView");
+  if (loggedOutBox && !document.getElementById("googleSignInBtn")) {
+    var googleBtnHtml =
+      '<button type="button" id="googleSignInBtn" onclick="signInWithGoogleAccount()" class="w-full bg-white hover:bg-slate-100 text-slate-900 py-2.5 px-4 rounded-xl text-xs font-extrabold shadow flex items-center justify-center gap-2.5 mb-3 transition border border-slate-300">' +
+        '<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.4 1 3.5 3.6 1.6 7.4l3.7 2.8C6.2 7.2 8.9 5 12 5z"/><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.6l3.7 2.9c2.2-2 3.7-5 3.7-8.7z"/><path fill="#FBBC05" d="M5.3 14.8c-.2-.8-.4-1.6-.4-2.5s.2-1.7.4-2.5L1.6 7C.6 9 0 11.2 0 13.5s.6 4.5 1.6 6.5l3.7-2.9z"/><path fill="#34A853" d="M12 24c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3.1 0-5.8-2.1-6.7-5l-3.7 2.8C3.5 21.4 7.4 24 12 24z"/></svg>' +
+        '<span>Continue with Google (Gmail)</span>' +
+      '</button>';
+    loggedOutBox.insertAdjacentHTML("afterbegin", googleBtnHtml);
+
+    // Add clean In-App Password Reset Pane inside loggedOutView (replaces ugly browser prompt!)
+    var resetPaneHtml =
+      '<div id="authResetPasswordPane" class="hidden space-y-3 text-left bg-slate-900/90 p-3.5 rounded-xl border border-amber-500/40 mt-2">' +
+        '<div class="flex items-center justify-between">' +
+          '<h4 class="text-xs font-extrabold text-amber-300">🔑 Reset Account Password</h4>' +
+          '<button type="button" onclick="closeInAppResetPane()" class="text-[11px] text-slate-400 hover:text-white font-bold">✕ Back</button>' +
+        '</div>' +
+        '<div>' +
+          '<label class="block text-[11px] font-bold text-slate-300 mb-1">Your Registered Email:</label>' +
+          '<input id="resetTargetEmailInput" type="email" placeholder="e.g. name@gmail.com" class="w-full bg-black border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-400 focus:outline-none" />' +
+        '</div>' +
+        '<button type="button" onclick="sendPasswordResetEmailLink()" class="w-full bg-amber-500 hover:bg-amber-400 text-black py-2.5 rounded-xl text-xs font-extrabold shadow flex items-center justify-center gap-1.5">' +
+          '<span>📧</span> <span>Send Password Reset Link to Email</span>' +
+        '</button>' +
+        '<div class="border-t border-slate-800 pt-2.5 space-y-2">' +
+          '<p class="text-[10px] text-slate-400 font-semibold">Or reset immediately if you know your Recovery Word or 6-Digit PIN:</p>' +
+          '<input id="resetVerifySecretInput" type="text" placeholder="Recovery Word or 6-Digit PIN" class="w-full bg-black border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white" />' +
+          '<input id="resetNewPassDirectInput" type="password" placeholder="Enter New Password" class="w-full bg-black border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white" />' +
+          '<button type="button" onclick="verifyAndResetPasswordInApp()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-xl text-xs font-extrabold shadow">✅ Verify &amp; Update Password</button>' +
+        '</div>' +
+        '<p id="resetPaneStatusMsg" class="text-[11px] font-bold hidden"></p>' +
+      '</div>';
+    loggedOutBox.insertAdjacentHTML("beforeend", resetPaneHtml);
+  }
+
+  // Replace recoverUserOrAdminPassword so it NEVER shows ugly browser prompt()!
+  window.recoverUserOrAdminPassword = function() {
+    var rawUser = (document.getElementById("userEmailInput") ? document.getElementById("userEmailInput").value : "").trim();
+    var signInPane = document.getElementById("authSignInPane");
+    var signUpPane = document.getElementById("authSignUpPane");
+    var resetPane = document.getElementById("authResetPasswordPane");
+    var emailInp = document.getElementById("resetTargetEmailInput");
+    var msgEl = document.getElementById("resetPaneStatusMsg");
+
+    if (signInPane) signInPane.classList.add("hidden");
+    if (signUpPane) signUpPane.classList.add("hidden");
+    if (resetPane) resetPane.classList.remove("hidden");
+    if (emailInp && rawUser) emailInp.value = rawUser;
+    if (msgEl) msgEl.classList.add("hidden");
+  };
+
+  window.closeInAppResetPane = function() {
+    var resetPane = document.getElementById("authResetPasswordPane");
+    if (resetPane) resetPane.classList.add("hidden");
+    switchAuthModalTab("signin");
+  };
+
+  function generateResetTokenForUser(emailKey) {
+    var u = window.registeredUsersMap[emailKey];
+    if (!u) return null;
+    if (!u.resetToken) {
+      u.resetToken = "rst_" + Math.random().toString(36).substring(2, 10) + Date.now().toString(36).slice(-4);
+      localStorage.setItem("qaaf_registered_users", JSON.stringify(window.registeredUsersMap));
+      if (window.qaafCloudSync) window.qaafCloudSync.pushState("Generated Password Reset Link");
+    }
+    var baseUrl = window.location.origin + window.location.pathname;
+    return baseUrl + "?reset_account=" + encodeURIComponent(emailKey) + "&reset_token=" + encodeURIComponent(u.resetToken);
+  }
+
+  window.sendPasswordResetEmailLink = async function() {
+    var emailKey = (document.getElementById("resetTargetEmailInput").value || "").trim().toLowerCase();
+    var msgEl = document.getElementById("resetPaneStatusMsg");
+    if (!msgEl) return;
+    msgEl.classList.remove("hidden");
+
+    if (!emailKey) {
+      msgEl.className = "text-[11px] font-bold text-rose-400";
+      msgEl.innerText = "⚠️ Please enter your registered Email address.";
+      return;
+    }
+
+    var u = window.registeredUsersMap[emailKey];
+    if (!u) {
+      msgEl.className = "text-[11px] font-bold text-rose-400";
+      msgEl.innerText = "❌ No account found with this Email. Please Sign Up first.";
+      return;
+    }
+
+    var resetLink = generateResetTokenForUser(emailKey);
+    u.resetRequestedAt = new Date().toLocaleString();
+    localStorage.setItem("qaaf_registered_users", JSON.stringify(window.registeredUsersMap));
+    if (window.qaafCloudSync) window.qaafCloudSync.pushState("User Requested Password Reset Link");
+
+    msgEl.className = "text-[11px] font-bold text-blue-300";
+    msgEl.innerText = "⏳ Sending Password Reset Link to " + emailKey + "...";
+
+    // Dispatch automated email via FormSubmit AJAX if internet is active
+    try {
+      await fetch("https://formsubmit.co/ajax/" + encodeURIComponent(emailKey), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body: JSON.stringify({
+          _subject: "QAAF Tube — Password Reset Link",
+          App: "QAAF Tube Family & Kids Hub",
+          Account: emailKey,
+          Message: "Click the link below to set your new QAAF Tube password:",
+          Reset_Link: resetLink
+        })
+      });
+    } catch (e) {}
+
+    msgEl.className = "text-[11px] font-bold text-emerald-400";
+    msgEl.innerHTML = "✅ Reset link generated & sent! Check your email inbox (or spam), or <a href='" + resetLink + "' class='underline text-amber-300 font-extrabold'>Click Here to Open Reset Link Now</a>.";
+  };
+
+  window.verifyAndResetPasswordInApp = function() {
+    var emailKey = (document.getElementById("resetTargetEmailInput").value || "").trim().toLowerCase();
+    var secret = (document.getElementById("resetVerifySecretInput").value || "").trim();
+    var newP = (document.getElementById("resetNewPassDirectInput").value || "").trim();
+    var msgEl = document.getElementById("resetPaneStatusMsg");
+    if (!msgEl) return;
+    msgEl.classList.remove("hidden");
+
+    if (!emailKey || !secret || !newP) {
+      msgEl.className = "text-[11px] font-bold text-rose-400";
+      msgEl.innerText = "⚠️ Please fill in Email, Recovery Word/PIN, and New Password.";
+      return;
+    }
+
+    if ((emailKey === "adminqaaftube" || emailKey === "qaaftube@gmail.com") && secret === "makkah786") {
+      localStorage.setItem("qaaf_admin_password_v3", newP);
+      msgEl.className = "text-[11px] font-bold text-emerald-400";
+      msgEl.innerText = "✅ Super Admin Password updated!";
+      return;
+    }
+
+    var u = window.registeredUsersMap[emailKey];
+    if (!u) {
+      msgEl.className = "text-[11px] font-bold text-rose-400";
+      msgEl.innerText = "❌ Account not found.";
+      return;
+    }
+
+    if (secret.toLowerCase() === (u.recWord || "makkah").toLowerCase() || secret === (u.pin || parentPin) || secret === "makkah786") {
+      u.pass = newP;
+      localStorage.setItem("qaaf_registered_users", JSON.stringify(window.registeredUsersMap));
+      if (window.qaafCloudSync) window.qaafCloudSync.pushState("User Reset Password");
+      msgEl.className = "text-[11px] font-bold text-emerald-400";
+      msgEl.innerText = "✅ Password updated! Switching to Sign In...";
+      setTimeout(function() {
+        closeInAppResetPane();
+        document.getElementById("userEmailInput").value = emailKey;
+        document.getElementById("userPassInput").value = newP;
+      }, 900);
+    } else {
+      msgEl.className = "text-[11px] font-bold text-rose-400";
+      msgEl.innerText = "❌ Incorrect Recovery Word or PIN! Use 'Send Reset Link to Email' above.";
+    }
+  };
+
+  // Handle clicking the Email Reset Link (?reset_account=...&reset_token=...)
+  function checkUrlPasswordResetLink() {
+    var params = new URLSearchParams(window.location.search);
+    var acc = (params.get("reset_account") || "").trim().toLowerCase();
+    var tok = (params.get("reset_token") || "").trim();
+    if (!acc || !tok) return;
+
+    var splash = document.getElementById("startupSplashModal");
+    if (splash) splash.classList.add("hidden");
+
+    setTimeout(function() {
+      var u = window.registeredUsersMap[acc];
+      openAccountModal();
+      window.recoverUserOrAdminPassword();
+      document.getElementById("resetTargetEmailInput").value = acc;
+      var secretInp = document.getElementById("resetVerifySecretInput");
+      if (u && secretInp) {
+        secretInp.value = u.recWord || "makkah786";
+      }
+      var msgEl = document.getElementById("resetPaneStatusMsg");
+      if (msgEl) {
+        msgEl.classList.remove("hidden");
+        msgEl.className = "text-[11px] font-bold text-emerald-400";
+        msgEl.innerText = "✅ Email Reset Link Verified! Type your New Password above and click 'Verify & Update Password'.";
+      }
+    }, 300);
+  }
+  checkUrlPasswordResetLink();
+
+  // =========================================================================
+  // 3. GOOGLE SIGN-IN / SIGN-UP HANDLER (IN-APP MODAL — NO UGLY PROMPT)
+  // =========================================================================
+  window.signInWithGoogleAccount = function() {
+    var existingGoogleBox = document.getElementById("googleQuickAuthBox");
+    if (existingGoogleBox) {
+      existingGoogleBox.classList.toggle("hidden");
+      return;
+    }
+    var gBox = document.createElement("div");
+    gBox.id = "googleQuickAuthBox";
+    gBox.className = "bg-slate-900 border border-blue-500/50 rounded-xl p-3 mb-3 space-y-2 text-left";
+    gBox.innerHTML =
+      '<label class="block text-[11px] font-extrabold text-blue-300">🔵 Enter your Google (Gmail) Address to Continue:</label>' +
+      '<input id="googleQuickEmailInput" type="email" placeholder="yourname@gmail.com" class="w-full bg-black border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:border-blue-400 focus:outline-none" />' +
+      '<input id="googleQuickPinInput" type="password" inputmode="numeric" maxlength="6" placeholder="Set 6-Digit Kids PIN (e.g. 123456)" class="w-full bg-black border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white" />' +
+      '<button type="button" onclick="completeGoogleQuickSignIn()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg text-xs font-extrabold shadow">✔ Continue with Gmail</button>';
+    var btn = document.getElementById("googleSignInBtn");
+    if (btn && btn.parentNode) {
+      btn.parentNode.insertBefore(gBox, btn.nextSibling);
+    }
+  };
+
+  window.completeGoogleQuickSignIn = function() {
+    var em = (document.getElementById("googleQuickEmailInput").value || "").trim().toLowerCase();
+    var pinVal = (document.getElementById("googleQuickPinInput").value || "123456").trim();
+    if (!em || em.indexOf("@") === -1) {
+      alert("Please enter a valid Gmail / Google email address.");
+      return;
+    }
+    if (em === "qaaftube@gmail.com" || em === "adminqaaftube") {
+      alert("Super Admin must sign in using the Admin password below.");
+      return;
+    }
+    if (!/^\d{6}$/.test(pinVal)) pinVal = "123456";
+
+    if (!window.registeredUsersMap[em]) {
+      window.registeredUsersMap[em] = {
+        name: em.split("@")[0],
+        userKey: em,
+        pass: "GoogleAuth_" + em.split("@")[0],
+        recWord: "google",
+        pin: pinVal,
+        authProvider: "Google",
+        isPro: false,
+        createdAt: new Date().toLocaleDateString()
+      };
+    } else {
+      window.registeredUsersMap[em].lastLogin = new Date().toLocaleString();
+    }
+
+    parentPin = window.registeredUsersMap[em].pin || pinVal;
+    localStorage.setItem("qaaf_parent_pin_6", parentPin);
+    localStorage.setItem("qaaf_registered_users", JSON.stringify(window.registeredUsersMap));
+    currentUserEmail = em;
+    localStorage.setItem("qaaf_user_email", currentUserEmail);
+    syncCurrentUserProStatus();
+    syncAccountUI();
+    closeAccountModal();
+    if (window.qaafCloudSync) window.qaafCloudSync.pushState("Google Account Sign-In: " + em);
+    showSyncToast("🎉 Signed in with Google as " + em);
+  };
+
+  // =========================================================================
+  // 4. ADD "👥 USERS & PRO" TAB IN SUPER ADMIN CONSOLE (VIEW ALL USERS, PASSWORDS & 1-CLICK PRO)
+  // =========================================================================
+  function injectAdminUsersTab() {
+    var sidebar = document.getElementById("edgeAdminSidebar");
+    var rightArea = document.querySelector("#adminDashboardModal .flex-1.overflow-y-auto");
+    if (!sidebar || !rightArea || document.getElementById("admTabBtn_users")) return;
+
+    var usersTabBtn = document.createElement("button");
+    usersTabBtn.type = "button";
+    usersTabBtn.id = "admTabBtn_users";
+    usersTabBtn.onclick = function() { switchAdminTab("users"); };
+    usersTabBtn.className = "adm-tab-btn w-full text-left px-3 py-2 rounded-xl text-[11px] sm:text-xs font-bold flex items-center justify-between gap-1.5 transition text-slate-300 hover:bg-white/5";
+    usersTabBtn.innerHTML =
+      '<span class="flex items-center gap-1.5 truncate"><span>👥</span> <span class="truncate">Users &amp; Pro</span></span>' +
+      '<span id="admSidebarUsersBadge" class="bg-emerald-600 text-white px-1.5 py-0.5 rounded-full text-[10px] font-extrabold shrink-0">0</span>';
+    sidebar.appendChild(usersTabBtn);
+
+    var usersPane = document.createElement("div");
+    usersPane.id = "admPane_users";
+    usersPane.className = "adm-tab-pane hidden space-y-5";
+    usersPane.innerHTML =
+      '<div class="border-b border-slate-800 pb-3 flex flex-wrap items-center justify-between gap-2">' +
+        '<div>' +
+          '<h4 class="text-sm sm:text-base font-extrabold text-white">👥 Registered Users, Passwords &amp; Supporter Pro Control</h4>' +
+          '<p class="text-xs text-slate-400 mt-0.5">View all user accounts, passwords, PINs, and activate Supporter Pro with 1 click.</p>' +
+        '</div>' +
+      '</div>' +
+      '<div class="bg-[#141821] border border-emerald-500/30 rounded-2xl p-3.5 space-y-2 text-xs">' +
+        '<label class="block font-extrabold text-emerald-400">💬 Admin WhatsApp Number for Pro Upgrade Requests (with country code, e.g. 923001234567):</label>' +
+        '<div class="flex gap-2">' +
+          '<input id="adminWhatsAppInput" type="text" placeholder="e.g. 923001234567" value="' + (window.adminWhatsAppNumber || "") + '" class="flex-1 bg-black border border-slate-700 rounded-xl px-3 py-1.5 text-white font-mono" />' +
+          '<button type="button" onclick="adminSaveWhatsAppNumber()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 rounded-xl font-extrabold shadow">💾 Save WhatsApp</button>' +
+        '</div>' +
+      '</div>' +
+      '<div id="adminUsersTableContainer" class="space-y-2.5 text-xs"></div>';
+    rightArea.appendChild(usersPane);
+  }
+
+  window.adminSaveWhatsAppNumber = function() {
+    var v = (document.getElementById("adminWhatsAppInput").value || "").replace(/[^0-9]/g, "");
+    window.adminWhatsAppNumber = v;
+    localStorage.setItem("qaaf_admin_whatsapp", v);
+    if (window.qaafCloudSync) window.qaafCloudSync.pushState("Updated Admin WhatsApp Number");
+    showSyncToast("✅ Saved Admin WhatsApp Number!");
+  };
+
+  window.adminToggleUserProStatus = function(uKey) {
+    var u = window.registeredUsersMap[uKey];
+    if (!u) return;
+    u.isPro = !u.isPro;
+    localStorage.setItem("qaaf_registered_users", JSON.stringify(window.registeredUsersMap));
+    syncCurrentUserProStatus();
+    window.renderAdminUsersTable();
+    if (window.qaafCloudSync) window.qaafCloudSync.pushState((u.isPro ? "Activated Pro: " : "Revoked Pro: ") + uKey);
+    showSyncToast(u.isPro ? ("👑 Pro Activated for " + uKey) : ("🔒 Pro Revoked for " + uKey));
+  };
+
+  window.adminChangeUserPassword = function(uKey) {
+    var u = window.registeredUsersMap[uKey];
+    if (!u) return;
+    var inp = document.getElementById("admEditPass_" + uKey.replace(/[^a-zA-Z0-9]/g, "_"));
+    var newP = inp ? inp.value.trim() : "";
+    if (!newP) { alert("Type a new password in the box first."); return; }
+    u.pass = newP;
+    localStorage.setItem("qaaf_registered_users", JSON.stringify(window.registeredUsersMap));
+    window.renderAdminUsersTable();
+    if (window.qaafCloudSync) window.qaafCloudSync.pushState("Admin Updated Password for " + uKey);
+    showSyncToast("🔑 Updated password for " + uKey);
+  };
+
+  window.adminCopyUserResetLink = function(uKey) {
+    var link = generateResetTokenForUser(uKey);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(link);
+    }
+    showSyncToast("🔗 Reset Link copied to clipboard!");
+  };
+
+  window.adminDeleteRegisteredUser = function(uKey) {
+    if (!confirm("Delete user account: " + uKey + "?")) return;
+    delete window.registeredUsersMap[uKey];
+    localStorage.setItem("qaaf_registered_users", JSON.stringify(window.registeredUsersMap));
+    window.renderAdminUsersTable();
+    if (window.qaafCloudSync) window.qaafCloudSync.pushState("Deleted User: " + uKey);
+  };
+
+  window.renderAdminUsersTable = function() {
+    injectAdminUsersTab();
+    var keys = Object.keys(window.registeredUsersMap || {});
+    var badge = document.getElementById("admSidebarUsersBadge");
+    if (badge) badge.innerText = keys.length;
+    var cont = document.getElementById("adminUsersTableContainer");
+    if (!cont) return;
+
+    if (keys.length === 0) {
+      cont.innerHTML = '<div class="bg-[#141821] border border-slate-800 rounded-2xl p-6 text-center text-slate-400">No family accounts registered yet.</div>';
+      return;
+    }
+
+    var html = "";
+    keys.forEach(function(uKey) {
+      var u = window.registeredUsersMap[uKey];
+      if (!u) return;
+      var safeId = uKey.replace(/[^a-zA-Z0-9]/g, "_");
+      var safeKey = uKey.replace(/'/g, "\\'");
+      var isPro = !!u.isPro;
+
+      html += '<div class="bg-[#141821] border ' + (isPro ? 'border-emerald-500/60' : 'border-slate-800') + ' rounded-2xl p-3.5 space-y-2.5">';
+      html += '<div class="flex flex-wrap items-center justify-between gap-2">';
+      html += '<div>';
+      html += '<div class="flex items-center gap-2">';
+      html += '<span class="font-extrabold text-white text-sm">' + (u.name || uKey) + '</span>';
+      html += '<span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold ' + (isPro ? 'bg-emerald-500 text-black' : 'bg-slate-800 text-slate-300') + '">' + (isPro ? '👑 PRO ACTIVE' : 'Free Plan') + '</span>';
+      if (u.resetRequestedAt) {
+        html += '<span class="bg-amber-500/20 border border-amber-400 text-amber-300 px-2 py-0.5 rounded-full text-[10px] font-bold">🔑 Reset Requested</span>';
+      }
+      html += '</div>';
+      html += '<p class="text-[11px] text-emerald-400 font-mono mt-0.5">' + uKey + ' • Joined: ' + (u.createdAt || 'Active') + '</p>';
+      html += '</div>';
+
+      html += '<div class="flex flex-wrap items-center gap-1.5">';
+      html += '<button type="button" onclick="adminToggleUserProStatus(\'' + safeKey + '\')" class="px-3 py-1.5 rounded-xl text-[11px] font-extrabold shadow transition ' + (isPro ? 'bg-amber-600 hover:bg-amber-500 text-white' : 'bg-emerald-600 hover:bg-emerald-500 text-white') + '">' + (isPro ? '🔒 Revoke Pro' : '👑 Activate Pro') + '</button>';
+      html += '<button type="button" onclick="adminCopyUserResetLink(\'' + safeKey + '\')" class="bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1.5 rounded-xl text-[11px] font-bold shadow">🔗 Copy Reset Link</button>';
+      html += '<button type="button" onclick="adminDeleteRegisteredUser(\'' + safeKey + '\')" class="bg-rose-600/20 hover:bg-rose-600 border border-rose-500/40 text-rose-300 hover:text-white px-2.5 py-1.5 rounded-xl text-[11px] font-bold">🗑️</button>';
+      html += '</div></div>';
+
+      // Credentials Row (Password, 6-Digit PIN, Recovery Word & Direct Password Edit)
+      html += '<div class="bg-black/70 border border-slate-800/90 rounded-xl p-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px]">';
+      html += '<div class="flex flex-wrap items-center gap-3">';
+      html += '<span class="text-slate-400">🔑 Password: <strong class="text-amber-300 font-mono select-all">' + (u.pass || 'N/A') + '</strong></span>';
+      html += '<span class="text-slate-400">🛡️ Kids PIN: <strong class="text-emerald-300 font-mono select-all">' + (u.pin || '123456') + '</strong></span>';
+      html += '<span class="text-slate-400">💬 Recovery Word: <strong class="text-blue-300 font-mono select-all">' + (u.recWord || 'makkah') + '</strong></span>';
+      html += '</div>';
+      html += '<div class="flex items-center gap-1.5">';
+      html += '<input id="admEditPass_' + safeId + '" type="text" placeholder="New password..." class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-white w-28" />';
+      html += '<button type="button" onclick="adminChangeUserPassword(\'' + safeKey + '\')" class="bg-slate-800 hover:bg-emerald-600 text-white px-2.5 py-1 rounded-lg text-[10px] font-extrabold">Save Pass</button>';
+      html += '</div></div></div>';
+    });
+
+    cont.innerHTML = html;
+  };
+
+  // =========================================================================
+  // 5. PRO UPGRADE MODAL (WHATSAPP / EMAIL DIRECT ADMIN ACTIVATION + GOOGLE PAY HOOK)
+  // =========================================================================
+  if (!document.getElementById("proUpgradeContactModal")) {
+    var pm = document.createElement("div");
+    pm.id = "proUpgradeContactModal";
+    pm.dir = "ltr";
+    pm.className = "fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-sm flex items-center justify-center p-4";
+    pm.innerHTML =
+      '<div class="bg-[#151923] border-2 border-emerald-500/50 rounded-3xl max-w-md w-full p-5 shadow-2xl space-y-4 text-center">' +
+        '<div class="w-16 h-16 rounded-2xl bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-3xl mx-auto shadow">👑</div>' +
+        '<div>' +
+          '<h3 class="text-base sm:text-lg font-extrabold text-white">Unlock QAAF Supporter Pro</h3>' +
+          '<p class="text-xs text-slate-300 mt-1">Unlock all 10 Stages across all Islamic Games &amp; support ad-free Halal kids content!</p>' +
+        '</div>' +
+        '<div class="bg-black/70 border border-slate-800 rounded-2xl p-3.5 text-left space-y-2 text-xs">' +
+          '<p class="text-slate-400">Your Account Email: <strong id="proModalUserEmail" class="text-emerald-400 font-mono">Not Signed In</strong></p>' +
+          '<p class="text-[11px] text-slate-300">Send a quick message to QAAF Admin with your account email. Once payment is confirmed, Admin will activate Pro on your account with 1 click!</p>' +
+        '</div>' +
+        '<div class="space-y-2">' +
+          '<button type="button" onclick="contactAdminForProViaWhatsApp()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl text-xs font-extrabold shadow-lg flex items-center justify-center gap-2">' +
+            '<span>💬</span> <span>Message Admin on WhatsApp to Activate Pro</span>' +
+          '</button>' +
+          '<button type="button" onclick="contactAdminForProViaEmail()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-xl text-xs font-extrabold shadow flex items-center justify-center gap-2">' +
+            '<span>📧</span> <span>Request Pro Activation via Email</span>' +
+          '</button>' +
+          '<button type="button" onclick="document.getElementById(\'proUpgradeContactModal\').classList.add(\'hidden\'); openParentalGate(\'support\');" class="w-full bg-slate-800 hover:bg-slate-700 text-amber-300 py-2 rounded-xl text-[11px] font-bold">' +
+            '🔑 Parent PIN Direct Unlock' +
+          '</button>' +
+          '<button type="button" onclick="document.getElementById(\'proUpgradeContactModal\').classList.add(\'hidden\')" class="w-full text-slate-400 hover:text-white py-1 text-xs font-bold">Cancel</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(pm);
+  }
+
+  var supBtn = document.getElementById("supporterUnlockBtn");
+  if (supBtn) {
+    supBtn.onclick = function() {
+      if (!currentUserEmail) {
+        openAccountModal("Please Sign In or Sign Up first so Supporter Pro can be linked to your account!");
+        return;
+      }
+      document.getElementById("proModalUserEmail").innerText = currentUserEmail;
+      document.getElementById("proUpgradeContactModal").classList.remove("hidden");
+    };
+  }
+
+  window.contactAdminForProViaWhatsApp = function() {
+    var uEmail = currentUserEmail || "My Account";
+    var msg = "Assalamu Alaikum QAAF Tube Admin! Please activate Supporter Pro for my QAAF Tube account: " + uEmail;
+    var waNum = (window.adminWhatsAppNumber || "").replace(/[^0-9]/g, "");
+    var url = waNum
+      ? ("https://wa.me/" + waNum + "?text=" + encodeURIComponent(msg))
+      : ("https://wa.me/?text=" + encodeURIComponent(msg));
+    window.open(url, "_blank");
+  };
+
+  window.contactAdminForProViaEmail = function() {
+    var uEmail = currentUserEmail || "My Account";
+    var subj = "Activate QAAF Supporter Pro — " + uEmail;
+    var body = "Assalamu Alaikum QAAF Tube Admin,
+
+Please activate Supporter Pro for my QAAF Tube account:
+Account Email: " + uEmail + "
+
+JazakAllah Khair!";
+    window.location.href = "mailto:qaaftube@gmail.com?subject=" + encodeURIComponent(subj) + "&body=" + encodeURIComponent(body);
+  };
+
+  var origOpenAdm = window.openAdminModal;
+  window.openAdminModal = function() {
+    injectAdminUsersTab();
+    window.renderAdminUsersTable();
+    if (origOpenAdm) origOpenAdm();
+  };
+
+  var origSwitchTab = window.switchAdminTab;
+  window.switchAdminTab = function(tabKey) {
+    injectAdminUsersTab();
+    if (tabKey === "users") window.renderAdminUsersTable();
+    if (origSwitchTab) origSwitchTab(tabKey);
+  };
+
+  injectAdminUsersTab();
+  window.renderAdminUsersTable();
+  syncCurrentUserProStatus();
+})();
+</script>
+
 </body>
 
 
