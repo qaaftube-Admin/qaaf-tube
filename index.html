@@ -111,7 +111,23 @@
 <body id="appBody" class="bg-islamic-family min-h-screen flex flex-col justify-between pb-28 transition-colors duration-500">
 
   <!-- STARTUP LOGO ANIMATION SPLASH SCREEN -->
-  <div id="startupSplashModal" class="fixed inset-0 z-[100] bg-[#050507] flex flex-col items-center justify-center p-6 transition-opacity duration-500" dir="ltr"></div>
+  <div id="startupSplashModal" class="fixed inset-0 z-[100] bg-[#050507] flex flex-col items-center justify-center p-6 transition-opacity duration-200" dir="ltr">
+    <div class="w-44 sm:w-52 flex flex-col items-center">
+      <svg class="w-full h-auto" viewBox="0 0 1024 716" xmlns="http://www.w3.org/2000/svg">
+        <path d="M 512 55 C 788 55 897 64 934 95 C 971 125 984 222 984 358 C 984 494 971 590 934 621 C 897 651 788 661 512 661 C 236 661 127 651 90 621 C 53 590 40 494 40 358 C 40 222 53 125 90 95 C 127 64 236 55 512 55 Z" fill="#E51920"/>
+        <path d="M 512 79 C 772 79 894 92 920 115 C 946 138 959 232 959 358 C 959 484 946 578 920 601 C 894 624 772 637 512 637 C 252 637 130 624 104 601 C 78 578 65 484 65 358 C 65 232 78 138 104 115 C 130 92 252 79 512 79 Z M 512 103 C 695 103 863 102 901 134 C 938 166 935 290 935 358 C 935 426 938 550 901 582 C 863 614 695 613 512 613 C 329 613 161 614 123 582 C 86 550 89 426 89 358 C 89 290 86 166 123 134 C 161 102 329 103 512 103 Z" fill="#FFFFFF" fill-rule="evenodd"/>
+        <path d="M 562 241 L 562 474 Q 562 505 589 489 L 789 372 Q 816 357 789 341 L 589 225 Q 562 210 562 241 Z" fill="#FFFFFF"/>
+        <path d="M 455 219 C 395 219 392 315 415 330 C 438 345 485 330 508 345 C 515 352 490 385 430 420 C 370 455 295 468 265 438 C 238 412 248 360 260 326 L 245 335 C 220 385 220 455 262 492 C 305 525 395 505 465 450 C 525 402 542 355 530 295 C 520 245 490 219 455 219 Z M 448 265 C 465 265 476 276 474 286 C 460 290 432 288 425 278 C 425 270 435 265 448 265 Z M 406 146 L 381 181 L 421 210 L 444 182 L 478 207 L 502 171 L 464 143 L 440 168 Z" fill="#FFFFFF" fill-rule="evenodd"/>
+        <rect x="223" y="554" width="578" height="25" rx="12.5" ry="12.5" fill="none" stroke="#FFFFFF" stroke-width="4"/>
+        <rect x="223" y="554" width="309" height="25" rx="12.5" ry="12.5" fill="#FFFFFF"/>
+      </svg>
+      <div class="mt-3 text-center">
+        <div class="text-lg font-extrabold tracking-tight flex items-center justify-center gap-1">
+          <span class="text-white">QAAF</span><span class="text-slate-600 font-light">|</span><span class="text-emerald-400">Tube</span>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- TOP SIMULATOR TEST BAR -->
   <div class="bg-slate-900/95 border-b border-slate-800 px-2.5 py-1 flex flex-wrap items-center justify-between gap-1.5 text-[11px]" dir="ltr">
@@ -9494,6 +9510,56 @@
   }
 
   checkAndPlayUrlWatchParam();
+})();
+</script>
+
+<!-- QAAF INSTANT SPLIT-SECOND SPLASH DISMISSAL (OPENS IMMEDIATELY WHEN READY) -->
+<script>
+(function enableInstantSplashDismissal() {
+  var CLEAN_HEADER_SVG =
+    '<path d="M 512 55 C 788 55 897 64 934 95 C 971 125 984 222 984 358 C 984 494 971 590 934 621 C 897 651 788 661 512 661 C 236 661 127 651 90 621 C 53 590 40 494 40 358 C 40 222 53 125 90 95 C 127 64 236 55 512 55 Z" fill="#E51920"/>' +
+    '<path d="M 512 79 C 772 79 894 92 920 115 C 946 138 959 232 959 358 C 959 484 946 578 920 601 C 894 624 772 637 512 637 C 252 637 130 624 104 601 C 78 578 65 484 65 358 C 65 232 78 138 104 115 C 130 92 252 79 512 79 Z M 512 103 C 695 103 863 102 901 134 C 938 166 935 290 935 358 C 935 426 938 550 901 582 C 863 614 695 613 512 613 C 329 613 161 614 123 582 C 86 550 89 426 89 358 C 89 290 86 166 123 134 C 161 102 329 103 512 103 Z" fill="#FFFFFF" fill-rule="evenodd"/>' +
+    '<path d="M 562 241 L 562 474 Q 562 505 589 489 L 789 372 Q 816 357 789 341 L 589 225 Q 562 210 562 241 Z" fill="#FFFFFF"/>' +
+    '<path d="M 455 219 C 395 219 392 315 415 330 C 438 345 485 330 508 345 C 515 352 490 385 430 420 C 370 455 295 468 265 438 C 238 412 248 360 260 326 L 245 335 C 220 385 220 455 262 492 C 305 525 395 505 465 450 C 525 402 542 355 530 295 C 520 245 490 219 455 219 Z M 448 265 C 465 265 476 276 474 286 C 460 290 432 288 425 278 C 425 270 435 265 448 265 Z M 406 146 L 381 181 L 421 210 L 444 182 L 478 207 L 502 171 L 464 143 L 440 168 Z" fill="#FFFFFF" fill-rule="evenodd"/>' +
+    '<rect x="223" y="554" width="578" height="25" rx="12.5" ry="12.5" fill="none" stroke="#FFFFFF" stroke-width="4"/>' +
+    '<rect x="223" y="554" width="309" height="25" rx="12.5" ry="12.5" fill="#FFFFFF"/>';
+
+  var headerSvg = document.querySelector("#mainHeader svg");
+  if (headerSvg) {
+    headerSvg.setAttribute("viewBox", "0 0 1024 716");
+    headerSvg.innerHTML = CLEAN_HEADER_SVG;
+  }
+
+  function dismissSplashImmediately() {
+    var modal = document.getElementById("startupSplashModal");
+    if (!modal || modal.classList.contains("hidden")) return;
+    modal.style.opacity = "0";
+    setTimeout(function() {
+      modal.classList.add("hidden");
+    }, 180);
+  }
+
+  // Override runStartupSplash so it doesn't force a 2.5-second delay on page load!
+  window.runStartupSplash = function(isManualReplay) {
+    var modal = document.getElementById("startupSplashModal");
+    if (!modal) return;
+    if (!isManualReplay) {
+      // On normal page load, dismiss as soon as DOM is ready (split-second!)
+      setTimeout(dismissSplashImmediately, 120);
+      return;
+    }
+    // Only if manually clicked via Replay button
+    modal.classList.remove("hidden");
+    modal.style.opacity = "1";
+    setTimeout(dismissSplashImmediately, 1200);
+  };
+
+  window.replayStartupSplash = function() {
+    window.runStartupSplash(true);
+  };
+
+  // Dismiss right now since the page & video cards are ready!
+  dismissSplashImmediately();
 })();
 </script>
 
