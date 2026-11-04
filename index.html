@@ -336,7 +336,7 @@
 
         <!-- YOUTUBE IFRAME (NO BLOCKING OVERLAYS — VOLUME & SETTINGS GEAR 100% WORKING) -->
         <div id="ytPlayerContainer" class="absolute inset-0 w-full h-full">
-          <iframe id="ytIframe" class="w-full h-full" src="" title="QAAF YouTube Player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+          <iframe id="ytIframe" class="w-full h-full" src="" title="QAAF YouTube Player" frameborder="0" sandbox="allow-scripts allow-same-origin allow-presentation" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
         </div>
 
         <!-- FALLBACK SAFE CANVAS CONTAINER (HIDDEN BY DEFAULT) -->
@@ -4741,7 +4741,7 @@
         // Recreate iframe cleanly so browser Back button NEVER navigates iframe back to about:blank!
         const parentCont = document.getElementById('ytPlayerContainer');
         if (parentCont) {
-          parentCont.innerHTML = `<iframe id="ytIframe" class="w-full h-full" src="${embedUrl}" title="QAAF YouTube Player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`;
+          parentCont.innerHTML = `<iframe id="ytIframe" class="w-full h-full" src="${embedUrl}" title="QAAF YouTube Player" frameborder="0" sandbox="allow-scripts allow-same-origin allow-presentation" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`;
         }
       }
     } else {
@@ -7802,6 +7802,342 @@
       return data;
     };
   }
+})();
+</script>
+
+<!-- QAAF STRICT ANTI-YOUTUBE ESCAPE, PERSISTENT KIDS TIMER LOCK & ADMIN VIEW UPGRADE -->
+<script>
+(function enforceStrictKidsLockAndAdminView() {
+  // =========================================================================
+  // PART A: BLOCK YOUTUBE LOGO / TITLE CLICKS INSIDE PLAYER (NO ESCAPE TO YOUTUBE APP)
+  // =========================================================================
+  function injectYouTubeLogoShields() {
+    var ytCont = document.getElementById("ytPlayerContainer");
+    if (!ytCont) return;
+
+    // 1. Ensure iframe always has strict sandbox (no allow-popups, no allow-top-navigation)
+    var ifr = document.getElementById("ytIframe");
+    if (ifr) {
+      ifr.setAttribute("sandbox", "allow-scripts allow-same-origin allow-presentation");
+    }
+
+    // 2. Top Shield: Blocks clicking the video title / "Watch on YouTube" header link inside embed
+    if (!document.getElementById("ytTopLinkBlocker")) {
+      var topShield = document.createElement("div");
+      topShield.id = "ytTopLinkBlocker";
+      topShield.className = "absolute top-0 left-0 right-0 h-14 z-20 bg-transparent select-none";
+      topShield.onclick = function(e) { e.stopPropagation(); e.preventDefault(); };
+      ytCont.appendChild(topShield);
+    }
+
+    // 3. Bottom-Right Shield: Blocks clicking the "YouTube" watermark logo next to fullscreen button
+    if (!document.getElementById("ytBottomLogoBlocker")) {
+      var botShield = document.createElement("div");
+      botShield.id = "ytBottomLogoBlocker";
+      botShield.style.cssText = "position:absolute; bottom:0; right:44px; width:115px; height:48px; z-index:20; background:transparent;";
+      botShield.onclick = function(e) { e.stopPropagation(); e.preventDefault(); };
+      ytCont.appendChild(botShield);
+    }
+
+    // 4. Bottom-Left "Watch on YouTube" badge blocker
+    if (!document.getElementById("ytBottomLeftBlocker")) {
+      var blShield = document.createElement("div");
+      blShield.id = "ytBottomLeftBlocker";
+      blShield.style.cssText = "position:absolute; bottom:42px; left:0; width:175px; height:46px; z-index:20; background:transparent;";
+      blShield.onclick = function(e) { e.stopPropagation(); e.preventDefault(); };
+      ytCont.appendChild(blShield);
+    }
+  }
+
+  var origLoadEng = window.loadVideoInActiveEngine;
+  window.loadVideoInActiveEngine = function(videoId) {
+    if (window.isKidsTimeExpiredLock) return;
+    if (origLoadEng) origLoadEng(videoId);
+    injectYouTubeLogoShields();
+  };
+  injectYouTubeLogoShields();
+
+  // =========================================================================
+  // PART B: PERSISTENT KIDS MODE & REAL-CLOCK TIMESTAMP COUNTDOWN (SURVIVES REFRESH & FULLSCREEN)
+  // =========================================================================
+  var realClockWatchdog = null;
+
+  function forceExitAnyFullscreen() {
+    try {
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(function() {});
+      } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+    } catch (e) {}
+  }
+
+  function destroyActivePlayersImmediately() {
+    forceExitAnyFullscreen();
+    try {
+      var ytCont = document.getElementById("ytPlayerContainer");
+      if (ytCont) {
+        ytCont.innerHTML = '<iframe id="ytIframe" class="w-full h-full" src="about:blank" frameborder="0" sandbox="allow-scripts allow-same-origin allow-presentation"></iframe>';
+      }
+      if (typeof closeVideoPlayer === "function") closeVideoPlayer();
+      if (typeof closeMiniGame === "function") closeMiniGame();
+      if (typeof closeStandaloneGameModal === "function") closeStandaloneGameModal();
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    } catch (e) {}
+  }
+
+  window.enforceHardTimeUpLockScreen = function() {
+    window.isKidsTimeExpiredLock = true;
+    window.kidsTimerRemainingSecs = 0;
+    localStorage.setItem("qaaf_kids_locked_state", "true");
+    localStorage.setItem("qaaf_kids_time_expired", "true");
+    localStorage.removeItem("qaaf_kids_timer_end_ts");
+
+    destroyActivePlayersImmediately();
+
+    var kmBadge = document.getElementById("kidsModeOnHeaderBadge");
+    if (kmBadge) {
+      kmBadge.classList.remove("hidden");
+      kmBadge.classList.add("flex");
+      kmBadge.innerHTML = "<span>🔒</span> <span>Time Up (Locked)</span>";
+    }
+
+    var lockOv = document.getElementById("kidsTimeUpLockOverlay");
+    if (lockOv) {
+      var pinInp = document.getElementById("timeUpParentPinInput");
+      var pinErr = document.getElementById("timeUpPinError");
+      if (pinInp) pinInp.value = "";
+      if (pinErr) pinErr.classList.add("hidden");
+      lockOv.classList.remove("hidden");
+    }
+  };
+
+  function applyVisualKidsModeLockUI() {
+    isKidsLocked = true;
+    localStorage.setItem("qaaf_kids_locked_state", "true");
+    document.getElementById("appBody").className = "bg-islamic-kids min-h-screen flex flex-col justify-between pb-12 transition-colors duration-500";
+    document.getElementById("brandSuffix").innerHTML = '<span class="kids-letters font-extrabold"><span>K</span><span>i</span><span>d</span><span>s</span></span>';
+    document.getElementById("lockIcon").innerText = "🔐";
+    document.getElementById("parentPanelBtn").classList.add("hidden");
+    document.getElementById("accountBtn").classList.add("hidden");
+    document.getElementById("superAdminHeaderBtn").classList.add("hidden");
+    document.getElementById("langDropdownContainer").classList.add("hidden");
+    document.getElementById("kidsContentSwitcher").classList.remove("hidden");
+    document.getElementById("kidsContentSwitcher").classList.add("flex");
+    document.querySelectorAll(".family-only-chip").forEach(function(el) { el.classList.add("hidden"); });
+    if (currentCategory === "bayan") currentCategory = "all";
+    syncRegionalPromoBar();
+    renderVideos();
+  }
+
+  function startRealClockWatchdog() {
+    if (realClockWatchdog) clearInterval(realClockWatchdog);
+    realClockWatchdog = setInterval(function() {
+      if (!isKidsLocked) return;
+
+      // If already expired, ensure no video/game modal can ever stay open
+      if (localStorage.getItem("qaaf_kids_time_expired") === "true") {
+        var lockOv = document.getElementById("kidsTimeUpLockOverlay");
+        if (lockOv && lockOv.classList.contains("hidden")) {
+          window.enforceHardTimeUpLockScreen();
+        }
+        var pModal = document.getElementById("playerModal");
+        if (pModal && !pModal.classList.contains("hidden")) {
+          destroyActivePlayersImmediately();
+        }
+        return;
+      }
+
+      var endTs = parseInt(localStorage.getItem("qaaf_kids_timer_end_ts") || "0", 10);
+      var kmBadge = document.getElementById("kidsModeOnHeaderBadge");
+      if (!endTs || endTs <= 0) {
+        if (kmBadge) {
+          kmBadge.classList.remove("hidden");
+          kmBadge.classList.add("flex");
+          kmBadge.innerHTML = "<span>🔐</span> <span>Kids Mode ON</span>";
+        }
+        return;
+      }
+
+      var remSecs = Math.ceil((endTs - Date.now()) / 1000);
+      if (remSecs <= 0) {
+        window.enforceHardTimeUpLockScreen();
+      } else {
+        window.kidsTimerRemainingSecs = remSecs;
+        if (kmBadge) {
+          kmBadge.classList.remove("hidden");
+          kmBadge.classList.add("flex");
+          kmBadge.innerHTML = "<span>⏰</span> <span>" + formatTimerMMSS(remSecs) + "</span>";
+        }
+      }
+    }, 500);
+  }
+
+  // Override startKidsModeWithTimer to save persistent timestamp in localStorage
+  window.startKidsModeWithTimer = function(minutes) {
+    document.getElementById("kidsTimerSetupModal").classList.add("hidden");
+    window.isKidsTimeExpiredLock = false;
+    localStorage.removeItem("qaaf_kids_time_expired");
+    if (minutes && minutes > 0) {
+      var targetEnd = Date.now() + Math.floor(minutes * 60 * 1000);
+      localStorage.setItem("qaaf_kids_timer_end_ts", String(targetEnd));
+      window.kidsTimerRemainingSecs = Math.floor(minutes * 60);
+    } else {
+      localStorage.removeItem("qaaf_kids_timer_end_ts");
+      window.kidsTimerRemainingSecs = 0;
+    }
+    applyVisualKidsModeLockUI();
+    startRealClockWatchdog();
+  };
+
+  // Override unlock buttons on the Black Time-Up Lock Screen
+  var btnExitKids = document.getElementById("unlockExitKidsBtn");
+  var btnAdd15m = document.getElementById("unlockAdd15mBtn");
+
+  function handleTimeUpUnlock(mode) {
+    var entered = (document.getElementById("timeUpParentPinInput").value || "").trim();
+    if (entered !== parentPin) {
+      document.getElementById("timeUpPinError").classList.remove("hidden");
+      return;
+    }
+    document.getElementById("timeUpPinError").classList.add("hidden");
+    window.isKidsTimeExpiredLock = false;
+    localStorage.removeItem("qaaf_kids_time_expired");
+    document.getElementById("kidsTimeUpLockOverlay").classList.add("hidden");
+
+    if (mode === "add_15m") {
+      window.startKidsModeWithTimer(15);
+      showSyncToast("⏱️ Added 15 minutes for child!");
+    } else {
+      localStorage.removeItem("qaaf_kids_locked_state");
+      localStorage.removeItem("qaaf_kids_timer_end_ts");
+      document.getElementById("pinInput").value = parentPin;
+      pendingParentPurpose = "unlock";
+      verifyPinCode();
+    }
+  }
+
+  if (btnExitKids) btnExitKids.onclick = function() { handleTimeUpUnlock("exit_kids"); };
+  if (btnAdd15m) btnAdd15m.onclick = function() { handleTimeUpUnlock("add_15m"); };
+
+  // Also clear persistent lock when Parent unlocks via normal Kids button PIN gate
+  var prevVerify = window.verifyPinCode;
+  window.verifyPinCode = function() {
+    var entered = (document.getElementById("pinInput").value || "").trim();
+    var isUnlockingKids = (pendingParentPurpose === "unlock" && entered === parentPin);
+    if (isUnlockingKids) {
+      localStorage.removeItem("qaaf_kids_locked_state");
+      localStorage.removeItem("qaaf_kids_timer_end_ts");
+      localStorage.removeItem("qaaf_kids_time_expired");
+      window.isKidsTimeExpiredLock = false;
+    }
+    if (prevVerify) prevVerify();
+  };
+
+  // Restore Kids Mode & Timer automatically on page load / refresh so kids cannot bypass by refreshing!
+  if (localStorage.getItem("qaaf_kids_locked_state") === "true") {
+    applyVisualKidsModeLockUI();
+    startRealClockWatchdog();
+    if (localStorage.getItem("qaaf_kids_time_expired") === "true") {
+      window.enforceHardTimeUpLockScreen();
+    }
+  }
+
+  // =========================================================================
+  // PART C: ADMIN CATALOG CHANNEL FILTER & VIDEO "▶ VIEW" BUTTON
+  // =========================================================================
+  window.adminSelectedCatalogChannel = "ALL";
+
+  window.adminFilterCatalogByChannel = function(chName) {
+    window.adminSelectedCatalogChannel = chName || "ALL";
+    if (window.renderAdminActiveVideosCatalog) window.renderAdminActiveVideosCatalog();
+  };
+
+  window.adminViewCatalogVideo = function(videoId, ev) {
+    if (ev) ev.stopPropagation();
+    closeAdminModal();
+    openVideoPlayer(videoId);
+  };
+
+  window.renderAdminActiveVideosCatalog = function() {
+    var listEl = document.getElementById("adminActiveVideosCatalogList");
+    var countBadge = document.getElementById("admVideosCountBadge");
+    if (countBadge) countBadge.innerText = videosData.length;
+    if (!listEl) return;
+
+    var uniqueChs = Array.from(new Set(videosData.map(function(v) { return v.channel; })));
+    var activeCh = window.adminSelectedCatalogChannel || "ALL";
+    if (activeCh !== "ALL" && uniqueChs.indexOf(activeCh) === -1) {
+      activeCh = "ALL";
+      window.adminSelectedCatalogChannel = "ALL";
+    }
+
+    var htmlOut = "";
+
+    if (uniqueChs.length > 0) {
+      htmlOut += '<div class="bg-slate-900/90 border border-slate-700/80 rounded-xl p-3 mb-3">';
+      htmlOut += '<div class="flex items-center justify-between mb-2">';
+      htmlOut += '<p class="text-[11px] font-extrabold text-amber-300">📺 Active Channels (' + uniqueChs.length + ') — Tap a channel to view its videos:</p>';
+      if (activeCh !== "ALL") {
+        htmlOut += '<button type="button" onclick="adminFilterCatalogByChannel(\'ALL\')" class="bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold shadow">🔄 Show All Channels (' + videosData.length + ')</button>';
+      }
+      htmlOut += '</div>';
+      htmlOut += '<div class="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto p-0.5">';
+
+      var isAllSelected = (activeCh === "ALL");
+      htmlOut += '<button type="button" onclick="adminFilterCatalogByChannel(\'ALL\')" class="px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition ' + (isAllSelected ? 'bg-emerald-500 text-black shadow' : 'bg-slate-800 text-slate-300 hover:bg-slate-700') + '">📋 All Videos (' + videosData.length + ')</button>';
+
+      uniqueChs.forEach(function(ch) {
+        var cCount = videosData.filter(function(v) { return v.channel === ch; }).length;
+        var safeCh = (ch || "").replace(/'/g, "\\'");
+        var isSelected = (activeCh === ch);
+        htmlOut += '<div class="inline-flex items-center rounded-lg overflow-hidden border ' + (isSelected ? 'border-emerald-400 bg-emerald-950/60' : 'border-slate-700 bg-black') + '">';
+        htmlOut += '<button type="button" onclick="adminFilterCatalogByChannel(\'' + safeCh + '\')" class="px-2.5 py-1 text-[11px] font-bold ' + (isSelected ? 'text-emerald-300' : 'text-slate-200 hover:text-white') + ' transition">🔍 ' + ch + ' (' + cCount + ')</button>';
+        htmlOut += '<button type="button" onclick="adminBanAndRemoveChannel(\'' + safeCh + '\', event)" class="px-2 py-1 bg-rose-950/60 hover:bg-red-600 text-rose-300 hover:text-white text-[10px] font-extrabold border-l border-slate-700 transition" title="Ban Channel">⛔</button>';
+        htmlOut += '</div>';
+      });
+      htmlOut += '</div></div>';
+    }
+
+    if (bannedChannels.length > 0) {
+      htmlOut += '<div class="bg-rose-950/20 border border-rose-500/30 rounded-xl p-2.5 mb-3">';
+      htmlOut += '<p class="text-[10px] font-bold text-rose-300 mb-1.5">⛔ Banned Channels (Click to Unban):</p>';
+      htmlOut += '<div class="flex flex-wrap gap-1.5">';
+      bannedChannels.forEach(function(bch) {
+        var safeBch = (bch || "").replace(/'/g, "\\'");
+        htmlOut += '<button type="button" onclick="adminUnbanChannel(\'' + safeBch + '\')" class="bg-black/70 border border-rose-500/40 text-rose-200 px-2 py-0.5 rounded text-[10px] font-bold hover:bg-emerald-950">🔄 Unban: ' + bch + '</button>';
+      });
+      htmlOut += '</div></div>';
+    }
+
+    var filteredVids = activeCh === "ALL" ? videosData : videosData.filter(function(v) { return v.channel === activeCh; });
+
+    if (activeCh !== "ALL") {
+      htmlOut += '<div class="bg-emerald-950/30 border border-emerald-500/40 rounded-xl px-3 py-2 mb-2.5 flex items-center justify-between">';
+      htmlOut += '<span class="text-xs font-extrabold text-emerald-300">📺 Showing ' + filteredVids.length + ' video(s) from "' + activeCh + '"</span>';
+      htmlOut += '<button type="button" onclick="adminFilterCatalogByChannel(\'ALL\')" class="text-[11px] text-slate-300 hover:text-white underline font-bold">✕ Clear Filter</button>';
+      htmlOut += '</div>';
+    }
+
+    filteredVids.forEach(function(v) {
+      var safeCh = (v.channel || "").replace(/'/g, "\\'");
+      var thumb = v.customThumb || ("https://i.ytimg.com/vi/" + v.ytId + "/hqdefault.jpg");
+      htmlOut += '<div class="bg-black/60 border border-slate-800 hover:border-slate-600 p-2.5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 transition">';
+      htmlOut += '<div onclick="adminViewCatalogVideo(\'' + v.id + '\', event)" class="min-w-0 flex-1 flex items-center gap-2.5 cursor-pointer group" title="Click to View / Play Video">';
+      htmlOut += '<img src="' + thumb + '" alt="" class="w-14 h-9 object-cover rounded-lg border border-white/15 shrink-0 group-hover:scale-105 transition" onerror="this.style.display=\'none\'" />';
+      htmlOut += '<div class="min-w-0 flex-1">';
+      htmlOut += '<p class="font-bold text-white group-hover:text-emerald-400 truncate transition">' + v.title + '</p>';
+      htmlOut += '<p class="text-[10px] text-slate-400">Channel: <strong class="text-amber-300">' + v.channel + '</strong> • ID: <span class="font-mono text-emerald-400">' + v.ytId + '</span> • ' + (v.lang || "en").toUpperCase() + '</p>';
+      htmlOut += '</div></div>';
+      htmlOut += '<div class="flex items-center gap-1.5 shrink-0">';
+      htmlOut += '<button type="button" onclick="adminViewCatalogVideo(\'' + v.id + '\', event)" class="bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-extrabold shadow transition">▶ View</button>';
+      htmlOut += '<button type="button" onclick="adminBanAndRemoveChannel(\'' + safeCh + '\', event)" class="bg-amber-600/20 hover:bg-red-600 border border-amber-500/40 text-amber-300 hover:text-white px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition">⛔ Ban Channel</button>';
+      htmlOut += '<button type="button" onclick="adminDeleteVideoCard(\'' + v.id + '\', event)" class="bg-rose-600/20 hover:bg-rose-600 border border-rose-500/40 text-rose-300 hover:text-white px-2.5 py-1 rounded-lg text-[10px] font-bold transition">🗑️ Video</button>';
+      htmlOut += '</div></div>';
+    });
+
+    listEl.innerHTML = htmlOut;
+  };
 })();
 </script>
 
