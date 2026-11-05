@@ -129,18 +129,8 @@
     </div>
   </div>
 
-  <!-- TOP SIMULATOR TEST BAR -->
-  <div class="bg-slate-900/95 border-b border-slate-800 px-2.5 py-1 flex flex-wrap items-center justify-between gap-1.5 text-[11px]" dir="ltr">
-    <div class="flex items-center gap-1.5">
-      <span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-bold">QAAF Tube v8.6 HD</span>
-      <span id="kioskStatusBadge" class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded">Family Mode</span>
-    </div>
-    <div class="flex items-center gap-1.5 flex-wrap">
-      <button onclick="replayStartupSplash()" class="bg-blue-600 hover:bg-blue-500 text-white px-2 py-0.5 rounded font-semibold">✨ Splash</button>
-      <button onclick="triggerAdSimulation()" class="bg-amber-600 hover:bg-amber-500 text-white px-2 py-0.5 rounded font-semibold">🕌 Test Ad -> Hisn al-Muslim Dua</button>
-      <button onclick="simulateIncomingCall()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-0.5 rounded font-semibold">📞 Call</button>
-    </div>
-  </div>
+  <!-- TOP STATUS (HIDDEN IN PRODUCTION) -->
+  <div class="hidden" dir="ltr"><span id="kioskStatusBadge">Family Mode</span></div>
 
   <!-- 100% RESPONSIVE SINGLE-LINE HEADER -->
   <header id="mainHeader" class="sticky top-0 z-30 bg-[#0b0d10]/95 backdrop-blur border-b border-white/10 h-14 px-1.5 sm:px-4 flex items-center justify-between gap-1" dir="ltr">
@@ -353,7 +343,7 @@
 
         <!-- YOUTUBE IFRAME (NO BLOCKING OVERLAYS — VOLUME & SETTINGS GEAR 100% WORKING) -->
         <div id="ytPlayerContainer" class="absolute inset-0 w-full h-full">
-          <iframe id="ytIframe" class="w-full h-full" src="" title="QAAF YouTube Player" frameborder="0" sandbox="allow-scripts allow-same-origin allow-presentation" sandbox="allow-scripts allow-same-origin allow-presentation" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+          <iframe id="ytIframe" class="w-full h-full" src="" title="QAAF YouTube Player" frameborder="0" sandbox="allow-scripts allow-same-origin allow-presentation" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
         </div>
 
         <!-- FALLBACK SAFE CANVAS CONTAINER (HIDDEN BY DEFAULT) -->
@@ -4757,7 +4747,7 @@
         // Recreate iframe cleanly so browser Back button NEVER navigates iframe back to about:blank!
         const parentCont = document.getElementById('ytPlayerContainer');
         if (parentCont) {
-          parentCont.innerHTML = `<iframe id="ytIframe" class="w-full h-full" src="${embedUrl}" title="QAAF YouTube Player" frameborder="0" sandbox="allow-scripts allow-same-origin allow-presentation" sandbox="allow-scripts allow-same-origin allow-presentation" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`;
+          parentCont.innerHTML = `<iframe id="ytIframe" class="w-full h-full" src="${embedUrl}" title="QAAF YouTube Player" frameborder="0" sandbox="allow-scripts allow-same-origin allow-presentation" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`;
         }
       }
     } else {
@@ -10794,17 +10784,21 @@
 <!-- QAAF V10.8 CHANNEL VS VIDEO VERIFIED, BY CHANNELS DIRECTORY (GREEN/YELLOW), NEW CATEGORIES & CLEAN SLATE -->
 <script>
 (function initQaafV108CategoriesAndChannelVerification() {
-  var CLEAN_SLATE_KEY = "qaaf_clean_slate_v108_empty";
+  var CLEAN_SLATE_KEY = "qaaf_clean_slate_v110_zero_catalog";
   window.verifiedChannelsList = JSON.parse(localStorage.getItem("qaaf_verified_channels") || "[]");
   window.isByChannelsPanelOpen = false;
 
   // 1. Force one-time complete wipe of any leftover cached videos on this browser
-  if (localStorage.getItem("qaaf_slate_v108") !== CLEAN_SLATE_KEY) {
+  if (localStorage.getItem("qaaf_slate_v110") !== CLEAN_SLATE_KEY) {
     videosData = [];
     window.verifiedChannelsList = [];
     localStorage.setItem("qaaf_videos_data", "[]");
     localStorage.setItem("qaaf_verified_channels", "[]");
-    localStorage.setItem("qaaf_slate_v108", CLEAN_SLATE_KEY);
+    localStorage.setItem("qaaf_slate_v110", CLEAN_SLATE_KEY);
+    localStorage.removeItem("qaaf_clean_slate_ver");
+    localStorage.removeItem("qaaf_slate_v108");
+    localStorage.removeItem("qaaf_cloud_last_sync_ts");
+    localStorage.removeItem("qaaf_cloud_updated_at");
     window.qaafActiveSearchQuery = "";
     var sInp = document.getElementById("qaafSearchInput");
     if (sInp) sInp.value = "";

@@ -2,7 +2,20 @@
   "rules": {
     ".read": true,
     "qaaf_global_state": {
+      ".read": true,
       ".write": "newData.hasChild('videosData') && newData.child('qaafSecurityToken').val() === 'QAAF_PROTECTED_TOKEN_786_99_MAKKAH'"
+    },
+    "public_video_requests": {
+      ".read": true,
+      "$requestId": {
+        ".write": "!data.exists() && newData.exists() && newData.hasChildren(['ytId', 'title', 'requestedAt'])"
+      }
+    },
+    "public_video_flags": {
+      ".read": true,
+      "$flagId": {
+        ".write": "!data.exists() && newData.exists() && newData.hasChildren(['videoId', 'reason'])"
+      }
     }
   }
 }
