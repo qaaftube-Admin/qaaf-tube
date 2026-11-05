@@ -296,7 +296,7 @@
       <div class="flex-1 min-w-0 flex items-center justify-center overflow-hidden h-full">
         <!-- Option A: Clickable Image / GIF Banner Button (Recommended Size: 320x36 px or 468x36 px) -->
         <a id="promoImageBannerLink" href="#" target="_blank" rel="noopener noreferrer" class="hidden h-9 max-w-[320px] sm:max-w-[468px] w-full rounded-lg overflow-hidden border border-amber-400/50 shadow flex items-center justify-center bg-black/50 hover:scale-[1.01] transition">
-          <img id="promoImageBannerEl" src="" alt="Sponsor Banner" class="h-full w-full object-cover" />
+          <img id="promoImageBannerEl" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E" alt="Sponsor Banner" class="h-full w-full object-cover" />
         </a>
 
         <!-- Option B: Moving Marquee / Ticker Text with Clickable Link -->
@@ -343,14 +343,14 @@
 
         <!-- YOUTUBE IFRAME (NO BLOCKING OVERLAYS — VOLUME & SETTINGS GEAR 100% WORKING) -->
         <div id="ytPlayerContainer" class="absolute inset-0 w-full h-full">
-          <iframe id="ytIframe" class="w-full h-full" src="" title="QAAF YouTube Player" frameborder="0" sandbox="allow-scripts allow-same-origin allow-presentation" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+          <iframe id="ytIframe" class="w-full h-full" src="about:blank" title="QAAF YouTube Player" frameborder="0" sandbox="allow-scripts allow-same-origin allow-presentation" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
         </div>
 
         <!-- FALLBACK SAFE CANVAS CONTAINER (HIDDEN BY DEFAULT) -->
         <div id="safeCanvasPlayerContainer" class="hidden absolute inset-0 w-full h-full flex-col justify-between bg-gradient-to-b from-[#06141d] via-[#050f16] to-[#02070b]">
           <canvas id="safePlayerCanvas" class="absolute inset-0 w-full h-full"></canvas>
           <div class="relative z-10 my-auto text-center px-4 pointer-events-none">
-            <img id="safePlayerPosterImg" src="" alt="Artwork" class="w-36 h-22 mx-auto object-cover rounded-xl border border-white/20 mb-2" />
+            <img id="safePlayerPosterImg" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E" alt="Artwork" class="w-36 h-22 mx-auto object-cover rounded-xl border border-white/20 mb-2" />
             <h3 id="safePlayerTitle" class="text-sm font-extrabold text-white truncate"></h3>
             <p id="safePlayerChannel" class="text-xs text-emerald-400 font-semibold"></p>
           </div>
@@ -546,7 +546,7 @@
 
         <!-- Live Thumbnail Preview Box -->
         <div id="adminYtPreviewContainer" class="hidden bg-black/70 border border-slate-800 rounded-xl p-2.5 flex items-center gap-3">
-          <img id="adminYtPreviewImg" src="" alt="Thumbnail preview" class="w-24 h-14 object-cover rounded-lg border border-white/10 shrink-0" onerror="this.src=''" />
+          <img id="adminYtPreviewImg" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E" alt="Thumbnail preview" class="w-24 h-14 object-cover rounded-lg border border-white/10 shrink-0" onerror="this.src=''" />
           <div class="min-w-0 flex-1 text-xs">
             <p id="adminYtPreviewTitle" class="text-white font-bold truncate">Title preview</p>
             <p id="adminYtPreviewChannel" class="text-slate-400 text-[11px] truncate">Channel preview</p>
@@ -858,7 +858,7 @@
   </div>
 
   <!-- OFFICIAL YOUTUBE IFRAME API FOR HIGH-SPEED HD PLAYBACK & ERROR DETECTION -->
-  <script src="https://www.youtube.com/iframe_api" async></script>
+  
 
  <script>
     const globalLanguagesList = [
@@ -2978,7 +2978,7 @@
     syncRegionalPromoBar();
     renderGames();
     updateSupporterBadges();
-    fetchHisnAlMuslimFromGitHub();
+    window.addEventListener('load', function() { setTimeout(fetchHisnAlMuslimFromGitHub, 500); });
     qaafCloudSync.init();
     runStartupSplash();
   </script>
@@ -4906,7 +4906,7 @@
   };
 
   syncRegionalPromoBar();
-  checkCloudVersionAndSync();
+  window.addEventListener('load', function() { setTimeout(checkCloudVersionAndSync, 400); });
 })();
 </script>
 
