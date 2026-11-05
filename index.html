@@ -136,7 +136,7 @@
   <header id="mainHeader" class="sticky top-0 z-30 bg-[#0b0d10]/95 backdrop-blur border-b border-white/10 h-14 px-1.5 sm:px-4 flex items-center justify-between gap-1" dir="ltr">
     
     <!-- Left: Approved Vector Logo -->
-    <div class="flex items-center gap-1 sm:gap-2 min-w-0 shrink-0">
+    <div onclick="if(window.qaafGoHome)window.qaafGoHome()" class="flex items-center gap-1 sm:gap-2 min-w-0 shrink-0 cursor-pointer select-none" title="QAAF Tube Home">
       <svg class="h-7 sm:h-9 w-auto shrink-0 drop-shadow" viewBox="0 0 500 350" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="qaafExactBrushGrad" x1="385" y1="65" x2="145" y2="285" gradientUnits="userSpaceOnUse">
@@ -1161,7 +1161,7 @@
             </div>
 
             <div class="absolute top-2 left-2 flex flex-wrap gap-1 z-10 pointer-events-none">
-              ${isPreferred ? `<span class="bg-emerald-500 text-black text-[10px] font-extrabold px-2 py-0.5 rounded shadow">⭐ Preferred (${video.lang.toUpperCase()})</span>` : `<span class="bg-slate-800/90 text-slate-300 text-[10px] font-bold px-2 py-0.5 rounded">${video.lang.toUpperCase()}</span>`}
+              
             </div>
 
             <span class="absolute bottom-2 right-2 bg-black/90 text-white text-[10px] font-bold px-1.5 py-0.5 rounded z-10 pointer-events-none">${video.duration || '12:00'}</span>
@@ -3308,8 +3308,8 @@
           topBar.className = 'bg-[#0f0f0f] px-3 py-1.5 flex items-center justify-between border-b border-white/10 shrink-0';
           topBar.dir = 'ltr';
           topBar.innerHTML = `
-            <button type="button" id="minimizePlayerBtn" onclick="minimizeToMiniPlayer()" class="text-white hover:bg-white/10 px-2.5 py-1 rounded-full text-xs font-extrabold flex items-center gap-1.5 transition">
-              <span class="text-base leading-none">⌄</span> <span>Minimize &amp; Browse</span>
+            <button type="button" id="minimizePlayerBtn" onclick="minimizeToMiniPlayer()" class="text-white hover:bg-white/15 w-8 h-8 rounded-full flex items-center justify-center transition" title="Minimize player">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
             </button>
             <span id="miniPlayerTitleLabel" class="hidden text-[11px] font-bold text-emerald-400 truncate max-w-[120px]">Playing...</span>
             <div id="miniPlayerControlsRight" class="flex items-center gap-1.5">
@@ -3577,8 +3577,24 @@
 
       function updateNotifBadges() {
         const qLen = (window.parentRequestsQueue && window.parentRequestsQueue.length) || 0;
+        const myReqIds = JSON.parse(localStorage.getItem('qaaf_my_submitted_req_ids') || '[]');
+        const myRequests = (window.parentRequestsQueue || []).filter(function(r) {
+          if (currentUserEmail && r.requestedBy === currentUserEmail) return true;
+          if (r.reqId && myReqIds.indexOf(r.reqId) !== -1) return true;
+          return false;
+        });
         const badge = document.getElementById('userNotifCountBadge');
-        if (badge) badge.innerText = requestNotificationsLog.length + qLen;
+        if (badge) {
+          const myTotalCount = myRequests.length;
+          badge.innerText = myTotalCount;
+          if (myTotalCount > 0) {
+            badge.classList.remove('hidden');
+            badge.style.display = 'inline-flex';
+          } else {
+            badge.classList.add('hidden');
+            badge.style.display = 'none';
+          }
+        }
         const sideReq = document.getElementById('admSidebarReqBadge');
         if (sideReq) sideReq.innerText = qLen;
         const sideFlag = document.getElementById('admSidebarFlagBadge');
@@ -3589,36 +3605,30 @@
         const listEl = document.getElementById('userNotifModalList');
         if (!listEl) return;
         listEl.innerHTML = '';
-        const qList = window.parentRequestsQueue || [];
+        const myReqIds = JSON.parse(localStorage.getItem('qaaf_my_submitted_req_ids') || '[]');
+        const qList = (window.parentRequestsQueue || []).filter(function(r) {
+          if (currentUserEmail && r.requestedBy === currentUserEmail) return true;
+          if (r.reqId && myReqIds.indexOf(r.reqId) !== -1) return true;
+          return false;
+        });
 
-        if (qList.length === 0 && requestNotificationsLog.length === 0) {
-          listEl.innerHTML = `<p class="text-slate-400 text-center py-6">No channel or video requests submitted yet.</p>`;
+        if (qList.length === 0) {
+          listEl.innerHTML = `<div class="text-center py-8 text-slate-400 text-xs">
+            <p class="text-2xl mb-2">&#x1F4EC;</p>
+            <p class="font-bold text-white mb-1">No pending requests</p>
+            <p class="text-[11px] text-slate-400">Submit any YouTube link above. Admin approval status will appear here.</p>
+          </div>`;
         } else {
           qList.forEach(req => {
             const isObs = req.filterTier === 'OBSERVATION';
             listEl.innerHTML += `
               <div class="bg-slate-900/90 border ${isObs ? 'border-amber-500/50' : 'border-blue-500/40'} p-3 rounded-xl flex items-center justify-between gap-2">
                 <div>
-                  <p class="font-bold text-white">${req.title}</p>
-                  <p class="text-[11px] text-slate-400">Channel: ${req.channel} • ${req.requestedAt || ''}</p>
-                  <p class="text-[10px] ${isObs ? 'text-amber-300' : 'text-blue-300'} font-semibold mt-1">${req.filterNote || '⏳ Waiting for Admin Approval'}</p>
+                  <p class="font-bold text-white leading-snug line-clamp-2">${req.title}</p>
+                  <p class="text-[11px] text-slate-400 mt-0.5">Channel: ${req.channel} &bull; ${req.requestedAt || ''}</p>
+                  <p class="text-[10px] ${isObs ? 'text-amber-300' : 'text-blue-300'} font-semibold mt-1">${req.filterNote || '&#x23F3; Waiting for Admin Approval'}</p>
                 </div>
-                <span class="bg-blue-600/20 border border-blue-400/40 text-blue-300 px-2.5 py-1 rounded-full text-[10px] font-extrabold shrink-0">⏳ Pending</span>
-              </div>`;
-          });
-
-          requestNotificationsLog.forEach(item => {
-            const isApp = item.status === 'APPROVED';
-            listEl.innerHTML += `
-              <div class="bg-slate-900/90 border ${isApp ? 'border-emerald-500/50' : 'border-rose-500/50'} p-3 rounded-xl flex items-center justify-between gap-2">
-                <div>
-                  <p class="font-bold text-white">${item.title}</p>
-                  <p class="text-[11px] text-slate-400">Channel: ${item.channel} • ${item.time || ''}</p>
-                  <p class="text-[10px] ${isApp ? 'text-emerald-400' : 'text-rose-400'} font-bold mt-1">${item.reason}</p>
-                </div>
-                <span class="${isApp ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-rose-500/20 text-rose-300 border-rose-500/40'} border px-2.5 py-1 rounded-full text-[10px] font-extrabold shrink-0">
-                  ${isApp ? '✅ Approved' : '🚫 Rejected'}
-                </span>
+                <span class="bg-blue-600/20 border border-blue-400/40 text-blue-300 px-2.5 py-1 rounded-full text-[10px] font-extrabold shrink-0">&#x23F3; Pending</span>
               </div>`;
           });
         }
@@ -4427,7 +4437,7 @@
           banBtn.onclick = function(e) {
             adminBanAndRemoveChannel(vidObj.channel, e);
           };
-          chRow.insertBefore(banBtn, chRow.lastElementChild);
+          // Clean card: ban channel moved to admin panel
         }
       });
     }
@@ -6672,51 +6682,62 @@
 </div>
 
 <div id="kidsTimerSetupModal" dir="ltr" class="fixed inset-0 z-50 hidden bg-black/90 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
-  <div class="bg-[#131722] border-2 border-blue-500/50 rounded-2xl max-w-lg w-full p-4 sm:p-5 shadow-2xl max-h-[92vh] overflow-y-auto space-y-4">
+  <div class="bg-[#131722] border-2 border-emerald-500/50 rounded-2xl max-w-md w-full p-4 sm:p-5 shadow-2xl max-h-[92vh] overflow-y-auto space-y-4">
     <div class="flex items-center justify-between border-b border-slate-800 pb-3">
       <div class="flex items-center gap-2.5">
-        <span class="text-2xl">⏰</span>
+        <span class="text-2xl">&#x23F0;</span>
         <div>
-          <h3 class="text-sm sm:text-base font-extrabold text-white">Kids Lock &amp; Screen Time Schedule</h3>
-          <p class="text-[11px] text-slate-400">Set clock time (from - to), quick minutes, or saved presets</p>
+          <h3 class="text-sm sm:text-base font-extrabold text-white">Kids Lock &amp; Screen Time</h3>
+          <p class="text-[11px] text-slate-400">1-Click quick timer or advanced schedule</p>
         </div>
       </div>
-      <button type="button" id="closeKidsTimerModalBtn" class="bg-slate-800 text-slate-300 px-2.5 py-1 rounded-lg text-xs font-bold">✕</button>
+      <button type="button" id="closeKidsTimerModalBtn" class="bg-slate-800 text-slate-300 px-2.5 py-1 rounded-lg text-xs font-bold hover:bg-slate-700">&#x2715;</button>
     </div>
 
-    <div class="bg-emerald-950/25 border border-emerald-500/40 rounded-xl p-3 space-y-2">
-      <span class="text-xs font-extrabold text-emerald-300 block">⭐ Saved Parent Presets (1-Click Start):</span>
-      <div id="kidsSavedPresetsContainer" class="flex flex-wrap gap-1.5"></div>
-    </div>
-
-    <div class="bg-blue-950/30 border border-blue-500/40 rounded-xl p-3.5 space-y-2.5">
-      <label class="block text-xs font-extrabold text-blue-300">🕰️ Option 1: Set By Mobile Clock Time (From — To):</label>
-      <div class="grid grid-cols-2 gap-2.5 text-xs">
-        <div><span class="text-[10px] text-slate-400 block mb-1">Start Time:</span><input id="kidsClockStartInput" type="time" value="09:00" class="w-full bg-black border border-slate-700 rounded-lg px-2.5 py-2 text-white font-bold" /></div>
-        <div><span class="text-[10px] text-slate-400 block mb-1">End / Lock Time:</span><input id="kidsClockEndInput" type="time" value="10:30" class="w-full bg-black border border-slate-700 rounded-lg px-2.5 py-2 text-white font-bold" /></div>
-      </div>
-      <div class="flex flex-wrap gap-2 pt-1">
-        <button type="button" id="startClockSchedBtn" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2 px-3 rounded-xl text-xs font-extrabold shadow">🔒 Start Clock Schedule</button>
-        <button type="button" id="saveClockPresetBtn" class="bg-slate-800 hover:bg-emerald-700 border border-slate-600 text-slate-200 px-3 py-2 rounded-xl text-xs font-bold">💾 Save Preset</button>
-      </div>
-    </div>
-
+    <!-- 1. SIMPLIFIED QUICK 1-CLICK COUNTDOWN BUTTONS (PROMINENT AT TOP) -->
     <div>
-      <label class="block text-xs font-extrabold text-amber-300 mb-2">⏱️ Option 2: Quick Countdown Timer:</label>
-      <div class="grid grid-cols-3 sm:grid-cols-6 gap-1.5 text-xs font-extrabold">
-        <button type="button" onclick="startKidsModeWithTimer(0)" class="bg-slate-800 hover:bg-emerald-600 text-white py-2.5 px-1 rounded-xl border border-slate-700">♾️ No Limit</button>
-        <button type="button" onclick="startKidsModeWithTimer(15)" class="bg-slate-900 hover:bg-blue-600 text-blue-200 py-2.5 px-1 rounded-xl border border-slate-700">15m</button>
-        <button type="button" onclick="startKidsModeWithTimer(30)" class="bg-slate-900 hover:bg-blue-600 text-blue-200 py-2.5 px-1 rounded-xl border border-slate-700">30m</button>
-        <button type="button" onclick="startKidsModeWithTimer(45)" class="bg-slate-900 hover:bg-blue-600 text-blue-200 py-2.5 px-1 rounded-xl border border-slate-700">45m</button>
-        <button type="button" onclick="startKidsModeWithTimer(60)" class="bg-slate-900 hover:bg-emerald-600 text-emerald-200 py-2.5 px-1 rounded-xl border border-slate-700">1 Hr</button>
-        <button type="button" onclick="startKidsModeWithTimer(120)" class="bg-slate-900 hover:bg-emerald-600 text-emerald-200 py-2.5 px-1 rounded-xl border border-slate-700">2 Hrs</button>
+      <label class="block text-xs font-extrabold text-emerald-400 mb-2">&#x26A1; Quick 1-Click Timer:</label>
+      <div class="grid grid-cols-3 sm:grid-cols-6 gap-2 text-xs font-extrabold">
+        <button type="button" onclick="startKidsModeWithTimer(0)" class="bg-slate-900 hover:bg-emerald-600 text-emerald-300 py-3 px-1 rounded-xl border border-slate-700 shadow transition flex flex-col items-center justify-center"><span>&#x221E;</span><span class="text-[11px]">No Limit</span></button>
+        <button type="button" onclick="startKidsModeWithTimer(15)" class="bg-slate-900 hover:bg-blue-600 text-blue-200 py-3 px-1 rounded-xl border border-slate-700 shadow transition flex flex-col items-center justify-center"><span>&#x23F3;</span><span class="text-[11px]">15m</span></button>
+        <button type="button" onclick="startKidsModeWithTimer(30)" class="bg-slate-900 hover:bg-blue-600 text-blue-200 py-3 px-1 rounded-xl border border-slate-700 shadow transition flex flex-col items-center justify-center"><span>&#x23F3;</span><span class="text-[11px]">30m</span></button>
+        <button type="button" onclick="startKidsModeWithTimer(45)" class="bg-slate-900 hover:bg-blue-600 text-blue-200 py-3 px-1 rounded-xl border border-slate-700 shadow transition flex flex-col items-center justify-center"><span>&#x23F3;</span><span class="text-[11px]">45m</span></button>
+        <button type="button" onclick="startKidsModeWithTimer(60)" class="bg-slate-900 hover:bg-emerald-600 text-emerald-200 py-3 px-1 rounded-xl border border-slate-700 shadow transition flex flex-col items-center justify-center"><span>&#x23F0;</span><span class="text-[11px]">1 Hr</span></button>
+        <button type="button" onclick="startKidsModeWithTimer(120)" class="bg-slate-900 hover:bg-emerald-600 text-emerald-200 py-3 px-1 rounded-xl border border-slate-700 shadow transition flex flex-col items-center justify-center"><span>&#x23F0;</span><span class="text-[11px]">2 Hrs</span></button>
       </div>
     </div>
 
-    <div class="bg-black/70 border border-slate-800 rounded-xl p-2.5 flex flex-wrap items-center gap-2">
-      <input id="customKidsTimerMins" type="number" min="1" max="480" placeholder="Custom minutes (e.g. 25)" class="flex-1 min-w-[140px] bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white" />
-      <button type="button" id="startCustomMinsBtn" class="bg-amber-500 hover:bg-amber-400 text-black px-3.5 py-1.5 rounded-lg text-xs font-extrabold shadow">Start</button>
-      <button type="button" id="saveCustomMinsBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold">💾 Save</button>
+    <!-- 2. COLLAPSIBLE ACCORDION FOR ADVANCED TIMING & CLOCK SCHEDULE (HIDDEN BY DEFAULT) -->
+    <div class="pt-1">
+      <button type="button" onclick="var b=document.getElementById('kidsAdvancedTimingBox'); b.classList.toggle('hidden'); document.getElementById('advTimingArrow').innerText=b.classList.contains('hidden')?'&#x25BE;':'&#x25B4;';" class="w-full bg-slate-900/90 hover:bg-slate-800 border border-slate-800 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-400 hover:text-white flex items-center justify-between transition">
+        <span class="flex items-center gap-1.5"><span>&#x2699;&#xFE0F;</span> <span>Advanced Timing Setup</span></span>
+        <span id="advTimingArrow" class="text-sm font-bold">&#x25BE;</span>
+      </button>
+
+      <div id="kidsAdvancedTimingBox" class="hidden space-y-3 pt-3">
+        <div class="bg-emerald-950/25 border border-emerald-500/40 rounded-xl p-3 space-y-2">
+          <span class="text-xs font-extrabold text-emerald-300 block">&#x2B50; Saved Parent Presets:</span>
+          <div id="kidsSavedPresetsContainer" class="flex flex-wrap gap-1.5"></div>
+        </div>
+
+        <div class="bg-blue-950/30 border border-blue-500/40 rounded-xl p-3 space-y-2">
+          <label class="block text-xs font-extrabold text-blue-300">&#x1F570;&#xFE0F; Set By Mobile Clock Time (From &mdash; To):</label>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div><span class="text-[10px] text-slate-400 block mb-1">Start Time:</span><input id="kidsClockStartInput" type="time" value="09:00" class="w-full bg-black border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-bold" /></div>
+            <div><span class="text-[10px] text-slate-400 block mb-1">End / Lock Time:</span><input id="kidsClockEndInput" type="time" value="10:30" class="w-full bg-black border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-bold" /></div>
+          </div>
+          <div class="flex flex-wrap gap-2 pt-1">
+            <button type="button" id="startClockSchedBtn" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-1.5 px-3 rounded-xl text-xs font-extrabold shadow">&#x1F512; Start Clock Schedule</button>
+            <button type="button" id="saveClockPresetBtn" class="bg-slate-800 hover:bg-emerald-700 border border-slate-600 text-slate-200 px-3 py-1.5 rounded-xl text-xs font-bold">&#x1F4BE; Save Preset</button>
+          </div>
+        </div>
+
+        <div class="bg-black/70 border border-slate-800 rounded-xl p-2.5 flex flex-wrap items-center gap-2">
+          <input id="customKidsTimerMins" type="number" min="1" max="480" placeholder="Custom minutes (e.g. 25)" class="flex-1 min-w-[140px] bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white" />
+          <button type="button" id="startCustomMinsBtn" class="bg-amber-500 hover:bg-amber-400 text-black px-3.5 py-1.5 rounded-lg text-xs font-extrabold shadow">Start</button>
+          <button type="button" id="saveCustomMinsBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold">&#x1F4BE; Save</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -10677,6 +10698,14 @@
 
     parentRequestsQueue.unshift(newReq);
     syncRequestQueueReferences(parentRequestsQueue);
+    try {
+      var myReqIds = JSON.parse(localStorage.getItem("qaaf_my_submitted_req_ids") || "[]");
+      if (newReq.reqId && myReqIds.indexOf(newReq.reqId) === -1) {
+        myReqIds.unshift(newReq.reqId);
+        localStorage.setItem("qaaf_my_submitted_req_ids", JSON.stringify(myReqIds));
+      }
+    } catch(e) {}
+    if (typeof updateNotifBadges === "function") updateNotifBadges();
 
     if (urlInput) urlInput.value = "";
     if (titleInput) titleInput.value = "";
@@ -10692,8 +10721,7 @@
     if (typeof window.openUserNotificationsModal === "function") {
       window.openUserNotificationsModal();
     }
-    var uBadge = document.getElementById("userNotifCountBadge");
-    if (uBadge) uBadge.innerText = parentRequestsQueue.length;
+    if (typeof updateNotifBadges === "function") updateNotifBadges();
 
     if (window.qaafCloudSync) {
       window.qaafCloudSync.pushState("New Video Request Submitted");
@@ -10717,8 +10745,7 @@
   window.openUserNotificationsModal = function() {
     syncRequestQueueReferences(parentRequestsQueue);
     if (prevOpenUserNotif) prevOpenUserNotif();
-    var uBadge = document.getElementById("userNotifCountBadge");
-    if (uBadge) uBadge.innerText = parentRequestsQueue.length;
+    if (typeof updateNotifBadges === "function") updateNotifBadges();
   };
 
   var bellBtnEl = document.getElementById("qaafNotifBellBtn");
@@ -10739,7 +10766,7 @@
 <!-- QAAF V10.6 ZERO PRELOADED CHANNELS, DISABLE AUTO YOUTUBE SEARCH & PREVENT AUTOFILL -->
 <script>
 (function enforceCleanSlateAndDisableExternalSearch() {
-  var SLATE_VER = "qaaf_empty_slate_v106";
+  var SLATE_VER = "qaaf_empty_slate_v125";
 
   // 1. Completely disable external YouTube search from ever adding unapproved videos/channels!
   window.qaafTriggerLiveYouTubeSearch = function() {
@@ -10784,17 +10811,17 @@
 <!-- QAAF V10.8 CHANNEL VS VIDEO VERIFIED, BY CHANNELS DIRECTORY (GREEN/YELLOW), NEW CATEGORIES & CLEAN SLATE -->
 <script>
 (function initQaafV108CategoriesAndChannelVerification() {
-  var CLEAN_SLATE_KEY = "qaaf_clean_slate_v110_zero_catalog";
+  var CLEAN_SLATE_KEY = "qaaf_clean_slate_v125_zero_sync_perfect";
   window.verifiedChannelsList = JSON.parse(localStorage.getItem("qaaf_verified_channels") || "[]");
   window.isByChannelsPanelOpen = false;
 
   // 1. Force one-time complete wipe of any leftover cached videos on this browser
-  if (localStorage.getItem("qaaf_slate_v110") !== CLEAN_SLATE_KEY) {
+  if (localStorage.getItem("qaaf_slate_v125") !== CLEAN_SLATE_KEY) {
     videosData = [];
     window.verifiedChannelsList = [];
     localStorage.setItem("qaaf_videos_data", "[]");
     localStorage.setItem("qaaf_verified_channels", "[]");
-    localStorage.setItem("qaaf_slate_v110", CLEAN_SLATE_KEY);
+    localStorage.setItem("qaaf_slate_v125", CLEAN_SLATE_KEY);
     localStorage.removeItem("qaaf_clean_slate_ver");
     localStorage.removeItem("qaaf_slate_v108");
     localStorage.removeItem("qaaf_cloud_last_sync_ts");
@@ -10931,19 +10958,21 @@
 
     var isAllTopics = (currentCategory === "all" && currentSelectedChannelName === "ALL");
 
+    // Ordered Categories requested by user:
+    // 1. Kids Cartoons, 2. Kids Tarbiyah, 3. Tilawat-e-Quran, 4. Islamic Bayanat (hidden in Kids Mode), 5. Naat Sharif
+    var topicList = [
+      { key: "kids_cartoon", label: "🌟 Kids Cartoons", kidsOk: true },
+      { key: "kids_tarbiyah", label: "📖 Kids Tarbiyah", kidsOk: true },
+      { key: "quran", label: "🕋 Tilawat-e-Quran", kidsOk: true },
+      { key: "bayan", label: "🎙️ Islamic Bayanat", kidsOk: false },
+      { key: "naat", label: "🎤 Naat Sharif", kidsOk: true },
+      { key: "tarbiyah", label: "🌿 Islamic Tarbiyah", kidsOk: true }
+    ];
+
     var topRowHtml = '<div class="flex items-center justify-between gap-2 overflow-x-auto pb-1">';
     topRowHtml += '<div class="flex items-center gap-1.5 shrink-0">';
 
     topRowHtml += '<button type="button" onclick="currentCategory=\'all\'; selectChannelFilter(\'ALL\');" class="px-3 py-1.5 rounded-full text-xs font-extrabold shrink-0 transition ' + (isAllTopics ? 'bg-emerald-500 text-black shadow' : 'bg-slate-800 text-slate-200 hover:bg-slate-700') + '">📋 All (' + visibleVids.length + ')</button>';
-
-    var topicList = [
-      { key: "quran", label: "🕋 Tilawat-e-Quran", kidsOk: true },
-      { key: "naat", label: "🎤 Naat Sharif", kidsOk: true },
-      { key: "tarbiyah", label: "🌿 Islamic Tarbiyah", kidsOk: true },
-      { key: "bayan", label: "🎙️ Islamic Bayanat", kidsOk: false },
-      { key: "kids_tarbiyah", label: "📖 Kids Tarbiyah", kidsOk: true },
-      { key: "kids_cartoon", label: "🌟 Kids Cartoons", kidsOk: true }
-    ];
 
     topicList.forEach(function(t) {
       if (isKidsLocked && !t.kidsOk) return;
@@ -10953,62 +10982,49 @@
 
     topRowHtml += '</div>';
 
-    // "📺 By Channels" Toggle Button
+    // SLEEK COMPACT "All Channels ▾" DROPDOWN TRIGGER (NOT A HUGE EXPANDED LIST)
     var hasSelectedCh = (currentSelectedChannelName !== "ALL");
-    topRowHtml += '<button type="button" onclick="toggleByChannelsDirectory()" class="px-3.5 py-1.5 rounded-full text-xs font-extrabold shrink-0 transition flex items-center gap-1.5 shadow ' + (window.isByChannelsPanelOpen || hasSelectedCh ? 'bg-amber-500 text-black' : 'bg-blue-600 hover:bg-blue-500 text-white') + '"><span>📺</span> <span>By Channels (' + allChs.length + ')</span> <span>' + (window.isByChannelsPanelOpen ? '▴' : '▾') + '</span></button>';
-    topRowHtml += '</div>';
+    var chLabel = hasSelectedCh ? currentSelectedChannelName : ("All Channels (" + allChs.length + ")");
+    topRowHtml += '<div class="relative shrink-0">';
+    topRowHtml += '<button type="button" onclick="window.isByChannelsPanelOpen = !window.isByChannelsPanelOpen; renderTopicAndByChannelsBar();" class="px-3 py-1.5 rounded-full text-xs font-extrabold shrink-0 transition flex items-center gap-1.5 shadow ' + (hasSelectedCh ? 'bg-emerald-500 text-black' : 'bg-[#1a1f2c] hover:bg-slate-800 text-slate-200 border border-slate-700') + '"><span>📺</span> <span class="max-w-[140px] truncate">' + chLabel + '</span> <span>' + (window.isByChannelsPanelOpen ? '▴' : '▾') + '</span></button>';
 
-    // Active Channel Filter Pill if a channel is selected
-    if (hasSelectedCh) {
-      var isSelGreen = greenVerifiedChs.indexOf(currentSelectedChannelName) !== -1;
-      topRowHtml += '<div class="mt-2 px-3 py-1.5 rounded-xl border flex items-center justify-between text-xs ' + (isSelGreen ? 'bg-emerald-950/50 border-emerald-500/50 text-emerald-300' : 'bg-amber-950/50 border-amber-500/50 text-amber-300') + '">';
-      topRowHtml += '<span class="font-extrabold">' + (isSelGreen ? '🟢 Channel Verified: ' : '🟡 Video Verified Only (Unverified Full Channel): ') + currentSelectedChannelName + '</span>';
-      topRowHtml += '<button type="button" onclick="selectChannelFilter(\'ALL\')" class="bg-black/60 hover:bg-rose-600 text-white px-2.5 py-0.5 rounded-lg text-[11px] font-bold">✕ Show All</button>';
-      topRowHtml += '</div>';
-    }
-
-    // Expandable "By Channels" Directory (Green Verified First, Yellow Video-Only Below)
+    // FLOATING POPUP DROPDOWN FOR CHANNELS
     if (window.isByChannelsPanelOpen) {
-      topRowHtml += '<div class="mt-2.5 pt-2.5 border-t border-slate-800 space-y-3">';
+      topRowHtml += '<div class="absolute right-0 top-full mt-1.5 z-40 bg-[#131722] border border-slate-700 rounded-xl shadow-2xl p-2 w-72 max-h-64 overflow-y-auto space-y-1">';
+      topRowHtml += '<button type="button" onclick="selectChannelFilter(\'ALL\'); window.isByChannelsPanelOpen=false; renderTopicAndByChannelsBar();" class="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-800 text-slate-200 flex items-center justify-between"><span>📋 All Channels</span> <span class="text-[10px] text-slate-400">(' + visibleVids.length + ')</span></button>';
 
-      // 1. GREEN VERIFIED CHANNELS
-      topRowHtml += '<div>';
-      topRowHtml += '<p class="text-[11px] font-extrabold text-emerald-400 mb-1.5 flex items-center gap-1.5"><span>🟢</span> <span>Verified Channels (' + greenVerifiedChs.length + ') — Full Approved Channels</span></p>';
-      if (greenVerifiedChs.length === 0) {
-        topRowHtml += '<p class="text-[11px] text-slate-500 pl-2">No full verified channels added yet.</p>';
-      } else {
-        topRowHtml += '<div class="flex flex-wrap gap-1.5">';
+      if (greenVerifiedChs.length > 0) {
+        topRowHtml += '<div class="pt-1 border-t border-slate-800"><p class="text-[10px] font-extrabold text-emerald-400 px-2 py-0.5">🟢 Verified Channels</p>';
         greenVerifiedChs.forEach(function(ch) {
           var cCount = visibleVids.filter(function(v) { return v.channel === ch; }).length;
-          var safeCh = ch.replace(/'/g, "\\'");
+          var safeCh = ch.replace(/'/g, "\'");
           var isAct = (currentSelectedChannelName === ch);
-          topRowHtml += '<button type="button" onclick="selectChannelFilter(\'' + safeCh + '\')" class="px-3 py-1.5 rounded-xl text-xs font-extrabold transition flex items-center gap-1.5 border ' + (isAct ? 'bg-emerald-500 text-black border-emerald-300 shadow-lg' : 'bg-emerald-950/50 hover:bg-emerald-900/70 text-emerald-300 border-emerald-500/50') + '"><span>✅ ' + ch + '</span> <span class="text-[10px] bg-black/40 px-1.5 py-0.5 rounded-full">Verified (' + cCount + ')</span></button>';
+          topRowHtml += '<button type="button" onclick="selectChannelFilter(\'' + safeCh + '\'); window.isByChannelsPanelOpen=false; renderTopicAndByChannelsBar();" class="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-emerald-950/60 ' + (isAct ? 'bg-emerald-500 text-black font-extrabold' : 'text-emerald-300') + ' flex items-center justify-between"><span>✓ ' + ch + '</span><span class="text-[10px] opacity-75">(' + cCount + ')</span></button>';
         });
         topRowHtml += '</div>';
       }
-      topRowHtml += '</div>';
 
-      // 2. YELLOW UNVERIFIED CHANNELS (ONLY SPECIFIC VIDEOS IN SYSTEM ARE VERIFIED)
-      topRowHtml += '<div>';
-      topRowHtml += '<p class="text-[11px] font-extrabold text-amber-400 mb-1.5 flex items-center gap-1.5"><span>🟡</span> <span>Selected Videos Only (' + yellowVideoOnlyChs.length + ') — Channel Not Verified, Only Listed Videos Approved</span></p>';
-      if (yellowVideoOnlyChs.length === 0) {
-        topRowHtml += '<p class="text-[11px] text-slate-500 pl-2">No single-video channels listed.</p>';
-      } else {
-        topRowHtml += '<div class="flex flex-wrap gap-1.5">';
+      if (yellowVideoOnlyChs.length > 0) {
+        topRowHtml += '<div class="pt-1 border-t border-slate-800"><p class="text-[10px] font-extrabold text-amber-400 px-2 py-0.5">🟡 Single Video Channels</p>';
         yellowVideoOnlyChs.forEach(function(ch) {
           var cCount = visibleVids.filter(function(v) { return v.channel === ch; }).length;
-          var safeCh = ch.replace(/'/g, "\\'");
+          var safeCh = ch.replace(/'/g, "\'");
           var isAct = (currentSelectedChannelName === ch);
-          topRowHtml += '<button type="button" onclick="selectChannelFilter(\'' + safeCh + '\')" class="px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border ' + (isAct ? 'bg-amber-400 text-black border-amber-200 shadow-lg font-extrabold' : 'bg-amber-950/40 hover:bg-amber-900/60 text-amber-300 border-amber-500/50') + '"><span>🟡 ' + ch + '</span> <span class="text-[10px] bg-black/50 px-1.5 py-0.5 rounded-full">' + cCount + ' Video(s) Only</span></button>';
+          topRowHtml += '<button type="button" onclick="selectChannelFilter(\'' + safeCh + '\'); window.isByChannelsPanelOpen=false; renderTopicAndByChannelsBar();" class="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-amber-950/60 ' + (isAct ? 'bg-amber-500 text-black font-extrabold' : 'text-amber-300') + ' flex items-center justify-between"><span>' + ch + '</span><span class="text-[10px] opacity-75">(' + cCount + ')</span></button>';
         });
         topRowHtml += '</div>';
       }
-      topRowHtml += '</div>';
+
+      if (allChs.length === 0) {
+        topRowHtml += '<p class="text-[11px] text-slate-500 text-center py-2">No channels added yet.</p>';
+      }
 
       topRowHtml += '</div>';
     }
 
-    bar.className = "mb-3.5 bg-[#10131a]/95 border border-slate-800 rounded-2xl p-3 flex flex-col";
+    topRowHtml += '</div>'; // End relative wrapper
+    topRowHtml += '</div>'; // End topRowHtml
+
     bar.innerHTML = topRowHtml;
   }
 
@@ -11136,12 +11152,10 @@
     var vwEl = document.getElementById("playingViewsText");
     var isChVer = window.isChannelFullyVerified(video.channel, video);
     if (chEl) {
-      chEl.innerHTML = isChVer
-        ? (video.channel + ' <span class="bg-emerald-500/20 border border-emerald-400 text-emerald-300 px-2 py-0.5 rounded-full text-[10px] font-extrabold ml-1">✅ Channel Verified</span>')
-        : (video.channel + ' <span class="bg-amber-500/20 border border-amber-400 text-amber-300 px-2 py-0.5 rounded-full text-[10px] font-extrabold ml-1">🟡 Video Verified</span>');
+      chEl.innerHTML = video.channel + (isChVer ? ' <span class="text-emerald-400 font-bold ml-1 text-xs" title="Verified Channel">✓</span>' : '');
     }
     if (vwEl) {
-      vwEl.innerText = ((video.views || 1500) / 1000).toFixed(1) + "K views • " + (video.lang || "en").toUpperCase() + " • " + (isChVer ? "Verified Full Channel" : "Verified Single Video");
+      vwEl.innerText = ((video.views || 1500) / 1000).toFixed(1) + "K views • " + (video.lang || "en").toUpperCase();
     }
   };
 
@@ -11177,10 +11191,8 @@
         var firstSpan = chRow.querySelector("span:first-child");
         var lastSpan = chRow.querySelector("span:last-child");
         if (firstSpan) {
-          firstSpan.className = isChVer ? "text-emerald-400 font-bold truncate" : "text-amber-300 font-semibold truncate";
-          firstSpan.innerHTML = isChVer
-            ? ("✅ " + vidObj.channel + ' <span class="text-[9px] bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 px-1.5 py-0.5 rounded ml-0.5">Channel Verified</span>')
-            : ("🟡 " + vidObj.channel + ' <span class="text-[9px] bg-amber-500/20 border border-amber-500/40 text-amber-300 px-1.5 py-0.5 rounded ml-0.5">Video Verified</span>');
+          firstSpan.className = "text-slate-400 font-medium truncate text-xs flex items-center gap-1";
+          firstSpan.innerHTML = vidObj.channel + (isChVer ? ' <span class="text-emerald-400 font-bold text-[10px]" title="Verified Channel">✓</span>' : '');
         }
         if (lastSpan) {
           var modeTxt = vidObj.audienceMode === "kids_preferred"
