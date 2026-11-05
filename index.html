@@ -5026,40 +5026,110 @@
     if (hMatch && hMatch[1]) handleName = hMatch[1];
     else handleName = raw.replace(/^https?:\/\/(www\.)?youtube\.com\//i, '').replace(/\/.*$/, '');
 
-    showSyncToast(`⏳ Connecting to @${handleName}... Fetching latest videos (4s)...`);
+    showSyncToast(`⏳ Connecting to @${handleName}... Scanning full channel catalog (10s)...`);
 
     let cleanChannelUrl = raw.startsWith('http') ? raw : `https://www.youtube.com/@${handleName}`;
-    const baseChannel = cleanChannelUrl.replace(/\/(videos|shorts|featured|streams)?\/?$/, '');
-
-    // Multi-tab aggregator: read /videos, /shorts, home, and search to fetch ALL public videos (no 6-video limit!)
-    const sources = [
-      `https://r.jina.ai/${baseChannel}/videos`,
-      `https://r.jina.ai/${baseChannel}/shorts`,
-      `https://r.jina.ai/${baseChannel}`,
-      `https://r.jina.ai/https://www.youtube.com/results?search_query=${encodeURIComponent(handleName)}`
-    ];
+    const baseChannel = cleanChannelUrl.replace(/\/(videos|shorts|featured|streams|playlists)?\/?$/, '');
 
     let allFoundIds = [];
-    for (const src of sources) {
+    let detectedChannelId = '';
+    let foundPlaylists = [];
+
+    const addUniqueVids = (text) => {
+      if (!text) return;
+      const matches = [...text.matchAll(/(?:watch\?v=|\/shorts\/|"videoId":|"contentId":|\/embed\/)([a-zA-Z0-9_-]{11})/g)].map(m => m[1]);
+      matches.forEach(id => {
+        if (!allFoundIds.includes(id)) allFoundIds.push(id);
+      });
+    };
+
+    // 1. Channel Home Page (HTML mode) -> extracts channelId, playlists, and home videos
+    try {
+      const res0 = await fetch(`https://r.jina.ai/${baseChannel}`, {
+        headers: { 'Accept': 'application/json', 'X-Return-Format': 'html' }
+      });
+      if (res0.ok) {
+        const d0 = await res0.json();
+        const html0 = (d0 && d0.data && d0.data.html) || '';
+        const chM = html0.match(/"browseId":"(UC[a-zA-Z0-9_-]{22})"/);
+        if (chM && chM[1]) detectedChannelId = chM[1];
+        else {
+          const anyUc = html0.match(/(UC[a-zA-Z0-9_-]{22})/);
+          if (anyUc) detectedChannelId = anyUc[1];
+        }
+        addUniqueVids(html0);
+
+        const pls = [...html0.matchAll(/list=(PL[a-zA-Z0-9_-]+)/g)].map(m => m[1]);
+        pls.forEach(p => { if (!foundPlaylists.includes(p)) foundPlaylists.push(p); });
+      }
+    } catch (e) {
+      console.warn("Home page fetch error:", e);
+    }
+
+    // 2. Uploads Playlist (UU...) -> grabs up to 100 uploads in one request!
+    if (detectedChannelId) {
+      const uplPlId = 'UU' + detectedChannelId.substring(2);
       try {
-        const res = await fetch(src);
-        if (!res.ok) continue;
-        const pageText = await res.text();
-        const m1 = [...pageText.matchAll(/(?:watch\?v=|\/shorts\/|"videoId":|\/embed\/)([a-zA-Z0-9_-]{11})/g)].map(m => m[1]);
-        m1.forEach(id => {
-          if (!allFoundIds.includes(id)) allFoundIds.push(id);
+        const resUpl = await fetch(`https://r.jina.ai/https://www.youtube.com/playlist?list=${uplPlId}`, {
+          headers: { 'Accept': 'application/json', 'X-Return-Format': 'html' }
         });
+        if (resUpl.ok) {
+          const dUpl = await resUpl.json();
+          const htmlUpl = (dUpl && dUpl.data && dUpl.data.html) || '';
+          addUniqueVids(htmlUpl);
+        }
+      } catch (e) {
+        console.warn("Uploads playlist fetch error:", e);
+      }
+    }
+
+    // 3. Channel Playlists Tab -> scans all playlists on channel for older videos beyond 100
+    try {
+      const resPlTab = await fetch(`https://r.jina.ai/${baseChannel}/playlists`);
+      if (resPlTab.ok) {
+        const textPl = await resPlTab.text();
+        const pls = [...textPl.matchAll(/list=(PL[a-zA-Z0-9_-]+)/g)].map(m => m[1]);
+        pls.forEach(p => { if (!foundPlaylists.includes(p)) foundPlaylists.push(p); });
+      }
+    } catch (e) {}
+
+    // Fetch up to 6 channel playlists in parallel
+    if (foundPlaylists.length > 0) {
+      const plPromises = foundPlaylists.slice(0, 6).map(async (pl) => {
+        try {
+          const r = await fetch(`https://r.jina.ai/https://www.youtube.com/playlist?list=${pl}`);
+          if (r.ok) {
+            const txt = await r.text();
+            addUniqueVids(txt);
+          }
+        } catch (e) {}
+      });
+      await Promise.all(plPromises);
+    }
+
+    // 4. Also fetch /videos and /shorts tabs
+    const extraSources = [
+      `https://r.jina.ai/${baseChannel}/videos`,
+      `https://r.jina.ai/${baseChannel}/shorts`
+    ];
+    for (const src of extraSources) {
+      try {
+        const r = await fetch(src);
+        if (r.ok) {
+          const txt = await r.text();
+          addUniqueVids(txt);
+        }
       } catch (e) {}
     }
 
-    const foundIds = allFoundIds.slice(0, 150); // Fetch up to 150 videos per channel
+    const foundIds = allFoundIds.slice(0, 300); // Support up to 300 channel videos!
 
     if (foundIds.length === 0) {
       alert('⚠️ Could not find public videos on that link. Please check the spelling of the channel link.');
       return;
     }
 
-    // High-speed parallel oEmbed title fetcher in batches of 15
+    // High-speed parallel oEmbed title fetcher in batches of 20
     const pack = [];
     let channelTitle = handleName;
 
@@ -5069,7 +5139,9 @@
       if (d0 && d0.author_name) channelTitle = d0.author_name;
     } catch(e) {}
 
-    const CHUNK_SIZE = 15;
+    showSyncToast(`⚡ Found ${foundIds.length} videos! Resolving titles in seconds...`);
+
+    const CHUNK_SIZE = 20;
     for (let i = 0; i < foundIds.length; i += CHUNK_SIZE) {
       const chunk = foundIds.slice(i, i + CHUNK_SIZE);
       const chunkPromises = chunk.map(async (vidId) => {
@@ -5119,6 +5191,12 @@
       if (bannedChannels.includes(targetChannelName)) {
         bannedChannels = bannedChannels.filter(c => c !== targetChannelName);
         localStorage.setItem('qaaf_banned_channels', JSON.stringify(bannedChannels));
+      }
+
+      // Automatically verify channel
+      if (targetChannelName && window.verifiedChannelsList && window.verifiedChannelsList.indexOf(targetChannelName) === -1) {
+        window.verifiedChannelsList.push(targetChannelName);
+        localStorage.setItem("qaaf_verified_channels", JSON.stringify(window.verifiedChannelsList));
       }
 
       fetchedChannelPack.forEach((item, i) => {
