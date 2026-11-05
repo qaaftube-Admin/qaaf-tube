@@ -133,7 +133,7 @@
   <div class="hidden" dir="ltr"><span id="kioskStatusBadge">Family Mode</span></div>
 
   <!-- 100% RESPONSIVE SINGLE-LINE HEADER -->
-  <header id="mainHeader" class="sticky top-0 z-30 bg-[#0b0d10]/95 backdrop-blur border-b border-white/10 h-14 px-1.5 sm:px-4 flex items-center justify-between gap-1" dir="ltr">
+  <header id="mainHeader" class="sticky top-0 z-30 bg-[#0b0d10]/95 backdrop-blur border-b border-white/10 h-14 px-1.5 sm:px-4 flex items-center justify-between gap-1 flex-nowrap overflow-x-hidden" dir="ltr">
     
     <!-- Left: Approved Vector Logo -->
     <div onclick="if(window.qaafGoHome)window.qaafGoHome()" class="flex items-center gap-1 sm:gap-2 min-w-0 shrink-0 cursor-pointer select-none" title="QAAF Tube Home">
@@ -163,7 +163,7 @@
     </div>
 
     <!-- Right Controls -->
-    <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
+    <div id="headerRightControls" class="flex items-center gap-1 sm:gap-1.5 shrink-0 flex-nowrap overflow-visible">
       
       <!-- SUPER ADMIN MOBILE BUTTON -->
       <button id="superAdminHeaderBtn" onclick="openAdminModal()" class="hidden bg-amber-500 hover:bg-amber-400 text-black px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full text-xs font-extrabold items-center gap-1 shadow shrink-0">
@@ -494,7 +494,10 @@
               <button onclick="adminSaveFirebaseUrl()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow flex items-center gap-1 transition">
                 <span>🔗</span> <span>Save &amp; Sync Cloud</span>
               </button>
-              <button onclick="adminForcePullCloud()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 px-3 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1 transition">
+              <button type="button" onclick="adminForcePushCloud()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1 shadow transition">
+                <span>☁️</span> <span>Push to Cloud</span>
+              </button>
+              <button type="button" onclick="adminForcePullCloud()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 px-3 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1 transition">
                 <span>🔄</span> <span>Force Pull</span>
               </button>
             </div>
@@ -1299,12 +1302,13 @@
       isSyncing: false,
 
       init() {
+        const OFFICIAL_FIREBASE_URL = "https://qaaftube-6f251-default-rtdb.firebaseio.com";
         let savedDb = localStorage.getItem('qaaf_firebase_db_url');
-        if (!savedDb || !savedDb.includes('firebaseio.com')) {
-          savedDb = DEFAULT_FIREBASE_RTDB_URL;
-          localStorage.setItem('qaaf_firebase_db_url', DEFAULT_FIREBASE_RTDB_URL);
+        if (!savedDb || savedDb !== OFFICIAL_FIREBASE_URL) {
+          savedDb = OFFICIAL_FIREBASE_URL;
+          localStorage.setItem('qaaf_firebase_db_url', OFFICIAL_FIREBASE_URL);
         }
-        this.firebaseUrl = savedDb;
+        this.firebaseUrl = OFFICIAL_FIREBASE_URL;
 
         if (this.broadcastChannel) {
           this.broadcastChannel.onmessage = (event) => {
@@ -1346,7 +1350,7 @@
       },
 
       getStatePayload() {
-        return { videosData, flaggedVideosQueue, parentRequestsQueue, blockedVideoIds, bannedChannels, regionalPromos, isPromoBarEnabled, updatedAt: Date.now() };
+        return { videosData, flaggedVideosQueue, parentRequestsQueue, blockedVideoIds, bannedChannels, regionalPromos, isPromoBarEnabled, qaafSecurityToken: 'QAAF_PROTECTED_TOKEN_786_99_MAKKAH', updatedAt: Date.now() };
       },
 
       applyIncomingState(payload, source = 'local') {
@@ -1496,7 +1500,39 @@
       if (input) input.value = cleanUrl;
       if (cleanUrl) qaafCloudSync.pullFromCloud(false);
     }
-    function adminForcePullCloud() { qaafCloudSync.pullFromCloud(false); }
+    
+  // DIRECT 1-CLICK FORCE PUSH FROM ADMIN CONSOLE TO FIREBASE CLOUD
+  window.adminForcePushCloud = async function() {
+    try {
+      const endpoint = "https://qaaftube-6f251-default-rtdb.firebaseio.com/qaaf_global_state.json";
+      const payload = {
+        videosData: videosData || [],
+        verifiedChannelsList: window.verifiedChannelsList || [],
+        bannedChannels: bannedChannels || [],
+        blockedVideoIds: blockedVideoIds || [],
+        regionalPromos: regionalPromos || {},
+        isPromoBarEnabled: isPromoBarEnabled !== false,
+        parentRequestsQueue: window.parentRequestsQueue || [],
+        qaafSecurityToken: "QAAF_PROTECTED_TOKEN_786_99_MAKKAH",
+        updatedAt: Date.now()
+      };
+      const res = await fetch(endpoint, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      localStorage.setItem("qaaf_cloud_updated_at", payload.updatedAt.toString());
+      localStorage.setItem("qaaf_cloud_last_synced", new Date().toLocaleTimeString());
+      localStorage.setItem("qaaf_cloud_last_sync_ts", Date.now().toString());
+      if (window.qaafCloudSync) window.qaafCloudSync.updateStatusBadge("connected");
+      alert("☁️ کامیابی سے فائر بیس کلاؤڈ پر سنک ہو گیا!\n\nویڈیوز: " + payload.videosData.length + "\nتصدیق شدہ چینلز: " + payload.verifiedChannelsList.length + "\n\nاب موبائل اور کمپیوٹر دونوں پر تمام چینلز لائیو نظر آئیں گے۔");
+    } catch(err) {
+      alert("⚠️ کلاؤڈ سنک میں خرابی: " + err.message);
+    }
+  };
+
+  function adminForcePullCloud() { qaafCloudSync.pullFromCloud(false); }
     function adminTestCloudConnection() { qaafCloudSync.pullFromCloud(false); }
 
     // =========================================================================
@@ -8174,12 +8210,63 @@
 <!-- QAAF V9.8 CLOCK TIMER FIX, COMPACT HEADER & ADMIN INLINE VIDEO PREVIEW + THUMBNAILS -->
 <style>
   @media (max-width: 640px) {
-    #mainHeader { padding-left: 4px !important; padding-right: 4px !important; gap: 2px !important; }
-    #headerDrawerMenuBtn { width: 28px !important; height: 28px !important; margin-right: 2px !important; }
-    #mainHeader svg { height: 24px !important; }
-    #kidsLockBtn { padding: 4px 8px !important; }
-    #kidsModeOnHeaderBadge { padding: 2px 6px !important; font-size: 10px !important; }
-    #kidsContentSwitcher button { padding: 3px 6px !important; font-size: 9px !important; }
+    #mainHeader {
+      height: 52px !important;
+      padding-left: 4px !important;
+      padding-right: 4px !important;
+      gap: 2px !important;
+      display: flex !important;
+      flex-direction: row !important;
+      flex-wrap: nowrap !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      overflow-x: hidden !important;
+    }
+    #headerRightControls {
+      display: flex !important;
+      flex-direction: row !important;
+      flex-wrap: nowrap !important;
+      align-items: center !important;
+      gap: 3px !important;
+      flex-shrink: 0 !important;
+    }
+    #superAdminHeaderBtn {
+      height: 28px !important;
+      padding: 2px 7px !important;
+      font-size: 11px !important;
+      border-radius: 9999px !important;
+      display: inline-flex !important;
+      flex-shrink: 0 !important;
+    }
+    #kidsLockBtn {
+      height: 28px !important;
+      padding: 2px 8px !important;
+      font-size: 11px !important;
+      border-radius: 9999px !important;
+      display: inline-flex !important;
+      flex-shrink: 0 !important;
+    }
+    #accountBtn, #parentPanelBtn, #langDropdownContainer > button {
+      height: 28px !important;
+      min-width: 28px !important;
+      padding: 2px 5px !important;
+      font-size: 11px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      flex-shrink: 0 !important;
+    }
+    #headerDrawerMenuBtn {
+      width: 28px !important;
+      height: 28px !important;
+      margin-right: 2px !important;
+      flex-shrink: 0 !important;
+    }
+    #mainHeader svg {
+      height: 24px !important;
+      width: auto !important;
+    }
+  }
   }
 </style>
 <script>
