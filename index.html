@@ -198,6 +198,12 @@
               <input id="customContentLangInput" type="text" placeholder="Type channel language..." class="flex-1 bg-black border border-amber-500/50 rounded-lg px-2.5 py-1.5 text-xs text-white" />
               <button onclick="applyCustomLanguage('content')" class="bg-amber-600 text-white px-3 py-1.5 rounded-lg font-bold">Save</button>
             </div>
+                    <div class="pt-2.5 mt-2.5 border-t border-slate-800">
+            <label class="flex items-center justify-between cursor-pointer text-slate-300 font-semibold select-none">
+              <span>Strict Language Only</span>
+              <input type="checkbox" id="strictLangToggle" onchange="toggleStrictLanguage()" class="accent-emerald-500 rounded scale-110" />
+            </label>
+            <p class="text-[10px] text-slate-400 mt-0.5">Show only videos matching preferred language</p>
           </div>
         </div>
       </div>
@@ -245,16 +251,7 @@
   <!-- MAIN CONTENT AREA -->
   <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-4" onclick="closeLangDropdownOutside(event)">
 
-    <!-- Compact Smart Feed Bar -->
-    <div class="mb-3 bg-slate-900/90 backdrop-blur border border-slate-800 rounded-xl px-3 py-1.5 flex items-center justify-between gap-2 text-xs">
-      <label class="flex items-center gap-1.5 cursor-pointer text-slate-300 font-semibold text-xs shrink-0 select-none">
-        <input type="checkbox" id="strictLangToggle" onchange="toggleStrictLanguage()" class="accent-emerald-500 rounded" />
-        <span>Strict Language Only</span>
-      </label>
-      <span id="feedActiveLangBadge" class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-lg text-[11px] font-bold truncate max-w-[200px]">
-        🇬🇧 English (Default)
-      </span>
-    </div>
+
 
     <!-- SECTION 1: VIDEO GRID -->
     <section id="videosSection">
