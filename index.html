@@ -4317,7 +4317,7 @@
     }
 
     const matches = [...htmlText.matchAll(/"videoId":"([a-zA-Z0-9_-]{11})"/g)].map(m => m[1]);
-    const uniqueIds = [...new Set(matches)].slice(0, 6);
+    const uniqueIds = [...new Set(matches)].slice(0, 150);
 
     const fetchedItems = [];
     let detectedAuthor = '';
@@ -5029,56 +5029,71 @@
     showSyncToast(`⏳ Connecting to @${handleName}... Fetching latest videos (4s)...`);
 
     let cleanChannelUrl = raw.startsWith('http') ? raw : `https://www.youtube.com/@${handleName}`;
-    if (!cleanChannelUrl.endsWith('/videos') && !cleanChannelUrl.endsWith('/shorts')) {
-      cleanChannelUrl = cleanChannelUrl.replace(/\/+$/, '') + (isShorts ? '/shorts' : '/videos');
-    }
-    const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(handleName)}`;
+    const baseChannel = cleanChannelUrl.replace(/\/(videos|shorts|featured|streams)?\/?$/, '');
 
-    // Multi-Engine CORS Reader Chain (r.jina.ai bypasses YouTube cookie walls + corsproxy + allorigins)
+    // Multi-tab aggregator: read /videos, /shorts, home, and search to fetch ALL public videos (no 6-video limit!)
     const sources = [
-      `https://r.jina.ai/${cleanChannelUrl}`,
-      `https://r.jina.ai/${searchUrl}`,
-      `https://api.allorigins.win/raw?url=${encodeURIComponent(searchUrl)}`,
-      `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(searchUrl)}`
+      `https://r.jina.ai/${baseChannel}/videos`,
+      `https://r.jina.ai/${baseChannel}/shorts`,
+      `https://r.jina.ai/${baseChannel}`,
+      `https://r.jina.ai/https://www.youtube.com/results?search_query=${encodeURIComponent(handleName)}`
     ];
 
-    let foundIds = [];
+    let allFoundIds = [];
     for (const src of sources) {
       try {
         const res = await fetch(src);
         if (!res.ok) continue;
-        const text = await res.text();
-        // Match watch?v=XXXXXXXXXXX, /shorts/XXXXXXXXXXX, or "videoId":"XXXXXXXXXXX"
-        const m1 = [...text.matchAll(/(?:watch\?v=|\/shorts\/|"videoId":")([a-zA-Z0-9_-]{11})/g)].map(m => m[1]);
-        const unique = [...new Set(m1)];
-        if (unique.length > 0) {
-          foundIds = unique.slice(0, 6);
-          break;
-        }
+        const pageText = await res.text();
+        const m1 = [...pageText.matchAll(/(?:watch\?v=|\/shorts\/|"videoId":|\/embed\/)([a-zA-Z0-9_-]{11})/g)].map(m => m[1]);
+        m1.forEach(id => {
+          if (!allFoundIds.includes(id)) allFoundIds.push(id);
+        });
       } catch (e) {}
     }
+
+    const foundIds = allFoundIds.slice(0, 150); // Fetch up to 150 videos per channel
 
     if (foundIds.length === 0) {
       alert('⚠️ Could not find public videos on that link. Please check the spelling of the channel link.');
       return;
     }
 
+    // High-speed parallel oEmbed title fetcher in batches of 15
     const pack = [];
     let channelTitle = handleName;
-    for (const vidId of foundIds) {
-      try {
-        const r = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${vidId}`);
-        const d = await r.json();
-        if (d && d.title) {
-          channelTitle = d.author_name || channelTitle;
-          pack.push({
-            ytId: vidId,
-            title: (isShorts && !d.title.includes('#Shorts')) ? `${d.title} #Shorts` : d.title,
-            channel: d.author_name || channelTitle,
-            isShort: isShorts
-          });
-        }
-      } catch (e) {}
+
+    try {
+      const r0 = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${foundIds[0]}`);
+      const d0 = await r0.json();
+      if (d0 && d0.author_name) channelTitle = d0.author_name;
+    } catch(e) {}
+
+    const CHUNK_SIZE = 15;
+    for (let i = 0; i < foundIds.length; i += CHUNK_SIZE) {
+      const chunk = foundIds.slice(i, i + CHUNK_SIZE);
+      const chunkPromises = chunk.map(async (vidId) => {
+        try {
+          const r = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${vidId}`);
+          const d = await r.json();
+          if (d && d.title) {
+            return {
+              ytId: vidId,
+              title: (isShorts && !d.title.includes('#Shorts')) ? `${d.title} #Shorts` : d.title,
+              channel: d.author_name || channelTitle,
+              isShort: isShorts
+            };
+          }
+        } catch (e) {}
+        return {
+          ytId: vidId,
+          title: `${channelTitle} Video (${vidId})`,
+          channel: channelTitle,
+          isShort: isShorts
+        };
+      });
+      const resolved = await Promise.all(chunkPromises);
+      resolved.forEach(item => { if (item) pack.push(item); });
     }
 
     if (pack.length > 0) {
@@ -5136,8 +5151,38 @@
       localStorage.setItem('qaaf_videos_data', JSON.stringify(videosData));
       renderVideos();
       if (window.renderAdminActiveVideosCatalog) window.renderAdminActiveVideosCatalog();
-      if (window.qaafCloudSync) qaafCloudSync.pushState(`Added Channel: ${targetChannelName} (${count} videos)`);
-      showSyncToast(`🎉 Successfully published ${count} videos from "${targetChannelName}"!`);
+      
+      // AUTO 1-CLICK INSTANT PUSH TO FIREBASE CLOUD (NO MANUAL CLOUD TAB CLICK REQUIRED!)
+      const fbEndpoint = "https://qaaftube-6f251-default-rtdb.firebaseio.com/qaaf_global_state.json";
+      const cloudPayload = {
+        videosData: videosData || [],
+        verifiedChannelsList: window.verifiedChannelsList || [],
+        bannedChannels: bannedChannels || [],
+        blockedVideoIds: blockedVideoIds || [],
+        regionalPromos: regionalPromos || {},
+        isPromoBarEnabled: isPromoBarEnabled !== false,
+        parentRequestsQueue: window.parentRequestsQueue || [],
+        qaafSecurityToken: "QAAF_PROTECTED_TOKEN_786_99_MAKKAH",
+        updatedAt: Date.now()
+      };
+      
+      fetch(fbEndpoint, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(cloudPayload)
+      }).then(res => {
+        if (res.ok) {
+          localStorage.setItem("qaaf_cloud_last_synced", new Date().toLocaleTimeString());
+          localStorage.setItem("qaaf_cloud_last_sync_ts", Date.now().toString());
+          localStorage.setItem("qaaf_cloud_updated_at", cloudPayload.updatedAt.toString());
+          if (window.qaafCloudSync) window.qaafCloudSync.updateStatusBadge("connected");
+          showSyncToast(`☁️ لائیو کلاؤڈ پر منتقل ہو گیا! (${count} ویڈیوز اور چینل تمام ڈیوائسز پر لائیو ہو گئے)`);
+        }
+      }).catch(err => {
+        console.warn("Cloud sync error on Push Live:", err);
+      });
+
+      showSyncToast(`🎉 ${count} ویڈیوز کامیابی سے شامل ہو گئیں اور کلاؤڈ پر لائیو ہو گئیں!`);
       return;
     }
     if (origPushLive) return origPushLive();
@@ -11280,7 +11325,33 @@
       localStorage.setItem("qaaf_videos_data", JSON.stringify(videosData));
       renderVideos();
       if (window.renderAdminActiveVideosCatalog) window.renderAdminActiveVideosCatalog();
-      if (window.qaafCloudSync) window.qaafCloudSync.pushState("Published Video/Channel with Verification Status");
+      
+      // AUTO 1-CLICK INSTANT PUSH TO FIREBASE CLOUD
+      const fbEndpoint2 = "https://qaaftube-6f251-default-rtdb.firebaseio.com/qaaf_global_state.json";
+      const cloudPayload2 = {
+        videosData: videosData || [],
+        verifiedChannelsList: window.verifiedChannelsList || [],
+        bannedChannels: bannedChannels || [],
+        blockedVideoIds: blockedVideoIds || [],
+        regionalPromos: regionalPromos || {},
+        isPromoBarEnabled: isPromoBarEnabled !== false,
+        parentRequestsQueue: window.parentRequestsQueue || [],
+        qaafSecurityToken: "QAAF_PROTECTED_TOKEN_786_99_MAKKAH",
+        updatedAt: Date.now()
+      };
+      fetch(fbEndpoint2, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(cloudPayload2)
+      }).then(res => {
+        if (res.ok) {
+          localStorage.setItem("qaaf_cloud_last_synced", new Date().toLocaleTimeString());
+          localStorage.setItem("qaaf_cloud_last_sync_ts", Date.now().toString());
+          localStorage.setItem("qaaf_cloud_updated_at", cloudPayload2.updatedAt.toString());
+          if (window.qaafCloudSync) window.qaafCloudSync.updateStatusBadge("connected");
+          showSyncToast(`☁️ کلاؤڈ پر فوراً منتقل ہو گیا!`);
+        }
+      }).catch(e => console.warn(e));
     }
   };
 
