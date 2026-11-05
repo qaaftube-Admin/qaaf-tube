@@ -398,33 +398,33 @@
         <!-- Horizontal Sequential List of Games -->
         <div id="sequentialGamesBar" class="flex items-center gap-2.5 overflow-x-auto no-scrollbar py-1 flex-1 scroll-smooth">
           <!-- Tab 1: Word Search Puzzle -->
-          <button onclick="switchGame('wordsearch')" id="gameTab-wordsearch" class="game-tab-btn btn-3d-gold py-2 px-4 flex items-center gap-2 text-xs sm:text-sm whitespace-nowrap shrink-0">
-            <span class="text-base sm:text-lg">🔍</span>
-            <span id="tabTitle-wordsearch">ورڈ سرچ پزل گیم</span>
+          <button onclick="switchGame('wordsearch')" id="gameTab-wordsearch" class="game-tab-btn btn-3d-gold py-1.5 px-3 flex items-center gap-1.5 text-xs sm:text-sm whitespace-nowrap shrink-0">
+            <span>🔍</span>
+            <span id="tabTitle-wordsearch">پزل</span>
           </button>
 
           <!-- Tab 2: Quran & Sunnah Quiz Adventure -->
-          <button onclick="switchGame('quiz')" id="gameTab-quiz" class="game-tab-btn btn-3d-dark py-2 px-4 flex items-center gap-2 text-xs sm:text-sm whitespace-nowrap shrink-0">
-            <span class="text-base sm:text-lg">📖</span>
-            <span id="tabTitle-quiz">قرآن و سنت کوئز</span>
+          <button onclick="switchGame('quiz')" id="gameTab-quiz" class="game-tab-btn btn-3d-dark py-1.5 px-3 flex items-center gap-1.5 text-xs sm:text-sm whitespace-nowrap shrink-0">
+            <span>📖</span>
+            <span id="tabTitle-quiz">کوئز</span>
           </button>
 
           <!-- Tab 3: Arabic Alphabet Puzzle -->
-          <button onclick="switchGame('alphabet')" id="gameTab-alphabet" class="game-tab-btn btn-3d-dark py-2 px-4 flex items-center gap-2 text-xs sm:text-sm whitespace-nowrap shrink-0">
-            <span class="text-base sm:text-lg">🔤</span>
-            <span id="tabTitle-alphabet">عربی حروف تہجی پزل</span>
+          <button onclick="switchGame('alphabet')" id="gameTab-alphabet" class="game-tab-btn btn-3d-dark py-1.5 px-3 flex items-center gap-1.5 text-xs sm:text-sm whitespace-nowrap shrink-0">
+            <span>🔤</span>
+            <span id="tabTitle-alphabet">حروف تہجی</span>
           </button>
 
           <!-- Tab 4: Masjid & Wudu Builder -->
-          <button onclick="switchGame('masjid')" id="gameTab-masjid" class="game-tab-btn btn-3d-dark py-2 px-4 flex items-center gap-2 text-xs sm:text-sm whitespace-nowrap shrink-0">
-            <span class="text-base sm:text-lg">🕌</span>
-            <span id="tabTitle-masjid">مسجد اور وضو بلڈر</span>
+          <button onclick="switchGame('masjid')" id="gameTab-masjid" class="game-tab-btn btn-3d-dark py-1.5 px-3 flex items-center gap-1.5 text-xs sm:text-sm whitespace-nowrap shrink-0">
+            <span>🕌</span>
+            <span id="tabTitle-masjid">وضو و نماز</span>
           </button>
 
-          <!-- Tab 5: Halal Perspective Bike Racing Game -->
-          <button onclick="switchGame('racing')" id="gameTab-racing" class="game-tab-btn btn-3d-dark py-2 px-4 flex items-center gap-2 text-xs sm:text-sm whitespace-nowrap shrink-0">
-            <span class="text-base sm:text-lg">🏍️</span>
-            <span id="tabTitle-racing">حلال بائیک ریسنگ</span>
+          <!-- Tab 5: Bike Racing Game -->
+          <button onclick="switchGame('racing')" id="gameTab-racing" class="game-tab-btn btn-3d-dark py-1.5 px-3 flex items-center gap-1.5 text-xs sm:text-sm whitespace-nowrap shrink-0">
+            <span>🏍️</span>
+            <span id="tabTitle-racing">بائیک ریسنگ</span>
           </button>
         </div>
 
@@ -444,46 +444,37 @@
          ===================================================================== -->
     <section id="gameSection-wordsearch" class="space-y-5">
 
-      <!-- Top Control Card: Language Version Selector + Stage Selector -->
-      <div class="card-3d p-4 sm:p-6">
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-
-          <!-- Title & Subtitle -->
-          <div>
-            <div class="flex items-center gap-2.5">
-              <span class="text-2xl sm:text-3xl">🧩</span>
-              <h2 id="wsMainHeading" class="text-lg sm:text-2xl font-bold text-amber-400">ورڈ سرچ پزل گیم (تین زبانوں میں)</h2>
+      <!-- Top Control Card: Compact Header + Corner Language Chips + 10 Circle Stages -->
+      <div class="card-3d p-3 sm:p-5">
+        <div class="flex items-center justify-between gap-3 border-b border-slate-800/80 pb-2.5 mb-2.5 flex-wrap">
+          <div class="flex items-center gap-2">
+            <span class="text-xl sm:text-2xl">🧩</span>
+            <div>
+              <h2 id="wsMainHeading" class="text-base sm:text-lg font-bold text-amber-400">ورڈ سرچ پزل</h2>
+              <span id="wsCurrentCategoryLabel" class="text-xs font-semibold text-emerald-400"></span>
             </div>
-            <p id="wsSubHeading" class="text-xs sm:text-sm text-slate-300 mt-1">
-              اوپر دی گئی دس تصویروں میں سے جو تصویر بڑی ہو کر سامنے آئے، نیچے ڈبے میں اس کے حروف ملا کر لفظ پورا کریں!
-            </p>
           </div>
 
-          <!-- 3 Language Modes Inside Word Search -->
-          <div class="flex flex-wrap items-center gap-2">
-            <span id="wsModeLabel" class="text-xs sm:text-sm text-amber-300 font-bold">پزل کی زبان:</span>
-            <button onclick="setPreferredContentLanguage('ur')" id="wsLangBtn-ur" class="btn-3d-emerald px-3.5 py-2 text-xs sm:text-sm flex items-center gap-1.5">
-              <span>🌙</span>
-              <span>اردو ورژن</span>
+          <!-- 3 Compact Language Chips in Corner -->
+          <div class="flex items-center gap-1 shrink-0 bg-slate-900/90 p-0.5 rounded-full border border-slate-700">
+            <button onclick="setPreferredContentLanguage('ur')" id="wsLangBtn-ur" class="px-2.5 py-1 rounded-full text-[11px] font-bold btn-3d-emerald">
+              <span>🌙 اردو</span>
             </button>
-            <button onclick="setPreferredContentLanguage('ar')" id="wsLangBtn-ar" class="btn-3d-dark px-3.5 py-2 text-xs sm:text-sm flex items-center gap-1.5 font-arabic">
-              <span>🕋</span>
-              <span>النسخة العربية</span>
+            <button onclick="setPreferredContentLanguage('ar')" id="wsLangBtn-ar" class="px-2.5 py-1 rounded-full text-[11px] font-semibold text-slate-300 hover:text-white font-arabic">
+              <span>🕋 عربی</span>
             </button>
-            <button onclick="setPreferredContentLanguage('en')" id="wsLangBtn-en" class="btn-3d-dark px-3.5 py-2 text-xs sm:text-sm flex items-center gap-1.5 font-english">
-              <span>🌍</span>
-              <span>English Mode</span>
+            <button onclick="setPreferredContentLanguage('en')" id="wsLangBtn-en" class="px-2.5 py-1 rounded-full text-[11px] font-semibold text-slate-300 hover:text-white font-english">
+              <span>🌍 English</span>
             </button>
           </div>
         </div>
 
-        <!-- 10 Stages Bar (Stages 1-5 Free, 6-10 Supporter Pro) -->
-        <div class="mt-4 pt-3 border-t border-slate-800">
-          <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
-            <span id="wsStageBarTitle" class="text-xs sm:text-sm font-bold text-emerald-400">اسٹیج منتخب کریں (پہلے پانچ اسٹیجز مفت ہیں):</span>
-            <span id="wsCurrentCategoryLabel" class="text-xs sm:text-sm font-bold text-amber-300 bg-amber-500/15 border border-amber-400/40 px-3.5 py-1 rounded-full"></span>
+        <!-- 10 Stages Bar (Numbered Circles 1 to 10) -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5 flex-wrap gap-2 text-xs">
+            <span id="wsStageBarTitle" class="font-bold text-emerald-400">اسٹیج منتخب کریں:</span>
           </div>
-          <div id="wsStagesRow" class="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-2">
+          <div id="wsStagesRow" class="flex items-center justify-between gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-1">
             <!-- Dynamically populated 10 stage buttons -->
           </div>
         </div>
@@ -652,7 +643,7 @@
 
         <!-- 10 Stages Selector -->
         <div class="mt-4 pt-3 border-t border-slate-800">
-          <div id="quizStagesRow" class="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-2">
+          <div id="quizStagesRow" class="flex items-center justify-between gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-1">
             <!-- Populated by JS -->
           </div>
         </div>
@@ -727,7 +718,7 @@
 
         <!-- 10 Stages Selector -->
         <div class="mt-4 pt-3 border-t border-slate-800">
-          <div id="alphaStagesRow" class="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-2"></div>
+          <div id="alphaStagesRow" class="flex items-center justify-between gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-1"></div>
         </div>
       </div>
 
@@ -801,7 +792,7 @@
 
         <!-- 10 Stages Selector -->
         <div class="mt-4 pt-3 border-t border-slate-800">
-          <div id="masjidStagesRow" class="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-2"></div>
+          <div id="masjidStagesRow" class="flex items-center justify-between gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-1"></div>
         </div>
       </div>
 
@@ -964,7 +955,7 @@
           <div>
             <div class="flex items-center gap-2.5">
               <span class="text-2xl sm:text-3xl">🏍️</span>
-              <h2 id="raceMainHeading" class="text-lg sm:text-2xl font-bold text-amber-400">حلال بائیک ریسنگ چیمپئن (دس اسٹیجز)</h2>
+              <h2 id="raceMainHeading" class="text-lg sm:text-2xl font-bold text-amber-400">بائیک ریسنگ چیمپئن (دس اسٹیجز)</h2>
             </div>
             <p id="raceSubHeading" class="text-xs sm:text-sm text-slate-300 mt-1">
               اپنی پسندیدہ بائیک اور ہیلمٹ کا رنگ منتخب کریں، بسم اللّٰہ پڑھ کر ریس شروع کریں اور حریفوں سے آگے نکل کر منزل تک پہنچیں!
@@ -982,7 +973,7 @@
 
         <!-- 10 Stages Bar (Stages 1-5 Free with Green line, 6-10 Pro with Blue line) -->
         <div class="mt-4 pt-3 border-t border-slate-800">
-          <div id="raceStagesRow" class="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-2">
+          <div id="raceStagesRow" class="flex items-center justify-between gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-1">
             <!-- Dynamically populated 10 stage buttons -->
           </div>
         </div>
@@ -1482,6 +1473,16 @@
       if (appState.audioMuted) return;
       playHalalTactileClick('pop');
 
+      // Intercept Islamic phrases and play authentic Arabic human voice recordings
+      if (/بِسْمِ/i.test(text)) {
+        playAuthenticIslamicPraise('bismillah');
+        return;
+      }
+      if (/شَاءَ|سُبْحَانَ|حَمْد|أَكْبَر|جَزَاك|أَحْسَنْتَ|بَارَكَ/i.test(text)) {
+        playAuthenticIslamicPraise('praise');
+        return;
+      }
+
       if (!('speechSynthesis' in window)) return;
       try {
         if (speechTimeoutId) clearTimeout(speechTimeoutId);
@@ -1549,22 +1550,73 @@
       } catch (e) {}
     }
 
+    /**
+     * Authentic Human Voice Islamic Praises & Duas System
+     * Plays crystal-clear authentic human Arabic recitations (SubhanAllah, Alhamdulillah, Allahu Akbar, JazakAllah, Bismillah)
+     * instead of robotic distorted speech synthesis!
+     */
+    const AUTHENTIC_ISLAMIC_AUDIOS = [
+      'audio/subhanallah.mp3',
+      'audio/allahuakbar.mp3',
+      'audio/jazakallah.mp3',
+      'audio/barakallah.mp3',
+      'audio/alhamdulillah_full.mp3',
+      'audio/subhanallah_alhamdulillah_allahuakbar.mp3'
+    ];
+
+    let lastPraiseIndex = -1;
+    let currentPraiseAudio = null;
+
+    function playAuthenticIslamicPraise(type = 'praise') {
+      if (appState.audioMuted) return;
+      try {
+        if (currentPraiseAudio) {
+          try {
+            currentPraiseAudio.pause();
+            currentPraiseAudio.currentTime = 0;
+          } catch(err) {}
+        }
+
+        let audioFile = '';
+        if (type === 'bismillah') {
+          audioFile = 'audio/bismillah.mp3';
+        } else if (type === 'bismillah_full') {
+          audioFile = 'audio/bismillah_full.mp3';
+        } else if (type === 'wudu') {
+          audioFile = 'audio/dua_wudu_after.mp3';
+        } else if (type === 'riding') {
+          audioFile = 'audio/dua_riding.mp3';
+        } else {
+          let idx = Math.floor(Math.random() * AUTHENTIC_ISLAMIC_AUDIOS.length);
+          if (idx === lastPraiseIndex) {
+            idx = (idx + 1) % AUTHENTIC_ISLAMIC_AUDIOS.length;
+          }
+          lastPraiseIndex = idx;
+          audioFile = AUTHENTIC_ISLAMIC_AUDIOS[idx];
+        }
+
+        currentPraiseAudio = new Audio(audioFile);
+        currentPraiseAudio.volume = 1.0;
+        const playPromise = currentPraiseAudio.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(e => {
+            playHalalTactileClick('star');
+          });
+        }
+      } catch (e) {
+        playHalalTactileClick('star');
+      }
+    }
+
     function speakMashaAllah() {
       playHalalTactileClick('star');
-      // Always prefer authentic Arabic/Urdu pronunciation for MashaAllah with clear open-vowel phonetic fallback
-      if (appState.uiLang === 'ar') {
-        speakText('مَا شَاءَ اللّٰهُ! أَحْسَنْتَ', 'ar-SA', 'Maa Shaa Allaah! Ahsanta!');
-      } else if (appState.uiLang === 'ur') {
-        speakText('مَا شَاءَ اللّٰهُ! بہت خوب', 'ur-PK', 'Maa Shaa Allaah! Bohat Khoob!');
-      } else {
-        speakText('مَا شَاءَ اللّٰهُ!', 'ar-SA', 'Maa Shaa Allaah! Wonderful!');
-      }
+      playAuthenticIslamicPraise('praise');
     }
 
     function testHalalAudioSystem() {
       appState.audioMuted = false;
       playHalalTactileClick('star');
-      speakMashaAllah();
+      playAuthenticIslamicPraise('praise');
     }
 
     function toggleAudioMute() {
@@ -1646,11 +1698,11 @@
         proBtnLabelActive: 'سپورٹر پرو فعال ہے',
         audioOn: 'آواز آن',
         audioOff: 'آواز آف',
-        tabWordSearch: 'ورڈ سرچ پزل گیم',
-        tabQuiz: 'قرآن و سنت کوئز',
-        tabAlphabet: 'عربی حروف تہجی پزل',
-        tabMasjid: 'مسجد اور وضو بلڈر',
-        tabRacing: 'حلال بائیک ریسنگ',
+        tabWordSearch: 'پزل',
+        tabQuiz: 'کوئز',
+        tabAlphabet: 'حروف تہجی',
+        tabMasjid: 'وضو و نماز',
+        tabRacing: 'بائیک ریسنگ',
         wsMainHeading: 'ورڈ سرچ پزل گیم (تین زبانوں میں)',
         wsSubHeading: 'اوپر دی گئی دس تصویروں میں سے جو تصویر بڑی ہو کر سامنے آئے، نیچے ڈبے میں اس کے حروف ملا کر لفظ پورا کریں!',
         wsModeLabel: 'پزل کی زبان:',
@@ -1700,7 +1752,7 @@
         stageWord: 'اسٹیج',
         freeWord: 'مفت',
         proWord: 'پرو',
-        raceMainHeading: 'حلال بائیک ریسنگ چیمپئن (دس اسٹیجز)',
+        raceMainHeading: 'بائیک ریسنگ چیمپئن (دس اسٹیجز)',
         raceSubHeading: 'اپنی پسندیدہ بائیک اور ہیلمٹ کا رنگ منتخب کریں، بسم اللّٰہ پڑھ کر ریس شروع کریں اور حریفوں سے آگے نکل کر منزل تک پہنچیں!',
         raceBikeSelectLabel: 'بائیک اور ہیلمٹ کا رنگ:',
         racePosLabel: 'پوزیشن:',
@@ -1730,10 +1782,10 @@
         audioOn: 'الصوت مفعل',
         audioOff: 'الصوت صامت',
         tabWordSearch: 'لعبة البحث عن الكلمات',
-        tabQuiz: 'مسابقة القرآن والسنة',
+        tabQuiz: 'مسابقة إسلامية',
         tabAlphabet: 'أحجية الحروف العربية',
-        tabMasjid: 'بناء المسجد والوضوء',
-        tabRacing: 'سباق الدراجات الحلال',
+        tabMasjid: 'الوضوء والصلاة',
+        tabRacing: 'سباق الدراجات',
         wsMainHeading: 'لعبة البحث عن الكلمات (بثلاث لغات)',
         wsSubHeading: 'شاهد الصورة المكبرة في الأعلى، ثم اسحب بإصبعك أو الفأرة على الحروف في الشبكة لتكوين الكلمة!',
         wsModeLabel: 'لغة الشبكة:',
@@ -1812,11 +1864,11 @@
         proBtnLabelActive: 'Supporter Pro Active',
         audioOn: 'Voice On',
         audioOff: 'Muted',
-        tabWordSearch: 'Word Search Puzzle',
-        tabQuiz: 'Quran & Sunnah Quiz',
-        tabAlphabet: 'Arabic Alphabet Puzzle',
-        tabMasjid: 'Masjid & Wudu Builder',
-        tabRacing: 'Halal Bike Racing',
+        tabWordSearch: 'Puzzle',
+        tabQuiz: 'Quiz',
+        tabAlphabet: 'Alphabet',
+        tabMasjid: 'Wudu & Prayer',
+        tabRacing: 'Bike Racing',
         wsMainHeading: 'Word Search Puzzle (English, Arabic & Urdu)',
         wsSubHeading: 'Watch the active picture pop up at the top, listen to its pronunciation, and swipe across the 10x10 grid to connect the word!',
         wsModeLabel: 'Puzzle Mode:',
@@ -1866,7 +1918,7 @@
         stageWord: 'Stage',
         freeWord: 'Free',
         proWord: 'Pro',
-        raceMainHeading: 'Halal Bike Racing Champion (10 Stages)',
+        raceMainHeading: 'Bike Racing Champion (10 Stages)',
         raceSubHeading: 'Pick your favorite bike & helmet color, start with Bismillah, jump over ramps, and beat the competitors to the finish line!',
         raceBikeSelectLabel: 'Bike & Helmet Color:',
         racePosLabel: 'Rank:',
@@ -3338,24 +3390,16 @@
           const isActive = cfg.current === s;
           const topicName = getStageTopicShortTitle(cfg.gameType, s);
 
-          // Green bottom indicator line for Free stages (1-5), Blue bottom indicator line for Pro stages (6-10)
-          const bottomIndicatorBar = isFree
-            ? 'border-b-4 border-b-emerald-400'
-            : 'border-b-4 border-b-sky-400';
-
-          let btnClass = isActive
-            ? `btn-3d-gold ${bottomIndicatorBar}`
-            : `btn-3d-dark ${bottomIndicatorBar} ${isUnlocked ? '' : 'opacity-80'}`;
+          let circleStyle = isActive
+            ? 'bg-gradient-to-br from-amber-400 to-amber-500 text-slate-950 font-black shadow-lg shadow-amber-500/30 scale-110 ring-2 ring-amber-300'
+            : (isFree
+                ? 'bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-emerald-500/40 hover:border-emerald-400'
+                : 'bg-slate-900 hover:bg-slate-800 text-sky-300 border border-sky-500/40 hover:border-sky-400 opacity-90');
 
           html += `
-            <button onclick="${cfg.handler}(${s})" class="${btnClass} py-2 px-2 flex flex-col items-center justify-between gap-1 text-xs relative overflow-hidden">
-              <div class="flex items-center justify-center gap-1 font-extrabold">
-                <span>${t.stageWord} ${s}</span>
-                ${!isUnlocked ? '<i class="fa-solid fa-lock text-[10px] text-sky-400"></i>' : ''}
-              </div>
-              <span class="text-[10px] sm:text-[11px] leading-snug line-clamp-1 w-full text-center ${isActive ? 'text-slate-950 font-bold' : 'text-slate-300'}">
-                ${topicName}
-              </span>
+            <button onclick="${cfg.handler}(${s})" title="${t.stageWord} ${s}: ${topicName}" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full ${circleStyle} flex items-center justify-center text-xs sm:text-sm font-extrabold transition-all shrink-0 relative flex-1 max-w-[42px]">
+              <span>${s}</span>
+              ${!isUnlocked ? '<span class="absolute -top-1 -right-1 text-[8px] leading-none bg-slate-950 rounded-full px-0.5 text-sky-300 shadow">🔒</span>' : ''}
             </button>
           `;
         }

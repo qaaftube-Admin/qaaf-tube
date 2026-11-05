@@ -107,6 +107,26 @@
     ::-webkit-scrollbar-track { background: #141414; }
     ::-webkit-scrollbar-thumb { background: #383838; border-radius: 9999px; }
   </style>
+<style>
+  /* Ensure header right controls are strictly single row horizontal */
+  #headerRightControls {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 6px !important;
+    overflow: visible !important;
+  }
+  #headerRightControls > button,
+  #headerRightControls > div {
+    display: inline-flex !important;
+    flex-shrink: 0 !important;
+  }
+  #langDropdownContainer {
+    display: inline-block !important;
+    position: relative !important;
+  }
+</style>
 </head>
 <body id="appBody" class="bg-islamic-family min-h-screen flex flex-col justify-between pb-28 transition-colors duration-500">
 
@@ -207,6 +227,7 @@
           </div>
         </div>
       </div>
+    </div>
 
       <!-- ACCOUNT / ADMIN LOGIN BUTTON -->
       <button id="accountBtn" onclick="openAccountModal()" class="bg-[#272727] hover:bg-[#383838] text-slate-200 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full text-xs font-bold flex items-center gap-0.5 sm:gap-1 shrink-0">
@@ -8266,7 +8287,6 @@
       height: 24px !important;
       width: auto !important;
     }
-  }
   }
 </style>
 <script>
