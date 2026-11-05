@@ -127,6 +127,12 @@
     position: relative !important;
   }
 </style>
+<style>
+  /* Hide redundant green channels bar below search bar as requested */
+  #qaafChannelsFilterBar {
+    display: none !important;
+  }
+</style>
 </head>
 <body id="appBody" class="bg-islamic-family min-h-screen flex flex-col justify-between pb-28 transition-colors duration-500">
 
@@ -171,8 +177,8 @@
         <path d="M 264,104 L 303,64 L 335,88 L 348,64 L 392,94 L 368,125 L 331,102 L 302,129 Z" fill="#00FF7B"/>
         <path fill-rule="evenodd" clip-rule="evenodd" d="M 342,202 C 320,202 292,199 281,182 C 271,166 280,127 318,123 C 356,119 385,147 386,192 C 387,238 348,278 282,300 C 218,321 156,306 142,265 C 134,242 142,212 156,191 C 158,188 161,190 159,194 C 148,217 148,242 162,257 C 182,278 232,275 282,256 C 332,237 368,208 369,184 C 371,196 364,213 356,222 C 363,210 364,198 359,193 C 354,199 348,202 342,202 Z M 326,151 C 311,151 304,160 307,168 C 310,175 327,176 346,174 C 343,159 336,151 326,151 Z" fill="url(#qaafExactBrushGrad)"/>
       </svg>
-      <div class="text-xs sm:text-lg font-extrabold tracking-tight flex items-center gap-0.5 shrink-0">
-        <span class="text-white">QAAF</span><span class="text-slate-500 font-light">|</span><span id="brandSuffix" class="text-emerald-400">Tube</span>
+      <div class="text-xs sm:text-lg font-extrabold tracking-tight flex items-center gap-0.5 shrink-0 cursor-pointer" onclick="if(window.isKidsLocked){ openParentalGate('unlock'); } else if(window.qaafGoHome){ window.qaafGoHome(); }" title="QAAF Tube Home / Unlock Kids">
+        <span class="text-white" id="brandMainPrefix">QAAF</span><span id="brandDivider" class="text-slate-500 font-light">|</span><span id="brandSuffix" class="text-emerald-400">Tube</span>
       </div>
     </div>
 
@@ -252,11 +258,13 @@
   <!-- CATEGORY & FILTER BAR -->
   <div id="categoryBar" class="bg-[#0b0d10]/90 backdrop-blur border-b border-white/5 px-3 sm:px-4 py-2 flex items-center justify-between gap-2 overflow-x-auto">
     <div class="flex items-center gap-1.5 shrink-0">
-      <button onclick="filterCategory('all')" id="ui_catAll" class="cat-chip bg-white text-black px-3 py-1 rounded-lg text-xs font-bold shrink-0">All Videos</button>
-      <button onclick="filterCategory('bayan')" id="ui_catBayan" class="cat-chip family-only-chip bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0">🎙️ Scholars & Bayan</button>
-      <button onclick="filterCategory('quran')" id="ui_catQuran" class="cat-chip bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0">🕋 Quran & Tajweed</button>
-      <button onclick="filterCategory('stories')" id="ui_catStories" class="cat-chip bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0">📖 Prophet Stories</button>
-      <button onclick="filterCategory('kids_cartoon')" id="ui_catCartoon" class="cat-chip bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0">🌟 Islamic Cartoons</button>
+      <button onclick="filterCategory('all')" id="ui_catAll" class="cat-chip bg-white text-black px-3 py-1 rounded-lg text-xs font-bold shrink-0 flex items-center gap-1.5"><span>📺</span> <span id="ui_catAllLabel">All Channels</span></button>
+      <button onclick="filterCategory('quran')" id="ui_catQuran" class="cat-chip bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0 flex items-center gap-1.5"><span>🕋</span> <span id="ui_catQuranLabel">Tilawat-e-Quran</span></button>
+      <button onclick="filterCategory('naat')" id="ui_catNaat" class="cat-chip bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0 flex items-center gap-1.5"><span class="text-emerald-400">🕌</span> <span id="ui_catNaatLabel">Naat</span></button>
+      <button onclick="filterCategory('tarbiyah')" id="ui_catTarbiyah" class="cat-chip bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0 flex items-center gap-1.5"><span>🌿</span> <span id="ui_catTarbiyahLabel">Islamic Tarbiyah</span></button>
+      <button onclick="filterCategory('bayan')" id="ui_catBayan" class="cat-chip family-only-chip bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0 flex items-center gap-1.5"><span>🎙️</span> <span id="ui_catBayanLabel">Islamic Bayanat</span></button>
+      <button onclick="filterCategory('kids_tarbiyah')" id="ui_catStories" class="cat-chip bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0 flex items-center gap-1.5"><span>📖</span> <span id="ui_catStoriesLabel">Kids Tarbiyah</span></button>
+      <button onclick="filterCategory('kids_cartoon')" id="ui_catCartoon" class="cat-chip bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0 flex items-center gap-1.5"><span>🌟</span> <span id="ui_catCartoonLabel">Kids Cartoons</span></button>
     </div>
 
     <div class="flex items-center gap-1.5 shrink-0 border-l border-slate-800 pl-2.5" dir="ltr">
@@ -1382,6 +1390,13 @@
           renderAdminParentRequests();
         }
         if (Array.isArray(payload.videosData)) {
+          // If cloud returns empty array but local has custom channels/videos, DO NOT WIPE LOCAL!
+          if (source === 'cloud' && payload.videosData.length === 0 && videosData && videosData.length > 0) {
+            console.warn('[QaafSync] Cloud returned empty catalog but local has ' + videosData.length + ' videos. Preserving local and uploading to Firebase!');
+            this.pushState('Syncing local catalog to Firebase Cloud');
+            return;
+          }
+
           let scrubbed = false;
           videosData = payload.videosData.map(v => {
             const res = sanitizeVideoItem(v);
@@ -1899,14 +1914,20 @@
         document.getElementById('activeUserEmailDisplay').innerText = currentUserEmail;
         if (roleBadge) roleBadge.innerText = isSuperAdmin() ? '👑 Super Admin Role Active' : '👨‍👩‍👧 Parent Account Active';
         if (switchBtn) switchBtn.classList.toggle('hidden', isSuperAdmin());
-        if (isSuperAdmin() && !isKidsLocked) { adminBtn.classList.remove('hidden'); adminBtn.classList.add('flex'); }
-        else { adminBtn.classList.add('hidden'); }
+        if ((isSuperAdmin() || (window.isMonitorUser && window.isMonitorUser())) && !isKidsLocked) {
+          adminBtn.classList.remove('hidden');
+          adminBtn.style.removeProperty('display');
+        } else {
+          adminBtn.classList.add('hidden');
+          adminBtn.style.setProperty('display', 'none', 'important');
+        }
       } else {
         label.innerText = 'Login';
         document.getElementById('loggedOutView').classList.remove('hidden');
         document.getElementById('loggedInView').classList.add('hidden');
         if (switchBtn) switchBtn.classList.add('hidden');
         adminBtn.classList.add('hidden');
+        adminBtn.style.setProperty('display', 'none', 'important');
       }
     }
 
@@ -1976,8 +1997,10 @@
           document.documentElement.requestFullscreen().catch(() => {});
         }
         document.getElementById('appBody').className = "bg-islamic-kids min-h-screen flex flex-col justify-between pb-28 transition-colors duration-500";
-        document.getElementById('brandSuffix').innerHTML = `<span class="kids-letters font-extrabold"><span>K</span><span>i</span><span>d</span><span>s</span></span>`;
-        document.getElementById('lockIcon').innerText = '🔐';
+        var bPref = document.getElementById('brandMainPrefix'); if(bPref) bPref.classList.add('hidden');
+        var bDiv = document.getElementById('brandDivider'); if(bDiv) bDiv.classList.add('hidden');
+        document.getElementById('brandSuffix').innerHTML = `<span class="kids-letters font-extrabold text-sm sm:text-base"><span>K</span><span>i</span><span>d</span><span>s</span> <span class="text-xs">🔒</span></span>`;
+        document.getElementById('lockIcon').innerText = '🔓';
         document.getElementById('kioskStatusBadge').innerText = '🔒 KIDS LOCK';
         document.getElementById('kioskStatusBadge').className = 'bg-red-600 text-white px-2 py-0.5 rounded font-bold';
         document.getElementById('parentPanelBtn').classList.add('hidden');
@@ -2891,6 +2914,8 @@
           document.exitFullscreen().catch(() => {});
         }
         document.getElementById('appBody').className = "bg-islamic-family min-h-screen flex flex-col justify-between pb-28 transition-colors duration-500";
+        var bPref = document.getElementById('brandMainPrefix'); if(bPref) bPref.classList.remove('hidden');
+        var bDiv = document.getElementById('brandDivider'); if(bDiv) bDiv.classList.remove('hidden');
         document.getElementById('brandSuffix').innerText = 'Tube';
         document.getElementById('lockIcon').innerText = '🔒';
         document.getElementById('kioskStatusBadge').innerText = 'Family Mode';
@@ -5140,9 +5165,12 @@
   // 2. Add "🔒 Kids Mode ON" Badge inside Main Header (Hidden in Family Mode, Visible in Kids Mode)
   const kidsSwitcher = document.getElementById('kidsContentSwitcher');
   if (kidsSwitcher && !document.getElementById('kidsModeOnHeaderBadge')) {
-    const badge = document.createElement('span');
+    const badge = document.createElement('button');
+    badge.type = 'button';
     badge.id = 'kidsModeOnHeaderBadge';
-    badge.className = 'hidden bg-red-600/25 border border-red-500/50 text-red-300 px-2.5 py-1 rounded-full text-[11px] font-extrabold items-center gap-1 shadow shrink-0';
+    badge.onclick = function() { openParentalGate('unlock'); };
+    badge.title = 'کلک کر کے پن کوڈ درج کریں اور کڈز موڈ سے باہر نکلیں';
+    badge.className = 'hidden bg-red-600/30 hover:bg-red-600/50 border border-red-500/60 text-red-200 px-2 sm:px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-extrabold items-center gap-1 shadow shrink-0 cursor-pointer transition';
     badge.innerHTML = '<span>🔐</span> <span>Kids Mode ON</span>';
     kidsSwitcher.parentNode.insertBefore(badge, kidsSwitcher);
   }
@@ -7406,10 +7434,12 @@
     }
     kmBadge.classList.remove("hidden");
     kmBadge.classList.add("flex");
+    kmBadge.onclick = function() { openParentalGate('unlock'); };
+    kmBadge.title = 'کلک کر کے پن کوڈ درج کریں اور کڈز موڈ سے باہر نکلیں';
     if (window.kidsTimerRemainingSecs > 0) {
-      kmBadge.innerHTML = "<span>⏰</span> <span>" + formatTimerMMSS(window.kidsTimerRemainingSecs) + "</span>";
+      kmBadge.innerHTML = "<span>⏰</span> <span>" + formatTimerMMSS(window.kidsTimerRemainingSecs) + "</span> <span class='text-[10px] text-amber-300'>🔓</span>";
     } else {
-      kmBadge.innerHTML = "<span>🔐</span> <span>Kids Mode ON</span>";
+      kmBadge.innerHTML = "<span>🔐</span> <span>Kids 🔓</span>";
     }
   }
 
@@ -7480,7 +7510,7 @@
       document.documentElement.requestFullscreen().catch(function() {});
     }
     document.getElementById("appBody").className = "bg-islamic-kids min-h-screen flex flex-col justify-between pb-12 transition-colors duration-500";
-    document.getElementById("brandSuffix").innerHTML = '<span class="kids-letters font-extrabold"><span>K</span><span>i</span><span>d</span><span>s</span></span>';
+    var bP = document.getElementById("brandMainPrefix"); if(bP) bP.classList.add("hidden"); var bD = document.getElementById("brandDivider"); if(bD) bD.classList.add("hidden"); document.getElementById("brandSuffix").innerHTML = '<span class="kids-letters font-extrabold text-sm sm:text-base"><span>K</span><span>i</span><span>d</span><span>s</span> <span class="text-xs">🔒</span></span>';
     document.getElementById("lockIcon").innerText = "🔐";
     document.getElementById("parentPanelBtn").classList.add("hidden");
     document.getElementById("accountBtn").classList.add("hidden");
@@ -8003,7 +8033,7 @@
     isKidsLocked = true;
     localStorage.setItem("qaaf_kids_locked_state", "true");
     document.getElementById("appBody").className = "bg-islamic-kids min-h-screen flex flex-col justify-between pb-12 transition-colors duration-500";
-    document.getElementById("brandSuffix").innerHTML = '<span class="kids-letters font-extrabold"><span>K</span><span>i</span><span>d</span><span>s</span></span>';
+    var bP = document.getElementById("brandMainPrefix"); if(bP) bP.classList.add("hidden"); var bD = document.getElementById("brandDivider"); if(bD) bD.classList.add("hidden"); document.getElementById("brandSuffix").innerHTML = '<span class="kids-letters font-extrabold text-sm sm:text-base"><span>K</span><span>i</span><span>d</span><span>s</span> <span class="text-xs">🔒</span></span>';
     document.getElementById("lockIcon").innerText = "🔐";
     document.getElementById("parentPanelBtn").classList.add("hidden");
     document.getElementById("accountBtn").classList.add("hidden");
@@ -8251,13 +8281,16 @@
       gap: 3px !important;
       flex-shrink: 0 !important;
     }
-    #superAdminHeaderBtn {
+    #superAdminHeaderBtn:not(.hidden) {
       height: 28px !important;
       padding: 2px 7px !important;
       font-size: 11px !important;
       border-radius: 9999px !important;
       display: inline-flex !important;
       flex-shrink: 0 !important;
+    }
+    #superAdminHeaderBtn.hidden {
+      display: none !important;
     }
     #kidsLockBtn {
       height: 28px !important;
@@ -8829,7 +8862,7 @@
     isKidsLocked = true;
     localStorage.setItem("qaaf_kids_locked_state", "true");
     document.getElementById("appBody").className = "bg-islamic-kids min-h-screen flex flex-col justify-between pb-12 transition-colors duration-500";
-    document.getElementById("brandSuffix").innerHTML = '<span class="kids-letters font-extrabold"><span>K</span><span>i</span><span>d</span><span>s</span></span>';
+    var bP = document.getElementById("brandMainPrefix"); if(bP) bP.classList.add("hidden"); var bD = document.getElementById("brandDivider"); if(bD) bD.classList.add("hidden"); document.getElementById("brandSuffix").innerHTML = '<span class="kids-letters font-extrabold text-sm sm:text-base"><span>K</span><span>i</span><span>d</span><span>s</span> <span class="text-xs">🔒</span></span>';
     document.getElementById("lockIcon").innerText = "🔐";
     document.getElementById("parentPanelBtn").classList.add("hidden");
     document.getElementById("accountBtn").classList.add("hidden");
@@ -10947,10 +10980,17 @@
     var origApply = window.qaafCloudSync.applyIncomingState.bind(window.qaafCloudSync);
     window.qaafCloudSync.applyIncomingState = function(payload, source) {
       if (payload && typeof payload === "object") {
-        if (!Array.isArray(payload.videosData)) payload.videosData = [];
-        if (Array.isArray(payload.verifiedChannelsList)) {
+        // If remote has verified channels list, sync it
+        if (Array.isArray(payload.verifiedChannelsList) && payload.verifiedChannelsList.length > 0) {
           window.verifiedChannelsList = payload.verifiedChannelsList;
           localStorage.setItem("qaaf_verified_channels", JSON.stringify(window.verifiedChannelsList));
+        }
+        // If remote has videosData, pass it; if missing, do NOT overwrite with empty array
+        if (Array.isArray(payload.videosData)) {
+          // passed through to origApply which now has wipe-protection
+        } else {
+          // Do not inject empty array
+          delete payload.videosData;
         }
       }
       origApply(payload, source);
@@ -10991,9 +11031,9 @@
   // 2. UPGRADE CATEGORY BARS & ADD "📺 BY CHANNELS" DIRECTORY (GREEN TOP, YELLOW BELOW)
   // =========================================================================
   var CATEGORY_META = {
-    all: { label: "All Videos", icon: "📋", familyOnly: false },
+    all: { label: "All Channels", icon: "📺", familyOnly: false },
     quran: { label: "Tilawat-e-Quran", icon: "🕋", familyOnly: false },
-    naat: { label: "Naat Sharif", icon: "🎤", familyOnly: false },
+    naat: { label: "Naat", icon: "🕌", familyOnly: false },
     tarbiyah: { label: "Islamic Tarbiyah", icon: "🌿", familyOnly: false },
     bayan: { label: "Islamic Bayanat", icon: "🎙️", familyOnly: true },
     kids_tarbiyah: { label: "Kids Tarbiyah", icon: "📖", familyOnly: false },
@@ -11004,13 +11044,13 @@
   var catBarLeft = document.querySelector("#categoryBar > div:first-child");
   if (catBarLeft) {
     catBarLeft.innerHTML =
-      '<button onclick="filterCategory(\'all\')" id="ui_catAll" class="cat-chip bg-white text-black px-3 py-1 rounded-lg text-xs font-bold shrink-0">📋 All Videos</button>' +
-      '<button onclick="filterCategory(\'quran\')" id="ui_catQuran" class="cat-chip bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0">🕋 Tilawat-e-Quran</button>' +
-      '<button onclick="filterCategory(\'naat\')" id="ui_catNaat" class="cat-chip bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0">🎤 Naat Sharif</button>' +
-      '<button onclick="filterCategory(\'tarbiyah\')" id="ui_catTarbiyah" class="cat-chip bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0">🌿 Islamic Tarbiyah</button>' +
-      '<button onclick="filterCategory(\'bayan\')" id="ui_catBayan" class="cat-chip family-only-chip bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0">🎙️ Islamic Bayanat</button>' +
-      '<button onclick="filterCategory(\'kids_tarbiyah\')" id="ui_catStories" class="cat-chip bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0">📖 Kids Tarbiyah</button>' +
-      '<button onclick="filterCategory(\'kids_cartoon\')" id="ui_catCartoon" class="cat-chip bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0">🌟 Kids Cartoons</button>';
+      '<button onclick="filterCategory(\'all\')" id="ui_catAll" class="cat-chip bg-white text-black px-3 py-1 rounded-lg text-xs font-bold shrink-0 flex items-center gap-1.5"><span>📺</span> <span>All Channels</span></button>' +
+      '<button onclick="filterCategory(\'quran\')" id="ui_catQuran" class="cat-chip bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0 flex items-center gap-1.5"><span>🕋</span> <span>Tilawat-e-Quran</span></button>' +
+      '<button onclick="filterCategory(\'naat\')" id="ui_catNaat" class="cat-chip bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0 flex items-center gap-1.5"><span class="text-emerald-400">🕌</span> <span>Naat</span></button>' +
+      '<button onclick="filterCategory(\'tarbiyah\')" id="ui_catTarbiyah" class="cat-chip bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0 flex items-center gap-1.5"><span>🌿</span> <span>Islamic Tarbiyah</span></button>' +
+      '<button onclick="filterCategory(\'bayan\')" id="ui_catBayan" class="cat-chip family-only-chip bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0 flex items-center gap-1.5"><span>🎙️</span> <span>Islamic Bayanat</span></button>' +
+      '<button onclick="filterCategory(\'kids_tarbiyah\')" id="ui_catStories" class="cat-chip bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0 flex items-center gap-1.5"><span>📖</span> <span>Kids Tarbiyah</span></button>' +
+      '<button onclick="filterCategory(\'kids_cartoon\')" id="ui_catCartoon" class="cat-chip bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0 flex items-center gap-1.5"><span>🌟</span> <span>Kids Cartoons</span></button>';
   }
 
   window.filterCategory = function(cat) {
