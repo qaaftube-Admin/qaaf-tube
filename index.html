@@ -1,7 +1,7 @@
 ﻿<!DOCTYPE html>
 <html id="htmlRoot" lang="en" dir="ltr">
 <head>
-  <meta charset="UTF-8" />
+<meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>QAAF Tube — Muslim Family & Kids Hub</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 716'%3E%3Crect width='1024' height='716' rx='160' fill='%23E51920'/%3E%3Cpolygon points='562,225 562,489 800,357' fill='%23FFFFFF'/%3E%3Ccircle cx='380' cy='360' r='140' stroke='%23FFFFFF' stroke-width='55' fill='none'/%3E%3C/svg%3E" />
@@ -1045,7 +1045,6 @@
         changed = true;
       } else if (!isBuiltin && customFlag === undefined) {
         customFlag = true;
-        changed = true;
       }
       return { item: { ...v, ytId: newYtId, isCustomAdded: customFlag }, changed };
     }
@@ -1163,7 +1162,7 @@
 
       if (shortVideos.length > 0) {
         let shortsCardsHtml = '';
-        shortVideos.forEach(sh => {
+        shortVideos.slice(0, 12).forEach(sh => {
           const categoryArtwork = getCategoryIslamicArtwork(sh.category);
           const thumbUrl = sh.customThumb || `https://i.ytimg.com/vi/${sh.ytId}/hqdefault.jpg`;
           shortsCardsHtml += `
@@ -2055,7 +2054,7 @@
       if (input) input.value = qaafCloudSync.firebaseUrl || '';
       qaafCloudSync.updateStatusBadge();
       document.getElementById('adminDashboardModal').classList.remove('hidden');
-      if (window.renderAdminActiveVideosCatalog) window.renderAdminActiveVideosCatalog();
+      
     }
     function closeAdminModal() { document.getElementById('adminDashboardModal').classList.add('hidden'); }
 
@@ -2966,8 +2965,7 @@
       const chList = document.getElementById('parentChannelsFilterList');
       if (chList) {
         chList.innerHTML = '';
-        videosData.forEach(v => {
-          const isVideoBlocked = blockedVideoIds.includes(v.id);
+        videosData.slice(0, 25).forEach(v => { const isVideoBlocked = blockedVideoIds.includes(v.id);
           const isChanBanned = bannedChannels.includes(v.channel);
           const isAllowed = !isVideoBlocked && !isChanBanned;
           const safeChannel = v.channel.replace(/'/g, "\\'");
@@ -3208,7 +3206,7 @@
         Object.keys(brokenIdFixes).forEach(k => { legacyPlaceholderMap[k] = brokenIdFixes[k]; });
       }
 
-      function scrubBrokenVideoIds() {
+      function scrubBrokenVideoIds() { return;
         let fixedAny = false;
         videosData = videosData.map(v => {
           if (false && brokenIdFixes[v.ytId]) {
@@ -3231,7 +3229,7 @@
         videosData = videosData.filter(v => v.id !== videoId);
         localStorage.setItem('qaaf_videos_data', JSON.stringify(videosData));
         renderVideos();
-        if (window.renderAdminActiveVideosCatalog) window.renderAdminActiveVideosCatalog();
+        
         if (window.qaafCloudSync) qaafCloudSync.pushState('Admin Deleted Video');
       };
 
@@ -3441,7 +3439,7 @@
         if (activeBtn) {
           activeBtn.className = 'adm-tab-btn w-full text-left px-3 py-2 rounded-xl text-[11px] sm:text-xs font-extrabold flex items-center justify-between gap-1.5 transition bg-emerald-500/15 text-emerald-400 border-l-4 border-emerald-400';
         }
-        if (window.renderAdminActiveVideosCatalog) window.renderAdminActiveVideosCatalog();
+        
       };
 
       window.adminSaveSecurityCredentials = function() {
@@ -3565,7 +3563,7 @@
         const video = videosData.find(v => v.id === currentPlayingVideoId);
 
         if (modal && box && aspect) {
-          modal.className = 'fixed bottom-12 right-3 z-40 w-72 sm:w-80 shadow-2xl pointer-events-auto';
+          modal.className = 'fixed bottom-12 right-3 z-[90] w-72 sm:w-80 shadow-2xl pointer-events-auto';
           box.className = 'w-full bg-[#141414] rounded-2xl overflow-hidden border-2 border-emerald-500/60 shadow-2xl flex flex-col';
           aspect.className = 'relative w-full aspect-video bg-black overflow-hidden flex items-center justify-center';
           if (scrollWrap) scrollWrap.classList.add('hidden');
@@ -3590,13 +3588,13 @@
         const video = videosData.find(v => v.id === currentPlayingVideoId) || videosData[0];
 
         if (modal && box && aspect) {
-          modal.className = 'fixed inset-0 z-40 bg-black/95 flex flex-col justify-start items-center overflow-hidden';
+          modal.className = 'fixed inset-0 z-[90] bg-black/95 flex flex-col justify-start items-center overflow-hidden';
           if (isVideoShort(video)) {
             box.className = 'w-full max-w-md h-full bg-[#0f0f0f] overflow-hidden border-x border-white/10 shadow-2xl flex flex-col';
-            aspect.className = 'relative aspect-[9/16] max-h-[62vh] w-full bg-black shrink-0 overflow-hidden flex items-center justify-center mx-auto';
+            aspect.className = 'relative aspect-[9/16] min-h-[340px] max-h-[62vh] w-full bg-black shrink-0 overflow-hidden flex items-center justify-center mx-auto';
           } else {
             box.className = 'w-full max-w-5xl h-full bg-[#0f0f0f] overflow-hidden border-x border-white/10 shadow-2xl flex flex-col';
-            aspect.className = 'relative aspect-video max-h-[42vh] sm:max-h-[54vh] w-full bg-black shrink-0 overflow-hidden flex items-center justify-center';
+            aspect.className = 'relative aspect-video min-h-[240px] sm:min-h-[380px] max-h-[48vh] sm:max-h-[56vh] w-full bg-black shrink-0 overflow-hidden flex items-center justify-center';
           }
           if (scrollWrap) scrollWrap.classList.remove('hidden');
           if (minBtn) minBtn.classList.remove('hidden');
@@ -3638,7 +3636,7 @@
           return true;
         });
 
-        related.forEach(v => {
+        related.slice(0, 12).forEach(v => {
           const categoryArtwork = getCategoryIslamicArtwork(v.category);
           const cardThumb = v.customThumb || `https://i.ytimg.com/vi/${v.ytId}/hqdefault.jpg`;
           upNextGrid.innerHTML += `
@@ -3708,10 +3706,7 @@
         expandFromMiniPlayer();
         updatePlayerEngineUI();
         loadVideoInActiveEngine(videoId);
-        renderWatchPageExtras(videoId);
-        const scrollWrap = document.getElementById('ytWatchScrollContainer');
-        if (scrollWrap) scrollWrap.scrollTop = 0;
-        renderVideos();
+        setTimeout(function(){ renderWatchPageExtras(videoId); }, 150);
       };
 
       // 5. INJECT YOUTUBE-STYLE SAFE SEARCH BAR & NOTIFICATION BAR
@@ -3830,7 +3825,7 @@
       const origOpenAdmin = window.openAdminModal;
       window.openAdminModal = function() {
         origOpenAdmin();
-        if (window.renderAdminActiveVideosCatalog) window.renderAdminActiveVideosCatalog();
+        
         updateNotifBadges();
       };
 
@@ -3848,7 +3843,7 @@
         origRenderVideos();
         videosData = backupData;
         updateNotifBadges();
-        if (window.renderAdminActiveVideosCatalog) window.renderAdminActiveVideosCatalog();
+        
 
         if (isSuperAdmin() && !isKidsLocked) {
           document.querySelectorAll('#videoGrid > div').forEach(card => {
@@ -4362,7 +4357,7 @@
     renderVideos();
   };
 
-  function renderChannelsBar() {
+  function renderChannelsBar() { return;
     const bar = document.getElementById('qaafChannelsFilterBar');
     if (!bar) return;
     const visibleVids = videosData.filter(v => !isKidsLocked || v.kidsSafe);
@@ -4495,7 +4490,7 @@
       updateYtPreview(null);
 
       renderVideos();
-      if (window.renderAdminActiveVideosCatalog) window.renderAdminActiveVideosCatalog();
+      
       if (window.qaafCloudSync) qaafCloudSync.pushState(`Imported ${countAdded} videos from ${chAdded}`);
       showSyncToast(`🎉 Imported ${countAdded} videos from ${chAdded}!`);
       return;
@@ -4503,8 +4498,7 @@
     if (prevAddVideo) return prevAddVideo();
   };
 
-  renderVideos();
-})();
+  })();
 </script>
 <script>
 (function enableDirectChannelBanEverywhere() {
@@ -4524,7 +4518,7 @@
 
     if (typeof selectChannelFilter === 'function') selectChannelFilter('ALL');
     renderVideos();
-    if (window.renderAdminActiveVideosCatalog) window.renderAdminActiveVideosCatalog();
+    
     if (window.qaafCloudSync) qaafCloudSync.pushState(`Banned Channel: ${channelName}`);
     showSyncToast(`⛔ Channel "${channelName}" banned and removed!`);
   };
@@ -4533,7 +4527,7 @@
     bannedChannels = bannedChannels.filter(c => c !== channelName);
     localStorage.setItem('qaaf_banned_channels', JSON.stringify(bannedChannels));
     renderVideos();
-    if (window.renderAdminActiveVideosCatalog) window.renderAdminActiveVideosCatalog();
+    
     if (window.qaafCloudSync) qaafCloudSync.pushState(`Unbanned Channel: ${channelName}`);
     showSyncToast(`✅ Channel "${channelName}" unbanned!`);
   };
@@ -4636,7 +4630,7 @@
   };
 
   renderVideos();
-  if (window.renderAdminActiveVideosCatalog) window.renderAdminActiveVideosCatalog();
+  
 })();
 </script>
 
@@ -5461,7 +5455,7 @@
 
       localStorage.setItem('qaaf_videos_data', JSON.stringify(videosData));
       renderVideos();
-      if (window.renderAdminActiveVideosCatalog) window.renderAdminActiveVideosCatalog();
+      
       
       // AUTO 1-CLICK INSTANT PUSH TO FIREBASE CLOUD (NO MANUAL CLOUD TAB CLICK REQUIRED!)
       const fbEndpoint = "https://qaaftube-6f251-default-rtdb.firebaseio.com/qaaf_global_state.json";
@@ -5500,7 +5494,7 @@
   };
 
   renderVideos();
-  if (window.renderAdminActiveVideosCatalog) window.renderAdminActiveVideosCatalog();
+  
 })();
 </script>
 
@@ -5691,8 +5685,7 @@
     }
   };
 
-  renderVideos();
-})();
+  })();
 </script>
 
 <script>
@@ -6898,7 +6891,7 @@
 <!-- QAAF SAFE SPEED OPTIMIZER & SWIPE-DOWN MINI-PLAYER -->
 <style>
   #videoGrid > div {
-    content-visibility: auto;
+    content-visibility: visible;
     contain-intrinsic-size: 260px;
   }
   .bg-islamic-family, .bg-islamic-kids {
@@ -6912,7 +6905,7 @@
 <script>
 (function enableSpeedBoostAndSwipeMinimize() {
   // A. Debounce renderVideos during startup so it doesn't run 7 times in a row and slow down the phone
-  let isStartupPhase = true;
+  let isStartupPhase = false;
   let startupTimer = null;
   const realRenderVideos = window.renderVideos;
 
@@ -7920,8 +7913,7 @@
   };
 
   refreshSidebarUI();
-  renderVideos();
-})();
+  })();
 </script>
 
 <!-- QAAF MASTER PERFORMANCE & INSTANT SWIPE ENGINE -->
@@ -7932,7 +7924,7 @@
     background-color: #080b11 !important;
   }
   #videoGrid > div {
-    content-visibility: auto;
+    content-visibility: visible;
     contain-intrinsic-size: 250px;
     will-change: auto;
   }
@@ -8522,7 +8514,7 @@
 
   window.adminFilterCatalogByChannel = function(chName) {
     window.adminSelectedCatalogChannel = chName || "ALL";
-    if (window.renderAdminActiveVideosCatalog) window.renderAdminActiveVideosCatalog();
+    
   };
 
   window.adminViewCatalogVideo = function(videoId, ev) {
@@ -8596,7 +8588,7 @@
       htmlOut += '</div>';
     }
 
-    filteredVids.forEach(function(v) {
+    filteredVids.slice(0, 40).forEach(function(v) {
       var safeCh = (v.channel || "").replace(/'/g, "\\'");
       var thumb = v.customThumb || ("https://i.ytimg.com/vi/" + v.ytId + "/hqdefault.jpg");
       htmlOut += '<div class="bg-black/60 border border-slate-800 hover:border-slate-600 p-2.5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 transition">';
@@ -9078,7 +9070,7 @@
 
     var filteredVids = activeCh === "ALL" ? videosData : videosData.filter(function(v) { return v.channel === activeCh; });
 
-    filteredVids.forEach(function(v) {
+    filteredVids.slice(0, 40).forEach(function(v) {
       var safeCh = (v.channel || "").replace(/'/g, "\\'");
       var safeTitle = (v.title || "").replace(/'/g, "\\'");
       var thumb = v.customThumb || ("https://i.ytimg.com/vi/" + v.ytId + "/hqdefault.jpg");
@@ -9104,9 +9096,7 @@
     listEl.innerHTML = htmlOut;
   };
 
-  window.renderAdminFlaggedQueue();
-  window.renderAdminActiveVideosCatalog();
-})();
+  })();
 </script>
 
 <!-- QAAF V9.9 UNBREAKABLE REFRESH LOCK, 12H CLOCK FIX & KEYBOARD-SAFE PIN MODAL -->
@@ -9410,7 +9400,7 @@
 
   var SKIP_TAGS = { SCRIPT: 1, STYLE: 1, TEXTAREA: 1, INPUT: 1, OPTION: 1, SELECT: 1, TITLE: 1 };
 
-  window.upgradeDomEmojisToCustomSvg = function(rootNode) {
+  window.upgradeDomEmojisToCustomSvg = function(rootNode) { return;
     var root = rootNode || document.body;
     if (!root) return;
     var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
@@ -9483,7 +9473,7 @@
     }
   }
 
-  setInterval(syncOverscrollMode, 400);
+  
   syncOverscrollMode();
 
   // B. Add Smooth Volume Slider (0% to 100%) in Video Player Top Bar & Action Bar
@@ -9880,7 +9870,7 @@
     localStorage.setItem("qaaf_flagged_queue", JSON.stringify(flaggedVideosQueue));
     if (typeof window.closeAdminInlinePlayer === "function") window.closeAdminInlinePlayer();
     renderAdminFlaggedQueue();
-    if (window.renderAdminActiveVideosCatalog) window.renderAdminActiveVideosCatalog();
+    
     renderVideos();
     qaafCloudSync.pushState(action === "block_video" ? "Removed Flagged Video" : (action === "ban_channel" ? "Banned Flagged Channel" : "Approved Flagged Video"));
   };
@@ -9899,9 +9889,8 @@
   };
 
   renderAdminFlaggedQueue();
-  if (window.renderAdminActiveVideosCatalog) window.renderAdminActiveVideosCatalog();
-  renderVideos();
-})();
+  
+  })();
 </script>
 
 <!-- QAAF LOGO HOME BUTTON & FAMILY-ONLY RIGHT-CLICK NEW TAB LOCK -->
@@ -9940,7 +9929,7 @@
     if (prevRenderNow) prevRenderNow();
     syncCardLinksForCurrentMode();
   };
-  setInterval(syncCardLinksForCurrentMode, 500);
+  
 
   // =========================================================================
   // 2. MAKE QAAF TUBE HEADER LOGO & BRAND NAME WORK AS HOME REFRESH BUTTON
@@ -11291,13 +11280,7 @@
   }
 
   // 3. One-time wipe of all preloaded & auto-searched channels/videos in localStorage
-  if (localStorage.getItem("qaaf_clean_slate_ver") !== SLATE_VER) {
-    videosData = [];
-    localStorage.setItem("qaaf_videos_data", "[]");
-    localStorage.setItem("qaaf_clean_slate_ver", SLATE_VER);
-    window.qaafActiveSearchQuery = "";
-    if (sInp) sInp.value = "";
-  }
+  localStorage.setItem("qaaf_clean_slate_ver", SLATE_VER);
 
   // Also purge any video that was ever added by 'v_search_'
   videosData = (videosData || []).filter(function(v) {
@@ -11305,7 +11288,7 @@
   });
   localStorage.setItem("qaaf_videos_data", JSON.stringify(videosData));
 
-  if (window.renderAdminActiveVideosCatalog) window.renderAdminActiveVideosCatalog();
+  
   if (window.renderVideosNow) window.renderVideosNow();
 })();
 </script>
@@ -11318,20 +11301,7 @@
   window.isByChannelsPanelOpen = false;
 
   // 1. Force one-time complete wipe of any leftover cached videos on this browser
-  if (localStorage.getItem("qaaf_slate_v125") !== CLEAN_SLATE_KEY) {
-    videosData = [];
-    window.verifiedChannelsList = [];
-    localStorage.setItem("qaaf_videos_data", "[]");
-    localStorage.setItem("qaaf_verified_channels", "[]");
-    localStorage.setItem("qaaf_slate_v125", CLEAN_SLATE_KEY);
-    localStorage.removeItem("qaaf_clean_slate_ver");
-    localStorage.removeItem("qaaf_slate_v108");
-    localStorage.removeItem("qaaf_cloud_last_sync_ts");
-    localStorage.removeItem("qaaf_cloud_updated_at");
-    window.qaafActiveSearchQuery = "";
-    var sInp = document.getElementById("qaafSearchInput");
-    if (sInp) sInp.value = "";
-  }
+  localStorage.setItem("qaaf_slate_v125", CLEAN_SLATE_KEY);
 
   // Sync verifiedChannelsList with Firebase Cloud
   if (window.qaafCloudSync) {
@@ -11387,7 +11357,7 @@
     localStorage.setItem("qaaf_verified_channels", JSON.stringify(window.verifiedChannelsList));
     localStorage.setItem("qaaf_videos_data", JSON.stringify(videosData));
     renderVideos();
-    if (window.renderAdminActiveVideosCatalog) window.renderAdminActiveVideosCatalog();
+    
     if (window.qaafCloudSync) window.qaafCloudSync.pushState((nowVerified ? "Marked Channel Verified: " : "Marked Video-Only Verified: ") + chName);
     showSyncToast(nowVerified ? ("🟢 '" + chName + "' is now Channel Verified!") : ("🟡 '" + chName + "' set to Video Verified Only."));
   };
@@ -11442,7 +11412,7 @@
     if (origSelCh) origSelCh(chName);
   };
 
-  function renderTopicAndByChannelsBar() {
+  function renderTopicAndByChannelsBar() { return;
     var bar = document.getElementById("qaafChannelsFilterBar");
     if (!bar) return;
 
@@ -11644,7 +11614,7 @@
       localStorage.setItem("qaaf_verified_channels", JSON.stringify(window.verifiedChannelsList));
       localStorage.setItem("qaaf_videos_data", JSON.stringify(videosData));
       renderVideos();
-      if (window.renderAdminActiveVideosCatalog) window.renderAdminActiveVideosCatalog();
+      
       
       // AUTO 1-CLICK INSTANT PUSH TO FIREBASE CLOUD
       const fbEndpoint2 = "https://qaaftube-6f251-default-rtdb.firebaseio.com/qaaf_global_state.json";
@@ -11769,7 +11739,521 @@
   };
 
   window.renderVideosNow();
-  if (window.renderAdminActiveVideosCatalog) window.renderAdminActiveVideosCatalog();
+  
+})();
+</script>
+
+<!-- QAAF V11.0 ANTI-FREEZE FAST ENGINE, GUARANTEED VIDEO PLAYER VISIBILITY & ALL CHANNELS DROPDOWN -->
+<style>
+  #playerModal:not(.hidden) {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  #ytPlayerContainer:not(.hidden) {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    display: block !important;
+    z-index: 15 !important;
+  }
+  #ytIframe {
+    width: 100% !important;
+    height: 100% !important;
+    border: 0 !important;
+    display: block !important;
+  }
+</style>
+<script>
+(function initQaafV11MasterFix() {
+  window.qaafSelectedChannel = "ALL";
+  window.qaafGridPageLimit = 24;
+
+  // =========================================================================
+  // 1. FIX BUG 2: GUARANTEED VIDEO PLAYER VISIBILITY (FULL & MINI PLAYER)
+  // =========================================================================
+  window.expandFromMiniPlayer = function() {
+    var modal = document.getElementById("playerModal");
+    var box = document.getElementById("playerModalBox");
+    var aspect = document.getElementById("playerAspectBox");
+    var scrollWrap = document.getElementById("ytWatchScrollContainer");
+    var expBtn = document.getElementById("expandMiniPlayerBtn");
+    var minBtn = document.getElementById("minimizePlayerBtn");
+    var miniTitle = document.getElementById("miniPlayerTitleLabel");
+    var co = document.getElementById("miniCenterExpandOverlay");
+    var vb = document.getElementById("qaafVolumeControlBox");
+    var video = (videosData || []).find(function(v) { return v.id === currentPlayingVideoId; }) || (videosData && videosData[0]);
+    var isShort = video && isVideoShort(video);
+
+    if (modal && box && aspect) {
+      modal.classList.remove("hidden");
+      modal.style.cssText = "position:fixed; inset:0; z-index:999; background:rgba(0,0,0,0.96); display:flex; flex-direction:column; justify-content:flex-start; align-items:center; overflow:hidden; padding:0;";
+      if (isShort) {
+        box.style.cssText = "width:100%; max-width:420px; height:100%; background:#0f0f0f; display:flex; flex-direction:column; overflow:hidden; border-left:1px solid rgba(255,255,255,0.1); border-right:1px solid rgba(255,255,255,0.1); transform:none;";
+        aspect.style.cssText = "position:relative; width:100%; height:58vh; min-height:320px; max-height:64vh; background:#000; flex-shrink:0; overflow:hidden; display:block; margin:0 auto;";
+      } else {
+        box.style.cssText = "width:100%; max-width:1024px; height:100%; background:#0f0f0f; display:flex; flex-direction:column; overflow:hidden; border-left:1px solid rgba(255,255,255,0.1); border-right:1px solid rgba(255,255,255,0.1); transform:none;";
+        aspect.style.cssText = "position:relative; width:100%; height:42vh; min-height:240px; max-height:480px; background:#000; flex-shrink:0; overflow:hidden; display:block;";
+      }
+      if (scrollWrap) scrollWrap.classList.remove("hidden");
+      if (minBtn) minBtn.classList.remove("hidden");
+      if (miniTitle) miniTitle.classList.add("hidden");
+      if (expBtn) expBtn.classList.add("hidden");
+      if (co) co.classList.add("hidden");
+      if (vb) vb.classList.remove("hidden");
+    }
+  };
+
+  window.minimizeToMiniPlayer = function() {
+    var modal = document.getElementById("playerModal");
+    var box = document.getElementById("playerModalBox");
+    var aspect = document.getElementById("playerAspectBox");
+    var scrollWrap = document.getElementById("ytWatchScrollContainer");
+    var expBtn = document.getElementById("expandMiniPlayerBtn");
+    var minBtn = document.getElementById("minimizePlayerBtn");
+    var miniTitle = document.getElementById("miniPlayerTitleLabel");
+    var co = document.getElementById("miniCenterExpandOverlay");
+    var vb = document.getElementById("qaafVolumeControlBox");
+    var video = (videosData || []).find(function(v) { return v.id === currentPlayingVideoId; });
+
+    if (modal && box && aspect) {
+      modal.classList.remove("hidden");
+      modal.style.cssText = "position:fixed; bottom:3.2rem; right:0.75rem; left:auto; top:auto; width:300px; z-index:999; display:block; background:transparent; pointer-events:auto;";
+      box.style.cssText = "width:100%; background:#141414; border-radius:16px; overflow:hidden; border:2px solid rgba(16,185,129,0.7); box-shadow:0 20px 50px rgba(0,0,0,0.9); display:flex; flex-direction:column; transform:none;";
+      aspect.style.cssText = "position:relative; width:100%; height:168px; min-height:168px; background:#000; flex-shrink:0; overflow:hidden; display:block;";
+      if (scrollWrap) scrollWrap.classList.add("hidden");
+      if (minBtn) minBtn.classList.add("hidden");
+      if (miniTitle) {
+        miniTitle.innerText = video ? video.title : "Playing...";
+        miniTitle.classList.remove("hidden");
+      }
+      if (expBtn) expBtn.classList.add("hidden");
+      if (co) co.classList.remove("hidden");
+      if (vb) vb.classList.add("hidden");
+    }
+    [100, 350].forEach(function(ms) {
+      setTimeout(function() {
+        if (typeof sendYouTubeCommand === "function") sendYouTubeCommand("playVideo");
+      }, ms);
+    });
+  };
+
+  window.openVideoPlayer = function(videoId) {
+    if (window.isKidsTimeExpiredLock) return;
+    activePlayerEngine = "youtube";
+    currentPlayingVideoId = videoId;
+    var video = (videosData || []).find(function(v) { return v.id === videoId; }) || (videosData && videosData[0]);
+    if (!video) return;
+    video.views = (video.views || 1500) + 1;
+
+    if (typeof recordVideoInHistory === "function") recordVideoInHistory(videoId);
+
+    var titleEl = document.getElementById("playingTitle");
+    if (titleEl) titleEl.innerText = video.title;
+
+    var isChVer = typeof window.isChannelFullyVerified === "function" && window.isChannelFullyVerified(video.channel, video);
+    var chEl = document.getElementById("playingChannelName");
+    if (chEl) {
+      chEl.innerHTML = video.channel + (isChVer ? ' <span class="text-emerald-400 font-bold ml-1 text-xs" title="Verified Channel">✓</span>' : '');
+    }
+    var vwEl = document.getElementById("playingViewsText");
+    if (vwEl) {
+      vwEl.innerText = ((video.views || 1500) / 1000).toFixed(1) + "K views • " + (video.lang || "en").toUpperCase();
+    }
+
+    var shortsNav = document.getElementById("shortsSideNav");
+    if (isVideoShort(video)) {
+      if (shortsNav) { shortsNav.classList.remove("hidden"); shortsNav.classList.add("flex"); }
+    } else {
+      if (shortsNav) { shortsNav.classList.add("hidden"); shortsNav.classList.remove("flex"); }
+    }
+
+    var modal = document.getElementById("playerModal");
+    var wasHidden = modal && modal.classList.contains("hidden");
+    if (modal) modal.classList.remove("hidden");
+
+    window.expandFromMiniPlayer();
+    updatePlayerEngineUI();
+
+    var ytCont = document.getElementById("ytPlayerContainer");
+    var safeCont = document.getElementById("safeCanvasPlayerContainer");
+    if (ytCont) {
+      ytCont.classList.remove("hidden");
+      var originParam = window.location.protocol.startsWith("http") ? ("&origin=" + encodeURIComponent(window.location.origin)) : "";
+      var embedUrl = "https://www.youtube-nocookie.com/embed/" + video.ytId + "?autoplay=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&vq=hd1080" + originParam;
+      ytCont.innerHTML = '<iframe id="ytIframe" style="width:100%;height:100%;border:0;display:block;" src="' + embedUrl + '" title="QAAF YouTube Player" frameborder="0" sandbox="allow-scripts allow-same-origin allow-presentation" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>';
+    }
+    if (safeCont) safeCont.classList.add("hidden");
+
+    if (wasHidden) {
+      try { history.pushState({ qaafVideoOpen: true }, ""); } catch (e) {}
+    }
+
+    setTimeout(function() {
+      if (typeof window.renderWatchPageExtras === "function") window.renderWatchPageExtras(videoId);
+    }, 120);
+  };
+
+  window.closeVideoPlayer = function() {
+    var ytCont = document.getElementById("ytPlayerContainer");
+    if (ytCont) ytCont.innerHTML = '<iframe id="ytIframe" class="w-full h-full" src="about:blank" frameborder="0"></iframe>';
+    stopSafeCanvasPlayer();
+    stopHalalVoiceRecitation();
+    var duaOv = document.getElementById("duaAdOverlay");
+    if (duaOv) duaOv.classList.add("hidden");
+    var modal = document.getElementById("playerModal");
+    if (modal) {
+      modal.classList.add("hidden");
+      modal.style.display = "none";
+    }
+    if (adCountdownTimer) clearInterval(adCountdownTimer);
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    resetDuaAudioBtn();
+  };
+
+  // =========================================================================
+  // 2. FIX BUG 1: ULTRA-FAST O(1) UNIFIED VIDEO RENDERER (NO 794-VIDEO FREEZE!)
+  // =========================================================================
+  var fastRenderTimer = null;
+
+  function executeFastUnifiedRender() {
+    var grid = document.getElementById("videoGrid");
+    if (!grid) return;
+
+    var favBadge = document.getElementById("favCountBadge");
+    if (favBadge) favBadge.innerText = (favoriteVideoIds && favoriteVideoIds.length) || 0;
+
+    var blockedSet = new Set(blockedVideoIds || []);
+    var bannedSet = new Set(bannedChannels || []);
+    var favSet = new Set(favoriteVideoIds || []);
+    var verChSet = new Set(window.verifiedChannelsList || []);
+
+    var plVidSet = new Set();
+    var pls = typeof getActivePlaylistsGroup === "function" ? getActivePlaylistsGroup() : [];
+    (pls || []).forEach(function(pl) {
+      (pl.videos || []).forEach(function(vidId) { plVidSet.add(vidId); });
+    });
+
+    var isPlFilter = (currentSortFilter === "playlist");
+    var isHistFilter = (currentSortFilter === "history");
+    var allowedOrderIds = null;
+
+    if (isPlFilter) {
+      var activePl = (pls || []).find(function(p) { return p.id === window.activeSelectedPlaylistId; }) || (pls && pls[0]);
+      if (activePl) window.activeSelectedPlaylistId = activePl.id;
+      allowedOrderIds = (activePl && activePl.videos) || [];
+    } else if (isHistFilter && typeof getActiveHistory === "function") {
+      allowedOrderIds = getActiveHistory() || [];
+    }
+
+    var rawSearch = (window.qaafActiveSearchQuery || "").trim().toLowerCase();
+    var searchTokens = rawSearch ? rawSearch.split(/\s+/).filter(Boolean) : [];
+    var selCh = window.qaafSelectedChannel || "ALL";
+
+    var sourceList = videosData || [];
+    var allFiltered = [];
+
+    if (allowedOrderIds !== null) {
+      var byIdMap = new Map();
+      for (var i = 0; i < sourceList.length; i++) {
+        var v0 = sourceList[i];
+        if (v0 && v0.id) byIdMap.set(v0.id, v0);
+      }
+      for (var j = 0; j < allowedOrderIds.length; j++) {
+        var vf = byIdMap.get(allowedOrderIds[j]);
+        if (vf && !blockedSet.has(vf.id) && !bannedSet.has(vf.channel) && (!isKidsLocked || vf.kidsSafe)) {
+          allFiltered.push(vf);
+        }
+      }
+    } else {
+      for (var k = 0; k < sourceList.length; k++) {
+        var v = sourceList[k];
+        if (!v || !v.ytId) continue;
+        if (blockedSet.has(v.id) || blockedSet.has(v.ytId)) continue;
+        if (bannedSet.has(v.channel)) continue;
+        if (isKidsLocked && !v.kidsSafe) continue;
+
+        if (!rawSearch) {
+          if (selCh !== "ALL" && v.channel !== selCh) continue;
+          if (currentCategory !== "all") {
+            if (currentCategory === "kids_tarbiyah") {
+              if (v.category !== "kids_tarbiyah" && v.category !== "stories") continue;
+            } else if (v.category !== currentCategory) {
+              continue;
+            }
+          }
+          if (strictLanguageOnly && v.lang !== preferredContentLang && v.lang !== "global" && !v.universalQuran) continue;
+          if (currentSortFilter === "favorites" && !favSet.has(v.id)) continue;
+        } else {
+          var hay = ((v.title || "") + " " + (v.channel || "") + " " + (v.category || "")).toLowerCase();
+          var matched = true;
+          for (var t = 0; t < searchTokens.length; t++) {
+            if (hay.indexOf(searchTokens[t]) === -1) { matched = false; break; }
+          }
+          if (!matched) continue;
+        }
+        allFiltered.push(v);
+      }
+
+      if (currentSortFilter === "recent") {
+        allFiltered.sort(function(a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
+      } else if (currentSortFilter === "viewed") {
+        allFiltered.sort(function(a, b) { return (b.views || 0) - (a.views || 0); });
+      }
+    }
+
+    var regularVideos = [];
+    var shortVideos = [];
+    for (var m = 0; m < allFiltered.length; m++) {
+      var item = allFiltered[m];
+      if (isVideoShort(item)) shortVideos.push(item);
+      else regularVideos.push(item);
+    }
+
+    // 1. Render Shorts Shelf (Max 12 items)
+    var shortsShelf = document.getElementById("qaafShortsShelf");
+    if (!shortsShelf) {
+      shortsShelf = document.createElement("div");
+      shortsShelf.id = "qaafShortsShelf";
+      shortsShelf.className = "mb-6";
+      grid.parentNode.insertBefore(shortsShelf, grid);
+    }
+    if (shortVideos.length > 0) {
+      var shHtml = "";
+      var shSlice = shortVideos.slice(0, 12);
+      for (var s = 0; s < shSlice.length; s++) {
+        var sh = shSlice[s];
+        var catArt = getCategoryIslamicArtwork(sh.category);
+        var shThumb = sh.customThumb || ("https://i.ytimg.com/vi/" + sh.ytId + "/hqdefault.jpg");
+        shHtml += '<a ' + (isKidsLocked ? '' : 'href="?watch=' + encodeURIComponent(sh.id) + '"') + ' onclick="return handleQaafVideoLinkClick(event, \'' + sh.id + '\')" class="w-40 sm:w-48 shrink-0 bg-[#12151c] rounded-2xl overflow-hidden border border-white/10 hover:border-red-500/60 transition cursor-pointer group relative aspect-[9/16] flex flex-col justify-end shadow-lg no-underline text-inherit">' +
+          '<img src="' + shThumb + '" alt="" class="absolute inset-0 w-full h-full object-cover pointer-events-none select-none" loading="lazy" decoding="async" onerror="this.onerror=null;this.src=\'' + catArt + '\';" />' +
+          '<div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent"></div>' +
+          '<span class="absolute top-2.5 left-2.5 bg-red-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1 shadow">⚡ Short</span>' +
+          '<div class="relative z-10 p-3 text-left">' +
+            '<h4 class="text-xs font-extrabold text-white line-clamp-2 leading-snug mb-1">' + sh.title + '</h4>' +
+            '<p class="text-[10px] text-slate-300 font-semibold truncate">' + sh.channel + '</p>' +
+          '</div></a>';
+      }
+      shortsShelf.innerHTML = '<div class="flex items-center justify-between mb-2.5 px-1"><div class="flex items-center gap-2"><span class="bg-red-600 text-white w-6 h-6 rounded-lg flex items-center justify-center text-xs font-extrabold shadow">⚡</span><h3 class="text-sm sm:text-base font-extrabold text-white tracking-tight">QAAF Islamic Shorts &amp; Quick Bayans</h3></div><span class="text-[11px] text-slate-400 font-semibold">Swipe / Scroll ➔</span></div><div class="flex items-center gap-3 overflow-x-auto pb-2">' + shHtml + '</div>';
+      shortsShelf.classList.remove("hidden");
+    } else {
+      shortsShelf.classList.add("hidden");
+    }
+
+    // 2. Render Regular Videos (Batched 24 at a time via DocumentFragment)
+    window.qaafActiveRegularVideos = regularVideos;
+    var limit = window.qaafGridPageLimit || 24;
+    var displayed = regularVideos.slice(0, limit);
+    grid.innerHTML = "";
+
+    if (regularVideos.length === 0 && shortVideos.length === 0) {
+      grid.innerHTML = '<div class="col-span-full bg-[#121620] border border-slate-800 rounded-2xl p-8 text-center my-4"><div class="text-3xl mb-2">🕌</div><h4 class="text-sm sm:text-base font-extrabold text-white mb-1">No Videos Found</h4><p class="text-xs text-slate-400">Try selecting All Channels or another category above.</p></div>';
+    } else {
+      var frag = document.createDocumentFragment();
+      var isAdminMode = isSuperAdmin() && !isKidsLocked;
+      for (var d = 0; d < displayed.length; d++) {
+        var vid = displayed[d];
+        var cardEl = buildFastVideoCard(vid, favSet.has(vid.id), plVidSet.has(vid.id), verChSet.has(vid.channel) || vid.channelVerified, isAdminMode);
+        frag.appendChild(cardEl);
+      }
+      grid.appendChild(frag);
+    }
+
+    renderQaafLoadMoreControls(regularVideos.length, displayed.length);
+    updateAllChannelsButtonLabel();
+  }
+
+  function buildFastVideoCard(video, isFav, inPl, isChVer, isAdminMode) {
+    var isPreferred = (video.lang === preferredContentLang || video.lang === "global");
+    var categoryArtwork = getCategoryIslamicArtwork(video.category);
+    var thumbHq = "https://i.ytimg.com/vi/" + video.ytId + "/hqdefault.jpg";
+    var thumbMq = "https://i.ytimg.com/vi/" + video.ytId + "/mqdefault.jpg";
+    var cardThumb = video.customThumb || thumbHq;
+    var modeTxt = video.audienceMode === "kids_preferred" ? "🧒 Kids Preferred" : ((video.audienceMode === "family_only" || !video.kidsSafe) ? "🎙️ Family Only" : "👨‍👩‍👧‍👦 Kids + Family");
+
+    var card = document.createElement("div");
+    card.className = "bg-[#131720]/95 hover:bg-[#1b212d] rounded-xl overflow-hidden border " + (isPreferred ? "border-emerald-500/60 shadow-lg shadow-emerald-950/30" : "border-white/10") + " transition group relative";
+    card.dataset.videoId = video.id;
+
+    card.innerHTML =
+      '<a ' + (isKidsLocked ? '' : 'href="?watch=' + encodeURIComponent(video.id) + '"') + ' onclick="return handleQaafVideoLinkClick(event, \'' + video.id + '\')" class="block relative aspect-video bg-slate-900 flex items-center justify-center overflow-hidden cursor-pointer no-underline text-inherit">' +
+        '<img src="' + cardThumb + '" alt="" class="absolute inset-0 w-full h-full object-cover pointer-events-none select-none" loading="lazy" decoding="async" onerror="if(!this.dataset.retried){this.dataset.retried=\'1\';this.src=\'' + thumbMq + '\';}else{this.onerror=null;this.src=\'' + categoryArtwork + '\';}" />' +
+        '<div class="absolute inset-0 flex items-center justify-center pointer-events-none"><div class="w-12 h-12 rounded-full bg-red-600/95 group-hover:scale-110 transition flex items-center justify-center shadow-lg"><span class="text-white text-lg ml-0.5">▶</span></div></div>' +
+        '<div class="absolute top-2 left-2 flex flex-wrap gap-1 z-10 pointer-events-none">' +
+          (isPreferred ? '<span class="bg-emerald-500 text-black text-[10px] font-extrabold px-2 py-0.5 rounded shadow">⭐ Preferred</span>' : '') +
+        '</div>' +
+        '<span class="absolute bottom-2 right-2 bg-black/90 text-white text-[10px] font-bold px-1.5 py-0.5 rounded z-10 pointer-events-none">' + (video.duration || "12:00") + '</span>' +
+        '<span class="absolute bottom-2 left-2 bg-black/75 text-slate-300 text-[10px] px-1.5 py-0.5 rounded z-10 pointer-events-none">👁️ ' + (((video.views || 2500) / 1000).toFixed(1)) + 'K</span>' +
+      '</a>' +
+      '<div class="absolute top-2 right-2 z-10 flex items-center gap-1">' +
+        '<button type="button" onclick="toggleVideoInPlaylist(\'' + video.id + '\', event)" class="w-7 h-7 rounded-full ' + (inPl ? 'bg-emerald-500 text-black' : 'bg-black/80 hover:bg-emerald-600 text-emerald-300') + ' flex items-center justify-center text-xs font-extrabold shadow border border-emerald-400/40" title="Save to Playlist">' + (inPl ? '✔' : '➕') + '</button>' +
+        '<button type="button" onclick="toggleFavoriteVideo(\'' + video.id + '\', event)" class="w-7 h-7 rounded-full bg-black/75 hover:bg-black flex items-center justify-center text-xs shadow border border-white/10" title="Favorite">' + (isFav ? '❤️' : '🤍') + '</button>' +
+        '<button type="button" onclick="openFlagModal(\'' + video.id + '\', event)" class="w-7 h-7 rounded-full bg-black/75 hover:bg-rose-950 flex items-center justify-center text-xs shadow border border-white/10" title="Report">🚩</button>' +
+        (isAdminMode ? '<button type="button" onclick="adminDeleteVideoCard(\'' + video.id + '\', event)" class="w-7 h-7 rounded-full bg-red-600/90 hover:bg-red-500 text-white flex items-center justify-center text-xs shadow border border-white/20" title="Admin: Delete Video">🗑️</button>' : '') +
+      '</div>' +
+      '<a ' + (isKidsLocked ? '' : 'href="?watch=' + encodeURIComponent(video.id) + '"') + ' onclick="return handleQaafVideoLinkClick(event, \'' + video.id + '\')" class="block p-3 cursor-pointer no-underline text-inherit">' +
+        '<h3 class="text-sm font-bold text-white line-clamp-2 leading-snug">' + video.title + '</h3>' +
+        '<div class="flex items-center justify-between mt-2 text-[11px] text-slate-400">' +
+          '<span class="truncate max-w-[160px] flex items-center gap-1">' + video.channel + (isChVer ? ' <span class="text-emerald-400 font-bold text-[10px]" title="Verified Channel">✓</span>' : '') + '</span>' +
+          '<span class="text-emerald-400 font-semibold shrink-0">' + modeTxt + '</span>' +
+        '</div>' +
+      '</a>';
+    return card;
+  }
+
+  window.renderVideosNow = executeFastUnifiedRender;
+  window.renderVideos = function() {
+    if (fastRenderTimer) cancelAnimationFrame(fastRenderTimer);
+    fastRenderTimer = requestAnimationFrame(executeFastUnifiedRender);
+  };
+
+  // Override qaafLoadMoreVideos to use buildFastVideoCard
+  window.qaafLoadMoreVideos = function() {
+    if (window.qaafIsLoadingMoreBatch) return;
+    window.qaafIsLoadingMoreBatch = true;
+    var grid = document.getElementById("videoGrid");
+    if (!grid || !window.qaafActiveRegularVideos) {
+      window.qaafIsLoadingMoreBatch = false;
+      return;
+    }
+    var currentCount = grid.querySelectorAll("[data-video-id]").length;
+    var nextBatch = window.qaafActiveRegularVideos.slice(currentCount, currentCount + 24);
+    if (nextBatch.length > 0) {
+      var favSet = new Set(favoriteVideoIds || []);
+      var verChSet = new Set(window.verifiedChannelsList || []);
+      var plVidSet = new Set();
+      var pls = typeof getActivePlaylistsGroup === "function" ? getActivePlaylistsGroup() : [];
+      (pls || []).forEach(function(pl) { (pl.videos || []).forEach(function(id) { plVidSet.add(id); }); });
+      var isAdminMode = isSuperAdmin() && !isKidsLocked;
+
+      var frag = document.createDocumentFragment();
+      nextBatch.forEach(function(vid) {
+        frag.appendChild(buildFastVideoCard(vid, favSet.has(vid.id), plVidSet.has(vid.id), verChSet.has(vid.channel) || vid.channelVerified, isAdminMode));
+      });
+      grid.appendChild(frag);
+      window.qaafGridPageLimit = currentCount + nextBatch.length;
+      renderQaafLoadMoreControls(window.qaafActiveRegularVideos.length, currentCount + nextBatch.length);
+    }
+    setTimeout(function() { window.qaafIsLoadingMoreBatch = false; }, 180);
+  };
+
+  // =========================================================================
+  // 3. INTERACTIVE "📺 ALL CHANNELS ▾" DROPDOWN IN CATEGORY BAR (PENDING ITEM #1)
+  // =========================================================================
+  if (!document.getElementById("allChannelsDropdownPopup")) {
+    var pop = document.createElement("div");
+    pop.id = "allChannelsDropdownPopup";
+    pop.dir = "ltr";
+    pop.className = "hidden fixed left-3 top-28 z-50 w-72 sm:w-80 max-h-80 overflow-y-auto bg-[#121622] border-2 border-emerald-500/60 rounded-2xl shadow-2xl p-2.5 space-y-1.5 text-xs";
+    document.body.appendChild(pop);
+  }
+
+  function updateAllChannelsButtonLabel() {
+    var allBtn = document.getElementById("ui_catAll");
+    if (!allBtn) return;
+    var selCh = window.qaafSelectedChannel || "ALL";
+    var labelTxt = selCh === "ALL" ? "All Channels" : selCh;
+    allBtn.innerHTML = '<span>📺</span> <span class="max-w-[130px] truncate">' + labelTxt + '</span> <span class="text-[10px] opacity-80">▾</span>';
+  }
+
+  window.toggleAllChannelsDropdownPopup = function(ev) {
+    if (ev) ev.stopPropagation();
+    var pop = document.getElementById("allChannelsDropdownPopup");
+    if (!pop) return;
+    if (!pop.classList.contains("hidden")) {
+      pop.classList.add("hidden");
+      return;
+    }
+
+    var blockedSet = new Set(blockedVideoIds || []);
+    var bannedSet = new Set(bannedChannels || []);
+    var verChSet = new Set(window.verifiedChannelsList || []);
+    var countsMap = new Map();
+    var chVerMap = new Map();
+
+    (videosData || []).forEach(function(v) {
+      if (!v || !v.channel || blockedSet.has(v.id) || bannedSet.has(v.channel)) return;
+      if (isKidsLocked && !v.kidsSafe) return;
+      countsMap.set(v.channel, (countsMap.get(v.channel) || 0) + 1);
+      if (verChSet.has(v.channel) || v.channelVerified) chVerMap.set(v.channel, true);
+    });
+
+    var greenChs = [];
+    var yellowChs = [];
+    countsMap.forEach(function(cnt, ch) {
+      if (chVerMap.get(ch)) greenChs.push({ name: ch, count: cnt });
+      else yellowChs.push({ name: ch, count: cnt });
+    });
+
+    var isAll = (window.qaafSelectedChannel === "ALL");
+    var html = '<button type="button" onclick="pickChannelFromTopBar(\'ALL\', event)" class="w-full text-left px-3 py-2 rounded-xl font-extrabold flex items-center justify-between transition ' + (isAll ? 'bg-emerald-500 text-black shadow' : 'bg-slate-800 hover:bg-slate-700 text-white') + '"><span>📺 All Channels (Default)</span><span>Show All</span></button>';
+
+    if (greenChs.length > 0) {
+      html += '<p class="px-2 pt-1.5 text-[10px] font-extrabold text-emerald-400">🟢 Verified Channels (' + greenChs.length + ')</p>';
+      greenChs.forEach(function(item) {
+        var sCh = item.name.replace(/'/g, "\\'");
+        var act = (window.qaafSelectedChannel === item.name);
+        html += '<button type="button" onclick="pickChannelFromTopBar(\'' + sCh + '\', event)" class="w-full text-left px-2.5 py-1.5 rounded-xl font-bold flex items-center justify-between border transition ' + (act ? 'bg-emerald-500 text-black border-emerald-300 font-extrabold' : 'bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-200 border-emerald-500/30') + '"><span class="truncate pr-2">✓ ' + item.name + '</span><span class="text-[10px] opacity-80">(' + item.count + ')</span></button>';
+      });
+    }
+
+    if (yellowChs.length > 0) {
+      html += '<p class="px-2 pt-1.5 text-[10px] font-extrabold text-amber-400">🟡 Selected Video Channels (' + yellowChs.length + ')</p>';
+      yellowChs.forEach(function(item) {
+        var sCh = item.name.replace(/'/g, "\\'");
+        var act = (window.qaafSelectedChannel === item.name);
+        html += '<button type="button" onclick="pickChannelFromTopBar(\'' + sCh + '\', event)" class="w-full text-left px-2.5 py-1.5 rounded-xl font-bold flex items-center justify-between border transition ' + (act ? 'bg-amber-400 text-black border-amber-200 font-extrabold' : 'bg-amber-950/40 hover:bg-amber-900/60 text-amber-200 border-amber-500/30') + '"><span class="truncate pr-2">' + item.name + '</span><span class="text-[10px] opacity-80">(' + item.count + ')</span></button>';
+      });
+    }
+
+    pop.innerHTML = html;
+    pop.classList.remove("hidden");
+  };
+
+  window.pickChannelFromTopBar = function(chName, ev) {
+    if (ev) ev.stopPropagation();
+    window.qaafSelectedChannel = chName || "ALL";
+    window.qaafGridPageLimit = 24;
+    var pop = document.getElementById("allChannelsDropdownPopup");
+    if (pop) pop.classList.add("hidden");
+    updateAllChannelsButtonLabel();
+    window.renderVideosNow();
+  };
+
+  window.selectChannelFilter = function(chName) {
+    window.qaafSelectedChannel = chName || "ALL";
+    window.qaafGridPageLimit = 24;
+    updateAllChannelsButtonLabel();
+    window.renderVideosNow();
+  };
+
+  window.filterCategory = function(cat, ev) {
+    if (cat === "all") {
+      window.toggleAllChannelsDropdownPopup(ev);
+      currentCategory = "all";
+    } else {
+      currentCategory = cat;
+      var pop = document.getElementById("allChannelsDropdownPopup");
+      if (pop) pop.classList.add("hidden");
+    }
+    window.qaafGridPageLimit = 24;
+    document.querySelectorAll("#categoryBar .cat-chip").forEach(function(btn) {
+      var isAct = (btn.getAttribute("onclick") || "").indexOf("'" + cat + "'") !== -1;
+      btn.className = "cat-chip " + (btn.classList.contains("family-only-chip") ? "family-only-chip " : "") + (isAct ? "bg-emerald-500 text-black px-3 py-1 rounded-lg text-xs font-extrabold shrink-0 shadow flex items-center gap-1.5" : "bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0 flex items-center gap-1.5") + (isKidsLocked && btn.classList.contains("family-only-chip") ? " hidden" : "");
+    });
+    window.renderVideosNow();
+  };
+
+  document.addEventListener("click", function(e) {
+    var pop = document.getElementById("allChannelsDropdownPopup");
+    var allBtn = document.getElementById("ui_catAll");
+    if (pop && !pop.classList.contains("hidden") && (!allBtn || !allBtn.contains(e.target)) && !pop.contains(e.target)) {
+      pop.classList.add("hidden");
+    }
+  });
+
+  window.renderVideosNow();
 })();
 </script>
 
