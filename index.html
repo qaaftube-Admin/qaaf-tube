@@ -79,6 +79,14 @@
     }
 
     /* STARTUP SPLASH ANIMATIONS */
+    @keyframes splashZoomIn {
+      0% { transform: scale(0.4); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes splashFadeOut {
+      0% { opacity: 1; pointer-events: auto; }
+      100% { opacity: 0; pointer-events: none; visibility: hidden; }
+    }
     @keyframes splashRedBoxZoom {
       0% { transform: scale(0); opacity: 0; }
       60% { transform: scale(1.06); opacity: 1; }
@@ -136,10 +144,10 @@
 </head>
 <body id="appBody" class="bg-islamic-family min-h-screen flex flex-col justify-between pb-28 transition-colors duration-500">
 
-  <!-- STARTUP LOGO ANIMATION SPLASH SCREEN -->
-  <div id="startupSplashModal" class="fixed inset-0 z-[100] bg-[#050507] flex flex-col items-center justify-center p-6 transition-opacity duration-200" dir="ltr">
-    <div class="w-44 sm:w-52 flex flex-col items-center">
-      <svg class="w-full h-auto" viewBox="0 0 1024 716" xmlns="http://www.w3.org/2000/svg">
+  <!-- STARTUP LOGO ANIMATION SPLASH SCREEN (0.5s SMOOTH ZOOM & GUARANTEED AUTO-DISMISS) -->
+  <div id="startupSplashModal" class="fixed inset-0 z-[100] bg-[#050507] flex flex-col items-center justify-center p-6 transition-opacity duration-200" dir="ltr" style="animation: splashFadeOut 0.25s ease-out 0.65s forwards;">
+    <div class="w-48 sm:w-56 flex flex-col items-center" style="animation: splashZoomIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: center;">
+      <svg class="w-full h-auto drop-shadow-2xl" viewBox="0 0 1024 716" xmlns="http://www.w3.org/2000/svg">
         <path d="M 512 55 C 788 55 897 64 934 95 C 971 125 984 222 984 358 C 984 494 971 590 934 621 C 897 651 788 661 512 661 C 236 661 127 651 90 621 C 53 590 40 494 40 358 C 40 222 53 125 90 95 C 127 64 236 55 512 55 Z" fill="#E51920"/>
         <path d="M 512 79 C 772 79 894 92 920 115 C 946 138 959 232 959 358 C 959 484 946 578 920 601 C 894 624 772 637 512 637 C 252 637 130 624 104 601 C 78 578 65 484 65 358 C 65 232 78 138 104 115 C 130 92 252 79 512 79 Z M 512 103 C 695 103 863 102 901 134 C 938 166 935 290 935 358 C 935 426 938 550 901 582 C 863 614 695 613 512 613 C 329 613 161 614 123 582 C 86 550 89 426 89 358 C 89 290 86 166 123 134 C 161 102 329 103 512 103 Z" fill="#FFFFFF" fill-rule="evenodd"/>
         <path d="M 562 241 L 562 474 Q 562 505 589 489 L 789 372 Q 816 357 789 341 L 589 225 Q 562 210 562 241 Z" fill="#FFFFFF"/>
@@ -154,6 +162,21 @@
       </div>
     </div>
   </div>
+  <script>
+    // HARDWARE FAILSAFE: Guaranteed splash dismiss in 650ms max!
+    (function() {
+      setTimeout(function() {
+        var modal = document.getElementById("startupSplashModal");
+        if (modal) {
+          modal.style.opacity = "0";
+          setTimeout(function() {
+            modal.classList.add("hidden");
+            modal.style.display = "none";
+          }, 200);
+        }
+      }, 650);
+    })();
+  </script>
 
   <!-- TOP STATUS (HIDDEN IN PRODUCTION) -->
   <div class="hidden" dir="ltr"><span id="kioskStatusBadge">Family Mode</span></div>
@@ -4638,11 +4661,23 @@
 
   let animFrameId = null;
 
-  window.runStartupSplash = function() {
+  window.runStartupSplash = function(isManual) {
     const modal = document.getElementById('startupSplashModal');
     if (!modal) return;
+    if (!isManual) {
+      modal.style.opacity = '0';
+      modal.classList.add('hidden');
+      modal.style.display = 'none';
+      return;
+    }
     modal.classList.remove('hidden');
+    modal.style.display = 'flex';
     modal.style.opacity = '1';
+    setTimeout(function() {
+      modal.style.opacity = '0';
+      setTimeout(function() { modal.classList.add('hidden'); modal.style.display = 'none'; }, 200);
+    }, 600);
+    return;
 
     const redBox = document.getElementById('redBox');
     const innerBorder = document.getElementById('innerBorder');
@@ -7855,8 +7890,7 @@
     if (!modal) return;
     if (splashTimer) clearTimeout(splashTimer);
 
-    modal.classList.remove("hidden");
-    modal.style.opacity = "1";
+    if (!modal) return;
 
     var redBox = document.getElementById("redBox");
     var innerBorder = document.getElementById("innerBorder");
