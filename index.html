@@ -1117,6 +1117,34 @@
       openVideoPlayer(shortsList[nextIdx].id);
     }
 
+    window.handleQaafVideoLinkClick = function(e, videoId) {
+      if (e) {
+        if (!isKidsLocked && (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1)) {
+          return true;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      try {
+        openVideoPlayer(videoId);
+      } catch (err) {
+        console.error('Player open error:', err);
+      }
+      return false;
+    };
+    window.qaafGoHome = function() {
+      if (window.isKidsTimeExpiredLock) return;
+      window.qaafSelectedChannel = 'ALL';
+      window.qaafActiveSearchQuery = '';
+      currentCategory = 'all';
+      currentSortFilter = 'default';
+      window.qaafGridPageLimit = 24;
+      var sInp = document.getElementById('qaafSearchInput');
+      if (sInp) sInp.value = '';
+      if (typeof closeVideoPlayer === 'function') closeVideoPlayer();
+      if (typeof window.renderVideosNow === 'function') window.renderVideosNow();
+    };
+
     function renderVideos() {
       const grid = document.getElementById('videoGrid');
       grid.innerHTML = '';
@@ -2054,6 +2082,7 @@
       if (input) input.value = qaafCloudSync.firebaseUrl || '';
       qaafCloudSync.updateStatusBadge();
       document.getElementById('adminDashboardModal').classList.remove('hidden');
+      if (window.renderAdminActiveVideosCatalog) window.renderAdminActiveVideosCatalog();
       
     }
     function closeAdminModal() { document.getElementById('adminDashboardModal').classList.add('hidden'); }
@@ -2953,6 +2982,8 @@
     }
 
     function renderParentGameControls() {
+      const pm = document.getElementById('parentModal');
+      if (!pm || pm.classList.contains('hidden')) return;
       renderAdminParentRequests();
       const c = document.getElementById('parentGamesControlList');
       if (c) {
@@ -3233,25 +3264,10 @@
         if (window.qaafCloudSync) qaafCloudSync.pushState('Admin Deleted Video');
       };
 
-      // RENDER ACTIVE VIDEOS CATALOG INSIDE ADMIN TAB 1
+      // RENDER ACTIVE VIDEOS CATALOG INSIDE ADMIN TAB 1 (DEFERRED UNTIL ADMIN MODAL IS OPEN)
       window.renderAdminActiveVideosCatalog = function() {
-        const listEl = document.getElementById('adminActiveVideosCatalogList');
         const countBadge = document.getElementById('admVideosCountBadge');
-        if (countBadge) countBadge.innerText = videosData.length;
-        if (!listEl) return;
-        listEl.innerHTML = '';
-        videosData.forEach(v => {
-          listEl.innerHTML += `
-            <div class="bg-black/60 border border-slate-800 hover:border-slate-700 p-2.5 rounded-xl flex items-center justify-between gap-2 transition">
-              <div class="min-w-0 flex-1">
-                <p class="font-bold text-white truncate">${v.title}</p>
-                <p class="text-[10px] text-slate-400">Channel: <strong class="text-slate-200">${v.channel}</strong> • ID: <span class="font-mono text-emerald-400">${v.ytId}</span> • ${v.lang.toUpperCase()}</p>
-              </div>
-              <button type="button" onclick="adminDeleteVideoCard('${v.id}', event)" class="bg-rose-600/20 hover:bg-rose-600 border border-rose-500/40 text-rose-300 hover:text-white px-3 py-1 rounded-lg text-[11px] font-bold shrink-0 transition">
-                🗑️ Delete
-              </button>
-            </div>`;
-        });
+        if (countBadge) countBadge.innerText = (videosData && videosData.length) || 0;
       };
 
       // 2. TRANSFORM ADMIN MODAL INTO PROFESSIONAL EDGE-STYLE SIDEBAR + MOBILE GRID CONSOLE
@@ -3424,7 +3440,6 @@
         if (cardCloud) document.getElementById('admMount_cloud').appendChild(cardCloud);
         if (cardBackup) document.getElementById('admMount_cloud').appendChild(cardBackup);
 
-        window.renderAdminActiveVideosCatalog();
       }
 
       window.switchAdminTab = function(tabKey) {
@@ -4536,8 +4551,9 @@
   window.renderAdminActiveVideosCatalog = function() {
     const listEl = document.getElementById('adminActiveVideosCatalogList');
     const countBadge = document.getElementById('admVideosCountBadge');
-    if (countBadge) countBadge.innerText = videosData.length;
-    if (!listEl) return;
+    if (countBadge) countBadge.innerText = (videosData && videosData.length) || 0;
+    const admModal = document.getElementById('adminDashboardModal');
+    if (!listEl || !admModal || admModal.classList.contains('hidden')) return;
 
     const uniqueChs = [...new Set(videosData.map(v => v.channel))];
     let htmlOut = '';
@@ -4629,8 +4645,6 @@
     }
   };
 
-  renderVideos();
-  
 })();
 </script>
 
@@ -5493,8 +5507,6 @@
     if (origPushLive) return origPushLive();
   };
 
-  renderVideos();
-  
 })();
 </script>
 
@@ -7913,7 +7925,7 @@
   };
 
   refreshSidebarUI();
-  })();
+})();
 </script>
 
 <!-- QAAF MASTER PERFORMANCE & INSTANT SWIPE ENGINE -->
@@ -8000,8 +8012,7 @@
     scrollCont.addEventListener("touchend", onTouchEnd, { passive: true });
   }
 
-  // Trigger one clean initial render
-  window.renderVideosNow();
+  // Deferred to final V11 engine
 })();
 </script>
 
@@ -9943,8 +9954,7 @@
       if (e) e.stopPropagation();
       if (window.isKidsTimeExpiredLock) return;
       // Skip the startup splash animation on logo-refresh so the Home screen opens instantaneously
-      sessionStorage.setItem("qaaf_skip_splash_once", "1");
-      window.location.href = window.location.pathname;
+      if (window.qaafGoHome) window.qaafGoHome();
     }
 
     [logoSvg, brandText].forEach(function(el) {
@@ -11289,7 +11299,6 @@
   localStorage.setItem("qaaf_videos_data", JSON.stringify(videosData));
 
   
-  if (window.renderVideosNow) window.renderVideosNow();
 })();
 </script>
 
@@ -11738,8 +11747,6 @@
     }
   };
 
-  window.renderVideosNow();
-  
 })();
 </script>
 
