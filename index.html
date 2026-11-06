@@ -12353,11 +12353,7 @@
 
           '<!-- Right: Compact Single-Row YouTube Action Icons + Volume Control -->' +
           '<div class="flex items-center gap-1.5 shrink-0">' +
-            '<!-- Below-Video Volume Pill -->' +
-            '<div class="flex items-center gap-1.5 bg-[#272727] px-2.5 py-1.5 rounded-full border border-white/5">' +
-              '<button type="button" id="belowVideoMuteBtn" onclick="toggleBelowVideoMute()" class="text-xs leading-none">' + (savedVol === 0 ? '🔇' : '🔊') + '</button>' +
-              '<input id="belowVideoVolSlider" type="range" min="0" max="100" value="' + savedVol + '" oninput="changeBelowVideoVolume(this.value)" class="w-14 sm:w-20 h-1 accent-emerald-400 bg-neutral-600 rounded-lg cursor-pointer" />' +
-            '</div>' +
+
 
             '<!-- Like / Favorite Icon Pill -->' +
             '<button type="button" onclick="toggleFavoriteVideo(currentPlayingVideoId, event)" class="bg-[#272727] hover:bg-[#383838] text-white px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1 transition shrink-0" title="Favorite">' +
@@ -12533,6 +12529,139 @@
       titleEl.className = "yt-single-line-gradient-title text-[15px] sm:text-base font-bold text-white leading-snug cursor-pointer";
     }
   };
+})();
+</script>
+
+<!-- QAAF V11.4 BOTTOM-CENTER AUTO-HIDE VOLUME BAR (BELOW RED SEEKBAR) -->
+<style>
+  #qaafBottomSeekVolBar {
+    transition: opacity 0.25s ease;
+  }
+  #qaafBottomSeekVolBar.vol-hidden {
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+  #qaafBottomSeekVolBar.vol-visible {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+</style>
+<script>
+(function initBottomCenterAutoHideVolume() {
+  var volHideTimer = null;
+
+  function ensureBottomVolBar() {
+    var aspect = document.getElementById("playerAspectBox");
+    if (!aspect || document.getElementById("qaafBottomSeekVolBar")) return;
+
+    var curV = parseInt(localStorage.getItem("qaaf_player_volume") || "100", 10);
+    var volBar = document.createElement("div");
+    volBar.id = "qaafBottomSeekVolBar";
+    volBar.dir = "ltr";
+    volBar.className = "vol-visible";
+    // Positioned at the bottom-center, right below YouTube's red seekbar, between the link icon and YouTube watermark
+    volBar.style.cssText = "position:absolute; bottom:6px; left:50%; transform:translateX(-50%); z-index:35; background:rgba(15,15,15,0.82); border:1px solid rgba(255,255,255,0.18); border-radius:9999px; padding:4px 10px; display:flex; align-items:center; gap:6px; backdrop-filter:blur(4px); box-shadow:0 4px 12px rgba(0,0,0,0.6);";
+
+    volBar.innerHTML =
+      '<button type="button" id="seekVolMuteBtn" onclick="toggleSeekBottomMute(event)" class="text-white text-xs leading-none select-none">' + (curV === 0 ? '🔇' : '🔊') + '</button>' +
+      '<input id="seekVolSlider" type="range" min="0" max="100" value="' + curV + '" oninput="changeSeekBottomVolume(this.value, event)" class="w-20 sm:w-24 h-1 accent-white bg-white/30 rounded-lg cursor-pointer" />' +
+      '<span id="seekVolPctText" class="text-[10px] font-bold text-white/90 w-7 text-right">' + curV + '%</span>';
+
+    aspect.appendChild(volBar);
+  }
+
+  window.wakeBottomSeekVolume = function(ms) {
+    ensureBottomVolBar();
+    var bar = document.getElementById("qaafBottomSeekVolBar");
+    var scrollWrap = document.getElementById("ytWatchScrollContainer");
+    var isMini = scrollWrap && scrollWrap.classList.contains("hidden");
+    if (!bar || isMini) {
+      if (bar) bar.style.display = "none";
+      return;
+    }
+    bar.style.display = "flex";
+    bar.classList.remove("vol-hidden");
+    bar.classList.add("vol-visible");
+
+    if (volHideTimer) clearTimeout(volHideTimer);
+    volHideTimer = setTimeout(function() {
+      bar.classList.remove("vol-visible");
+      bar.classList.add("vol-hidden");
+    }, ms || 3400);
+  };
+
+  window.changeSeekBottomVolume = function(val, ev) {
+    if (ev) ev.stopPropagation();
+    window.wakeBottomSeekVolume(4000);
+    if (typeof window.setQaafPlayerVolume === "function") {
+      window.setQaafPlayerVolume(val);
+    }
+    var v = Math.max(0, Math.min(100, parseInt(val, 10) || 0));
+    var btn = document.getElementById("seekVolMuteBtn");
+    var txt = document.getElementById("seekVolPctText");
+    if (btn) btn.innerText = v === 0 ? "🔇" : (v < 50 ? "🔉" : "🔊");
+    if (txt) txt.innerText = v + "%";
+  };
+
+  window.toggleSeekBottomMute = function(ev) {
+    if (ev) ev.stopPropagation();
+    window.wakeBottomSeekVolume(4000);
+    if (typeof window.toggleQaafVolumeMute === "function") {
+      window.toggleQaafVolumeMute();
+    }
+    var mainSld = document.getElementById("qaafVolumeRangeSlider");
+    var v = mainSld ? parseInt(mainSld.value, 10) : 0;
+    var btn = document.getElementById("seekVolMuteBtn");
+    var sld = document.getElementById("seekVolSlider");
+    var txt = document.getElementById("seekVolPctText");
+    if (btn) btn.innerText = v === 0 ? "🔇" : (v < 50 ? "🔉" : "🔊");
+    if (sld) sld.value = v;
+    if (txt) txt.innerText = v + "%";
+  };
+
+  // Show when video starts playing
+  var prevOpen = window.openVideoPlayer;
+  window.openVideoPlayer = function(videoId) {
+    if (prevOpen) prevOpen(videoId);
+    ensureBottomVolBar();
+    window.wakeBottomSeekVolume(3800);
+  };
+
+  // Hide in Mini-Player, show briefly when expanded
+  var prevMin = window.minimizeToMiniPlayer;
+  window.minimizeToMiniPlayer = function() {
+    if (prevMin) prevMin();
+    var bar = document.getElementById("qaafBottomSeekVolBar");
+    if (bar) bar.style.display = "none";
+  };
+
+  var prevExp = window.expandFromMiniPlayer;
+  window.expandFromMiniPlayer = function() {
+    if (prevExp) prevExp();
+    window.wakeBottomSeekVolume(3500);
+  };
+
+  // Wake when user taps/touches the player or iframe
+  var pModal = document.getElementById("playerModal");
+  if (pModal) {
+    pModal.addEventListener("touchstart", function() { window.wakeBottomSeekVolume(3500); }, { passive: true, capture: true });
+    pModal.addEventListener("mousemove", function() { window.wakeBottomSeekVolume(3200); }, { passive: true });
+    pModal.addEventListener("click", function() { window.wakeBottomSeekVolume(3500); }, { capture: true });
+  }
+
+  window.addEventListener("blur", function() {
+    var modal = document.getElementById("playerModal");
+    if (modal && !modal.classList.contains("hidden")) {
+      window.wakeBottomSeekVolume(3500);
+    }
+    setTimeout(function() {
+      if (document.activeElement && document.activeElement.id === "ytIframe") {
+        document.activeElement.blur();
+      }
+    }, 300);
+  });
+
+  ensureBottomVolBar();
 })();
 </script>
 
