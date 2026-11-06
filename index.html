@@ -12264,178 +12264,240 @@
 })();
 </script>
 
-<!-- QAAF V11.2 YOUTUBE-STYLE AUTO-HIDE HUD (MINIMIZE ARROW, VOLUME SLIDER & CLOSE) + ZERO BLACK BARS -->
+
+
+<!-- QAAF V11.3 PURE YOUTUBE WATCH LAYOUT (ZERO VIDEO STICKERS, 1-LINE GRADIENT TITLE, THIN META, BELOW-VIDEO VOLUME & COMPACT COMMENTS) -->
 <style>
-  /* Hide the old permanent top bar so video sits cleanly edge-to-edge with zero wasted space */
-  #ytTopControlBar {
+  /* 1. Never show any bar above the video or any sticker over the video */
+  #ytTopControlBar,
+  #qaafFloatingPlayerHud,
+  #qaafHudWakeZoneTop {
     display: none !important;
   }
-  #qaafFloatingPlayerHud {
-    transition: opacity 0.25s ease, transform 0.25s ease;
+
+  /* 2. Single-line video title with smooth right-side gradient fade exactly like YouTube mobile */
+  .yt-single-line-gradient-title {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    display: block !important;
+    -webkit-mask-image: linear-gradient(to right, #000000 80%, transparent 98%);
+    mask-image: linear-gradient(to right, #000000 80%, transparent 98%);
   }
-  #qaafFloatingPlayerHud.hud-hidden {
-    opacity: 0 !important;
-    pointer-events: none !important;
+
+  /* 3. Hide scrollbar on horizontal action pills row */
+  .yt-actions-scroll::-webkit-scrollbar {
+    display: none;
   }
-  #qaafFloatingPlayerHud.hud-visible {
-    opacity: 1 !important;
-    pointer-events: auto !important;
+  .yt-actions-scroll {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 </style>
 <script>
-(function initYoutubeStyleAutoHidePlayerHud() {
-  var hudHideTimer = null;
-  var hudVolOpen = false;
+(function initPureYoutubeWatchLayout() {
+  // Remove any leftover floating HUD elements inside #playerAspectBox
+  ["qaafFloatingPlayerHud", "qaafHudWakeZoneTop"].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.remove();
+  });
 
-  function ensureFloatingHudElements() {
-    var aspect = document.getElementById("playerAspectBox");
-    if (!aspect || document.getElementById("qaafFloatingPlayerHud")) return;
-
-    // 1. Thin invisible touch-wake zones at top & bottom edge so tapping/dragging the video always wakes the HUD
-    var wakeTop = document.createElement("div");
-    wakeTop.id = "qaafHudWakeZoneTop";
-    wakeTop.style.cssText = "position:absolute; top:0; left:0; right:0; height:42px; z-index:25; background:transparent;";
-    wakeTop.addEventListener("touchstart", function() { window.wakeQaafPlayerHud(3800); }, { passive: true });
-    wakeTop.addEventListener("click", function() { window.wakeQaafPlayerHud(3800); });
-    aspect.appendChild(wakeTop);
-
-    // 2. The Auto-Hiding Floating HUD Overlay (Minimize Arrow on Left, Compact Volume Slider in Center-Right, Close on Right)
-    var hud = document.createElement("div");
-    hud.id = "qaafFloatingPlayerHud";
-    hud.dir = "ltr";
-    hud.className = "hud-visible";
-    hud.style.cssText = "position:absolute; top:0; left:0; right:0; z-index:35; padding:8px 10px; display:flex; align-items:center; justify-content:space-between; gap:8px; background:linear-gradient(to bottom, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.35) 65%, transparent 100%);";
-
-    var savedVol = parseInt(localStorage.getItem("qaaf_player_volume") || "100", 10);
-
-    hud.innerHTML =
-      '<!-- Left: Minimize Down Arrow -->' +
-      '<button type="button" onclick="minimizeToMiniPlayer()" class="w-9 h-9 rounded-full bg-black/65 hover:bg-black/90 border border-white/15 text-white flex items-center justify-center shadow-lg active:scale-95 transition" title="Minimize Player">' +
-        '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.6" d="M19 9l-7 7-7-7"></path></svg>' +
-      '</button>' +
-
-      '<!-- Center: Subtle Drag Indicator Pill -->' +
-      '<div class="w-9 h-1 rounded-full bg-white/35 pointer-events-none"></div>' +
-
-      '<!-- Right: YouTube-Style Mute + Expandable Volume Slider & Close Button -->' +
-      '<div class="flex items-center gap-1.5">' +
-        '<div class="flex items-center gap-1.5 bg-black/70 border border-white/15 px-2.5 py-1 rounded-full shadow-lg backdrop-blur-sm">' +
-          '<button type="button" id="hudVolMuteBtn" onclick="toggleHudVolumeMute(event)" class="text-white text-xs leading-none select-none">' + (savedVol === 0 ? '🔇' : '🔊') + '</button>' +
-          '<input id="hudVolSlider" type="range" min="0" max="100" value="' + savedVol + '" oninput="updateHudVolume(this.value, event)" class="w-16 sm:w-20 h-1 accent-emerald-400 bg-white/30 rounded-lg cursor-pointer" />' +
-          '<span id="hudVolLabel" class="text-[10px] font-extrabold text-emerald-400 w-7 text-right">' + savedVol + '%</span>' +
-        '</div>' +
-        '<button type="button" onclick="closeVideoPlayer()" class="w-8 h-8 rounded-full bg-black/65 hover:bg-red-600 border border-white/15 text-white flex items-center justify-center text-xs font-extrabold shadow-lg active:scale-95 transition" title="Close">' +
-          '✕' +
-        '</button>' +
-      '</div>';
-
-    aspect.appendChild(hud);
-
-    // 3. Mini-Player Floating Close Button (Top-Right when minimized)
+  // Add a tiny Close button ONLY for Mini-Player mode
+  var aspectBox = document.getElementById("playerAspectBox");
+  if (aspectBox && !document.getElementById("qaafMiniPlayerCloseBtn")) {
     var miniClose = document.createElement("button");
     miniClose.id = "qaafMiniPlayerCloseBtn";
     miniClose.type = "button";
-    miniClose.className = "hidden";
-    miniClose.style.cssText = "position:absolute; top:6px; right:6px; z-index:40; width:26px; height:26px; border-radius:9999px; background:rgba(0,0,0,0.78); border:1px solid rgba(255,255,255,0.2); color:#fff; font-size:11px; font-weight:800; display:none; align-items:center; justify-content:center;";
+    miniClose.style.cssText = "position:absolute; top:6px; right:6px; z-index:40; width:26px; height:26px; border-radius:9999px; background:rgba(0,0,0,0.78); border:1px solid rgba(255,255,255,0.22); color:#fff; font-size:11px; font-weight:800; display:none; align-items:center; justify-content:center;";
     miniClose.innerText = "✕";
     miniClose.onclick = function(e) {
       e.stopPropagation();
       closeVideoPlayer();
     };
-    aspect.appendChild(miniClose);
+    aspectBox.appendChild(miniClose);
   }
 
-  window.wakeQaafPlayerHud = function(durationMs) {
-    ensureFloatingHudElements();
-    var hud = document.getElementById("qaafFloatingPlayerHud");
+  // Rebuild #ytWatchScrollContainer to match the exact clean YouTube Mobile Watch Screen (input_file_9.jpeg)
+  function buildCleanWatchDetailsLayout() {
     var scrollWrap = document.getElementById("ytWatchScrollContainer");
-    var isMini = scrollWrap && scrollWrap.classList.contains("hidden");
-    if (!hud || isMini) return;
+    if (!scrollWrap || document.getElementById("ytCleanWatchHeader")) return;
 
-    hud.classList.remove("hud-hidden");
-    hud.classList.add("hud-visible");
+    var savedVol = parseInt(localStorage.getItem("qaaf_player_volume") || "100", 10);
 
-    if (hudHideTimer) clearTimeout(hudHideTimer);
-    hudHideTimer = setTimeout(function() {
-      hud.classList.remove("hud-visible");
-      hud.classList.add("hud-hidden");
-    }, durationMs || 3200);
+    scrollWrap.className = "flex-1 overflow-y-auto bg-[#0f0f0f] text-white select-none";
+    scrollWrap.innerHTML =
+      '<!-- 1. COMPACT WATCH METADATA & ACTIONS (EXACT YOUTUBE MOBILE STYLE) -->' +
+      '<div id="ytCleanWatchHeader" class="px-3.5 pt-2.5 pb-2 space-y-2">' +
+
+        '<!-- Subtle thin drag handle pill at top of info area for swipe-down minimize -->' +
+        '<div class="w-9 h-1 bg-white/20 rounded-full mx-auto mb-1"></div>' +
+
+        '<!-- Single-Line Title with Right Gradient Fade (Tap to toggle full title) -->' +
+        '<h2 id="playingTitle" onclick="this.classList.toggle(\'yt-single-line-gradient-title\')" class="yt-single-line-gradient-title text-[15px] sm:text-base font-bold text-white leading-snug cursor-pointer" title="Tap to expand title">Playing Safe Islamic Video</h2>' +
+
+        '<!-- Thin, Subtle Metadata Line (@Channel • Likes • Views • Lang) -->' +
+        '<div class="flex items-center justify-between gap-2 text-[11px] text-neutral-400 font-normal">' +
+          '<p id="playingViewsText" class="truncate">@Channel • 2.5K views • GLOBAL</p>' +
+          '<div class="flex items-center gap-2 shrink-0">' +
+            '<button type="button" onclick="minimizeToMiniPlayer()" class="text-neutral-400 hover:text-white px-1.5 py-0.5 rounded bg-white/5 text-[10px] font-semibold flex items-center gap-1" title="Minimize"><span>⌄</span><span>Mini</span></button>' +
+            '<button type="button" onclick="closeVideoPlayer()" class="text-neutral-400 hover:text-rose-400 px-1.5 py-0.5 rounded bg-white/5 text-[10px] font-semibold" title="Close">✕ Close</button>' +
+          '</div>' +
+        '</div>' +
+
+        '<!-- Channel Row + Single-Line Icon Action Pills + Below-Video Volume Bar -->' +
+        '<div class="flex items-center justify-between gap-2 pt-1 overflow-x-auto yt-actions-scroll">' +
+          '<!-- Left: Small Channel Avatar & Name -->' +
+          '<div class="flex items-center gap-2 shrink-0 pr-2">' +
+            '<div class="w-8 h-8 rounded-full bg-emerald-600/20 border border-emerald-500/40 flex items-center justify-center text-xs font-bold text-emerald-400 shrink-0">🕌</div>' +
+            '<p id="playingChannelName" class="text-xs font-bold text-white truncate max-w-[130px] sm:max-w-[200px]">Channel Name</p>' +
+          '</div>' +
+
+          '<!-- Right: Compact Single-Row YouTube Action Icons + Volume Control -->' +
+          '<div class="flex items-center gap-1.5 shrink-0">' +
+            '<!-- Below-Video Volume Pill -->' +
+            '<div class="flex items-center gap-1.5 bg-[#272727] px-2.5 py-1.5 rounded-full border border-white/5">' +
+              '<button type="button" id="belowVideoMuteBtn" onclick="toggleBelowVideoMute()" class="text-xs leading-none">' + (savedVol === 0 ? '🔇' : '🔊') + '</button>' +
+              '<input id="belowVideoVolSlider" type="range" min="0" max="100" value="' + savedVol + '" oninput="changeBelowVideoVolume(this.value)" class="w-14 sm:w-20 h-1 accent-emerald-400 bg-neutral-600 rounded-lg cursor-pointer" />' +
+            '</div>' +
+
+            '<!-- Like / Favorite Icon Pill -->' +
+            '<button type="button" onclick="toggleFavoriteVideo(currentPlayingVideoId, event)" class="bg-[#272727] hover:bg-[#383838] text-white px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1 transition shrink-0" title="Favorite">' +
+              '<span>👍</span> <span id="watchLikeCountLabel" class="text-[11px] text-neutral-200">Like</span>' +
+            '</button>' +
+
+            '<!-- Save to Playlist Pill -->' +
+            '<button type="button" onclick="toggleVideoInPlaylist(currentPlayingVideoId, event)" class="bg-[#272727] hover:bg-[#383838] text-white px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1 transition shrink-0" title="Save to Playlist">' +
+              '<span>➕</span> <span class="text-[11px] text-neutral-200">Save</span>' +
+            '</button>' +
+
+            '<!-- Daily Dua Pill -->' +
+            '<button type="button" onclick="triggerAdSimulation()" class="bg-[#272727] hover:bg-[#383838] text-amber-300 px-2.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1 transition shrink-0" title="Daily Dua">' +
+              '<span>🕌</span> <span class="text-[11px]">Dua</span>' +
+            '</button>' +
+
+            '<!-- Report Flag Icon Pill -->' +
+            '<button type="button" onclick="openFlagModal(currentPlayingVideoId)" class="bg-[#272727] hover:bg-rose-950 text-neutral-300 px-2.5 py-1.5 rounded-full text-xs font-semibold flex items-center justify-center transition shrink-0" title="Report Video">' +
+              '<span>🚩</span>' +
+            '</button>' +
+          '</div>' +
+        '</div>' +
+
+        '<!-- 2. COMPACT YOUTUBE-STYLE COMMENTS TEASER BOX (EXPANDS ON TAP) -->' +
+        '<div class="pt-1.5">' +
+          '<div onclick="toggleCompactCommentsExpand()" class="bg-[#1e1e1e] hover:bg-[#262626] rounded-xl px-3 py-2.5 cursor-pointer transition">' +
+            '<div class="flex items-center justify-between text-xs mb-1">' +
+              '<span class="font-bold text-white flex items-center gap-1.5"><span>Comments</span> <span id="watchCommentCountBadge" class="text-neutral-400 font-normal text-[11px]">1</span></span>' +
+              '<span id="commentsExpandHint" class="text-[10px] text-neutral-400">Tap to view / add ▾</span>' +
+            '</div>' +
+            '<div class="flex items-center gap-2 text-xs">' +
+              '<div id="latestCommentAvatar" class="w-5 h-5 rounded-full bg-indigo-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">A</div>' +
+              '<p id="latestCommentPreviewText" class="text-neutral-200 text-[11px] truncate">ماشاء اللہ، بہت بہترین اور معلوماتی ویڈیو</p>' +
+            '</div>' +
+          '</div>' +
+
+          '<!-- Expandable Full Comments Drawer (Hidden by Default) -->' +
+          '<div id="expandedCommentsDrawer" class="hidden mt-2 bg-[#161616] border border-white/10 rounded-xl p-3 space-y-2.5">' +
+            '<div class="flex gap-2">' +
+              '<input id="newCommentInput" type="text" placeholder="Add a polite comment..." class="flex-1 bg-black border border-neutral-700 rounded-full px-3.5 py-1.5 text-xs text-white focus:border-emerald-500 focus:outline-none" />' +
+              '<button type="button" onclick="postVideoComment()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 rounded-full text-xs font-extrabold shrink-0">Post</button>' +
+            '</div>' +
+            '<div id="watchCommentsList" class="space-y-1.5 max-h-40 overflow-y-auto pr-1 text-xs"></div>' +
+          '</div>' +
+        '</div>' +
+
+      '</div>' +
+
+      '<!-- 3. UP NEXT VIDEOS FEED -->' +
+      '<div class="px-3.5 pt-2 pb-6">' +
+        '<h4 class="text-xs font-bold text-neutral-300 mb-2.5">Up Next</h4>' +
+        '<div id="watchUpNextGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3"></div>' +
+      '</div>';
+  }
+
+  buildCleanWatchDetailsLayout();
+
+  window.toggleCompactCommentsExpand = function() {
+    var drw = document.getElementById("expandedCommentsDrawer");
+    var hint = document.getElementById("commentsExpandHint");
+    if (!drw) return;
+    drw.classList.toggle("hidden");
+    if (hint) hint.innerText = drw.classList.contains("hidden") ? "Tap to view / add ▾" : "Hide ▴";
   };
 
-  window.updateHudVolume = function(val, ev) {
-    if (ev) ev.stopPropagation();
-    window.wakeQaafPlayerHud(4000);
+  window.changeBelowVideoVolume = function(val) {
     if (typeof window.setQaafPlayerVolume === "function") {
       window.setQaafPlayerVolume(val);
     }
     var v = Math.max(0, Math.min(100, parseInt(val, 10) || 0));
-    var lbl = document.getElementById("hudVolLabel");
-    var btn = document.getElementById("hudVolMuteBtn");
-    var sld = document.getElementById("hudVolSlider");
-    if (lbl) lbl.innerText = v + "%";
+    var btn = document.getElementById("belowVideoMuteBtn");
     if (btn) btn.innerText = v === 0 ? "🔇" : (v < 50 ? "🔉" : "🔊");
-    if (sld && parseInt(sld.value, 10) !== v) sld.value = v;
   };
 
-  window.toggleHudVolumeMute = function(ev) {
-    if (ev) ev.stopPropagation();
-    window.wakeQaafPlayerHud(4000);
+  window.toggleBelowVideoMute = function() {
     if (typeof window.toggleQaafVolumeMute === "function") {
       window.toggleQaafVolumeMute();
     }
-    var sldMain = document.getElementById("qaafVolumeRangeSlider");
-    var curV = sldMain ? parseInt(sldMain.value, 10) : 0;
-    var lbl = document.getElementById("hudVolLabel");
-    var btn = document.getElementById("hudVolMuteBtn");
-    var sld = document.getElementById("hudVolSlider");
-    if (lbl) lbl.innerText = curV + "%";
-    if (btn) btn.innerText = curV === 0 ? "🔇" : (curV < 50 ? "🔉" : "🔊");
-    if (sld) sld.value = curV;
+    var mainSld = document.getElementById("qaafVolumeRangeSlider");
+    var v = mainSld ? parseInt(mainSld.value, 10) : 0;
+    var btn = document.getElementById("belowVideoMuteBtn");
+    var sld = document.getElementById("belowVideoVolSlider");
+    if (btn) btn.innerText = v === 0 ? "🔇" : (v < 50 ? "🔉" : "🔊");
+    if (sld) sld.value = v;
   };
 
-  // Override expandFromMiniPlayer so `#playerAspectBox` uses true 16:9 aspect-ratio with ZERO extra black bars!
+  // Update renderWatchPageExtras so it populates the 1-line comment preview & thin metadata
+  var origRenderExtras = window.renderWatchPageExtras;
+  window.renderWatchPageExtras = function(videoId) {
+    buildCleanWatchDetailsLayout();
+    if (origRenderExtras) origRenderExtras(videoId);
+
+    var commList = document.getElementById("watchCommentsList");
+    var prevTxt = document.getElementById("latestCommentPreviewText");
+    var prevAv = document.getElementById("latestCommentAvatar");
+    var firstCommentP = commList ? commList.querySelector("p.text-slate-200") : null;
+    var firstAuthorP = commList ? commList.querySelector("p.font-bold") : null;
+
+    if (firstCommentP && prevTxt) {
+      prevTxt.innerText = firstCommentP.innerText;
+    }
+    if (firstAuthorP && prevAv) {
+      prevAv.innerText = (firstAuthorP.innerText || "A").trim().charAt(0).toUpperCase();
+    }
+  };
+
+  // Update expandFromMiniPlayer & minimizeToMiniPlayer for clean edge-to-edge 16:9 video with zero stickers
   window.expandFromMiniPlayer = function() {
-    ensureFloatingHudElements();
+    buildCleanWatchDetailsLayout();
     var modal = document.getElementById("playerModal");
     var box = document.getElementById("playerModalBox");
     var aspect = document.getElementById("playerAspectBox");
     var scrollWrap = document.getElementById("ytWatchScrollContainer");
     var co = document.getElementById("miniCenterExpandOverlay");
-    var hud = document.getElementById("qaafFloatingPlayerHud");
-    var wakeTop = document.getElementById("qaafHudWakeZoneTop");
     var miniClose = document.getElementById("qaafMiniPlayerCloseBtn");
     var video = (videosData || []).find(function(v) { return v.id === currentPlayingVideoId; }) || (videosData && videosData[0]);
     var isShort = video && isVideoShort(video);
 
     if (modal && box && aspect) {
       modal.classList.remove("hidden");
-      modal.style.cssText = "position:fixed; inset:0; z-index:999; background:#090b10; display:flex; flex-direction:column; justify-content:flex-start; align-items:center; overflow:hidden; padding:0;";
+      modal.style.cssText = "position:fixed; inset:0; z-index:999; background:#0f0f0f; display:flex; flex-direction:column; justify-content:flex-start; align-items:center; overflow:hidden; padding:0;";
       if (isShort) {
         box.style.cssText = "width:100%; max-width:420px; height:100%; background:#0f0f0f; display:flex; flex-direction:column; overflow:hidden; transform:none;";
         aspect.style.cssText = "position:relative; width:100%; height:58vh; min-height:300px; max-height:64vh; background:#000; flex-shrink:0; overflow:hidden; display:block; margin:0 auto;";
       } else {
         box.style.cssText = "width:100%; max-width:1024px; height:100%; background:#0f0f0f; display:flex; flex-direction:column; overflow:hidden; transform:none;";
-        // True 16:9 ratio: eliminates wasted top/bottom black bars on mobile portrait!
         aspect.style.cssText = "position:relative; width:100%; aspect-ratio:16/9; height:auto; max-height:54vh; background:#000; flex-shrink:0; overflow:hidden; display:block;";
       }
       if (scrollWrap) scrollWrap.classList.remove("hidden");
       if (co) co.classList.add("hidden");
-      if (wakeTop) wakeTop.style.display = "block";
       if (miniClose) miniClose.style.display = "none";
-      if (hud) hud.style.display = "flex";
-      window.wakeQaafPlayerHud(3200);
     }
   };
 
   window.minimizeToMiniPlayer = function() {
-    ensureFloatingHudElements();
     var modal = document.getElementById("playerModal");
     var box = document.getElementById("playerModalBox");
     var aspect = document.getElementById("playerAspectBox");
     var scrollWrap = document.getElementById("ytWatchScrollContainer");
     var co = document.getElementById("miniCenterExpandOverlay");
-    var hud = document.getElementById("qaafFloatingPlayerHud");
-    var wakeTop = document.getElementById("qaafHudWakeZoneTop");
     var miniClose = document.getElementById("qaafMiniPlayerCloseBtn");
 
     if (modal && box && aspect) {
@@ -12445,8 +12507,6 @@
       aspect.style.cssText = "position:relative; width:100%; aspect-ratio:16/9; height:auto; background:#000; flex-shrink:0; overflow:hidden; display:block;";
       if (scrollWrap) scrollWrap.classList.add("hidden");
       if (co) co.classList.remove("hidden");
-      if (hud) hud.style.display = "none";
-      if (wakeTop) wakeTop.style.display = "none";
       if (miniClose) miniClose.style.display = "flex";
     }
     [100, 350].forEach(function(ms) {
@@ -12456,67 +12516,23 @@
     });
   };
 
-  // Wake HUD whenever user touches/drags anywhere in playerModal or when iframe gets tapped (window blur)
-  var pModal = document.getElementById("playerModal");
-  if (pModal) {
-    pModal.addEventListener("touchstart", function() { window.wakeQaafPlayerHud(3500); }, { passive: true, capture: true });
-    pModal.addEventListener("touchmove", function() { window.wakeQaafPlayerHud(3500); }, { passive: true, capture: true });
-    pModal.addEventListener("mousemove", function() { window.wakeQaafPlayerHud(3200); }, { passive: true });
-    pModal.addEventListener("click", function() { window.wakeQaafPlayerHud(3500); }, { capture: true });
-  }
-
-  // When user taps directly inside the YouTube iframe, window blurs to iframe -> wake HUD immediately!
-  window.addEventListener("blur", function() {
-    var modal = document.getElementById("playerModal");
-    if (modal && !modal.classList.contains("hidden")) {
-      window.wakeQaafPlayerHud(3800);
+  // Format metadata line in openVideoPlayer to match `@ChannelName • 2.5K views • UR`
+  var prevOpen = window.openVideoPlayer;
+  window.openVideoPlayer = function(videoId) {
+    buildCleanWatchDetailsLayout();
+    if (prevOpen) prevOpen(videoId);
+    var video = (videosData || []).find(function(v) { return v.id === videoId; });
+    if (!video) return;
+    var handleStr = "@" + (video.channel || "Channel").replace(/\s+/g, "");
+    var vwEl = document.getElementById("playingViewsText");
+    if (vwEl) {
+      vwEl.innerText = handleStr + "  •  " + (((video.views || 1500) / 1000).toFixed(1)) + "K views  •  " + (video.lang || "en").toUpperCase();
     }
-  });
-
-  // Also allow swiping down from the top wake zone of the video itself to minimize smoothly!
-  var dragStartY = 0;
-  var dragCurY = 0;
-  var isDraggingTop = false;
-
-  document.addEventListener("touchstart", function(e) {
-    var modal = document.getElementById("playerModal");
-    var scrollWrap = document.getElementById("ytWatchScrollContainer");
-    if (!modal || modal.classList.contains("hidden") || !scrollWrap || scrollWrap.classList.contains("hidden")) return;
-    if (!e.touches || e.touches.length !== 1) return;
-    var y = e.touches[0].clientY;
-    // If touch starts in top 70px of screen or on video info bar
-    if (y < 260 && scrollWrap.scrollTop <= 2) {
-      dragStartY = y;
-      dragCurY = y;
-      isDraggingTop = true;
-      window.wakeQaafPlayerHud(3800);
+    var titleEl = document.getElementById("playingTitle");
+    if (titleEl) {
+      titleEl.className = "yt-single-line-gradient-title text-[15px] sm:text-base font-bold text-white leading-snug cursor-pointer";
     }
-  }, { passive: true });
-
-  document.addEventListener("touchmove", function(e) {
-    if (!isDraggingTop || !e.touches || e.touches.length !== 1) return;
-    dragCurY = e.touches[0].clientY;
-    var dy = dragCurY - dragStartY;
-    var box = document.getElementById("playerModalBox");
-    if (dy > 12 && box) {
-      box.style.transform = "translateY(" + Math.min(dy * 0.65, 190) + "px)";
-    }
-  }, { passive: true });
-
-  document.addEventListener("touchend", function() {
-    if (!isDraggingTop) return;
-    isDraggingTop = false;
-    var dy = dragCurY - dragStartY;
-    var box = document.getElementById("playerModalBox");
-    if (box) box.style.transform = "";
-    if (dy > 55) {
-      window.minimizeToMiniPlayer();
-    }
-    dragStartY = 0;
-    dragCurY = 0;
-  }, { passive: true });
-
-  ensureFloatingHudElements();
+  };
 })();
 </script>
 
