@@ -1,0 +1,7 @@
+*.psd
+*.ai
+*.log
+backups index/
+logo data/
+logo_svg_files/*.psd
+remaing works/

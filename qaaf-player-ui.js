@@ -6020,3 +6020,292 @@
 
   window.renderGames();
 })();
+
+
+
+
+// QAAF V12.2 ICON-ONLY MINIMIZE ARROW, SMOOTH CLEAN MINI-PLAYER & DIRECT qaaf-games.html CONNECTION
+(function initCleanMinimizeAndGamesConnection() {
+  // Remove min-h-[260px] so 16:9 video has zero top/bottom black bars on mobile
+  var pAspect = document.getElementById("playerAspectBox");
+  if (pAspect) {
+    pAspect.classList.remove("min-h-[260px]", "sm:min-h-[380px]");
+  }
+
+  // Replace the text "Mini" and "Close" buttons with clean icon-only circular buttons (Down Arrow & X)
+  function upgradeMinimizeAndCloseIcons() {
+    var hdr = document.getElementById("ytCleanWatchHeader");
+    if (!hdr) return;
+    var minBtn = hdr.querySelector('button[onclick*="minimizeToMiniPlayer"]');
+    var clsBtn = hdr.querySelector('button[onclick*="closeVideoPlayer"]');
+    if (minBtn) {
+      minBtn.className = "w-8 h-8 rounded-full bg-[#272727] hover:bg-[#3a3a3a] text-white flex items-center justify-center shadow transition shrink-0";
+      minBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.6" d="M19 9l-7 7-7-7"></path></svg>';
+      minBtn.title = "Minimize";
+    }
+    if (clsBtn) {
+      clsBtn.className = "w-8 h-8 rounded-full bg-[#272727] hover:bg-rose-600 text-white flex items-center justify-center text-xs font-extrabold shadow transition shrink-0";
+      clsBtn.innerHTML = "✕";
+      clsBtn.title = "Close";
+    }
+  }
+
+  // Create a clean bottom control strip for the Mini-Player so the video picture itself is 100% unobstructed
+  function ensureMiniPlayerBottomBar() {
+    var box = document.getElementById("playerModalBox");
+    if (!box || document.getElementById("qaafCleanMiniBar")) return;
+
+    var bar = document.createElement("div");
+    bar.id = "qaafCleanMiniBar";
+    bar.dir = "ltr";
+    bar.style.cssText = "display:none; align-items:center; justify-content:space-between; gap:8px; padding:6px 10px; background:#181818; border-top:1px solid rgba(255,255,255,0.1); cursor:pointer;";
+    bar.onclick = function() { window.expandFromMiniPlayer(); };
+
+    bar.innerHTML =
+      '<p id="qaafCleanMiniTitle" class="text-[11px] font-bold text-white truncate flex-1">Playing Video...</p>' +
+      '<div class="flex items-center gap-1.5 shrink-0">' +
+        '<button type="button" onclick="event.stopPropagation(); expandFromMiniPlayer();" class="w-7 h-7 rounded-full bg-white/10 hover:bg-emerald-600 text-white flex items-center justify-center" title="Expand">' +
+          '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.6" d="M5 15l7-7 7 7"></path></svg>' +
+        '</button>' +
+        '<button type="button" onclick="event.stopPropagation(); closeVideoPlayer();" class="w-7 h-7 rounded-full bg-white/10 hover:bg-rose-600 text-white flex items-center justify-center text-xs font-extrabold" title="Close">' +
+          '✕' +
+        '</button>' +
+      '</div>';
+
+    box.appendChild(bar);
+  }
+
+  window.expandFromMiniPlayer = function() {
+    upgradeMinimizeAndCloseIcons();
+    ensureMiniPlayerBottomBar();
+    var modal = document.getElementById("playerModal");
+    var box = document.getElementById("playerModalBox");
+    var aspect = document.getElementById("playerAspectBox");
+    var scrollWrap = document.getElementById("ytWatchScrollContainer");
+    var co = document.getElementById("miniCenterExpandOverlay");
+    var miniClose = document.getElementById("qaafMiniPlayerCloseBtn");
+    var miniBar = document.getElementById("qaafCleanMiniBar");
+    var video = (videosData || []).find(function(v) { return v.id === currentPlayingVideoId; }) || (videosData && videosData[0]);
+    var isShort = video && isVideoShort(video);
+
+    if (modal && box && aspect) {
+      modal.classList.remove("hidden");
+      modal.style.cssText = "position:fixed; inset:0; z-index:999; background:#0f0f0f; display:flex; flex-direction:column; justify-content:flex-start; align-items:center; overflow:hidden; padding:0;";
+      if (isShort) {
+        box.style.cssText = "width:100%; max-width:420px; height:100%; background:#0f0f0f; display:flex; flex-direction:column; overflow:hidden; transition:all 0.24s ease;";
+        aspect.style.cssText = "position:relative; width:100%; height:58vh; min-height:300px; max-height:64vh; background:#000; flex-shrink:0; overflow:hidden; display:block; margin:0 auto;";
+      } else {
+        box.style.cssText = "width:100%; max-width:1024px; height:100%; background:#0f0f0f; display:flex; flex-direction:column; overflow:hidden; transition:all 0.24s ease;";
+        aspect.style.cssText = "position:relative; width:100%; aspect-ratio:16/9; height:auto; min-height:0px !important; max-height:55vh; background:#000; flex-shrink:0; overflow:hidden; display:block; margin:0;";
+      }
+      if (scrollWrap) {
+        scrollWrap.classList.remove("hidden");
+        scrollWrap.style.opacity = "1";
+      }
+      if (co) co.classList.add("hidden");
+      if (miniClose) miniClose.style.display = "none";
+      if (miniBar) miniBar.style.display = "none";
+    }
+  };
+
+  window.minimizeToMiniPlayer = function() {
+    ensureMiniPlayerBottomBar();
+    var modal = document.getElementById("playerModal");
+    var box = document.getElementById("playerModalBox");
+    var aspect = document.getElementById("playerAspectBox");
+    var scrollWrap = document.getElementById("ytWatchScrollContainer");
+    var co = document.getElementById("miniCenterExpandOverlay");
+    var miniClose = document.getElementById("qaafMiniPlayerCloseBtn");
+    var miniBar = document.getElementById("qaafCleanMiniBar");
+    var miniTitle = document.getElementById("qaafCleanMiniTitle");
+    var volBar = document.getElementById("qaafBottomSeekVolBar");
+    var video = (videosData || []).find(function(v) { return v.id === currentPlayingVideoId; });
+
+    if (modal && box && aspect) {
+      modal.classList.remove("hidden");
+      modal.style.cssText = "position:fixed; bottom:3.1rem; right:0.6rem; left:auto; top:auto; width:260px; z-index:999; display:block; background:transparent; pointer-events:auto;";
+      box.style.cssText = "width:100%; background:#181818; border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,0.18); box-shadow:0 16px 40px rgba(0,0,0,0.9); display:flex; flex-direction:column; transition:all 0.24s ease;";
+      aspect.style.cssText = "position:relative; width:100%; aspect-ratio:16/9; height:auto; min-height:0px !important; background:#000; flex-shrink:0; overflow:hidden; display:block;";
+      if (scrollWrap) scrollWrap.classList.add("hidden");
+      if (co) co.classList.add("hidden"); // Keep video face 100% clear!
+      if (miniClose) miniClose.style.display = "none";
+      if (volBar) volBar.style.display = "none";
+      if (miniTitle) miniTitle.innerText = video ? video.title : "Playing...";
+      if (miniBar) miniBar.style.display = "flex";
+    }
+    [100, 350].forEach(function(ms) {
+      setTimeout(function() {
+        if (typeof sendYouTubeCommand === "function") sendYouTubeCommand("playVideo");
+      }, ms);
+    });
+  };
+
+  // Connect qaaf-games.html directly when playing any game in Category 1 (qaaf_simple)
+  window.openAndPlayGame = function(gameId) {
+    var g = gamesData.find(function(x) { return x.id === gameId; });
+    if (!g || !g.installed || g.blockedByParent) {
+      installGameByChild(gameId);
+      return;
+    }
+
+    var targetFile = g.externalFile || "./qaaf-games.html";
+    // For Category 1 (qaaf_simple), qaaf-games.html is in the main folder, so open it directly in the full-screen game frame!
+    if ((g.category || "qaaf_simple") === "qaaf_simple") {
+      var gm = document.getElementById("qaafStandaloneGamesModal");
+      var ifr = document.getElementById("qaafStandaloneGameIframe");
+      if (gm && ifr) {
+        document.getElementById("extGameHeaderIcon").innerText = g.icon;
+        document.getElementById("extGameHeaderTitle").innerText = g.title;
+        document.getElementById("extGameStarsCount").innerText = gameStars;
+        var proFlag = isSupporterPro ? "1" : "0";
+        ifr.src = targetFile + "?game=" + encodeURIComponent(g.slug) + "&id=" + encodeURIComponent(g.id) + "&lang=" + encodeURIComponent(preferredContentLang || "en") + "&pro=" + proFlag + "&stars=" + gameStars;
+        gm.classList.remove("hidden");
+        return;
+      }
+    }
+
+    launchMiniGame(gameId.indexOf("qg") === 0 ? "g1" : (gameId.indexOf("3dg") === 0 ? "g3" : gameId));
+  };
+
+  upgradeMinimizeAndCloseIcons();
+  ensureMiniPlayerBottomBar();
+})();
+
+
+
+// QAAF V12.3 1.8s AUTO-HIDE CLOSE CROSS (NEXT TO SETTINGS GEAR), SMOOTH MINIMIZE & ANTI-RELOAD LOCK
+(function initFastAutoHideCloseAndMinimize() {
+  var hudTimer = null;
+
+  // Lock browser Pull-to-Refresh whenever playerModal is open so dragging down NEVER reloads the page!
+  setInterval(function() {
+    var modal = document.getElementById("playerModal");
+    var isPlayerOpen = modal && !modal.classList.contains("hidden");
+    if (isPlayerOpen || isKidsLocked) {
+      document.documentElement.style.overscrollBehaviorY = "none";
+      document.body.style.overscrollBehaviorY = "none";
+    } else {
+      document.documentElement.style.overscrollBehaviorY = "auto";
+      document.body.style.overscrollBehaviorY = "auto";
+    }
+  }, 300);
+
+  function ensureTopRightQuickActions() {
+    var aspect = document.getElementById("playerAspectBox");
+    if (!aspect || document.getElementById("qaafQuickTopRightBox")) return;
+
+    // Placed at top-right (right side of YouTube's Settings gear) & top-left (Minimize arrow)
+    var topRight = document.createElement("div");
+    topRight.id = "qaafQuickTopRightBox";
+    topRight.dir = "ltr";
+    topRight.style.cssText = "position:absolute; top:10px; right:4px; z-index:38; display:flex; align-items:center; gap:4px; opacity:0; pointer-events:none; transition:opacity 0.2s ease;";
+
+    topRight.innerHTML =
+      '<button type="button" onclick="event.stopPropagation(); minimizeToMiniPlayer();" class="w-7 h-7 rounded-full bg-black/75 hover:bg-neutral-800 border border-white/25 text-white flex items-center justify-center shadow-lg active:scale-90 transition" title="Minimize">' +
+        '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.8" d="M19 9l-7 7-7-7"></path></svg>' +
+      '</button>' +
+      '<button type="button" onclick="event.stopPropagation(); closeVideoPlayer();" class="w-7 h-7 rounded-full bg-red-600/90 hover:bg-red-500 border border-white/30 text-white flex items-center justify-center text-xs font-extrabold shadow-lg active:scale-90 transition" title="Close Video">' +
+        '✕' +
+      '</button>';
+
+    aspect.appendChild(topRight);
+  }
+
+  window.wakeAllVideoControls1800 = function() {
+    ensureTopRightQuickActions();
+    var topRight = document.getElementById("qaafQuickTopRightBox");
+    var volBar = document.getElementById("qaafBottomSeekVolBar");
+    var scrollWrap = document.getElementById("ytWatchScrollContainer");
+    var isMini = scrollWrap && scrollWrap.classList.contains("hidden");
+
+    if (isMini) {
+      if (topRight) topRight.style.display = "none";
+      if (volBar) volBar.style.display = "none";
+      return;
+    }
+
+    if (topRight) {
+      topRight.style.display = "flex";
+      topRight.style.opacity = "1";
+      topRight.style.pointerEvents = "auto";
+    }
+    if (volBar) {
+      volBar.style.display = "flex";
+      volBar.style.opacity = "1";
+      volBar.style.pointerEvents = "auto";
+    }
+
+    if (hudTimer) clearTimeout(hudTimer);
+    // Auto-hide in 1.8 seconds (1800ms) as requested!
+    hudTimer = setTimeout(function() {
+      if (topRight) {
+        topRight.style.opacity = "0";
+        topRight.style.pointerEvents = "none";
+      }
+      if (volBar) {
+        volBar.style.opacity = "0";
+        volBar.style.pointerEvents = "none";
+      }
+    }, 1800);
+  };
+
+  // Override wakeBottomSeekVolume to use the unified 1.8s timer
+  window.wakeBottomSeekVolume = window.wakeAllVideoControls1800;
+
+  var aspectBox = document.getElementById("playerAspectBox");
+  if (aspectBox) {
+    aspectBox.addEventListener("touchstart", function() { window.wakeAllVideoControls1800(); }, { passive: true, capture: true });
+    aspectBox.addEventListener("click", function() { window.wakeAllVideoControls1800(); }, { capture: true });
+  }
+
+  window.addEventListener("blur", function() {
+    var modal = document.getElementById("playerModal");
+    if (modal && !modal.classList.contains("hidden")) {
+      window.wakeAllVideoControls1800();
+      setTimeout(function() {
+        try { window.focus(); } catch (e) {}
+      }, 350);
+    }
+  });
+
+  // Smooth pull-down on the title / info header area below the video to minimize without reloading
+  var pullStartY = 0;
+  var pullCurY = 0;
+  var isPullingDown = false;
+
+  var scrollCont = document.getElementById("ytWatchScrollContainer");
+  if (scrollCont) {
+    scrollCont.addEventListener("touchstart", function(e) {
+      if (scrollCont.scrollTop > 2 || !e.touches || e.touches.length !== 1) return;
+      pullStartY = e.touches[0].clientY;
+      pullCurY = pullStartY;
+      isPullingDown = true;
+    }, { passive: true });
+
+    scrollCont.addEventListener("touchmove", function(e) {
+      if (!isPullingDown || !e.touches || e.touches.length !== 1) return;
+      pullCurY = e.touches[0].clientY;
+      var dy = pullCurY - pullStartY;
+      var box = document.getElementById("playerModalBox");
+      if (dy > 10 && scrollCont.scrollTop <= 0 && box) {
+        box.style.transform = "translateY(" + Math.min(dy * 0.6, 150) + "px)";
+      }
+    }, { passive: true });
+
+    scrollCont.addEventListener("touchend", function() {
+      if (!isPullingDown) return;
+      isPullingDown = false;
+      var dy = pullCurY - pullStartY;
+      var box = document.getElementById("playerModalBox");
+      if (box) box.style.transform = "";
+      if (dy > 50 && scrollCont.scrollTop <= 0) {
+        window.minimizeToMiniPlayer();
+      }
+      pullStartY = 0;
+      pullCurY = 0;
+    }, { passive: true });
+  }
+
+  ensureTopRightQuickActions();
+})();
+
