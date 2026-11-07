@@ -1,0 +1,20 @@
+﻿<svg width="1000" height="700" viewBox="0 0 500 350" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="qaafExactBrushGrad" x1="385" y1="65" x2="145" y2="285" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00FF7B"/>
+      <stop offset="42%" stop-color="#00DF89"/>
+      <stop offset="72%" stop-color="#0099DF"/>
+      <stop offset="100%" stop-color="#1E78FF"/>
+    </linearGradient>
+  </defs>
+  <g id="Layer_1_Red_Box">
+    <path d="M 480,175 C 480,238 475,278 463,296 C 450,315 415,323 250,323 C 85,323 50,315 37,296 C 25,278 20,238 20,175 C 20,112 25,72 37,54 C 50,35 85,27 250,27 C 415,27 450,35 463,54 C 475,72 480,112 480,175 Z" fill="#EE1D23"/>
+  </g>
+  <g id="Layer_2_Play_Triangle">
+    <polygon points="170,118 170,256 290,187" fill="#FFFFFF"/>
+  </g>
+  <g id="Layer_3_Qaaf_Letter">
+    <path id="Qaaf_Two_Dots" d="M 264,104 L 303,64 L 335,88 L 348,64 L 392,94 L 368,125 L 331,102 L 302,129 Z" fill="#00FF7B"/>
+    <path id="Qaaf_Body" fill-rule="evenodd" clip-rule="evenodd" d="M 342,202 C 320,202 292,199 281,182 C 271,166 280,127 318,123 C 356,119 385,147 386,192 C 387,238 348,278 282,300 C 218,321 156,306 142,265 C 134,242 142,212 156,191 C 158,188 161,190 159,194 C 148,217 148,242 162,257 C 182,278 232,275 282,256 C 332,237 368,208 369,184 C 371,196 364,213 356,222 C 363,210 364,198 359,193 C 354,199 348,202 342,202 Z M 326,151 C 311,151 304,160 307,168 C 310,175 327,176 346,174 C 343,159 336,151 326,151 Z" fill="url(#qaafExactBrushGrad)"/>
+  </g>
+</svg>

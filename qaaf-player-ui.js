@@ -2908,7 +2908,7 @@
     '<rect x="223" y="554" width="309" height="25" rx="12.5" ry="12.5" fill="#FFFFFF"/>';
 
   var headerSvg = document.querySelector("#mainHeader svg");
-  if (headerSvg) {
+  if (false && headerSvg) {
     headerSvg.setAttribute("viewBox", "0 0 1024 716");
     headerSvg.innerHTML = CLEAN_HEADER_SVG;
   }

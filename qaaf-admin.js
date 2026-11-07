@@ -1438,7 +1438,7 @@
 
   // 1. Update Header Logo (Static with Half-Filled White Bar: width="309")
   const headerSvg = document.querySelector('#mainHeader svg');
-  if (headerSvg) {
+  if (false && headerSvg) {
     headerSvg.setAttribute('viewBox', '0 0 1024 716');
     headerSvg.innerHTML = `
       <path d="${RED_D}" fill="#E51920" />
@@ -1452,7 +1452,7 @@
 
   // 2. Replace #startupSplashModal HTML completely (No Urdu text, only English Slogan)
   const splashModal = document.getElementById('startupSplashModal');
-  if (splashModal) {
+  if (false && splashModal) {
     splashModal.innerHTML = `
       <div class="relative w-full max-w-md flex flex-col items-center justify-center p-4" >
         <div id="logo-container" class="w-full h-auto block">
