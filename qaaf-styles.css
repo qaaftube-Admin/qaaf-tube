@@ -409,7 +409,4 @@ img.qaaf-custom-emoji {
     opacity: 0 !important;
     pointer-events: none !important;
   }
-  #qaafBottomSeekVolBar.vol-visible {
-    opacity: 1 !important;
-    pointer-events: auto !important;
-  }
+  

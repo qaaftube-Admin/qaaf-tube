@@ -15,29 +15,16 @@
     })();
 
 const globalLanguagesList = [
-      { code: 'en', short: 'EN', label: '🇬🇧 English (Default)', rtl: false, regionKey: 'US_UK' },
+      { code: 'en', short: 'EN', label: '🇬🇧 English', rtl: false, regionKey: 'US_UK' },
       { code: 'ar', short: 'AR', label: '🇸🇦 Arabic (العربية)', rtl: true, regionKey: 'AR' },
       { code: 'ur', short: 'UR', label: '🇵🇰 Urdu (اردو)', rtl: true, regionKey: 'PK' },
       { code: 'hi', short: 'HI', label: '🇮🇳 Hindi (हिन्दी)', rtl: false, regionKey: 'GLOBAL' },
       { code: 'bn', short: 'BN', label: '🇧🇩 Bengali (বাংলা)', rtl: false, regionKey: 'BD' },
       { code: 'tr', short: 'TR', label: '🇹🇷 Turkish (Türkçe)', rtl: false, regionKey: 'GLOBAL' },
-      { code: 'ms', short: 'MS', label: '🇲🇾 Malay (Bahasa Melayu)', rtl: false, regionKey: 'GLOBAL' },
+      { code: 'ms', short: 'MS', label: '🇲🇾 Malay (Melayu)', rtl: false, regionKey: 'GLOBAL' },
       { code: 'id', short: 'ID', label: '🇮🇩 Indonesian (Bahasa)', rtl: false, regionKey: 'GLOBAL' },
       { code: 'fr', short: 'FR', label: '🇫🇷 French (Français)', rtl: false, regionKey: 'US_UK' },
-      { code: 'de', short: 'DE', label: '🇩🇪 German (Deutsch)', rtl: false, regionKey: 'US_UK' },
-      { code: 'it', short: 'IT', label: '🇮🇹 Italian (Italiano)', rtl: false, regionKey: 'US_UK' },
-      { code: 'es', short: 'ES', label: '🇪🇸 Spanish (Español)', rtl: false, regionKey: 'US_UK' },
-      { code: 'ru', short: 'RU', label: '🇷🇺 Russian (Русский)', rtl: false, regionKey: 'GLOBAL' },
-      { code: 'fa', short: 'FA', label: '🇮🇷 Persian (فارسی)', rtl: true, regionKey: 'GLOBAL' },
-      { code: 'ps', short: 'PS', label: '🇦🇫 Pashto (پښتو)', rtl: true, regionKey: 'PK' },
-      { code: 'pa', short: 'PA', label: '🇵🇰 Punjabi (پنجابی)', rtl: false, regionKey: 'PK' },
-      { code: 'sw', short: 'SW', label: '🇰🇪 Swahili', rtl: false, regionKey: 'GLOBAL' },
-      { code: 'ha', short: 'HA', label: '🇳🇬 Hausa', rtl: false, regionKey: 'GLOBAL' },
-      { code: 'so', short: 'SO', label: '🇸🇴 Somali', rtl: false, regionKey: 'GLOBAL' },
-      { code: 'uz', short: 'UZ', label: '🇺🇿 Uzbek', rtl: false, regionKey: 'GLOBAL' },
-      { code: 'sq', short: 'SQ', label: '🇦🇱 Albanian', rtl: false, regionKey: 'GLOBAL' },
-      { code: 'bs', short: 'BS', label: '🇧🇦 Bosnian', rtl: false, regionKey: 'GLOBAL' },
-      { code: 'zh', short: 'ZH', label: '🇨🇳 Chinese', rtl: false, regionKey: 'GLOBAL' }
+      { code: 'ru', short: 'RU', label: '🇷🇺 Russian (Русский)', rtl: false, regionKey: 'GLOBAL' }
     ];
 
     // HISN AL-MUSLIM 15 ESSENTIAL MULTILINGUAL DUAS
