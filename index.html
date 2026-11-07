@@ -1042,6 +1042,321 @@
   <script src="./qaaf-data.js?v=12.0"></script>
   <script src="./qaaf-admin.js?v=12.0"></script>
   <script src="./qaaf-player-ui.js?v=12.0"></script>
+<!-- QAAF V12.6 NATIVE MASTER PATCH START -->
+<style>
+  #ytTopControlBar, #qaafFloatingPlayerHud, #qaafHudWakeZoneTop, #qaafQuickTopRightBox {
+    display: none !important;
+  }
+  .yt-single-line-gradient-title {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    display: block !important;
+    -webkit-mask-image: linear-gradient(to right, #000000 80%, transparent 98%);
+    mask-image: linear-gradient(to right, #000000 80%, transparent 98%);
+  }
+</style>
+<script>
+(function initQaafV126MasterNativePatch() {
+  var hudFadeTimer = null;
+
+  // A. REMOVE BLACK BARS ON MOBILE 16:9 PLAYER & LOCK PULL-TO-REFRESH WHEN PLAYER IS OPEN
+  var pAspect = document.getElementById("playerAspectBox");
+  if (pAspect) pAspect.classList.remove("min-h-[260px]", "sm:min-h-[380px]");
+
+  setInterval(function() {
+    var modal = document.getElementById("playerModal");
+    var isPlayerOpen = modal && !modal.classList.contains("hidden");
+    if (isPlayerOpen || isKidsLocked) {
+      document.documentElement.style.overscrollBehaviorY = "none";
+      document.body.style.overscrollBehaviorY = "none";
+    } else {
+      document.documentElement.style.overscrollBehaviorY = "auto";
+      document.body.style.overscrollBehaviorY = "auto";
+    }
+  }, 300);
+
+  // B. HEADER LOGO = INSTANT HOME BUTTON
+  function bindLogoHome() {
+    var headerLeft = document.querySelector("#mainHeader > div:first-child");
+    if (!headerLeft) return;
+    headerLeft.style.cursor = "pointer";
+    headerLeft.onclick = function(e) {
+      if (e.target && e.target.closest("#headerDrawerMenuBtn")) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (window.isKidsTimeExpiredLock) return;
+      if (isKidsLocked) { openParentalGate("unlock"); return; }
+      if (typeof closeVideoPlayer === "function") closeVideoPlayer();
+      if (typeof closeQaafProfileDrawer === "function") closeQaafProfileDrawer();
+      window.qaafSelectedChannel = "ALL";
+      window.qaafActiveSearchQuery = "";
+      currentCategory = "all";
+      currentSortFilter = "default";
+      window.qaafGridPageLimit = 24;
+      var sInp = document.getElementById("qaafSearchInput");
+      if (sInp) sInp.value = "";
+      if (typeof window.renderVideosNow === "function") window.renderVideosNow();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+  }
+  bindLogoHome();
+
+  // C. TOP-LEFT MINIMAL RED CROSS (NO CIRCLE) & TRANSPARENT RED VOLUME BAR (AUTO-HIDES IN 1.5s)
+  function cleanupOldButtons() {
+    var tr = document.getElementById("qaafQuickTopRightBox");
+    if (tr) tr.remove();
+    var hdr = document.getElementById("ytCleanWatchHeader");
+    if (hdr) {
+      var minB = hdr.querySelector('button[onclick*="minimizeToMiniPlayer"]');
+      var clsB = hdr.querySelector('button[onclick*="closeVideoPlayer"]');
+      if (minB) minB.remove();
+      if (clsB) clsB.remove();
+    }
+  }
+
+  function ensureMinimalRedControls() {
+    cleanupOldButtons();
+    var aspect = document.getElementById("playerAspectBox");
+    if (!aspect) return;
+
+    var topLeftX = document.getElementById("qaafMinimalTopLeftClose");
+    if (!topLeftX) {
+      topLeftX = document.createElement("button");
+      topLeftX.id = "qaafMinimalTopLeftClose";
+      topLeftX.type = "button";
+      topLeftX.style.cssText = "position:absolute; top:8px; left:10px; z-index:38; background:transparent !important; border:none !important; box-shadow:none !important; color:#ff1e38; font-size:22px; font-weight:800; line-height:1; padding:4px 8px; cursor:pointer; opacity:0; pointer-events:none; transition:opacity 0.2s ease; filter:drop-shadow(0 1px 3px rgba(0,0,0,0.85));";
+      topLeftX.innerHTML = "✕";
+      topLeftX.onclick = function(e) { e.stopPropagation(); closeVideoPlayer(); };
+      aspect.appendChild(topLeftX);
+    }
+
+    var volBar = document.getElementById("qaafBottomSeekVolBar");
+    if (volBar && !volBar.dataset.redUpgraded) {
+      volBar.dataset.redUpgraded = "1";
+      volBar.className = "";
+      volBar.style.cssText = "position:absolute; bottom:4px; left:50%; transform:translateX(-50%); z-index:35; background:transparent !important; border:none !important; box-shadow:none !important; backdrop-filter:none !important; padding:2px 6px; display:flex; align-items:center; gap:6px; opacity:0; pointer-events:none; transition:opacity 0.2s ease;";
+      var curV = parseInt(localStorage.getItem("qaaf_player_volume") || "100", 10);
+      volBar.innerHTML =
+        '<button type="button" id="seekVolMuteBtn" onclick="toggleSeekBottomMute(event)" style="color:#ff1e38; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.9));" class="text-xs font-extrabold leading-none select-none">' + (curV === 0 ? '🔇' : '🔊') + '</button>' +
+        '<input id="seekVolSlider" type="range" min="0" max="100" value="' + curV + '" oninput="changeSeekBottomVolume(this.value, event)" style="accent-color:#ff1e38; height:3px; background:rgba(255,30,56,0.35);" class="w-24 sm:w-28 rounded-lg cursor-pointer" />' +
+        '<span id="seekVolPctText" style="color:#ff1e38; text-shadow:0 1px 3px rgba(0,0,0,0.95);" class="text-[11px] font-extrabold w-8 text-left">' + curV + '%</span>';
+    }
+  }
+
+  window.hideRedOverlayNow = function() {
+    var topLeftX = document.getElementById("qaafMinimalTopLeftClose");
+    var volBar = document.getElementById("qaafBottomSeekVolBar");
+    if (topLeftX) {
+      topLeftX.style.setProperty("opacity", "0", "important");
+      topLeftX.style.setProperty("pointer-events", "none", "important");
+    }
+    if (volBar) {
+      volBar.className = "";
+      volBar.style.setProperty("opacity", "0", "important");
+      volBar.style.setProperty("pointer-events", "none", "important");
+    }
+  };
+
+  window.wakeRedOverlay1500 = function() {
+    ensureMinimalRedControls();
+    var topLeftX = document.getElementById("qaafMinimalTopLeftClose");
+    var volBar = document.getElementById("qaafBottomSeekVolBar");
+    var scrollWrap = document.getElementById("ytWatchScrollContainer");
+    var isMini = scrollWrap && scrollWrap.classList.contains("hidden");
+
+    if (isMini) {
+      window.hideRedOverlayNow();
+      return;
+    }
+
+    if (topLeftX) {
+      topLeftX.style.display = "block";
+      topLeftX.style.setProperty("opacity", "1", "important");
+      topLeftX.style.setProperty("pointer-events", "auto", "important");
+    }
+    if (volBar) {
+      volBar.className = "";
+      volBar.style.display = "flex";
+      volBar.style.setProperty("opacity", "1", "important");
+      volBar.style.setProperty("pointer-events", "auto", "important");
+    }
+
+    if (hudFadeTimer) clearTimeout(hudFadeTimer);
+    hudFadeTimer = setTimeout(function() {
+      window.hideRedOverlayNow();
+    }, 1500);
+  };
+
+  window.wakeBottomSeekVolume = window.wakeRedOverlay1500;
+  window.wakeAllVideoControls1800 = window.wakeRedOverlay1500;
+  window.wakeMinimalRedControls1500 = window.wakeRedOverlay1500;
+
+  if (pAspect) {
+    pAspect.addEventListener("touchstart", function() { window.wakeRedOverlay1500(); }, { passive: true, capture: true });
+    pAspect.addEventListener("click", function() { window.wakeRedOverlay1500(); }, { capture: true });
+  }
+  document.addEventListener("input", function(e) {
+    if (e.target && e.target.id === "seekVolSlider") window.wakeRedOverlay1500();
+  });
+
+  // D. SMOOTH YOUTUBE-STYLE SWIPE-DOWN TO MINIMIZE
+  function ensureTopSwipeStrip() {
+    var aspect = document.getElementById("playerAspectBox");
+    if (!aspect || document.getElementById("qaafTopSwipeStrip")) return;
+    var strip = document.createElement("div");
+    strip.id = "qaafTopSwipeStrip";
+    strip.style.cssText = "position:absolute; top:0; left:48px; right:145px; height:44px; z-index:32; background:transparent; touch-action:none;";
+    aspect.appendChild(strip);
+  }
+
+  var sY0 = 0, sY1 = 0, dragging = false;
+  document.addEventListener("touchstart", function(e) {
+    var modal = document.getElementById("playerModal");
+    var scrollWrap = document.getElementById("ytWatchScrollContainer");
+    if (!modal || modal.classList.contains("hidden") || !scrollWrap || scrollWrap.classList.contains("hidden")) return;
+    if (!e.touches || e.touches.length !== 1) return;
+    var t = e.target;
+    if (t && (t.tagName === "INPUT" || t.tagName === "BUTTON")) return;
+    var y = e.touches[0].clientY;
+    if (scrollWrap.scrollTop <= 2 && y < 380) {
+      sY0 = y; sY1 = y; dragging = true;
+    }
+  }, { passive: true });
+
+  document.addEventListener("touchmove", function(e) {
+    if (!dragging || !e.touches || !e.touches.length) return;
+    sY1 = e.touches[0].clientY;
+    var dy = sY1 - sY0;
+    if (dy <= 6) return;
+    var modal = document.getElementById("playerModal");
+    var box = document.getElementById("playerModalBox");
+    var scrollWrap = document.getElementById("ytWatchScrollContainer");
+    var prog = Math.min(1, dy / 220);
+    var sc = 1 - (prog * 0.24);
+    if (modal) modal.style.background = "rgba(0,0,0," + (0.94 - prog * 0.65).toFixed(2) + ")";
+    if (scrollWrap) scrollWrap.style.opacity = String(Math.max(0, 1 - prog * 2.4));
+    if (box) {
+      box.style.transition = "none";
+      box.style.transform = "translateY(" + Math.min(dy * 0.85, 260) + "px) scale(" + sc.toFixed(3) + ")";
+      box.style.borderRadius = Math.round(prog * 16) + "px";
+    }
+  }, { passive: true });
+
+  document.addEventListener("touchend", function() {
+    if (!dragging) return;
+    dragging = false;
+    var dy = sY1 - sY0;
+    var modal = document.getElementById("playerModal");
+    var box = document.getElementById("playerModalBox");
+    var scrollWrap = document.getElementById("ytWatchScrollContainer");
+    if (box) box.style.transition = "all 0.22s cubic-bezier(0.22, 1, 0.36, 1)";
+    if (dy > 32) {
+      if (scrollWrap) scrollWrap.style.opacity = "1";
+      window.minimizeToMiniPlayer();
+    } else {
+      if (modal) modal.style.background = "#0f0f0f";
+      if (scrollWrap) scrollWrap.style.opacity = "1";
+      if (box) { box.style.transform = "none"; box.style.borderRadius = "0px"; }
+    }
+    sY0 = 0; sY1 = 0;
+  }, { passive: true });
+
+  // E. DUAL LANGUAGE SYSTEM (10 CORE ISLAMIC LANGUAGES: DISPLAY VS PREFERRED VIDEO LANGUAGE)
+  var TEN_LANGS = [
+    { code: "en", short: "EN", label: "🇬🇧 English" },
+    { code: "ar", short: "AR", label: "🇸🇦 Arabic (العربية)" },
+    { code: "ur", short: "UR", label: "🇵🇰 Urdu (اردو)" },
+    { code: "hi", short: "HI", label: "🇮🇳 Hindi (हिन्दी)" },
+    { code: "bn", short: "BN", label: "🇧🇩 Bengali (বাংলা)" },
+    { code: "tr", short: "TR", label: "🇹🇷 Turkish (Türkçe)" },
+    { code: "ms", short: "MS", label: "🇲🇾 Malay (Melayu)" },
+    { code: "id", short: "ID", label: "🇮🇩 Indonesian (Bahasa)" },
+    { code: "fr", short: "FR", label: "🇫🇷 French (Français)" },
+    { code: "ru", short: "RU", label: "🇷🇺 Russian (Русский)" }
+  ];
+
+  currentAppUILang = localStorage.getItem("qaaf_ui_display_lang") || "en";
+  preferredContentLang = localStorage.getItem("qaaf_preferred_content_lang") || "en";
+
+  function syncLangUI() {
+    var codeEl = document.getElementById("shortLangCode");
+    var prefObj = TEN_LANGS.find(function(l) { return l.code === preferredContentLang; });
+    if (codeEl) codeEl.innerText = prefObj ? prefObj.short : preferredContentLang.toUpperCase().slice(0, 2);
+
+    var menu = document.getElementById("langDropdownMenu");
+    if (!menu) return;
+
+    var uiOpt = "";
+    TEN_LANGS.forEach(function(l) {
+      uiOpt += '<option value="' + l.code + '" ' + (l.code === currentAppUILang ? 'selected' : '') + '>' + l.label + (l.code === 'en' ? ' (Default UI)' : '') + '</option>';
+    });
+
+    var pills = "";
+    TEN_LANGS.forEach(function(l) {
+      var act = (l.code === preferredContentLang);
+      pills += '<button type="button" onclick="setPreferredVideoLangNow(\'' + l.code + '\')" class="px-2.5 py-1.5 rounded-xl text-xs font-extrabold border transition flex items-center justify-between gap-1 ' +
+        (act ? 'bg-emerald-500 text-black border-emerald-300 shadow' : 'bg-black/70 hover:bg-slate-800 text-slate-200 border-slate-700') + '">' +
+        '<span class="truncate">' + l.label + '</span><span class="text-[10px] opacity-80">' + l.short + '</span></button>';
+    });
+
+    menu.innerHTML =
+      '<div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">' +
+        '<div><span class="font-extrabold text-white block text-xs">🌍 Language Preferences</span><span class="text-[10px] text-slate-400">Preferred Video Language &amp; App Display</span></div>' +
+        '<button type="button" onclick="toggleLangDropdown()" class="text-slate-400 hover:text-white px-2 py-0.5 rounded-lg bg-slate-800 font-bold">✕</button>' +
+      '</div>' +
+      '<div class="mb-3.5">' +
+        '<label class="block text-[11px] font-extrabold text-emerald-400 mb-1">🎬 1. Preferred Video &amp; Channel Language:</label>' +
+        '<p class="text-[10px] text-slate-400 mb-2">Videos of this language appear first on your screen:</p>' +
+        '<div class="grid grid-cols-2 gap-1.5">' + pills + '</div>' +
+      '</div>' +
+      '<div class="pt-2.5 border-t border-slate-800 mb-2.5">' +
+        '<label class="block text-[11px] font-bold text-amber-300 mb-1">📱 2. App Display Language (Buttons &amp; Menus):</label>' +
+        '<select id="uiLangSelectDropdown" onchange="setAppDisplayLangNow(this.value)" class="w-full bg-black border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold">' + uiOpt + '</select>' +
+      '</div>' +
+      '<div class="pt-2.5 border-t border-slate-800">' +
+        '<label class="flex items-center justify-between cursor-pointer text-slate-200 font-bold select-none text-xs">' +
+          '<span>Strict Language Only</span>' +
+          '<input type="checkbox" id="strictLangToggle" ' + (strictLanguageOnly ? 'checked' : '') + ' onchange="toggleStrictLanguage()" class="accent-emerald-500 rounded scale-110" />' +
+        '</label>' +
+      '</div>';
+
+    var selHtml = '<option value="global">🌍 Global (All Languages)</option>';
+    TEN_LANGS.forEach(function(l) { selHtml += '<option value="' + l.code + '">' + l.label + ' (' + l.short + ')</option>'; });
+    ["adminVideoLang", "parentVideoLang", "quickReqVideoLang"].forEach(function(id) {
+      var s = document.getElementById(id);
+      if (s) s.innerHTML = selHtml;
+    });
+  }
+
+  window.setPreferredVideoLangNow = function(code) {
+    preferredContentLang = code || "en";
+    localStorage.setItem("qaaf_preferred_content_lang", preferredContentLang);
+    syncLangUI();
+    if (typeof syncRegionalPromoBar === "function") syncRegionalPromoBar();
+    if (typeof window.renderVideosNow === "function") window.renderVideosNow();
+  };
+
+  window.setAppDisplayLangNow = function(code) {
+    currentAppUILang = code || "en";
+    localStorage.setItem("qaaf_ui_display_lang", currentAppUILang);
+    document.getElementById("htmlRoot").dir = (currentAppUILang === "ar") ? "rtl" : "ltr";
+    syncLangUI();
+  };
+
+  var prevOpen = window.openVideoPlayer;
+  window.openVideoPlayer = function(videoId) {
+    if (prevOpen) prevOpen(videoId);
+    ensureTopSwipeStrip();
+    ensureMinimalRedControls();
+    window.wakeRedOverlay1500();
+  };
+
+  ensureTopSwipeStrip();
+  ensureMinimalRedControls();
+  syncLangUI();
+})();
+</script>
+<!-- QAAF V12.6 NATIVE MASTER PATCH END -->
 </body>
 
 </html>
