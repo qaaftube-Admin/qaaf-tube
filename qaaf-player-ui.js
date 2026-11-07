@@ -6309,3 +6309,233 @@
   ensureTopRightQuickActions();
 })();
 
+
+
+// QAAF V12.4 LOGO HOME BUTTON, TOP-LEFT MINIMAL RED X (NO CIRCLE), TRANSPARENT RED VOLUME BAR & YOUTUBE DRAG-TO-MINIMIZE
+(function initSmartRedYoutubeHudAndLogoHome() {
+  var hudFadeTimer = null;
+
+  // 1. MAKE HEADER LOGO & BRAND TEXT WORK 100% AS HOME BUTTON
+  function bindHeaderLogoHomeButton() {
+    var headerLeft = document.querySelector("#mainHeader > div:first-child");
+    if (!headerLeft) return;
+    var logoChildren = headerLeft.querySelectorAll("svg, div.font-extrabold, #brandMainPrefix, #brandSuffix");
+    logoChildren.forEach(function(el) {
+      el.style.cursor = "pointer";
+      el.onclick = function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (window.isKidsTimeExpiredLock) return;
+        if (isKidsLocked) {
+          openParentalGate("unlock");
+          return;
+        }
+        // Reset everything to Home immediately and scroll to top
+        if (typeof closeVideoPlayer === "function") closeVideoPlayer();
+        if (typeof closeQaafProfileDrawer === "function") closeQaafProfileDrawer();
+        window.qaafSelectedChannel = "ALL";
+        window.qaafActiveSearchQuery = "";
+        currentCategory = "all";
+        currentSortFilter = "default";
+        window.qaafGridPageLimit = 24;
+        var sInp = document.getElementById("qaafSearchInput");
+        if (sInp) sInp.value = "";
+        var sClr = document.getElementById("qaafSearchClearBtn");
+        if (sClr) sClr.classList.add("hidden");
+        var pop = document.getElementById("allChannelsDropdownPopup");
+        if (pop) pop.classList.add("hidden");
+        document.querySelectorAll("#categoryBar .cat-chip").forEach(function(btn) {
+          var isAll = (btn.id === "ui_catAll");
+          btn.className = "cat-chip " + (btn.classList.contains("family-only-chip") ? "family-only-chip " : "") + (isAll ? "bg-emerald-500 text-black px-3 py-1 rounded-lg text-xs font-extrabold shrink-0 shadow flex items-center gap-1.5" : "bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0 flex items-center gap-1.5");
+        });
+        if (typeof window.renderVideosNow === "function") window.renderVideosNow();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      };
+    });
+  }
+  bindHeaderLogoHomeButton();
+
+  // 2. REMOVE TOP-RIGHT OVERLAY & METADATA ROW ARROW/CLOSE BUTTONS
+  var oldTopRight = document.getElementById("qaafQuickTopRightBox");
+  if (oldTopRight) oldTopRight.remove();
+
+  function removeMetadataRowButtons() {
+    var hdr = document.getElementById("ytCleanWatchHeader");
+    if (!hdr) return;
+    var minBtn = hdr.querySelector('button[onclick*="minimizeToMiniPlayer"]');
+    var clsBtn = hdr.querySelector('button[onclick*="closeVideoPlayer"]');
+    if (minBtn) minBtn.remove();
+    if (clsBtn) clsBtn.remove();
+  }
+  removeMetadataRowButtons();
+
+  // 3. CREATE TOP-LEFT MINIMAL RED CROSS (NO CIRCLE, NO BACKGROUND) & TRANSPARENT RED VOLUME BAR
+  function setupMinimalRedControls() {
+    var aspect = document.getElementById("playerAspectBox");
+    if (!aspect) return;
+
+    var oldTR = document.getElementById("qaafQuickTopRightBox");
+    if (oldTR) oldTR.remove();
+
+    // Top-Left Minimal Red X (No circle, no background fill, just sleek red X)
+    var topLeftX = document.getElementById("qaafMinimalTopLeftClose");
+    if (!topLeftX) {
+      topLeftX = document.createElement("button");
+      topLeftX.id = "qaafMinimalTopLeftClose";
+      topLeftX.type = "button";
+      topLeftX.title = "Close Video";
+      topLeftX.style.cssText = "position:absolute; top:8px; left:10px; z-index:38; background:transparent !important; border:none !important; box-shadow:none !important; color:#ff1e38; font-size:22px; font-weight:800; line-height:1; padding:4px 8px; cursor:pointer; opacity:0; pointer-events:none; transition:opacity 0.2s ease, transform 0.15s ease; filter:drop-shadow(0 1px 3px rgba(0,0,0,0.85));";
+      topLeftX.innerHTML = "✕";
+      topLeftX.onclick = function(e) {
+        e.stopPropagation();
+        closeVideoPlayer();
+      };
+      aspect.appendChild(topLeftX);
+    }
+
+    // Restyle Bottom Volume Bar to 100% Transparent Background, Thin Red Slider Bar & Red % Text
+    var volBar = document.getElementById("qaafBottomSeekVolBar");
+    if (volBar) {
+      volBar.style.cssText = "position:absolute; bottom:4px; left:50%; transform:translateX(-50%); z-index:35; background:transparent !important; border:none !important; box-shadow:none !important; backdrop-filter:none !important; padding:2px 6px; display:flex; align-items:center; gap:6px; opacity:0; pointer-events:none; transition:opacity 0.2s ease;";
+      var curV = parseInt(localStorage.getItem("qaaf_player_volume") || "100", 10);
+      volBar.innerHTML =
+        '<button type="button" id="seekVolMuteBtn" onclick="toggleSeekBottomMute(event)" style="color:#ff1e38; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.9));" class="text-xs font-extrabold leading-none select-none">' + (curV === 0 ? '🔇' : '🔊') + '</button>' +
+        '<input id="seekVolSlider" type="range" min="0" max="100" value="' + curV + '" oninput="changeSeekBottomVolume(this.value, event)" style="accent-color:#ff1e38; height:3px; background:rgba(255,30,56,0.35);" class="w-24 sm:w-28 rounded-lg cursor-pointer" />' +
+        '<span id="seekVolPctText" style="color:#ff1e38; text-shadow:0 1px 3px rgba(0,0,0,0.95);" class="text-[11px] font-extrabold w-8 text-left">' + curV + '%</span>';
+    }
+  }
+
+  window.wakeMinimalRedControls1500 = function() {
+    setupMinimalRedControls();
+    removeMetadataRowButtons();
+    var topLeftX = document.getElementById("qaafMinimalTopLeftClose");
+    var volBar = document.getElementById("qaafBottomSeekVolBar");
+    var scrollWrap = document.getElementById("ytWatchScrollContainer");
+    var isMini = scrollWrap && scrollWrap.classList.contains("hidden");
+
+    if (isMini) {
+      if (topLeftX) topLeftX.style.display = "none";
+      if (volBar) volBar.style.display = "none";
+      return;
+    }
+
+    if (topLeftX) {
+      topLeftX.style.display = "block";
+      topLeftX.style.opacity = "1";
+      topLeftX.style.pointerEvents = "auto";
+    }
+    if (volBar) {
+      volBar.style.display = "flex";
+      volBar.style.opacity = "1";
+      volBar.style.pointerEvents = "auto";
+    }
+
+    if (hudFadeTimer) clearTimeout(hudFadeTimer);
+    // Auto-hide quickly in 1.5 seconds (1500ms) as requested!
+    hudFadeTimer = setTimeout(function() {
+      if (topLeftX) {
+        topLeftX.style.opacity = "0";
+        topLeftX.style.pointerEvents = "none";
+      }
+      if (volBar) {
+        volBar.style.opacity = "0";
+        volBar.style.pointerEvents = "none";
+      }
+    }, 1500);
+  };
+
+  window.wakeAllVideoControls1800 = window.wakeMinimalRedControls1500;
+  window.wakeBottomSeekVolume = window.wakeMinimalRedControls1500;
+
+  // 4. SMOOTH YOUTUBE-STYLE DRAG-DOWN TO MINIMIZE (FROM TOP STRIP OR INFO AREA)
+  function ensureTopDragMinimizeStrip() {
+    var aspect = document.getElementById("playerAspectBox");
+    if (!aspect || document.getElementById("qaafTopSwipeStrip")) return;
+    // Invisible touch strip along the top-center of video so swiping down from top of video works smoothly!
+    var strip = document.createElement("div");
+    strip.id = "qaafTopSwipeStrip";
+    strip.style.cssText = "position:absolute; top:0; left:48px; right:145px; height:44px; z-index:32; background:transparent; touch-action:none;";
+    aspect.appendChild(strip);
+  }
+
+  var ytDragStartY = 0;
+  var ytDragCurY = 0;
+  var isYtDragging = false;
+
+  document.addEventListener("touchstart", function(e) {
+    var modal = document.getElementById("playerModal");
+    var scrollWrap = document.getElementById("ytWatchScrollContainer");
+    if (!modal || modal.classList.contains("hidden") || !scrollWrap || scrollWrap.classList.contains("hidden")) return;
+    if (!e.touches || e.touches.length !== 1) return;
+
+    var target = e.target;
+    if (target && (target.tagName === "INPUT" || target.tagName === "BUTTON")) return;
+
+    var y = e.touches[0].clientY;
+    if (scrollWrap.scrollTop <= 2 && y < 380) {
+      ytDragStartY = y;
+      ytDragCurY = y;
+      isYtDragging = true;
+    }
+  }, { passive: true });
+
+  document.addEventListener("touchmove", function(e) {
+    if (!isYtDragging || !e.touches || !e.touches.length) return;
+    ytDragCurY = e.touches[0].clientY;
+    var dy = ytDragCurY - ytDragStartY;
+    if (dy <= 6) return;
+
+    var modal = document.getElementById("playerModal");
+    var box = document.getElementById("playerModalBox");
+    var scrollWrap = document.getElementById("ytWatchScrollContainer");
+    var progress = Math.min(1, dy / 220);
+    var scaleVal = 1 - (progress * 0.24);
+
+    if (modal) modal.style.background = "rgba(0, 0, 0, " + (0.94 - progress * 0.65).toFixed(2) + ")";
+    if (scrollWrap) scrollWrap.style.opacity = String(Math.max(0, 1 - progress * 2.4));
+    if (box) {
+      box.style.transition = "none";
+      box.style.transform = "translateY(" + Math.min(dy * 0.85, 260) + "px) scale(" + scaleVal.toFixed(3) + ")";
+      box.style.borderRadius = Math.round(progress * 16) + "px";
+    }
+  }, { passive: true });
+
+  document.addEventListener("touchend", function() {
+    if (!isYtDragging) return;
+    isYtDragging = false;
+    var dy = ytDragCurY - ytDragStartY;
+    var modal = document.getElementById("playerModal");
+    var box = document.getElementById("playerModalBox");
+    var scrollWrap = document.getElementById("ytWatchScrollContainer");
+
+    if (box) box.style.transition = "all 0.22s cubic-bezier(0.22, 1, 0.36, 1)";
+
+    // Even a light 32px downward flick smoothly minimizes the player!
+    if (dy > 32) {
+      if (scrollWrap) scrollWrap.style.opacity = "1";
+      window.minimizeToMiniPlayer();
+    } else {
+      if (modal) modal.style.background = "#0f0f0f";
+      if (scrollWrap) scrollWrap.style.opacity = "1";
+      if (box) {
+        box.style.transform = "none";
+        box.style.borderRadius = "0px";
+      }
+    }
+    ytDragStartY = 0;
+    ytDragCurY = 0;
+  }, { passive: true });
+
+  var prevOpen = window.openVideoPlayer;
+  window.openVideoPlayer = function(videoId) {
+    if (prevOpen) prevOpen(videoId);
+    ensureTopDragMinimizeStrip();
+    setupMinimalRedControls();
+    removeMetadataRowButtons();
+    window.wakeMinimalRedControls1500();
+  };
+
+  ensureTopDragMinimizeStrip();
+  setupMinimalRedControls();
+})();
+
