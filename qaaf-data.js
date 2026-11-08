@@ -1188,21 +1188,211 @@ const globalLanguagesList = [
       contentSelect.innerHTML += `<option value="__custom__">➕ Other / Write Channel Language...</option>`;
     }
 
+    const QAAF_UI_DICTIONARY = {
+      en: {
+        videos: "Videos", games: "Games", settings: "Settings", kids: "Kids", login: "Login", admin: "Admin",
+        catAll: "All Channels", catQuran: "Tilawat-e-Quran", catNaat: "Naat", catTarbiyah: "Islamic Tarbiyah", catBayan: "Islamic Bayanat", catStories: "Kids Tarbiyah", catCartoon: "Kids Cartoons",
+        smart: "Smart Feed", fav: "Favorites", recent: "Most Recent", viewed: "Most Viewed",
+        searchPh: "Search any Video, Scholar, Surah, Cartoon or Channel (Urdu / English)...", searchBtn: "Search",
+        videoReq: "Video Request", shortsTitle: "QAAF Islamic Shorts & Quick Bayans", swipe: "Swipe / Scroll ➔",
+        drawerHome: "All Videos Feed", drawerPl: "My Playlists", drawerHist: "Watch History", drawerFav: "Favorite Videos", drawerTimer: "Kids Lock & Schedule",
+        langTitle: "🌍 Language & Region Setup", langLbl1: "📱 1. App Interface Language (UI):", langLbl2: "🎬 2. Preferred Video & Dua Language:", strictLbl: "Strict Language Only", strictSub: "Show only videos matching preferred language"
+      },
+      ur: {
+        videos: "ویڈیوز", games: "گیمز", settings: "سیٹنگز", kids: "کڈز", login: "لاگ ان", admin: "ایڈمن",
+        catAll: "تمام چینلز", catQuran: "تلاوتِ قرآن پاک", catNaat: "نعت شریف", catTarbiyah: "اسلامی تربیت", catBayan: "اسلامی بیانات", catStories: "بچوں کی تربیت", catCartoon: "کڈز کارٹون",
+        smart: "اسمارٹ فیڈ", fav: "پسندیدہ", recent: "تازہ ترین", viewed: "سب سے زیادہ دیکھی گئی",
+        searchPh: "کوئی بھی ویڈیو، قاری، نعت، کارٹون یا چینل تلاش کریں...", searchBtn: "تلاش کریں",
+        videoReq: "ویڈیو کی درخواست", shortsTitle: "قاف اسلامک شارٹس اور مختصر بیانات", swipe: "آگے دیکھیں ➔",
+        drawerHome: "تمام ویڈیوز", drawerPl: "میری پلے لسٹس", drawerHist: "دیکھی گئی ویڈیوز", drawerFav: "پسندیدہ ویڈیوز", drawerTimer: "کڈز لاک اور وقت",
+        langTitle: "🌍 زبان اور علاقے کی ترتیب", langLbl1: "📱 1۔ ویب سائٹ کے بٹنوں کی زبان:", langLbl2: "🎬 2۔ پسندیدہ ویڈیوز اور دعا کی زبان:", strictLbl: "صرف منتخب زبان کی ویڈیوز دکھائیں", strictSub: "صرف پسندیدہ زبان کی ویڈیوز سامنے آئیں گی"
+      },
+      ar: {
+        videos: "الفيديوهات", games: "الألعاب", settings: "الإعدادات", kids: "أطفال", login: "دخول", admin: "الإدارة",
+        catAll: "جميع القنوات", catQuran: "تلاوة القرآن", catNaat: "أناشيد إسلامية", catTarbiyah: "التربية الإسلامية", catBayan: "محاضرات إسلامية", catStories: "تربية الأطفال", catCartoon: "كرتون إسلامي",
+        smart: "المختار", fav: "المفضلة", recent: "الأحدث", viewed: "الأكثر مشاهدة",
+        searchPh: "ابحث عن أي فيديو أو قارئ أو سورة أو قناة...", searchBtn: "بحث",
+        videoReq: "طلب فيديو", shortsTitle: "مقاطع قاف القصيرة والمحاضرات", swipe: "اسحب للمزيد ➔",
+        drawerHome: "جميع الفيديوهات", drawerPl: "قوائم التشغيل", drawerHist: "سجل المشاهدة", drawerFav: "المفضلة", drawerTimer: "قفل ومؤقت الأطفال",
+        langTitle: "🌍 إعدادات اللغة والمنطقة", langLbl1: "📱 ١. لغة واجهة التطبيق والأزرار:", langLbl2: "🎬 ٢. لغة الفيديوهات والأدعية المفضلة:", strictLbl: "عرض هذه اللغة فقط", strictSub: "إظهار الفيديوهات المطابقة للغة المفضلة فقط"
+      },
+      hi: {
+        videos: "वीडियो", games: "गेम्स", settings: "सेटिंग्स", kids: "किड्स", login: "लॉग इन", admin: "एडमिन",
+        catAll: "सभी चैनल", catQuran: "तिलावत-ए-कुरआन", catNaat: "नात शरीफ़", catTarbiyah: "इस्लामी तरबियत", catBayan: "इस्लामी बयानात", catStories: "बच्चों की तरबियत", catCartoon: "किड्स कार्टून",
+        smart: "स्मार्ट फ़ीड", fav: "पसंदीदा", recent: "नवीनतम", viewed: "सबसे ज़्यादा देखे गए",
+        searchPh: "कोई भी वीडियो, कारी, सूरह या चैनल खोजें...", searchBtn: "खोजें",
+        videoReq: "वीडियो अनुरोध", shortsTitle: "क़ाफ़ इस्लामिक शॉर्ट्स और बयानात", swipe: "आगे देखें ➔",
+        drawerHome: "सभी वीडियो", drawerPl: "मेरी प्लेलिस्ट", drawerHist: "देखे गए वीडियो", drawerFav: "पसंदीदा वीडियो", drawerTimer: "किड्स लॉक और समय",
+        langTitle: "🌍 भाषा और क्षेत्र सेटअप", langLbl1: "📱 1. ऐप के बटनों की भाषा:", langLbl2: "🎬 2. पसंदीदा वीडियो और दुआ की भाषा:", strictLbl: "केवल चुनी हुई भाषा", strictSub: "केवल पसंदीदा भाषा के वीडियो दिखाएं"
+      },
+      bn: {
+        videos: "ভিডিও", games: "গেমস", settings: "সেটিংস", kids: "কিডস", login: "লগইন", admin: "অ্যাডমিন",
+        catAll: "সব চ্যানেল", catQuran: "তিলাওয়াতে কুরআন", catNaat: "নাত শরীফ", catTarbiyah: "ইসলামিক তারবিয়াহ", catBayan: "ইসলামিক বয়ান", catStories: "শিশুদের তারবিয়াহ", catCartoon: "কিডস কার্টুন",
+        smart: "স্মার্ট ফিড", fav: "প্রিয়", recent: "সাম্প্রতিক", viewed: "সর্বাধিক দেখা",
+        searchPh: "যেকোনো ভিডিও, কারী, সূরা বা চ্যানেল খুঁজুন...", searchBtn: "খুঁজুন",
+        videoReq: "ভিডিও অনুরোধ", shortsTitle: "কাফ ইসলামিক শর্টস ও বয়ান", swipe: "সোয়াইপ করুন ➔",
+        drawerHome: "সব ভিডিও", drawerPl: "আমার প্লেলিস্ট", drawerHist: "দেখার ইতিহাস", drawerFav: "প্রিয় ভিডিও", drawerTimer: "কিডস লক ও টাইমার",
+        langTitle: "🌍 ভাষা ও অঞ্চল সেটিং", langLbl1: "📱 ১. অ্যাপ বাটনের ভাষা:", langLbl2: "🎬 ২. পছন্দের ভিডিও ও দোয়ার ভাষা:", strictLbl: "শুধুমাত্র এই ভাষা", strictSub: "শুধু পছন্দের ভাষার ভিডিও দেখান"
+      },
+      tr: {
+        videos: "Videolar", games: "Oyunlar", settings: "Ayarlar", kids: "Çocuk", login: "Giriş", admin: "Yönetici",
+        catAll: "Tüm Kanallar", catQuran: "Kur'an Tilaveti", catNaat: "İlahi & Naat", catTarbiyah: "İslami Eğitim", catBayan: "İslami Sohbetler", catStories: "Çocuk Eğitimi", catCartoon: "Çocuk Çizgi Film",
+        smart: "Akıllı Akış", fav: "Favoriler", recent: "En Yeni", viewed: "En Çok İzlenen",
+        searchPh: "Video, Qari, Sure veya Kanal ara...", searchBtn: "Ara",
+        videoReq: "Video İsteği", shortsTitle: "QAAF İslami Kısa Videolar", swipe: "Kaydır ➔",
+        drawerHome: "Tüm Videolar", drawerPl: "Oynatma Listelerim", drawerHist: "İzleme Geçmişi", drawerFav: "Favori Videolar", drawerTimer: "Çocuk Kilidi & Süre",
+        langTitle: "🌍 Dil ve Bölge Ayarları", langLbl1: "📱 1. Uygulama Arayüz Dili:", langLbl2: "🎬 2. Tercih Edilen Video Dili:", strictLbl: "Sadece Seçili Dil", strictSub: "Yalnızca tercih edilen dildeki videoları göster"
+      },
+      ms: {
+        videos: "Video", games: "Permainan", settings: "Tetapan", kids: "Kanak2", login: "Log Masuk", admin: "Admin",
+        catAll: "Semua Saluran", catQuran: "Tilawah Al-Quran", catNaat: "Nasyid", catTarbiyah: "Tarbiyah Islam", catBayan: "Ceramah Islam", catStories: "Didik Anak", catCartoon: "Kartun Kanak-kanak",
+        smart: "Suapan Pintar", fav: "Kegemaran", recent: "Terkini", viewed: "Paling Ditonton",
+        searchPh: "Cari Video, Qari, Surah atau Saluran...", searchBtn: "Cari",
+        videoReq: "Mohon Video", shortsTitle: "Video Pendek & Bayan QAAF", swipe: "Leret ➔",
+        drawerHome: "Semua Video", drawerPl: "Senarai Main", drawerHist: "Sejarah Tontonan", drawerFav: "Video Kegemaran", drawerTimer: "Kunci & Masa Kanak-kanak",
+        langTitle: "🌍 Tetapan Bahasa", langLbl1: "📱 1. Bahasa Antara Muka (UI):", langLbl2: "🎬 2. Bahasa Video Pilihan:", strictLbl: "Bahasa Pilihan Sahaja", strictSub: "Tunjukkan video bahasa pilihan sahaja"
+      },
+      id: {
+        videos: "Video", games: "Permainan", settings: "Pengaturan", kids: "Anak", login: "Masuk", admin: "Admin",
+        catAll: "Semua Saluran", catQuran: "Tilawah Al-Quran", catNaat: "Nasyid", catTarbiyah: "Tarbiyah Islam", catBayan: "Kajian Islam", catStories: "Edukasi Anak", catCartoon: "Kartun Anak",
+        smart: "Beranda Pintar", fav: "Favorit", recent: "Terbaru", viewed: "Terpopuler",
+        searchPh: "Cari Video, Qari, Surah atau Saluran...", searchBtn: "Cari",
+        videoReq: "Request Video", shortsTitle: "Video Pendek & Kajian QAAF", swipe: "Geser ➔",
+        drawerHome: "Semua Video", drawerPl: "Playlist Saya", drawerHist: "Riwayat Tontonan", drawerFav: "Video Favorit", drawerTimer: "Kunci & Waktu Anak",
+        langTitle: "🌍 Pengaturan Bahasa", langLbl1: "📱 1. Bahasa Tampilan Aplikasi:", langLbl2: "🎬 2. Bahasa Video & Doa Pilihan:", strictLbl: "Hanya Bahasa Ini", strictSub: "Tampilkan hanya video sesuai bahasa pilihan"
+      },
+      fr: {
+        videos: "Vidéos", games: "Jeux", settings: "Paramètres", kids: "Enfants", login: "Connexion", admin: "Admin",
+        catAll: "Toutes les chaînes", catQuran: "Récitation du Coran", catNaat: "Anachid", catTarbiyah: "Éducation Islamique", catBayan: "Conférences", catStories: "Éducation Enfants", catCartoon: "Dessins Animés",
+        smart: "Flux Intelligent", fav: "Favoris", recent: "Plus récents", viewed: "Plus vus",
+        searchPh: "Rechercher une vidéo, sourate ou chaîne...", searchBtn: "Chercher",
+        videoReq: "Demander Vidéo", shortsTitle: "Shorts Islamiques & Rappels QAAF", swipe: "Glisser ➔",
+        drawerHome: "Toutes les vidéos", drawerPl: "Mes Playlists", drawerHist: "Historique", drawerFav: "Vidéos Favorites", drawerTimer: "Contrôle Parental",
+        langTitle: "🌍 Paramètres de langue", langLbl1: "📱 1. Langue des boutons:", langLbl2: "🎬 2. Langue préférée des vidéos:", strictLbl: "Langue stricte uniquement", strictSub: "Afficher uniquement les vidéos de cette langue"
+      },
+      ru: {
+        videos: "Видео", games: "Игры", settings: "Настройки", kids: "Детям", login: "Войти", admin: "Админ",
+        catAll: "Все каналы", catQuran: "Чтение Корана", catNaat: "Нашиды", catTarbiyah: "Исламское воспитание", catBayan: "Лекции", catStories: "Детям", catCartoon: "Мультфильмы",
+        smart: "Умная лента", fav: "Избранное", recent: "Новые", viewed: "Популярные",
+        searchPh: "Поиск видео, суры или канала...", searchBtn: "Поиск",
+        videoReq: "Запрос видео", shortsTitle: "Короткие исламские видео QAAF", swipe: "Листайте ➔",
+        drawerHome: "Все видео", drawerPl: "Мои плейлисты", drawerHist: "История просмотра", drawerFav: "Избранное", drawerTimer: "Детский таймер",
+        langTitle: "🌍 Настройки языка", langLbl1: "📱 1. Язык интерфейса:", langLbl2: "🎬 2. Предпочитаемый язык видео:", strictLbl: "Только выбранный язык", strictSub: "Показывать видео только на выбранном языке"
+      }
+    };
+
+    function setBtnLabelKeepIcon(btn, newText, hasArrow) {
+      if (!btn) return;
+      var kids = Array.prototype.slice.call(btn.children);
+      if (kids.length === 0) {
+        btn.innerText = newText + (hasArrow ? " ▾" : "");
+        return;
+      }
+      var lastEl = kids[kids.length - 1];
+      var isCountBadge = lastEl && (lastEl.id === "favCountBadge" || lastEl.id === "userNotifCountBadge" || lastEl.id === "userReqCountBadge" || (!isNaN(parseInt(lastEl.innerText, 10)) && kids.length >= 2));
+      if (isCountBadge && kids.length >= 3) {
+        kids[1].innerText = newText;
+        return;
+      }
+      if (isCountBadge && kids.length === 2) {
+        btn.innerHTML = kids[0].outerHTML + " <span>" + newText + "</span> " + lastEl.outerHTML;
+        return;
+      }
+      if (kids.length >= 2) {
+        kids[1].innerText = newText + (hasArrow && kids.length === 2 ? " ▾" : "");
+        return;
+      }
+      btn.innerHTML = kids[0].outerHTML + " <span>" + newText + (hasArrow ? " ▾" : "") + "</span>";
+    }
+
+    window.translateAllQaafWebsiteText = function(langCode) {
+      var code = langCode || currentAppUILang || localStorage.getItem("qaaf_ui_display_lang") || "en";
+      var t = QAAF_UI_DICTIONARY[code] || QAAF_UI_DICTIONARY.en;
+      window.activeQaafUITranslation = t;
+
+      // 1. Category Chips
+      var allBtn = document.getElementById("ui_catAll");
+      if (allBtn && (!window.qaafSelectedChannel || window.qaafSelectedChannel === "ALL")) {
+        setBtnLabelKeepIcon(allBtn, t.catAll, true);
+      }
+      setBtnLabelKeepIcon(document.getElementById("ui_catQuran"), t.catQuran, false);
+      setBtnLabelKeepIcon(document.getElementById("ui_catNaat"), t.catNaat, false);
+      setBtnLabelKeepIcon(document.getElementById("ui_catTarbiyah"), t.catTarbiyah, false);
+      setBtnLabelKeepIcon(document.getElementById("ui_catBayan"), t.catBayan, false);
+      setBtnLabelKeepIcon(document.getElementById("ui_catStories"), t.catStories, false);
+      setBtnLabelKeepIcon(document.getElementById("ui_catCartoon"), t.catCartoon, false);
+
+      // 2. Sort Chips
+      setBtnLabelKeepIcon(document.getElementById("sort_default"), t.smart, false);
+      setBtnLabelKeepIcon(document.getElementById("sort_favorites"), t.fav, false);
+      setBtnLabelKeepIcon(document.getElementById("sort_recent"), t.recent, false);
+      setBtnLabelKeepIcon(document.getElementById("sort_viewed"), t.viewed, false);
+
+      // 3. Header Buttons (Settings, Kids, Videos/Games, Login)
+      var setSpan = document.getElementById("ui_settingsBtn");
+      if (setSpan) setSpan.innerText = t.settings;
+      var vTab = document.getElementById("ui_videosTab");
+      if (vTab) vTab.innerText = t.videos;
+      var gTab = document.getElementById("ui_gamesTab");
+      if (gTab) gTab.innerText = t.games;
+      var accLbl = document.getElementById("accountBtnLabel");
+      if (accLbl && !currentUserEmail) accLbl.innerText = t.login;
+      var kLet = document.querySelector("#kidsLockBtn .kids-letters");
+      if (kLet) {
+        if (code === "en") kLet.innerHTML = "<span>K</span><span>i</span><span>d</span><span>s</span>";
+        else kLet.innerHTML = '<span class="text-amber-300 font-extrabold">' + t.kids + '</span>';
+      }
+
+      // 4. Search Bar & Video Request Button
+      var sInp = document.getElementById("qaafSearchInput");
+      if (sInp) sInp.placeholder = t.searchPh;
+      var sBtn = document.getElementById("qaafSearchSubmitBtn");
+      if (sBtn) setBtnLabelKeepIcon(sBtn, t.searchBtn, false);
+      var reqBtn = document.getElementById("qaafNotifBellBtn");
+      if (reqBtn) setBtnLabelKeepIcon(reqBtn, t.videoReq, false);
+
+      // 5. Shorts Shelf Heading & Swipe Hint
+      var shShelf = document.getElementById("qaafShortsShelf");
+      if (shShelf) {
+        var h3El = shShelf.querySelector("h3");
+        if (h3El) h3El.innerText = t.shortsTitle;
+        var spHint = shShelf.querySelector("div.flex.items-center.justify-between > span");
+        if (spHint) spHint.innerText = t.swipe;
+      }
+
+      // 6. Language Dropdown Labels
+      var lt = document.getElementById("ui_langModalTitle"); if (lt) lt.innerText = t.langTitle;
+      var l1 = document.getElementById("ui_langLabel1"); if (l1) l1.innerText = t.langLbl1;
+      var l2 = document.getElementById("ui_langLabel2"); if (l2) l2.innerText = t.langLbl2;
+      var sl = document.getElementById("ui_strictLangLabel"); if (sl) sl.innerText = t.strictLbl;
+      var ss = document.getElementById("ui_strictLangSub"); if (ss) ss.innerText = t.strictSub;
+    };
+
     function handleUILangSelectChange(val) {
       if (val === '__custom__') { document.getElementById('customUILangBox').classList.remove('hidden'); return; }
-      document.getElementById('customUILangBox').classList.add('hidden');
+      var cBox = document.getElementById('customUILangBox');
+      if (cBox) cBox.classList.add('hidden');
       const found = globalLanguagesList.find(l => l.code === val);
-      currentAppUILang = val;
-      document.getElementById('shortLangCode').innerText = found ? found.short : val.toUpperCase().slice(0, 2);
+      currentAppUILang = val || 'en';
+      window.currentAppUILang = currentAppUILang;
+      localStorage.setItem('qaaf_ui_display_lang', currentAppUILang);
       document.getElementById('htmlRoot').dir = (found && found.rtl) ? 'rtl' : 'ltr';
+      window.translateAllQaafWebsiteText(currentAppUILang);
     }
 
     function handleContentLangSelectChange(val) {
       if (val === '__custom__') { document.getElementById('customContentLangBox').classList.remove('hidden'); return; }
-      document.getElementById('customContentLangBox').classList.add('hidden');
-      preferredContentLang = val;
+      var cBox = document.getElementById('customContentLangBox');
+      if (cBox) cBox.classList.add('hidden');
+      preferredContentLang = val || 'en';
+      window.preferredContentLang = preferredContentLang;
+      localStorage.setItem('qaaf_preferred_content_lang', preferredContentLang);
+      const found = globalLanguagesList.find(l => l.code === preferredContentLang);
+      var sCode = document.getElementById('shortLangCode');
+      if (sCode) sCode.innerText = found ? found.short : preferredContentLang.toUpperCase().slice(0, 2);
       syncRegionalPromoBar();
       renderVideos();
+      window.translateAllQaafWebsiteText(currentAppUILang);
     }
 
     // FIXED & CLEANED CUSTOM LANGUAGE FUNCTION (NO DUPLICATE PWA CODE)
@@ -1217,8 +1407,21 @@ const globalLanguagesList = [
       if (type === 'ui') handleUILangSelectChange(code); else handleContentLangSelectChange(code);
     }
 
-    function toggleLangDropdown() { document.getElementById('langDropdownMenu').classList.toggle('hidden'); }
-    function closeLangDropdownOutside(e) { const c = document.getElementById('langDropdownContainer'); if (c && !c.contains(e.target)) document.getElementById('langDropdownMenu').classList.add('hidden'); }
+    function toggleLangDropdown(ev) {
+      if (ev && ev.stopPropagation) ev.stopPropagation();
+      var m = document.getElementById('langDropdownMenu');
+      if (!m) return;
+      if (m.parentElement !== document.body) document.body.appendChild(m);
+      populateLanguageDropdowns();
+      m.classList.toggle('hidden');
+    }
+    function closeLangDropdownOutside(e) {
+      var m = document.getElementById('langDropdownMenu');
+      var c = document.getElementById('langDropdownContainer');
+      if (!m || m.classList.contains('hidden')) return;
+      if (e && e.target && (m.contains(e.target) || (c && c.contains(e.target)))) return;
+      m.classList.add('hidden');
+    }
 
     function toggleKidsMode() {
       if (!isKidsLocked) {
