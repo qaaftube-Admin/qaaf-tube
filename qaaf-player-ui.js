@@ -6694,7 +6694,7 @@
     });
   }
 
-  window.setPreferredVideoLangNow = function(langCode) {
+  window._legacySetPrefVideoLang = function(langCode) {
     preferredContentLang = langCode || "en";
     localStorage.setItem("qaaf_preferred_content_lang", preferredContentLang);
     syncTopHeaderLangBadge();
@@ -6707,7 +6707,7 @@
     }
   };
 
-  window.setAppDisplayLangNow = function(langCode) {
+  window._legacySetAppDisplayLang = function(langCode) {
     currentAppUILang = langCode || "en";
     localStorage.setItem("qaaf_ui_display_lang", currentAppUILang);
     // Keep dir="ltr" when Display Language is English (default) so buttons stay in standard layout

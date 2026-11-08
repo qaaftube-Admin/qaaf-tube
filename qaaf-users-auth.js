@@ -1,4 +1,4 @@
-﻿// QAAF Tube Dedicated Users Data, Live Cloud Registry Sync, 10-Language Selector & 1.5s Volume Auto-Hide (qaaf-users-auth.js)
+﻿// QAAF Tube Dedicated Users Data, Live Cloud Registry Sync, Mobile-Safe 10-Language Selector & Full UI Translator (qaaf-users-auth.js v13.6)
 (function initQaafUsersDatabaseAndLanguageMaster() {
   var FIREBASE_DEFAULT_URL = "https://qaaftube-6f251-default-rtdb.firebaseio.com";
 
@@ -45,7 +45,6 @@
       var localMap = getLocalUsersMap();
       var mergedMap = {};
 
-      // 1. Pull from legacy global state map if any
       if (globalMapData && typeof globalMapData === "object") {
         Object.keys(globalMapData).forEach(function(k) {
           var u = globalMapData[k];
@@ -56,7 +55,6 @@
         });
       }
 
-      // 2. Pull from safe Firebase users vault
       if (vaultData && typeof vaultData === "object") {
         Object.keys(vaultData).forEach(function(safeK) {
           var item = vaultData[safeK];
@@ -72,7 +70,6 @@
         });
       }
 
-      // 3. Merge local users on top if newer or missing in cloud
       Object.keys(localMap).forEach(function(k) {
         var u = localMap[k];
         if (u && typeof u === "object") {
@@ -87,7 +84,6 @@
         }
       });
 
-      // Handle explicit deletion if requested by Admin
       if (deletedEmailKey) {
         var delKey = String(deletedEmailKey).trim().toLowerCase();
         delete mergedMap[delKey];
@@ -96,14 +92,12 @@
         fetch(baseUrl + "/qaaf_users_vault/" + safeDel + ".json", { method: "DELETE" }).catch(function() {});
       }
 
-      // 4. Save merged map locally
       window.registeredUsersMap = mergedMap;
       lastSerializedUsers = JSON.stringify(mergedMap);
       try {
         localStorage.setItem("qaaf_registered_users", lastSerializedUsers);
       } catch (e) {}
 
-      // 5. Push each user with safe key via PATCH so Firebase never rejects '.' in emails and never overwrites other users
       var patchPayload = {};
       var safeGlobalMap = {};
       Object.keys(mergedMap).forEach(function(realKey) {
@@ -132,7 +126,6 @@
         }).catch(function() {});
       }
 
-      // 6. Refresh Admin UI table & badges immediately
       if (typeof window.renderAdminUsersTable === "function") {
         window.renderAdminUsersTable();
       }
@@ -148,7 +141,6 @@
     });
   };
 
-  // Intercept localStorage.setItem so any signup / password reset / PIN update immediately syncs to Firebase Cloud
   var origSetItem = localStorage.setItem;
   localStorage.setItem = function(key, val) {
     origSetItem.apply(this, arguments);
@@ -160,7 +152,6 @@
     }
   };
 
-  // Also watch window.registeredUsersMap changes every 3 seconds
   setInterval(function() {
     if (window.registeredUsersMap && typeof window.registeredUsersMap === "object") {
       var cur = JSON.stringify(window.registeredUsersMap);
@@ -177,7 +168,7 @@
   window.adminExportUsersDatabaseJson = function() {
     var map = getLocalUsersMap();
     var backupObj = {
-      qaafUsersDatabaseVersion: "13.2",
+      qaafUsersDatabaseVersion: "13.6",
       exportedAt: new Date().toISOString(),
       totalRegisteredUsers: Object.keys(map).length,
       registeredUsersMap: map
@@ -219,9 +210,7 @@
 
   function injectUsersDatabaseBackupBar() {
     var usersPane = document.getElementById("admPane_users");
-    if (!usersPane) return;
-    var existing = document.getElementById("admUsersJsonBackupBar");
-    if (existing) return;
+    if (!usersPane || document.getElementById("admUsersJsonBackupBar")) return;
     var bar = document.createElement("div");
     bar.id = "admUsersJsonBackupBar";
     bar.className = "bg-gradient-to-r from-emerald-950/60 via-slate-900 to-blue-950/60 border border-emerald-500/40 rounded-2xl p-3.5 flex flex-wrap items-center justify-between gap-2 text-xs mb-3";
@@ -244,17 +233,6 @@
     injectUsersDatabaseBackupBar();
     window.syncQaafUsersWithCloudNow(false);
   };
-
-  var prevSwitchAdmTab = window.switchAdminConsoleTab;
-  if (typeof prevSwitchAdmTab === "function") {
-    window.switchAdminConsoleTab = function(tabName) {
-      prevSwitchAdmTab(tabName);
-      if (tabName === "users") {
-        injectUsersDatabaseBackupBar();
-        window.syncQaafUsersWithCloudNow(true);
-      }
-    };
-  }
 
   // =========================================================================
   // C. PREVENT CHROME PASSWORD MANAGER POPUP ON SEARCH BAR & PIN INPUTS
@@ -279,10 +257,10 @@
     });
   }
   sanitizeSearchAndSecretInputs();
-  setInterval(sanitizeSearchAndSecretInputs, 1000);
+  setInterval(sanitizeSearchAndSecretInputs, 1200);
 
   // =========================================================================
-  // D. WORKING 10-LANGUAGE SYSTEM (1. PREFERRED VIDEO LANGUAGE vs 2. DISPLAY LANGUAGE)
+  // D. MOBILE-SAFE & DESKTOP-SAFE 10-LANGUAGE SYSTEM (PORTALED TO DOCUMENT.BODY)
   // =========================================================================
   var TEN_ISLAMIC_LANGS = [
     { code: "en", short: "EN", label: "🇬🇧 English", regionKey: "US_UK" },
@@ -400,116 +378,183 @@
   window.currentAppUILang = currentAppUILang;
   window.preferredContentLang = preferredContentLang;
 
-  function updateBtnLabelSmart(btnEl, newText, hasDropdownArrow) {
-    if (!btnEl) return;
-    // Check if there is a dedicated label span inside
-    var spans = btnEl.querySelectorAll("span");
-    if (spans.length >= 2) {
-      // Usually spans[0] is icon/emoji, spans[1] is label
-      spans[1].innerText = newText + (hasDropdownArrow && spans.length === 2 ? " ▾" : "");
+  // Move #langDropdownMenu directly into document.body so #mainHeader backdrop-blur NEVER clips or hides it on mobile
+  function ensureMenuPortaledToBody() {
+    var menu = document.getElementById("langDropdownMenu");
+    if (!menu) return null;
+    if (menu.parentElement !== document.body) {
+      document.body.appendChild(menu);
+    }
+    menu.style.position = "fixed";
+    menu.style.top = "58px";
+    menu.style.zIndex = "99999";
+    menu.style.maxHeight = "84vh";
+    menu.style.overflowY = "auto";
+    if (window.innerWidth < 640) {
+      menu.style.left = "8px";
+      menu.style.right = "8px";
+      menu.style.width = "auto";
+    } else {
+      menu.style.left = "auto";
+      menu.style.right = "16px";
+      menu.style.width = "340px";
+    }
+    return menu;
+  }
+
+  window.addEventListener("resize", function() {
+    var menu = document.getElementById("langDropdownMenu");
+    if (menu && !menu.classList.contains("hidden")) {
+      ensureMenuPortaledToBody();
+    }
+  });
+
+  function setButtonTranslatedText(btn, newLabel, keepArrow) {
+    if (!btn) return;
+    // Preserve first icon (either <svg>, <img>, or first emoji <span>)
+    var children = Array.prototype.slice.call(btn.children);
+    if (children.length === 0) {
+      btn.innerText = newLabel + (keepArrow ? " ▾" : "");
       return;
     }
-    // Otherwise preserve first svg or emoji span and update text node
-    var firstSvgOrSpan = btnEl.querySelector("svg, span");
-    if (firstSvgOrSpan) {
-      var iconHtml = firstSvgOrSpan.outerHTML;
-      btnEl.innerHTML = iconHtml + ' <span>' + newText + (hasDropdownArrow ? ' ▾' : '') + '</span>';
-    } else {
-      btnEl.innerText = newText + (hasDropdownArrow ? " ▾" : "");
+    // Check if there is a count badge at the end (like #favCountBadge or #userReqCountBadge)
+    var lastChild = children[children.length - 1];
+    var hasBadge = lastChild && (lastChild.id === "favCountBadge" || lastChild.id === "userReqCountBadge" || (!isNaN(parseInt(lastChild.innerText, 10)) && children.length >= 2));
+
+    var firstIcon = children[0];
+    if (hasBadge && children.length >= 3) {
+      children[1].innerText = newLabel;
+      return;
     }
+    if (hasBadge && children.length === 2) {
+      var badgeHtml = lastChild.outerHTML;
+      var iconHtml = firstIcon.outerHTML;
+      btn.innerHTML = iconHtml + ' <span>' + newLabel + '</span> ' + badgeHtml;
+      return;
+    }
+    if (children.length >= 2) {
+      children[1].innerText = newLabel + (keepArrow && children.length === 2 ? " ▾" : "");
+      return;
+    }
+    // Only 1 child (the icon), and text node next to it
+    var iconOnlyHtml = firstIcon.outerHTML;
+    btn.innerHTML = iconOnlyHtml + ' <span>' + newLabel + (keepArrow ? ' ▾' : '') + '</span>';
   }
 
   function applyQaafUIButtonsTranslation(langCode) {
-    var t = UI_TRANSLATIONS[langCode] || UI_TRANSLATIONS.en;
+    var code = langCode || window.currentAppUILang || localStorage.getItem("qaaf_ui_display_lang") || "en";
+    var t = UI_TRANSLATIONS[code] || UI_TRANSLATIONS.en;
 
-    // 1. Direct ID spans if present
-    var directMap = {
-      "ui_videosTab": t.videos,
-      "ui_gamesTab": t.games,
-      "ui_settingsBtn": t.settings,
-      "ui_catAllLabel": t.catAll,
-      "ui_catQuranLabel": t.catQuran,
-      "ui_catNaatLabel": t.catNaat,
-      "ui_catTarbiyahLabel": t.catTarbiyah,
-      "ui_catBayanLabel": t.catBayan,
-      "ui_catStoriesLabel": t.catStories,
-      "ui_catCartoonLabel": t.catCartoon,
-      "ui_favFilter": t.fav,
-      "ui_recentFilter": t.recent,
-      "ui_viewedFilter": t.viewed
-    };
-    Object.keys(directMap).forEach(function(id) {
-      var el = document.getElementById(id);
-      if (el) el.innerText = directMap[id];
+    // Keep htmlRoot dir="ltr" so header & layout don't flip awkwardly, while translating every button & text cleanly
+    var rootEl = document.getElementById("htmlRoot");
+    if (rootEl) rootEl.dir = "ltr";
+
+    // 1. Category Buttons (by ID AND by onclick attribute in case qaaf-player-ui.js recreated them without IDs)
+    var catAllBtn = document.getElementById("ui_catAll") || document.getElementById("allChannelsDropdownBtn") || document.querySelector('button[onclick*="toggleAllChannelsDropdown"], button[onclick*="filterCategory('all')"]');
+    if (catAllBtn) setButtonTranslatedText(catAllBtn, t.catAll, true);
+
+    var catRules = [
+      { id: "ui_catQuran", key: "quran", text: t.catQuran },
+      { id: "ui_catNaat", key: "naat", text: t.catNaat },
+      { id: "ui_catTarbiyah", key: "tarbiyah", text: t.catTarbiyah },
+      { id: "ui_catBayan", key: "bayan", text: t.catBayan },
+      { id: "ui_catStories", key: "kids_tarbiyah", text: t.catStories },
+      { id: "ui_catCartoon", key: "kids_cartoon", text: t.catCartoon }
+    ];
+    catRules.forEach(function(item) {
+      var b = document.getElementById(item.id) || document.querySelector('button[onclick*="filterCategory('' + item.key + '')"]');
+      if (b) setButtonTranslatedText(b, item.text, false);
     });
 
-    // 2. Category Bar Buttons (even if dynamically rebuilt by qaaf-player-ui.js)
-    updateBtnLabelSmart(document.getElementById("ui_catAll") || document.getElementById("allChannelsDropdownBtn"), t.catAll, true);
-    updateBtnLabelSmart(document.getElementById("ui_catQuran"), t.catQuran, false);
-    updateBtnLabelSmart(document.getElementById("ui_catNaat"), t.catNaat, false);
-    updateBtnLabelSmart(document.getElementById("ui_catTarbiyah"), t.catTarbiyah, false);
-    updateBtnLabelSmart(document.getElementById("ui_catBayan"), t.catBayan, false);
-    updateBtnLabelSmart(document.getElementById("ui_catStories"), t.catStories, false);
-    updateBtnLabelSmart(document.getElementById("ui_catCartoon"), t.catCartoon, false);
+    // 2. Sort Filter Buttons
+    var sortRules = [
+      { id: "sort_default", key: "default", text: t.smart },
+      { id: "sort_favorites", key: "favorites", text: t.fav },
+      { id: "sort_recent", key: "recent", text: t.recent },
+      { id: "sort_viewed", key: "viewed", text: t.viewed }
+    ];
+    sortRules.forEach(function(item) {
+      var b = document.getElementById(item.id) || document.querySelector('button[onclick*="setSortFilter('' + item.key + '')"]');
+      if (b) setButtonTranslatedText(b, item.text, false);
+    });
 
-    // 3. Sort Filter Buttons
-    var sortDef = document.getElementById("sort_default");
-    if (sortDef) updateBtnLabelSmart(sortDef, t.smart, false);
-    var sortRec = document.getElementById("sort_recent");
-    if (sortRec && !document.getElementById("ui_recentFilter")) updateBtnLabelSmart(sortRec, t.recent, false);
-    var sortView = document.getElementById("sort_viewed");
-    if (sortView && !document.getElementById("ui_viewedFilter")) updateBtnLabelSmart(sortView, t.viewed, false);
+    // 3. Top Header Buttons (Settings, Kids, Videos/Games Tabs)
+    var vidTab = document.getElementById("ui_videosTab");
+    if (vidTab) vidTab.innerText = t.videos;
+    var gamTab = document.getElementById("ui_gamesTab");
+    if (gamTab) gamTab.innerText = t.games;
 
-    // 4. Header Buttons (Settings, Kids, Admin)
-    var pBtn = document.getElementById("parentPanelBtn");
-    if (pBtn && !document.getElementById("ui_settingsBtn")) updateBtnLabelSmart(pBtn, t.settings, false);
+    var setSpan = document.getElementById("ui_settingsBtn");
+    if (setSpan) {
+      setSpan.innerText = t.settings;
+    } else {
+      var pBtn = document.getElementById("parentPanelBtn");
+      if (pBtn) setButtonTranslatedText(pBtn, t.settings, false);
+    }
+
     var kLetters = document.querySelector("#kidsLockBtn .kids-letters");
     if (kLetters) {
-      if (langCode === "en") {
+      if (code === "en") {
         kLetters.innerHTML = "<span>K</span><span>i</span><span>d</span><span>s</span>";
       } else {
-        kLetters.innerHTML = '<span class="text-amber-300">' + t.kids + '</span>';
+        kLetters.innerHTML = '<span class="text-amber-300 font-extrabold">' + t.kids + '</span>';
       }
     }
 
-    // 5. Search Bar & Video Request Button
-    var sInp = document.getElementById("qaafSearchInput");
-    if (sInp) sInp.placeholder = t.searchPh;
-    var sBtn = document.getElementById("qaafSearchSubmitBtn");
-    if (sBtn) updateBtnLabelSmart(sBtn, t.searchBtn, false);
+    // 4. Search Bar Input, Search Button & Video Request Button
+    var sInp = document.getElementById("qaafSearchInput") || document.querySelector('input[type="search"]');
+    if (sInp) {
+      sInp.placeholder = t.searchPh;
+      sInp.dir = (code === "ur" || code === "ar") ? "rtl" : "ltr";
+    }
+
+    var sBtn = document.getElementById("qaafSearchSubmitBtn") || document.querySelector('button[onclick*="executeQaafSearch"], button[onclick*="runQaafSearch"]');
+    if (sBtn) setButtonTranslatedText(sBtn, t.searchBtn, false);
+
+    var reqBtn = document.getElementById("openUnifiedReqModalBtn") || document.querySelector('button[onclick*="openUnifiedVideoRequestModal"]');
+    if (reqBtn) setButtonTranslatedText(reqBtn, t.videoReq, false);
+
+    // Fallback scan for Search, Video Request & Shorts Heading if custom functions were used
     document.querySelectorAll("button").forEach(function(b) {
-      var txt = (b.innerText || "").trim();
-      if (b.id !== "qaafSearchSubmitBtn" && (txt === "Search" || txt === "🔍 Search" || txt === "تلاش کریں" || txt === "🔍 تلاش کریں" || txt === "بحث" || txt === "खोजें")) {
-        updateBtnLabelSmart(b, t.searchBtn, false);
-      }
-      if (b.querySelector("#userReqCountBadge") || txt.indexOf("Video Request") !== -1 || txt.indexOf("ویڈیو کی درخواست") !== -1 || txt.indexOf("طلب فيديو") !== -1) {
-        var badge = b.querySelector("#userReqCountBadge") || b.querySelector("span:last-child");
-        var firstIcon = b.querySelector("svg, span:first-child");
-        var spans = b.querySelectorAll("span");
-        if (spans.length >= 2) {
-          for (var i = 0; i < spans.length; i++) {
-            if (spans[i].id !== "userReqCountBadge" && isNaN(parseInt(spans[i].innerText, 10)) && spans[i] !== firstIcon) {
-              spans[i].innerText = t.videoReq;
-              break;
-            }
-          }
-        }
+      if (b.closest("#langDropdownMenu")) return;
+      var rawTxt = (b.innerText || "").trim();
+      if (rawTxt === "Search" || rawTxt === "🔍 Search" || rawTxt === "تلاش کریں" || rawTxt === "بحث" || rawTxt === "खोजें") {
+        setButtonTranslatedText(b, t.searchBtn, false);
+      } else if (rawTxt.indexOf("Video Request") !== -1 || rawTxt.indexOf("ویڈیو کی درخواست") !== -1 || rawTxt.indexOf("طلب فيديو") !== -1 || rawTxt.indexOf("वीडियो अनुरोध") !== -1) {
+        setButtonTranslatedText(b, t.videoReq, false);
       }
     });
 
-    // 6. Shorts Shelf Heading & Swipe text
+    // 5. Shorts Section Title & Swipe Hint
     document.querySelectorAll("h2, h3, span, div").forEach(function(el) {
-      if (el.children.length === 0) {
+      if (el.children.length === 0 && !el.closest("#langDropdownMenu")) {
         var tx = (el.innerText || "").trim();
-        if (tx === "QAAF Islamic Shorts & Quick Bayans" || tx === "قاف اسلامک شارٹس اور مختصر بیانات" || tx === "مقاطع قاف القصيرة والمحاضرات" || tx === "क़ाफ़ इस्लामिक शॉर्ट्स और बयानात") {
+        if (
+          tx === "QAAF Islamic Shorts & Quick Bayans" ||
+          tx === "قاف اسلامک شارٹس اور مختصر بیانات" ||
+          tx === "مقاطع قاف القصيرة والمحاضرات" ||
+          tx === "क़ाफ़ इस्लामिक शॉर्ट्स और बयानात" ||
+          tx === "কাফ ইসলামিক শর্টস ও বয়ান" ||
+          tx === "QAAF İslami Kısa Videolar" ||
+          tx === "Video Pendek & Bayan QAAF" ||
+          tx === "Video Pendek & Kajian QAAF" ||
+          tx === "Shorts Islamiques & Rappels QAAF" ||
+          tx === "Короткие исламские видео QAAF"
+        ) {
           el.innerText = t.shortsTitle;
-        } else if (tx.indexOf("Swipe / Scroll") !== -1 || tx === "آگے دیکھیں ➔" || tx === "اسحب للمزيد ➔") {
+        } else if (
+          tx === "Swipe / Scroll ➔" ||
+          tx === "Swipe / Scroll →" ||
+          tx === "آگے دیکھیں ➔" ||
+          tx === "اسحب للمزيد ➔" ||
+          tx === "आगे देखें ➔"
+        ) {
           el.innerText = t.swipe;
         }
       }
     });
 
-    // 7. Left Drawer & Promote Button
+    // 6. Left Drawer Items
     var dMap = [
       ["drawerHomeBtn", t.drawerHome],
       ["drawerPlToggleBtn", t.drawerPl],
@@ -530,7 +575,7 @@
   }
   window.applyQaafUIButtonsTranslation = applyQaafUIButtonsTranslation;
 
-    function sortVideosByPreferredLanguage() {
+  function sortVideosByPreferredLanguage() {
     if (typeof videosData === "undefined" || !Array.isArray(videosData) || videosData.length === 0) return;
     var pref = String(preferredContentLang || "en").toLowerCase();
     videosData.forEach(function(v, idx) {
@@ -553,12 +598,12 @@
       shortEl.innerText = prefObj.short;
     }
 
-    var menu = document.getElementById("langDropdownMenu");
+    var menu = ensureMenuPortaledToBody();
     if (!menu) return;
 
     var uiOptHtml = "";
     TEN_ISLAMIC_LANGS.forEach(function(l) {
-      uiOptHtml += '<option value="' + l.code + '" ' + (l.code === currentAppUILang ? 'selected' : '') + '>' + l.label + (l.code === 'en' ? ' (Keep App Buttons in English)' : '') + '</option>';
+      uiOptHtml += '<option value="' + l.code + '" ' + (l.code === currentAppUILang ? 'selected' : '') + '>' + l.label + (l.code === 'en' ? ' (Default English UI)' : '') + '</option>';
     });
 
     var prefBtnsHtml = "";
@@ -578,19 +623,20 @@
       '<div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">' +
         '<div>' +
           '<span class="font-extrabold text-white block text-xs">🌍 Language Setup (10 Core Languages)</span>' +
-          '<span class="text-[10px] text-emerald-400 font-bold">Preferred Video Language: ' + prefObj.label + ' (' + prefObj.short + ')</span>' +
+          '<span class="text-[10px] text-emerald-400 font-bold">Preferred Videos: ' + prefObj.label + ' (' + prefObj.short + ')</span>' +
         '</div>' +
-        '<button type="button" onclick="toggleLangDropdown(event)" class="text-slate-300 hover:text-white px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-rose-600 font-bold">✕</button>' +
+        '<button type="button" onclick="window.toggleLangDropdown(event)" class="text-slate-300 hover:text-white px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-rose-600 font-bold cursor-pointer">✕</button>' +
       '</div>' +
 
       '<div class="mb-3.5">' +
         '<label class="block text-[11px] font-extrabold text-emerald-400 mb-1">🎬 1. Preferred Video &amp; Channel Language:</label>' +
-        '<p class="text-[10px] text-slate-400 mb-2">Tap your language so its videos, channels &amp; Duas appear first (App buttons stay in English):</p>' +
+        '<p class="text-[10px] text-slate-400 mb-2">Videos &amp; channels of this language appear first on your screen:</p>' +
         '<div class="grid grid-cols-2 gap-1.5">' + prefBtnsHtml + '</div>' +
       '</div>' +
 
       '<div class="pt-2.5 border-t border-slate-800 mb-2.5">' +
-        '<label class="block text-[11px] font-bold text-amber-300 mb-1">📱 2. Display Language (App Buttons: Back, Close, Settings):</label>' +
+        '<label class="block text-[11px] font-bold text-amber-300 mb-1">📱 2. App Display Language (Buttons &amp; Menus):</label>' +
+        '<p class="text-[10px] text-slate-400 mb-1.5">Keep English for standard buttons or translate all app buttons below:</p>' +
         '<select id="uiLangSelectDropdown" onchange="window.selectQaafDisplayLang(this.value)" class="w-full bg-black border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold cursor-pointer">' +
           uiOptHtml +
         '</select>' +
@@ -599,7 +645,7 @@
       '<div class="pt-2.5 border-t border-slate-800">' +
         '<label class="flex items-center justify-between cursor-pointer text-slate-200 font-bold select-none text-xs">' +
           '<span>Strict Language Only (Show only ' + prefObj.short + ' videos)</span>' +
-          '<input type="checkbox" id="strictLangToggle" ' + (isStrict ? 'checked' : '') + ' onchange="toggleStrictLanguage()" class="accent-emerald-500 rounded scale-110 cursor-pointer" />' +
+          '<input type="checkbox" id="strictLangToggle" ' + (isStrict ? 'checked' : '') + ' onchange="window.toggleStrictLanguage()" class="accent-emerald-500 rounded scale-110 cursor-pointer" />' +
         '</label>' +
       '</div>';
 
@@ -619,21 +665,22 @@
     localStorage.setItem("qaaf_content_lang", preferredContentLang);
     sortVideosByPreferredLanguage();
     refreshHeaderLangButtonAndMenu();
-    applyQaafUIButtonsTranslation(currentAppUILang);
-    var menu = document.getElementById("langDropdownMenu");
-    if (menu) menu.classList.add("hidden");
     if (typeof syncRegionalPromoBar === "function") syncRegionalPromoBar();
     if (typeof window.renderVideosNow === "function") {
       window.renderVideosNow();
     } else if (typeof renderVideos === "function") {
       renderVideos();
     }
+    applyQaafUIButtonsTranslation(currentAppUILang);
+    var menu = document.getElementById("langDropdownMenu");
+    if (menu) menu.classList.add("hidden");
     var found = TEN_ISLAMIC_LANGS.find(function(l) { return l.code === preferredContentLang; });
     if (typeof showSyncToast === "function" && found) {
       showSyncToast("✅ Preferred Video Language: " + found.label + " (" + found.short + ")");
     }
   };
   window.setPreferredVideoLangNow = window.selectQaafPreferredVideoLang;
+  window.handleContentLangSelectChange = window.selectQaafPreferredVideoLang;
 
   window.selectQaafDisplayLang = function(code) {
     currentAppUILang = code || "en";
@@ -643,14 +690,15 @@
     applyQaafUIButtonsTranslation(currentAppUILang);
     refreshHeaderLangButtonAndMenu();
     if (typeof showSyncToast === "function") {
-      showSyncToast("📱 App Display Buttons set to " + currentAppUILang.toUpperCase());
+      showSyncToast("📱 App Display Language changed to " + currentAppUILang.toUpperCase());
     }
   };
   window.setAppDisplayLangNow = window.selectQaafDisplayLang;
+  window.handleUILangSelectChange = window.selectQaafDisplayLang;
 
   window.toggleLangDropdown = function(ev) {
     if (ev && ev.stopPropagation) ev.stopPropagation();
-    var menu = document.getElementById("langDropdownMenu");
+    var menu = ensureMenuPortaledToBody();
     if (!menu) return;
     var isHidden = menu.classList.contains("hidden");
     if (isHidden) {
@@ -660,6 +708,23 @@
       menu.classList.add("hidden");
     }
   };
+
+  window.closeLangDropdownOutside = function(ev) {
+    var menu = document.getElementById("langDropdownMenu");
+    var container = document.getElementById("langDropdownContainer");
+    if (!menu || menu.classList.contains("hidden")) return;
+    if (ev && ev.target && (menu.contains(ev.target) || (container && container.contains(ev.target)))) return;
+    menu.classList.add("hidden");
+  };
+
+  document.addEventListener("click", function(ev) {
+    var menu = document.getElementById("langDropdownMenu");
+    var container = document.getElementById("langDropdownContainer");
+    if (!menu || menu.classList.contains("hidden")) return;
+    if (!menu.contains(ev.target) && (!container || !container.contains(ev.target))) {
+      menu.classList.add("hidden");
+    }
+  });
 
   // =========================================================================
   // E. STRICT 1.5s AUTO-HIDE FOR BOTTOM RED VOLUME BAR & TOP-LEFT RED CROSS
@@ -709,12 +774,14 @@
   window.wakeAllVideoControls1800 = window.wakeRedOverlay1500;
   window.wakeMinimalRedControls1500 = window.wakeRedOverlay1500;
 
-  // Startup initialization
+  // Startup & continuous protection against any dynamic re-render resetting UI labels
+  ensureMenuPortaledToBody();
   sortVideosByPreferredLanguage();
   refreshHeaderLangButtonAndMenu();
   applyQaafUIButtonsTranslation(currentAppUILang);
   injectUsersDatabaseBackupBar();
   window.syncQaafUsersWithCloudNow(false);
+
   if (typeof window.renderVideosNow === "function") {
     var origRenderVids = window.renderVideosNow;
     window.renderVideosNow = function() {
@@ -723,6 +790,8 @@
     };
     window.renderVideosNow();
   }
-  setTimeout(function() { applyQaafUIButtonsTranslation(window.currentAppUILang || "en"); }, 400);
-  setTimeout(function() { applyQaafUIButtonsTranslation(window.currentAppUILang || "en"); }, 1200);
+
+  setInterval(function() {
+    applyQaafUIButtonsTranslation(window.currentAppUILang || "en");
+  }, 800);
 })();
