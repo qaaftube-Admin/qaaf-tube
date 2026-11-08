@@ -776,6 +776,7 @@ const globalLanguagesList = [
         regionalPromos: regionalPromos || {},
         isPromoBarEnabled: isPromoBarEnabled !== false,
         parentRequestsQueue: window.parentRequestsQueue || [],
+        registeredUsersJson: JSON.stringify(window.registeredUsersMap || {}),
         qaafSecurityToken: "QAAF_PROTECTED_TOKEN_786_99_MAKKAH",
         updatedAt: Date.now()
       };
@@ -2221,12 +2222,11 @@ const globalLanguagesList = [
     let deferredPwaPrompt = null;
 
     function initPwaManifest() {
-      const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 350" fill="none"><rect width="500" height="350" rx="60" fill="#080a0f"/><path d="M 264,104 L 303,64 L 335,88 L 348,64 L 392,94 L 368,125 L 331,102 L 302,129 Z" fill="#00FF7B"/><path fill-rule="evenodd" clip-rule="evenodd" d="M 342,202 C 320,202 292,199 281,182 C 271,166 280,127 318,123 C 356,119 385,147 386,192 C 387,238 348,278 282,300 C 218,321 156,306 142,265 C 134,242 142,212 156,191 C 158,188 161,190 159,194 C 148,217 148,242 162,257 C 182,278 232,275 282,256 C 332,237 368,208 369,184 C 371,196 364,213 356,222 C 363,210 364,198 359,193 C 354,199 348,202 342,202 Z M 326,151 C 311,151 304,160 307,168 C 310,175 327,176 346,174 C 343,159 336,151 326,151 Z" fill="#00DF89"/></svg>`;
-      const iconUri = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(iconSvg);
+      const iconUri = "https://qaaftube.com/favicon.svg?v=14.0";
       const manifestObj = {
-        name: "QAAF Tube — Muslim Family & Kids Safe Hub",
+        name: "QAAF Tube — Muslim Family & Kids Hub",
         short_name: "QAAF Tube",
-        description: "Safe, Halal, Islamic Video & Learning Hub for Muslim Families",
+        description: "Muslim Family & Kids Hub — 100% Halal & Music-Free Islamic Videos, Quran, Naats, Cartoons & Games",
         start_url: "./index.html",
         display: "standalone",
         orientation: "any",
@@ -2246,16 +2246,16 @@ const globalLanguagesList = [
     function registerPwaServiceWorker() {
       if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
         try {
-          const swCode = `
-            const CACHE_NAME = 'qaaf-tube-pwa-v86';
-            self.addEventListener('install', (e) => { self.skipWaiting(); });
-            self.addEventListener('activate', (e) => { e.waitUntil(clients.claim()); });
-            self.addEventListener('fetch', (e) => {
-              e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
-            });
-          `;
-          const blob = new Blob([swCode], { type: 'application/javascript' });
-          navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
+          navigator.serviceWorker.getRegistrations().then(function(regs) {
+            regs.forEach(function(r) { r.unregister(); });
+          }).catch(function() {});
+          if ('caches' in window) {
+            caches.keys().then(function(keys) {
+              keys.forEach(function(k) {
+                if (k.indexOf('qaaf-tube-pwa') !== -1) caches.delete(k);
+              });
+            }).catch(function() {});
+          }
         } catch (e) {}
       }
     }

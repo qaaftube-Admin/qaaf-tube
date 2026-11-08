@@ -34,7 +34,7 @@
     isSyncingUsers = true;
     var baseUrl = getFirebaseBaseUrl();
     var vaultUrl = baseUrl + "/qaaf_users_vault.json?t=" + Date.now();
-    var globalUrl = baseUrl + "/qaaf_global_state/registeredUsersMap.json?t=" + Date.now();
+    var globalUrl = baseUrl + "/qaaf_global_state/registeredUsersJson.json?t=" + Date.now();
 
     Promise.all([
       fetch(vaultUrl, { cache: "no-store" }).then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; }),
@@ -45,11 +45,14 @@
       var localMap = getLocalUsersMap();
       var mergedMap = {};
 
+      if (typeof globalMapData === "string" && globalMapData.trim().indexOf("{") === 0) {
+        try { globalMapData = JSON.parse(globalMapData); } catch (e) {}
+      }
       if (globalMapData && typeof globalMapData === "object") {
         Object.keys(globalMapData).forEach(function(k) {
           var u = globalMapData[k];
           if (u && typeof u === "object") {
-            var realKey = String(u.email || u.username || k).trim().toLowerCase();
+            var realKey = String(u.userKey || u.email || u.username || k).trim().toLowerCase();
             if (realKey) mergedMap[realKey] = u;
           }
         });
@@ -60,7 +63,7 @@
           var item = vaultData[safeK];
           if (!item) return;
           var u = item.userData || item;
-          var realKey = String(item.originalKey || (u && (u.email || u.username)) || safeK).trim().toLowerCase();
+          var realKey = String(item.originalKey || (u && (u.userKey || u.email || u.username)) || safeK).trim().toLowerCase();
           if (u && typeof u === "object" && realKey) {
             var existing = mergedMap[realKey];
             if (!existing || ((u.updatedAt || 0) >= (existing.updatedAt || 0))) {
@@ -73,7 +76,7 @@
       Object.keys(localMap).forEach(function(k) {
         var u = localMap[k];
         if (u && typeof u === "object") {
-          var realKey = String(u.email || u.username || k).trim().toLowerCase();
+          var realKey = String(u.userKey || u.email || u.username || k).trim().toLowerCase();
           if (!realKey) return;
           var cloudUser = mergedMap[realKey];
           if (!cloudUser) {
@@ -119,10 +122,10 @@
           body: JSON.stringify(patchPayload)
         }).catch(function() {});
 
-        fetch(baseUrl + "/qaaf_global_state/registeredUsersMap.json", {
-          method: "PATCH",
+        fetch(baseUrl + "/qaaf_global_state/registeredUsersJson.json", {
+          method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(safeGlobalMap)
+          body: JSON.stringify(JSON.stringify(mergedMap))
         }).catch(function() {});
       }
 

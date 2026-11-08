@@ -1048,6 +1048,7 @@
     localStorage.setItem('qaaf_user_email', currentUserEmail);
     syncAccountUI();
     closeAccountModal();
+    if (window.syncQaafUsersWithCloudNow) window.syncQaafUsersWithCloudNow(false);
     if (window.qaafCloudSync) qaafCloudSync.pushState('New Family Account Registered');
     alert(`🎉 Welcome ${name}! Your QAAF Tube Family Account has been created.`);
   };
@@ -2256,6 +2257,7 @@
         regionalPromos: regionalPromos || {},
         isPromoBarEnabled: isPromoBarEnabled !== false,
         parentRequestsQueue: window.parentRequestsQueue || [],
+        registeredUsersJson: JSON.stringify(window.registeredUsersMap || {}),
         qaafSecurityToken: "QAAF_PROTECTED_TOKEN_786_99_MAKKAH",
         updatedAt: Date.now()
       };

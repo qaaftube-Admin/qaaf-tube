@@ -2957,7 +2957,7 @@
     var prevGetPayload = window.qaafCloudSync.getStatePayload.bind(window.qaafCloudSync);
     window.qaafCloudSync.getStatePayload = function() {
       var data = prevGetPayload();
-      data.registeredUsersMap = window.registeredUsersMap;
+      data.registeredUsersJson = JSON.stringify(window.registeredUsersMap || {});
       data.adminWhatsAppNumber = window.adminWhatsAppNumber;
       data.qaafOfficialMailerUrl = window.qaafOfficialMailerUrl;
       return data;
@@ -3972,14 +3972,22 @@
                 flaggedVideosQueue = mergeArraysByKey(flaggedVideosQueue, cloudState.flaggedVideosQueue, "videoId");
                 localStorage.setItem("qaaf_flagged_queue", JSON.stringify(flaggedVideosQueue));
               }
+              if (cloudState.registeredUsersJson && typeof cloudState.registeredUsersJson === "string") {
+                try {
+                  var parsedCloudUsers = JSON.parse(cloudState.registeredUsersJson);
+                  Object.keys(parsedCloudUsers || {}).forEach(function(uk) {
+                    if (!window.registeredUsersMap[uk]) window.registeredUsersMap[uk] = parsedCloudUsers[uk];
+                  });
+                } catch (e) {}
+              }
               if (cloudState.registeredUsersMap && typeof cloudState.registeredUsersMap === "object") {
                 Object.keys(cloudState.registeredUsersMap).forEach(function(uk) {
-                  if (!window.registeredUsersMap[uk]) {
-                    window.registeredUsersMap[uk] = cloudState.registeredUsersMap[uk];
-                  }
+                  var uItem = cloudState.registeredUsersMap[uk];
+                  var realK = (uItem && (uItem.userKey || uItem.email)) ? String(uItem.userKey || uItem.email).toLowerCase() : uk;
+                  if (!window.registeredUsersMap[realK]) window.registeredUsersMap[realK] = uItem;
                 });
-                localStorage.setItem("qaaf_registered_users", JSON.stringify(window.registeredUsersMap));
               }
+              localStorage.setItem("qaaf_registered_users", JSON.stringify(window.registeredUsersMap));
             }
           }
         } catch (e) {}
@@ -3987,7 +3995,8 @@
 
       var payload = this.getStatePayload();
       payload.parentRequestsQueue = parentRequestsQueue;
-      payload.registeredUsersMap = window.registeredUsersMap;
+      payload.registeredUsersJson = JSON.stringify(window.registeredUsersMap || {});
+      delete payload.registeredUsersMap;
 
       localStorage.setItem("qaaf_videos_data", JSON.stringify(payload.videosData));
       localStorage.setItem("qaaf_flagged_queue", JSON.stringify(payload.flaggedVideosQueue));
@@ -4480,6 +4489,7 @@
         regionalPromos: regionalPromos || {},
         isPromoBarEnabled: isPromoBarEnabled !== false,
         parentRequestsQueue: window.parentRequestsQueue || [],
+        registeredUsersJson: JSON.stringify(window.registeredUsersMap || {}),
         qaafSecurityToken: "QAAF_PROTECTED_TOKEN_786_99_MAKKAH",
         updatedAt: Date.now()
       };
@@ -4828,6 +4838,16 @@
         allFiltered.sort(function(a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
       } else if (currentSortFilter === "viewed") {
         allFiltered.sort(function(a, b) { return (b.views || 0) - (a.views || 0); });
+      } else {
+        var prefLangNow = String(window.preferredContentLang || preferredContentLang || "en").toLowerCase();
+        allFiltered.sort(function(a, b) {
+          var la = String((a && a.lang) || "global").toLowerCase();
+          var lb = String((b && b.lang) || "global").toLowerCase();
+          var sa = (la === prefLangNow) ? 0 : (la === "global" ? 1 : 2);
+          var sb = (lb === prefLangNow) ? 0 : (lb === "global" ? 1 : 2);
+          if (sa !== sb) return sa - sb;
+          return (typeof getModePriorityScore === "function") ? (getModePriorityScore(b) - getModePriorityScore(a)) : 0;
+        });
       }
     }
 
@@ -6600,124 +6620,5 @@
     }
   });
 
-  // 2. DUAL LANGUAGE SYSTEM:
-  //    (A) Display Language (App Interface buttons: Back, Close, Settings — stays English by default)
-  //    (B) Preferred Video & Dua Language (Which language's videos & channels come FIRST in the feed!)
-  var TEN_ISLAMIC_LANGS = [
-    { code: "en", short: "EN", label: "🇬🇧 English" },
-    { code: "ar", short: "AR", label: "🇸🇦 Arabic (العربية)" },
-    { code: "ur", short: "UR", label: "🇵🇰 Urdu (اردو)" },
-    { code: "hi", short: "HI", label: "🇮🇳 Hindi (हिन्दी)" },
-    { code: "bn", short: "BN", label: "🇧🇩 Bengali (বাংলা)" },
-    { code: "tr", short: "TR", label: "🇹🇷 Turkish (Türkçe)" },
-    { code: "ms", short: "MS", label: "🇲🇾 Malay (Melayu)" },
-    { code: "id", short: "ID", label: "🇮🇩 Indonesian (Bahasa)" },
-    { code: "fr", short: "FR", label: "🇫🇷 French (Français)" },
-    { code: "ru", short: "RU", label: "🇷🇺 Russian (Русский)" }
-  ];
-
-  // Load saved Display Language & Preferred Video Language from localStorage
-  var savedUILang = localStorage.getItem("qaaf_ui_display_lang") || "en";
-  var savedPrefLang = localStorage.getItem("qaaf_preferred_content_lang") || "en";
-  currentAppUILang = savedUILang;
-  preferredContentLang = savedPrefLang;
-
-  function syncTopHeaderLangBadge() {
-    var codeEl = document.getElementById("shortLangCode");
-    if (!codeEl) return;
-    var prefObj = TEN_ISLAMIC_LANGS.find(function(l) { return l.code === preferredContentLang; });
-    var prefShort = prefObj ? prefObj.short : preferredContentLang.toUpperCase().slice(0, 2);
-    // Show the Preferred Language code on the header button so user immediately sees their active content language
-    codeEl.innerText = prefShort;
-  }
-
-  function buildCleanDualLanguageDropdown() {
-    var menu = document.getElementById("langDropdownMenu");
-    if (!menu) return;
-
-    var uiOptionsHtml = "";
-    TEN_ISLAMIC_LANGS.forEach(function(l) {
-      uiOptionsHtml += '<option value="' + l.code + '" ' + (l.code === currentAppUILang ? 'selected' : '') + '>' + l.label + (l.code === 'en' ? ' (Default UI)' : '') + '</option>';
-    });
-
-    var prefPillsHtml = "";
-    TEN_ISLAMIC_LANGS.forEach(function(l) {
-      var isAct = (l.code === preferredContentLang);
-      prefPillsHtml +=
-        '<button type="button" onclick="setPreferredVideoLangNow(\'' + l.code + '\')" class="px-2.5 py-1.5 rounded-xl text-xs font-extrabold border transition flex items-center justify-between gap-1 ' +
-        (isAct ? 'bg-emerald-500 text-black border-emerald-300 shadow' : 'bg-black/70 hover:bg-slate-800 text-slate-200 border-slate-700') + '">' +
-          '<span class="truncate">' + l.label + '</span>' +
-          '<span class="text-[10px] opacity-80">' + l.short + '</span>' +
-        '</button>';
-    });
-
-    menu.innerHTML =
-      '<div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">' +
-        '<div>' +
-          '<span class="font-extrabold text-white block text-xs">🌍 Language Preferences</span>' +
-          '<span class="text-[10px] text-slate-400">Set Preferred Video Language &amp; App Display</span>' +
-        '</div>' +
-        '<button type="button" onclick="toggleLangDropdown()" class="text-slate-400 hover:text-white px-2 py-0.5 rounded-lg bg-slate-800 font-bold">✕</button>' +
-      '</div>' +
-
-      '<!-- 1. PREFERRED VIDEO & DUA LANGUAGE (WHICH VIDEOS SHOW FIRST) -->' +
-      '<div class="mb-3.5">' +
-        '<label class="block text-[11px] font-extrabold text-emerald-400 mb-1">🎬 1. Preferred Video &amp; Channel Language:</label>' +
-        '<p class="text-[10px] text-slate-400 mb-2">Videos of this language will appear first at the top of your screen:</p>' +
-        '<div class="grid grid-cols-2 gap-1.5">' + prefPillsHtml + '</div>' +
-      '</div>' +
-
-      '<!-- 2. DISPLAY LANGUAGE (APP BUTTONS: BACK, CLOSE, SETTINGS) -->' +
-      '<div class="pt-2.5 border-t border-slate-800 mb-2.5">' +
-        '<label class="block text-[11px] font-bold text-amber-300 mb-1">📱 2. App Display Language (Buttons &amp; Menus):</label>' +
-        '<select id="uiLangSelectDropdown" onchange="setAppDisplayLangNow(this.value)" class="w-full bg-black border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold">' +
-          uiOptionsHtml +
-        '</select>' +
-      '</div>' +
-
-      '<!-- 3. STRICT LANGUAGE ONLY TOGGLE -->' +
-      '<div class="pt-2.5 border-t border-slate-800">' +
-        '<label class="flex items-center justify-between cursor-pointer text-slate-200 font-bold select-none text-xs">' +
-          '<span>Strict Language Only (Hide other languages)</span>' +
-          '<input type="checkbox" id="strictLangToggle" ' + (strictLanguageOnly ? 'checked' : '') + ' onchange="toggleStrictLanguage()" class="accent-emerald-500 rounded scale-110" />' +
-        '</label>' +
-      '</div>';
-
-    // Also update Admin & Request language dropdowns to the clean 10 languages + Global
-    var cleanSelectHtml = '<option value="global">🌍 Global (All Languages)</option>';
-    TEN_ISLAMIC_LANGS.forEach(function(l) {
-      cleanSelectHtml += '<option value="' + l.code + '">' + l.label + ' (' + l.short + ')</option>';
-    });
-    ["adminVideoLang", "parentVideoLang", "quickReqVideoLang"].forEach(function(id) {
-      var sel = document.getElementById(id);
-      if (sel) sel.innerHTML = cleanSelectHtml;
-    });
-  }
-
-  window._legacySetPrefVideoLang = function(langCode) {
-    preferredContentLang = langCode || "en";
-    localStorage.setItem("qaaf_preferred_content_lang", preferredContentLang);
-    syncTopHeaderLangBadge();
-    buildCleanDualLanguageDropdown();
-    if (typeof syncRegionalPromoBar === "function") syncRegionalPromoBar();
-    if (typeof window.renderVideosNow === "function") window.renderVideosNow();
-    var found = TEN_ISLAMIC_LANGS.find(function(l) { return l.code === preferredContentLang; });
-    if (typeof showSyncToast === "function" && found) {
-      showSyncToast("🎬 Preferred Video Language set to " + found.label);
-    }
-  };
-
-  window._legacySetAppDisplayLang = function(langCode) {
-    currentAppUILang = langCode || "en";
-    localStorage.setItem("qaaf_ui_display_lang", currentAppUILang);
-    // Keep dir="ltr" when Display Language is English (default) so buttons stay in standard layout
-    var found = TEN_ISLAMIC_LANGS.find(function(l) { return l.code === currentAppUILang; });
-    document.getElementById("htmlRoot").dir = (found && found.code === "ar") ? "rtl" : "ltr";
-    buildCleanDualLanguageDropdown();
-  };
-
-  syncTopHeaderLangBadge();
-  buildCleanDualLanguageDropdown();
-  if (typeof window.renderVideosNow === "function") window.renderVideosNow();
+  // Language system is now managed by qaaf-users-auth.js v14.0
 })();
-
