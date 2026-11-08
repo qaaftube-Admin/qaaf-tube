@@ -3037,7 +3037,7 @@
           '<!-- NEW PASSWORD BOX (APPEARS WHEN SECRET WORD OR EMAIL LINK IS VERIFIED) -->' +
           '<div id="resetNewPasswordBox" class="hidden bg-emerald-950/30 border-2 border-emerald-500/60 rounded-xl p-3 space-y-2">' +
             '<label class="block text-xs font-extrabold text-emerald-300">✅ Verified! Enter Your New Password:</label>' +
-            '<input id="resetNewPassDirectInput" type="password" placeholder="Type your new password..." class="w-full bg-black border border-emerald-500/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none" />' +
+            '<input id="resetNewPassDirectInput" type="text" autocomplete="off" data-lpignore="true" style="-webkit-text-security:disc; text-security:disc;" placeholder="Type your new password..." class="w-full bg-black border border-emerald-500/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none" />' +
             '<button type="button" onclick="saveNewPasswordNow()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-black py-2 rounded-xl text-xs font-extrabold shadow-lg">💾 Save New Password &amp; Sign In</button>' +
           '</div>' +
 
@@ -3298,7 +3298,7 @@
     gBox.innerHTML =
       '<label class="block text-[11px] font-extrabold text-blue-300">🔵 Enter your Google (Gmail) Address to Continue:</label>' +
       '<input id="googleQuickEmailInput" type="email" placeholder="yourname@gmail.com" class="w-full bg-black border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:border-blue-400 focus:outline-none" />' +
-      '<input id="googleQuickPinInput" type="password" inputmode="numeric" maxlength="6" placeholder="Set 6-Digit Kids PIN (e.g. 123456)" class="w-full bg-black border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white" />' +
+      '<input id="googleQuickPinInput" type="text" autocomplete="off" data-lpignore="true" style="-webkit-text-security:disc; text-security:disc;" inputmode="numeric" maxlength="6" placeholder="Set 6-Digit Kids PIN (e.g. 123456)" class="w-full bg-black border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white" />' +
       '<button type="button" onclick="completeGoogleQuickSignIn()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg text-xs font-extrabold shadow">✔ Continue with Gmail</button>';
     var btn = document.getElementById("googleSignInBtn");
     if (btn && btn.parentNode) {

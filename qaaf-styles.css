@@ -410,3 +410,9 @@ img.qaaf-custom-emoji {
     pointer-events: none !important;
   }
   
+
+/* Mask PIN and Password inputs without triggering Chrome Password Autofill Popup */
+#pinInput, #newPinInput, #confirmPinInput, #timeUpParentPinInput, #regPinInput, #userPassInput, #regPassInput, #resetNewPassDirectInput, #googleQuickPinInput {
+  -webkit-text-security: disc !important;
+  text-security: disc !important;
+}

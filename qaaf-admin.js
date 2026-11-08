@@ -757,7 +757,7 @@
             </div>
             <div>
               <label class="block text-[11px] font-bold text-slate-300 mb-1">Password:</label>
-              <input id="userPassInput" type="password" placeholder="••••••••••••" class="w-full bg-black border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white focus:border-emerald-500 focus:outline-none" />
+              <input id="userPassInput" type="text" autocomplete="off" data-lpignore="true" style="-webkit-text-security:disc; text-security:disc;" placeholder="••••••••••••" class="w-full bg-black border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white focus:border-emerald-500 focus:outline-none" />
             </div>
             <p id="loginAuthError" class="text-xs font-bold text-rose-400 hidden"></p>
             <button type="button" onclick="loginWithEmail()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl text-xs font-extrabold shadow mt-1">
@@ -853,7 +853,7 @@
         </div>
         <div>
           <label class="block text-[11px] font-bold text-slate-300 mb-1">Password (Required for Admin):</label>
-          <input id="userPassInput" type="password" placeholder="Enter Password" class="w-full bg-black border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none" />
+          <input id="userPassInput" type="text" autocomplete="off" data-lpignore="true" style="-webkit-text-security:disc; text-security:disc;" placeholder="Enter Password" class="w-full bg-black border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none" />
         </div>
         <p id="loginAuthError" class="text-xs font-bold text-rose-400 hidden"></p>
         <button type="button" onclick="loginWithEmail()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl text-xs font-extrabold shadow">
@@ -959,7 +959,7 @@
         </div>
         <div>
           <label class="block text-[11px] font-bold text-slate-300 mb-1">Password:</label>
-          <input id="userPassInput" type="password" placeholder="Enter Password" class="w-full bg-black border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none" />
+          <input id="userPassInput" type="text" autocomplete="off" data-lpignore="true" style="-webkit-text-security:disc; text-security:disc;" placeholder="Enter Password" class="w-full bg-black border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none" />
         </div>
         <p id="loginAuthError" class="text-xs font-bold text-rose-400 hidden"></p>
         <button type="button" onclick="loginWithEmail()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl text-xs font-extrabold shadow">
@@ -984,7 +984,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div>
             <label class="block text-[11px] font-bold text-slate-300 mb-1">Create Password:</label>
-            <input id="regPassInput" type="password" placeholder="Min 6 characters" class="w-full bg-black border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none" />
+            <input id="regPassInput" type="text" autocomplete="off" data-lpignore="true" style="-webkit-text-security:disc; text-security:disc;" placeholder="Min 6 characters" class="w-full bg-black border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none" />
           </div>
           <div>
             <label class="block text-[11px] font-bold text-amber-300 mb-1">Recovery Secret Word:</label>
@@ -2351,7 +2351,7 @@
     const pinDiv = document.createElement('div');
     pinDiv.innerHTML = `
       <label class="block text-[11px] font-bold text-emerald-400 mb-1">Set 6-Digit Kids Lock PIN:</label>
-      <input id="regPinInput" type="password" inputmode="numeric" maxlength="6" placeholder="e.g. 123456 (6 digits for Kids Mode)" class="w-full bg-black border border-emerald-500/50 rounded-xl px-3.5 py-2 text-xs text-white tracking-widest focus:border-emerald-400 focus:outline-none" />
+      <input id="regPinInput" type="text" autocomplete="off" data-lpignore="true" style="-webkit-text-security:disc; text-security:disc;" inputmode="numeric" maxlength="6" placeholder="e.g. 123456 (6 digits for Kids Mode)" class="w-full bg-black border border-emerald-500/50 rounded-xl px-3.5 py-2 text-xs text-white tracking-widest focus:border-emerald-400 focus:outline-none" />
     `;
     if (errNode) signUpPane.insertBefore(pinDiv, errNode);
   }
@@ -2775,7 +2775,7 @@
       <div class="flex-1 flex flex-col gap-1.5 relative">
         <div class="relative flex items-center bg-[#121621] border-2 border-slate-700 focus-within:border-emerald-500 rounded-full pl-3.5 pr-1.5 py-1.5 shadow-lg transition">
           <span class="text-emerald-400 mr-2 text-sm">🔍</span>
-          <input id="qaafSearchInput" type="search" name="qaaf_video_search_query_field" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly');" placeholder="Search any Video, Scholar, Surah, Cartoon or Channel (Urdu / English)..." class="w-full bg-transparent text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-none" />
+          <input id="qaafSearchInput" type="search" name="q_search" autocomplete="off" data-lpignore="true" data-form-type="other" readonly onfocus="this.removeAttribute('readonly');" placeholder="Search any Video, Scholar, Surah, Cartoon or Channel (Urdu / English)..." class="w-full bg-transparent text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-none" />
           <button id="qaafSearchClearBtn" type="button" class="hidden text-slate-400 hover:text-white text-xs font-extrabold px-2.5 py-1 rounded-full hover:bg-slate-800 mr-1" title="Clear Search">✕</button>
           <button id="qaafSearchSubmitBtn" type="button" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-extrabold shrink-0 shadow flex items-center gap-1 transition">
             <span>🔍</span> <span>Search</span>
