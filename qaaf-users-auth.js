@@ -298,16 +298,96 @@
   ];
 
   var UI_TRANSLATIONS = {
-    en: { videos: "Videos", games: "Games", settings: "Settings", catAll: "All Channels", catQuran: "Tilawat-e-Quran", catNaat: "Naat", catTarbiyah: "Islamic Tarbiyah", catBayan: "Islamic Bayanat", catStories: "Kids Tarbiyah", catCartoon: "Kids Cartoons", smart: "⭐ Smart Feed", fav: "Favorites", recent: "Most Recent", viewed: "Most Viewed", searchPh: "Search any Video, Scholar, Surah, Cartoon or Channel...", searchBtn: "🔍 Search" },
-    ur: { videos: "ویڈیوز", games: "گیمز", settings: "سیٹنگز", catAll: "تمام چینلز", catQuran: "تلاوتِ قرآن پاک", catNaat: "نعت شریف", catTarbiyah: "اسلامی تربیت", catBayan: "اسلامی بیانات", catStories: "بچوں کی تربیت", catCartoon: "کڈز کارٹون", smart: "⭐ اسمارٹ فیڈ", fav: "پسندیدہ", recent: "تازہ ترین", viewed: "سب سے زیادہ دیکھی گئی", searchPh: "کوئی بھی ویڈیو، قاری، نعت، کارٹون یا چینل تلاش کریں...", searchBtn: "🔍 تلاش" },
-    ar: { videos: "الفيديوهات", games: "الألعاب", settings: "الإعدادات", catAll: "جميع القنوات", catQuran: "تلاوة القرآن", catNaat: "أناشيد إسلامية", catTarbiyah: "التربية الإسلامية", catBayan: "محاضرات إسلامية", catStories: "تربية الأطفال", catCartoon: "كرتون إسلامي", smart: "⭐ المختار", fav: "المفضلة", recent: "الأحدث", viewed: "الأكثر مشاهدة", searchPh: "ابحث عن أي فيديو أو قارئ أو سورة أو قناة...", searchBtn: "🔍 بحث" },
-    hi: { videos: "वीडियो", games: "गेम्स", settings: "सेटिंग्स", catAll: "सभी चैनल", catQuran: "तिलावत-ए-कुरआन", catNaat: "नात शरीफ़", catTarbiyah: "इस्लामी तरबियत", catBayan: "इस्लामी बयानात", catStories: "बच्चों की तरबियत", catCartoon: "किड्स कार्टून", smart: "⭐ स्मार्ट फ़ीड", fav: "पसंदीदा", recent: "नवीनतम", viewed: "सबसे ज़्यादा देखे गए", searchPh: "कोई भी वीडियो, कारी, सूरह या चैनल खोजें...", searchBtn: "🔍 खोजें" },
-    bn: { videos: "ভিডিও", games: "গেমস", settings: "সেটিংস", catAll: "সব চ্যানেল", catQuran: "তিলাওয়াতে কুরআন", catNaat: "নাত শরীফ", catTarbiyah: "ইসলামিক তারবিয়াহ", catBayan: "ইসলামিক বয়ান", catStories: "শিশুদের তারবিয়াহ", catCartoon: "কিডস কার্টুন", smart: "⭐ স্মার্ট ফিড", fav: "প্রিয়", recent: "সাম্প্রতিক", viewed: "সর্বাধিক দেখা", searchPh: "যেকোনো ভিডিও, কারী, সূরা বা চ্যানেল খুঁজুন...", searchBtn: "🔍 খুঁজুন" },
-    tr: { videos: "Videolar", games: "Oyunlar", settings: "Ayarlar", catAll: "Tüm Kanallar", catQuran: "Kur'an Tilaveti", catNaat: "İlahi & Naat", catTarbiyah: "İslami Eğitim", catBayan: "İslami Sohbetler", catStories: "Çocuk Eğitimi", catCartoon: "Çocuk Çizgi Film", smart: "⭐ Akıllı Akış", fav: "Favoriler", recent: "En Yeni", viewed: "En Çok İzlenen", searchPh: "Video, Qari, Sure veya Kanal ara...", searchBtn: "🔍 Ara" },
-    ms: { videos: "Video", games: "Permainan", settings: "Tetapan", catAll: "Semua Saluran", catQuran: "Tilawah Al-Quran", catNaat: "Nasyid", catTarbiyah: "Tarbiyah Islam", catBayan: "Ceramah Islam", catStories: "Didik Anak", catCartoon: "Kartun Kanak-kanak", smart: "⭐ Suapan Pintar", fav: "Kegemaran", recent: "Terkini", viewed: "Paling Ditonton", searchPh: "Cari Video, Qari, Surah atau Saluran...", searchBtn: "🔍 Cari" },
-    id: { videos: "Video", games: "Permainan", settings: "Pengaturan", catAll: "Semua Saluran", catQuran: "Tilawah Al-Quran", catNaat: "Nasyid", catTarbiyah: "Tarbiyah Islam", catBayan: "Kajian Islam", catStories: "Edukasi Anak", catCartoon: "Kartun Anak", smart: "⭐ Beranda Pintar", fav: "Favorit", recent: "Terbaru", viewed: "Terpopuler", searchPh: "Cari Video, Qari, Surah atau Saluran...", searchBtn: "🔍 Cari" },
-    fr: { videos: "Vidéos", games: "Jeux", settings: "Paramètres", catAll: "Toutes les chaînes", catQuran: "Récitation du Coran", catNaat: "Anachid", catTarbiyah: "Éducation Islamique", catBayan: "Conférences", catStories: "Éducation Enfants", catCartoon: "Dessins Animés", smart: "⭐ Flux Intelligent", fav: "Favoris", recent: "Plus récents", viewed: "Plus vus", searchPh: "Rechercher une vidéo, sourate ou chaîne...", searchBtn: "🔍 Chercher" },
-    ru: { videos: "Видео", games: "Игры", settings: "Настройки", catAll: "Все каналы", catQuran: "Чтение Корана", catNaat: "Нашиды", catTarbiyah: "Исламское воспитание", catBayan: "Лекции", catStories: "Детям", catCartoon: "Мультфильмы", smart: "⭐ Умная лента", fav: "Избранное", recent: "Новые", viewed: "Популярные", searchPh: "Поиск видео, суры или канала...", searchBtn: "🔍 Поиск" }
+    en: {
+      videos: "Videos", games: "Games", settings: "Settings", kids: "Kids", login: "Login", admin: "Admin",
+      catAll: "All Channels", catQuran: "Tilawat-e-Quran", catNaat: "Naat", catTarbiyah: "Islamic Tarbiyah", catBayan: "Islamic Bayanat", catStories: "Kids Tarbiyah", catCartoon: "Kids Cartoons",
+      smart: "Smart Feed", fav: "Favorites", recent: "Most Recent", viewed: "Most Viewed",
+      searchPh: "Search any Video, Scholar, Surah, Cartoon or Channel...", searchBtn: "Search",
+      videoReq: "Video Request", shortsTitle: "QAAF Islamic Shorts & Quick Bayans", swipe: "Swipe / Scroll ➔",
+      drawerHome: "All Videos Feed", drawerPl: "My Playlists", drawerHist: "Watch History", drawerFav: "Favorite Videos", drawerTimer: "Kids Lock & Schedule",
+      promoteBtn: "Promote / Contact", backBtn: "◀ Back", homeBtn: "● Home", recentBtn: "■ Recent"
+    },
+    ur: {
+      videos: "ویڈیوز", games: "گیمز", settings: "سیٹنگز", kids: "کڈز", login: "لاگ ان", admin: "ایڈمن",
+      catAll: "تمام چینلز", catQuran: "تلاوتِ قرآن پاک", catNaat: "نعت شریف", catTarbiyah: "اسلامی تربیت", catBayan: "اسلامی بیانات", catStories: "بچوں کی تربیت", catCartoon: "کڈز کارٹون",
+      smart: "اسمارٹ فیڈ", fav: "پسندیدہ", recent: "تازہ ترین", viewed: "سب سے زیادہ دیکھی گئی",
+      searchPh: "کوئی بھی ویڈیو، قاری، نعت، کارٹون یا چینل تلاش کریں...", searchBtn: "تلاش کریں",
+      videoReq: "ویڈیو کی درخواست", shortsTitle: "قاف اسلامک شارٹس اور مختصر بیانات", swipe: "آگے دیکھیں ➔",
+      drawerHome: "تمام ویڈیوز", drawerPl: "میری پلے لسٹس", drawerHist: "دیکھی گئی ویڈیوز", drawerFav: "پسندیدہ ویڈیوز", drawerTimer: "کڈز لاک اور وقت",
+      promoteBtn: "رابطہ اور تشہیر", backBtn: "◀ واپس", homeBtn: "● ہوم", recentBtn: "■ حالیہ"
+    },
+    ar: {
+      videos: "الفيديوهات", games: "الألعاب", settings: "الإعدادات", kids: "أطفال", login: "دخول", admin: "الإدارة",
+      catAll: "جميع القنوات", catQuran: "تلاوة القرآن", catNaat: "أناشيد إسلامية", catTarbiyah: "التربية الإسلامية", catBayan: "محاضرات إسلامية", catStories: "تربية الأطفال", catCartoon: "كرتون إسلامي",
+      smart: "المختار", fav: "المفضلة", recent: "الأحدث", viewed: "الأكثر مشاهدة",
+      searchPh: "ابحث عن أي فيديو أو قارئ أو سورة أو قناة...", searchBtn: "بحث",
+      videoReq: "طلب فيديو", shortsTitle: "مقاطع قاف القصيرة والمحاضرات", swipe: "اسحب للمزيد ➔",
+      drawerHome: "جميع الفيديوهات", drawerPl: "قوائم التشغيل", drawerHist: "سجل المشاهدة", drawerFav: "المفضلة", drawerTimer: "قفل ومؤقت الأطفال",
+      promoteBtn: "للإعلان والتواصل", backBtn: "◀ رجوع", homeBtn: "● الرئيسية", recentBtn: "■ التطبيقات"
+    },
+    hi: {
+      videos: "वीडियो", games: "गेम्स", settings: "सेटिंग्स", kids: "किड्स", login: "लॉग इन", admin: "एडमिन",
+      catAll: "सभी चैनल", catQuran: "तिलावत-ए-कुरआन", catNaat: "नात शरीफ़", catTarbiyah: "इस्लामी तरबियत", catBayan: "इस्लामी बयानात", catStories: "बच्चों की तरबियत", catCartoon: "किड्स कार्टून",
+      smart: "स्मार्ट फ़ीड", fav: "पसंदीदा", recent: "नवीनतम", viewed: "सबसे ज़्यादा देखे गए",
+      searchPh: "कोई भी वीडियो, कारी, सूरह या चैनल खोजें...", searchBtn: "खोजें",
+      videoReq: "वीडियो अनुरोध", shortsTitle: "क़ाफ़ इस्लामिक शॉर्ट्स और बयानात", swipe: "आगे देखें ➔",
+      drawerHome: "सभी वीडियो", drawerPl: "मेरी प्लेलिस्ट", drawerHist: "देखे गए वीडियो", drawerFav: "पसंदीदा वीडियो", drawerTimer: "किड्स लॉक और समय",
+      promoteBtn: "प्रमोशन / संपर्क", backBtn: "◀ पीछे", homeBtn: "● होम", recentBtn: "■ हाल ही में"
+    },
+    bn: {
+      videos: "ভিডিও", games: "গেমস", settings: "সেটিংস", kids: "কিডস", login: "লগইন", admin: "অ্যাডমিন",
+      catAll: "সব চ্যানেল", catQuran: "তিলাওয়াতে কুরআন", catNaat: "নাত শরীফ", catTarbiyah: "ইসলামিক তারবিয়াহ", catBayan: "ইসলামিক বয়ান", catStories: "শিশুদের তারবিয়াহ", catCartoon: "কিডস কার্টুন",
+      smart: "স্মার্ট ফিড", fav: "প্রিয়", recent: "সাম্প্রতিক", viewed: "সর্বাধিক দেখা",
+      searchPh: "যেকোনো ভিডিও, কারী, সূরা বা চ্যানেল খুঁজুন...", searchBtn: "খুঁজুন",
+      videoReq: "ভিডিও অনুরোধ", shortsTitle: "কাফ ইসলামিক শর্টস ও বয়ান", swipe: "সোয়াইপ করুন ➔",
+      drawerHome: "সব ভিডিও", drawerPl: "আমার প্লেলিস্ট", drawerHist: "দেখার ইতিহাস", drawerFav: "প্রিয় ভিডিও", drawerTimer: "কিডস লক ও টাইমার",
+      promoteBtn: "প্রচার ও যোগাযোগ", backBtn: "◀ পিছনে", homeBtn: "● হোম", recentBtn: "■ সাম্প্রতিক"
+    },
+    tr: {
+      videos: "Videolar", games: "Oyunlar", settings: "Ayarlar", kids: "Çocuk", login: "Giriş", admin: "Yönetici",
+      catAll: "Tüm Kanallar", catQuran: "Kur'an Tilaveti", catNaat: "İlahi & Naat", catTarbiyah: "İslami Eğitim", catBayan: "İslami Sohbetler", catStories: "Çocuk Eğitimi", catCartoon: "Çocuk Çizgi Film",
+      smart: "Akıllı Akış", fav: "Favoriler", recent: "En Yeni", viewed: "En Çok İzlenen",
+      searchPh: "Video, Qari, Sure veya Kanal ara...", searchBtn: "Ara",
+      videoReq: "Video İsteği", shortsTitle: "QAAF İslami Kısa Videolar", swipe: "Kaydır ➔",
+      drawerHome: "Tüm Videolar", drawerPl: "Oynatma Listelerim", drawerHist: "İzleme Geçmişi", drawerFav: "Favori Videolar", drawerTimer: "Çocuk Kilidi & Süre",
+      promoteBtn: "Tanıtım / İletişim", backBtn: "◀ Geri", homeBtn: "● Ana Sayfa", recentBtn: "■ Son"
+    },
+    ms: {
+      videos: "Video", games: "Permainan", settings: "Tetapan", kids: "Kanak2", login: "Log Masuk", admin: "Admin",
+      catAll: "Semua Saluran", catQuran: "Tilawah Al-Quran", catNaat: "Nasyid", catTarbiyah: "Tarbiyah Islam", catBayan: "Ceramah Islam", catStories: "Didik Anak", catCartoon: "Kartun Kanak-kanak",
+      smart: "Suapan Pintar", fav: "Kegemaran", recent: "Terkini", viewed: "Paling Ditonton",
+      searchPh: "Cari Video, Qari, Surah atau Saluran...", searchBtn: "Cari",
+      videoReq: "Mohon Video", shortsTitle: "Video Pendek & Bayan QAAF", swipe: "Leret ➔",
+      drawerHome: "Semua Video", drawerPl: "Senarai Main", drawerHist: "Sejarah Tontonan", drawerFav: "Video Kegemaran", drawerTimer: "Kunci & Masa Kanak-kanak",
+      promoteBtn: "Promosi / Hubungi", backBtn: "◀ Kembali", homeBtn: "● Utama", recentBtn: "■ Terkini"
+    },
+    id: {
+      videos: "Video", games: "Permainan", settings: "Pengaturan", kids: "Anak", login: "Masuk", admin: "Admin",
+      catAll: "Semua Saluran", catQuran: "Tilawah Al-Quran", catNaat: "Nasyid", catTarbiyah: "Tarbiyah Islam", catBayan: "Kajian Islam", catStories: "Edukasi Anak", catCartoon: "Kartun Anak",
+      smart: "Beranda Pintar", fav: "Favorit", recent: "Terbaru", viewed: "Terpopuler",
+      searchPh: "Cari Video, Qari, Surah atau Saluran...", searchBtn: "Cari",
+      videoReq: "Request Video", shortsTitle: "Video Pendek & Kajian QAAF", swipe: "Geser ➔",
+      drawerHome: "Semua Video", drawerPl: "Playlist Saya", drawerHist: "Riwayat Tontonan", drawerFav: "Video Favorit", drawerTimer: "Kunci & Waktu Anak",
+      promoteBtn: "Promosi / Kontak", backBtn: "◀ Kembali", homeBtn: "● Beranda", recentBtn: "■ Terkini"
+    },
+    fr: {
+      videos: "Vidéos", games: "Jeux", settings: "Paramètres", kids: "Enfants", login: "Connexion", admin: "Admin",
+      catAll: "Toutes les chaînes", catQuran: "Récitation du Coran", catNaat: "Anachid", catTarbiyah: "Éducation Islamique", catBayan: "Conférences", catStories: "Éducation Enfants", catCartoon: "Dessins Animés",
+      smart: "Flux Intelligent", fav: "Favoris", recent: "Plus récents", viewed: "Plus vus",
+      searchPh: "Rechercher une vidéo, sourate ou chaîne...", searchBtn: "Chercher",
+      videoReq: "Demander Vidéo", shortsTitle: "Shorts Islamiques & Rappels QAAF", swipe: "Glisser ➔",
+      drawerHome: "Toutes les vidéos", drawerPl: "Mes Playlists", drawerHist: "Historique", drawerFav: "Vidéos Favorites", drawerTimer: "Contrôle Parental",
+      promoteBtn: "Promouvoir / Contact", backBtn: "◀ Retour", homeBtn: "● Accueil", recentBtn: "■ Récents"
+    },
+    ru: {
+      videos: "Видео", games: "Игры", settings: "Настройки", kids: "Детям", login: "Войти", admin: "Админ",
+      catAll: "Все каналы", catQuran: "Чтение Корана", catNaat: "Нашиды", catTarbiyah: "Исламское воспитание", catBayan: "Лекции", catStories: "Детям", catCartoon: "Мультфильмы",
+      smart: "Умная лента", fav: "Избранное", recent: "Новые", viewed: "Популярные",
+      searchPh: "Поиск видео, суры или канала...", searchBtn: "Поиск",
+      videoReq: "Запрос видео", shortsTitle: "Короткие исламские видео QAAF", swipe: "Листайте ➔",
+      drawerHome: "Все видео", drawerPl: "Мои плейлисты", drawerHist: "История просмотра", drawerFav: "Избранное", drawerTimer: "Детский таймер",
+      promoteBtn: "Реклама / Контакт", backBtn: "◀ Назад", homeBtn: "● Главная", recentBtn: "■ Недавние"
+    }
   };
 
   if (typeof globalLanguagesList !== "undefined" && Array.isArray(globalLanguagesList)) {
@@ -320,9 +400,30 @@
   window.currentAppUILang = currentAppUILang;
   window.preferredContentLang = preferredContentLang;
 
+  function updateBtnLabelSmart(btnEl, newText, hasDropdownArrow) {
+    if (!btnEl) return;
+    // Check if there is a dedicated label span inside
+    var spans = btnEl.querySelectorAll("span");
+    if (spans.length >= 2) {
+      // Usually spans[0] is icon/emoji, spans[1] is label
+      spans[1].innerText = newText + (hasDropdownArrow && spans.length === 2 ? " ▾" : "");
+      return;
+    }
+    // Otherwise preserve first svg or emoji span and update text node
+    var firstSvgOrSpan = btnEl.querySelector("svg, span");
+    if (firstSvgOrSpan) {
+      var iconHtml = firstSvgOrSpan.outerHTML;
+      btnEl.innerHTML = iconHtml + ' <span>' + newText + (hasDropdownArrow ? ' ▾' : '') + '</span>';
+    } else {
+      btnEl.innerText = newText + (hasDropdownArrow ? " ▾" : "");
+    }
+  }
+
   function applyQaafUIButtonsTranslation(langCode) {
     var t = UI_TRANSLATIONS[langCode] || UI_TRANSLATIONS.en;
-    var map = {
+
+    // 1. Direct ID spans if present
+    var directMap = {
       "ui_videosTab": t.videos,
       "ui_gamesTab": t.games,
       "ui_settingsBtn": t.settings,
@@ -333,24 +434,103 @@
       "ui_catBayanLabel": t.catBayan,
       "ui_catStoriesLabel": t.catStories,
       "ui_catCartoonLabel": t.catCartoon,
-      "sort_default": t.smart,
       "ui_favFilter": t.fav,
       "ui_recentFilter": t.recent,
       "ui_viewedFilter": t.viewed
     };
-    Object.keys(map).forEach(function(id) {
+    Object.keys(directMap).forEach(function(id) {
       var el = document.getElementById(id);
-      if (el) el.innerText = map[id];
+      if (el) el.innerText = directMap[id];
     });
+
+    // 2. Category Bar Buttons (even if dynamically rebuilt by qaaf-player-ui.js)
+    updateBtnLabelSmart(document.getElementById("ui_catAll") || document.getElementById("allChannelsDropdownBtn"), t.catAll, true);
+    updateBtnLabelSmart(document.getElementById("ui_catQuran"), t.catQuran, false);
+    updateBtnLabelSmart(document.getElementById("ui_catNaat"), t.catNaat, false);
+    updateBtnLabelSmart(document.getElementById("ui_catTarbiyah"), t.catTarbiyah, false);
+    updateBtnLabelSmart(document.getElementById("ui_catBayan"), t.catBayan, false);
+    updateBtnLabelSmart(document.getElementById("ui_catStories"), t.catStories, false);
+    updateBtnLabelSmart(document.getElementById("ui_catCartoon"), t.catCartoon, false);
+
+    // 3. Sort Filter Buttons
+    var sortDef = document.getElementById("sort_default");
+    if (sortDef) updateBtnLabelSmart(sortDef, t.smart, false);
+    var sortRec = document.getElementById("sort_recent");
+    if (sortRec && !document.getElementById("ui_recentFilter")) updateBtnLabelSmart(sortRec, t.recent, false);
+    var sortView = document.getElementById("sort_viewed");
+    if (sortView && !document.getElementById("ui_viewedFilter")) updateBtnLabelSmart(sortView, t.viewed, false);
+
+    // 4. Header Buttons (Settings, Kids, Admin)
+    var pBtn = document.getElementById("parentPanelBtn");
+    if (pBtn && !document.getElementById("ui_settingsBtn")) updateBtnLabelSmart(pBtn, t.settings, false);
+    var kLetters = document.querySelector("#kidsLockBtn .kids-letters");
+    if (kLetters) {
+      if (langCode === "en") {
+        kLetters.innerHTML = "<span>K</span><span>i</span><span>d</span><span>s</span>";
+      } else {
+        kLetters.innerHTML = '<span class="text-amber-300">' + t.kids + '</span>';
+      }
+    }
+
+    // 5. Search Bar & Video Request Button
     var sInp = document.getElementById("qaafSearchInput");
     if (sInp) sInp.placeholder = t.searchPh;
     var sBtn = document.getElementById("qaafSearchSubmitBtn");
-    if (sBtn) sBtn.innerText = t.searchBtn;
+    if (sBtn) updateBtnLabelSmart(sBtn, t.searchBtn, false);
+    document.querySelectorAll("button").forEach(function(b) {
+      var txt = (b.innerText || "").trim();
+      if (b.id !== "qaafSearchSubmitBtn" && (txt === "Search" || txt === "🔍 Search" || txt === "تلاش کریں" || txt === "🔍 تلاش کریں" || txt === "بحث" || txt === "खोजें")) {
+        updateBtnLabelSmart(b, t.searchBtn, false);
+      }
+      if (b.querySelector("#userReqCountBadge") || txt.indexOf("Video Request") !== -1 || txt.indexOf("ویڈیو کی درخواست") !== -1 || txt.indexOf("طلب فيديو") !== -1) {
+        var badge = b.querySelector("#userReqCountBadge") || b.querySelector("span:last-child");
+        var firstIcon = b.querySelector("svg, span:first-child");
+        var spans = b.querySelectorAll("span");
+        if (spans.length >= 2) {
+          for (var i = 0; i < spans.length; i++) {
+            if (spans[i].id !== "userReqCountBadge" && isNaN(parseInt(spans[i].innerText, 10)) && spans[i] !== firstIcon) {
+              spans[i].innerText = t.videoReq;
+              break;
+            }
+          }
+        }
+      }
+    });
+
+    // 6. Shorts Shelf Heading & Swipe text
+    document.querySelectorAll("h2, h3, span, div").forEach(function(el) {
+      if (el.children.length === 0) {
+        var tx = (el.innerText || "").trim();
+        if (tx === "QAAF Islamic Shorts & Quick Bayans" || tx === "قاف اسلامک شارٹس اور مختصر بیانات" || tx === "مقاطع قاف القصيرة والمحاضرات" || tx === "क़ाफ़ इस्लामिक शॉर्ट्स और बयानात") {
+          el.innerText = t.shortsTitle;
+        } else if (tx.indexOf("Swipe / Scroll") !== -1 || tx === "آگے دیکھیں ➔" || tx === "اسحب للمزيد ➔") {
+          el.innerText = t.swipe;
+        }
+      }
+    });
+
+    // 7. Left Drawer & Promote Button
+    var dMap = [
+      ["drawerHomeBtn", t.drawerHome],
+      ["drawerPlToggleBtn", t.drawerPl],
+      ["drawerHistToggleBtn", t.drawerHist],
+      ["drawerFavBtn", t.drawerFav],
+      ["drawerKidsTimerBtn", t.drawerTimer]
+    ];
+    dMap.forEach(function(pair) {
+      var b = document.getElementById(pair[0]);
+      if (b) {
+        var sp = b.querySelectorAll("span span");
+        if (sp.length >= 2) sp[1].innerText = pair[1];
+      }
+    });
+
     var duaBadge = document.getElementById("duaLangBadge");
     if (duaBadge) duaBadge.innerText = String(preferredContentLang || "en").toUpperCase();
   }
+  window.applyQaafUIButtonsTranslation = applyQaafUIButtonsTranslation;
 
-  function sortVideosByPreferredLanguage() {
+    function sortVideosByPreferredLanguage() {
     if (typeof videosData === "undefined" || !Array.isArray(videosData) || videosData.length === 0) return;
     var pref = String(preferredContentLang || "en").toLowerCase();
     videosData.forEach(function(v, idx) {
@@ -535,5 +715,14 @@
   applyQaafUIButtonsTranslation(currentAppUILang);
   injectUsersDatabaseBackupBar();
   window.syncQaafUsersWithCloudNow(false);
-  if (typeof window.renderVideosNow === "function") window.renderVideosNow();
+  if (typeof window.renderVideosNow === "function") {
+    var origRenderVids = window.renderVideosNow;
+    window.renderVideosNow = function() {
+      origRenderVids.apply(this, arguments);
+      applyQaafUIButtonsTranslation(window.currentAppUILang || "en");
+    };
+    window.renderVideosNow();
+  }
+  setTimeout(function() { applyQaafUIButtonsTranslation(window.currentAppUILang || "en"); }, 400);
+  setTimeout(function() { applyQaafUIButtonsTranslation(window.currentAppUILang || "en"); }, 1200);
 })();
