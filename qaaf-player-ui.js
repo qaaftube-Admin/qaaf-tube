@@ -4865,6 +4865,98 @@
       else regularVideos.push(item);
     }
 
+    // YOUTUBE-STYLE SMART DIVERSE INTERLEAVER (1 VIDEO PER CHANNEL PER ROUND + FAVORITES & PREFERRED LANG BOOST)
+    if (selCh === "ALL" && !rawSearch && currentSortFilter === "default" && allowedOrderIds === null) {
+      var prefLangCode = String(window.preferredContentLang || preferredContentLang || "en").toLowerCase();
+      var histArr = (typeof getActiveHistory === "function") ? (getActiveHistory() || []) : [];
+      var histSetLocal = new Set(histArr);
+      var likedChSet = new Set();
+      var likedCatSet = new Set();
+
+      (sourceList || []).forEach(function(v) {
+        if (!v) return;
+        if (favSet.has(v.id) || histSetLocal.has(v.id)) {
+          if (v.channel) likedChSet.add(v.channel);
+          if (v.category) likedCatSet.add(v.category);
+        }
+      });
+
+      function interleaveByChannelSmart(arr) {
+        if (!arr || arr.length <= 1) return arr;
+        var bucketsMap = new Map();
+        arr.forEach(function(v, idx) {
+          var ch = (v && v.channel) ? v.channel : "General";
+          if (!bucketsMap.has(ch)) bucketsMap.set(ch, []);
+          var vLang = String(v.lang || "global").toLowerCase();
+          var langScore = (vLang === prefLangCode) ? 100 : ((vLang === "global" || v.universalQuran) ? 50 : 0);
+          var favBonus = favSet.has(v.id) ? 35 : (likedChSet.has(ch) ? 20 : 0);
+          var catBonus = likedCatSet.has(v.category) ? 15 : 0;
+          var watchedPenalty = histSetLocal.has(v.id) ? -25 : 0;
+          var totalScore = langScore + favBonus + catBonus + watchedPenalty;
+          bucketsMap.get(ch).push({
+            video: v,
+            score: totalScore,
+            createdAt: v.createdAt || 0,
+            origIdx: idx
+          });
+        });
+
+        var chBuckets = [];
+        bucketsMap.forEach(function(list, chName) {
+          // Sort inside each channel: newest & highest interest first
+          list.sort(function(a, b) {
+            if (b.score !== a.score) return b.score - a.score;
+            if (b.createdAt !== a.createdAt) return b.createdAt - a.createdAt;
+            return a.origIdx - b.origIdx;
+          });
+          var maxCreated = 0;
+          var bestLangScore = 0;
+          list.forEach(function(x) {
+            if (x.createdAt > maxCreated) maxCreated = x.createdAt;
+            var vl = String(x.video.lang || "global").toLowerCase();
+            var ls = (vl === prefLangCode) ? 2 : (vl === "global" ? 1 : 0);
+            if (ls > bestLangScore) bestLangScore = ls;
+          });
+          chBuckets.push({
+            channel: chName,
+            items: list,
+            bestLangScore: bestLangScore,
+            isLikedCh: likedChSet.has(chName) ? 1 : 0,
+            maxCreated: maxCreated
+          });
+        });
+
+        // Sort channels: Preferred language first, then newest uploaded channel (#1 gets top spot), then liked channels
+        chBuckets.sort(function(a, b) {
+          if (b.bestLangScore !== a.bestLangScore) return b.bestLangScore - a.bestLangScore;
+          if (b.maxCreated !== a.maxCreated) return b.maxCreated - a.maxCreated;
+          return b.isLikedCh - a.isLikedCh;
+        });
+
+        // Strict Round-Robin: Pick ONLY 1 video from each channel in Round 1, then 1 from each in Round 2, etc.
+        var interleaved = [];
+        var maxDepth = 0;
+        chBuckets.forEach(function(b) {
+          if (b.items.length > maxDepth) maxDepth = b.items.length;
+        });
+
+        for (var r = 0; r < maxDepth; r++) {
+          for (var c = 0; c < chBuckets.length; c++) {
+            // Rotate starting channel slightly after Round 0 so rows look super varied like YouTube
+            var rotIdx = (r === 0) ? c : ((c + r) % chBuckets.length);
+            var bObj = chBuckets[rotIdx];
+            if (r < bObj.items.length) {
+              interleaved.push(bObj.items[r].video);
+            }
+          }
+        }
+        return interleaved;
+      }
+
+      regularVideos = interleaveByChannelSmart(regularVideos);
+      shortVideos = interleaveByChannelSmart(shortVideos);
+    }
+
     // 1. Render Shorts Shelf (Max 12 items)
     var shortsShelf = document.getElementById("qaafShortsShelf");
     if (!shortsShelf) {
