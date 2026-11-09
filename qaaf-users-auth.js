@@ -1785,3 +1785,203 @@
   }, 2200);
 })();
 // === QAAF V18 ADMIN PLAYLIST PICKER & DAILY CHANNEL SCANNER END ===
+
+// === QAAF V19 SUPER ADMIN UNBAN & RE-ADD CHANNEL OVERRIDE START ===
+(function initQaafSuperAdminUnbanAndReAddOverride() {
+  var FIREBASE_DEFAULT_URL = "https://qaaftube-6f251-default-rtdb.firebaseio.com";
+  function getFbBase() {
+    return (localStorage.getItem("qaaf_firebase_db_url") || FIREBASE_DEFAULT_URL).replace(/\/+$/, "");
+  }
+
+  // Strictly check if current user is the Main Super Admin (NOT Monitor, NOT Parent, NOT Guest)
+  window.isStrictlyMainSuperAdmin = function() {
+    return (typeof isSuperAdminLoggedIn !== "undefined" && isSuperAdminLoggedIn === true && !window.isMonitorRoleActive);
+  };
+
+  function syncUnbanStateToCloudNow() {
+    try {
+      localStorage.setItem("qaaf_banned_channels", JSON.stringify(bannedChannels || []));
+      localStorage.setItem("qaaf_blocked_videos", JSON.stringify(blockedVideoIds || []));
+    } catch (e) {}
+
+    var base = getFbBase();
+    fetch(base + "/qaaf_global_state/bannedChannels.json", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(bannedChannels || [])
+    }).catch(function() {});
+
+    fetch(base + "/qaaf_global_state/blockedVideoIds.json", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(blockedVideoIds || [])
+    }).catch(function() {});
+
+    if (window.qaafCloudSync && typeof window.qaafCloudSync.pushState === "function") {
+      window.qaafCloudSync.pushState("Super Admin Updated Banned Channels List");
+    }
+  }
+
+  // Helper: Completely clean a channel from bannedChannels AND clean its videos from blockedVideoIds
+  window.superAdminCleanChannelBanRecord = function(chName, batchVidIds) {
+    if (!chName && (!batchVidIds || batchVidIds.length === 0)) return;
+    var normTarget = String(chName || "").trim().toLowerCase();
+
+    if (normTarget && Array.isArray(bannedChannels)) {
+      for (var i = bannedChannels.length - 1; i >= 0; i--) {
+        var b = String(bannedChannels[i] || "").trim().toLowerCase();
+        if (b === normTarget || b.indexOf(normTarget) !== -1 || normTarget.indexOf(b) !== -1) {
+          bannedChannels.splice(i, 1);
+        }
+      }
+      window.bannedChannels = bannedChannels;
+    }
+
+    // Also clear any video IDs belonging to this channel or import batch from blockedVideoIds
+    if (Array.isArray(blockedVideoIds)) {
+      var idsToUnblock = new Set();
+      if (Array.isArray(batchVidIds)) {
+        batchVidIds.forEach(function(id) {
+          if (id) {
+            idsToUnblock.add(String(id));
+            idsToUnblock.add("v_" + String(id));
+          }
+        });
+      }
+      (videosData || []).forEach(function(v) {
+        if (v && v.channel && String(v.channel).trim().toLowerCase() === normTarget) {
+          if (v.id) idsToUnblock.add(String(v.id));
+          if (v.ytId) {
+            idsToUnblock.add(String(v.ytId));
+            idsToUnblock.add("v_" + String(v.ytId));
+          }
+        }
+      });
+
+      if (idsToUnblock.size > 0) {
+        for (var j = blockedVideoIds.length - 1; j >= 0; j--) {
+          if (idsToUnblock.has(String(blockedVideoIds[j]))) {
+            blockedVideoIds.splice(j, 1);
+          }
+        }
+        window.blockedVideoIds = blockedVideoIds;
+      }
+    }
+
+    syncUnbanStateToCloudNow();
+  };
+
+  // 1. OVERRIDE adminUnbanChannel: Restricted to Main Super Admin Only + Auto-Prepares Channel for Re-Import!
+  window.adminUnbanChannel = function(chName) {
+    if (!window.isStrictlyMainSuperAdmin()) {
+      alert("🔒 Access Denied: Only the Main Super Admin can unban or restore a banned channel.");
+      return;
+    }
+    if (!chName) return;
+
+    window.superAdminCleanChannelBanRecord(chName, []);
+
+    if (typeof window.renderAdminActiveVideosCatalog === "function") {
+      window.renderAdminActiveVideosCatalog();
+    }
+    if (typeof window.renderVideosNow === "function") {
+      window.renderVideosNow();
+    }
+
+    if (typeof showSyncToast === "function") {
+      showSyncToast("✅ Channel '" + chName + "' is now Unbanned!");
+    }
+
+    // Offer to auto-fill and fetch the channel right away so Admin can re-add it in 1 click!
+    var urlInp = document.getElementById("adminYtUrlInput");
+    var chInp = document.getElementById("adminChannelName");
+    if (urlInp) {
+      var handleGuess = "@" + String(chName).replace(/\s+/g, "");
+      urlInp.value = "https://www.youtube.com/" + handleGuess;
+      if (chInp) chInp.value = chName;
+      urlInp.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (confirm("✅ '" + chName + "' has been unbanned!\n\nWould you like to Auto-Fetch its videos now so you can push it live?")) {
+        if (typeof window.adminAutoFetchYouTubeInfo === "function") {
+          window.adminAutoFetchYouTubeInfo();
+        }
+      }
+    }
+  };
+
+  // 2. OVERRIDE adminBanEntireChannel: Restrict banning/unbanning controls & allow Main Super Admin to manage cleanly
+  var origBanChannel = window.adminBanEntireChannel;
+  window.adminBanEntireChannel = function(chName) {
+    if (!window.isStrictlyMainSuperAdmin()) {
+      alert("🔒 Only the Main Super Admin can ban an entire channel.");
+      return;
+    }
+    if (origBanChannel) origBanChannel(chName);
+  };
+
+  // 3. OVERRIDE adminAddGlobalVideo (+ Push Live):
+  //    If Main Super Admin is pushing a channel/video that was previously banned or had blocked video IDs,
+  //    automatically unban the channel & unblock all its video IDs so the import succeeds 100%!
+  var origAdminAddGlobalVideo = window.adminAddGlobalVideo;
+  window.adminAddGlobalVideo = function() {
+    var chInp = document.getElementById("adminChannelName");
+    var chName = (chInp ? chInp.value : "").trim() || (window.adminPendingBatchChannel ? window.adminPendingBatchChannel.channelTitle : "") || "";
+    var normCh = chName.toLowerCase();
+
+    var isCurrentlyBanned = Array.isArray(bannedChannels) && bannedChannels.some(function(b) {
+      var nb = String(b || "").trim().toLowerCase();
+      return nb && normCh && (nb === normCh || nb.indexOf(normCh) !== -1 || normCh.indexOf(nb) !== -1);
+    });
+
+    if (isCurrentlyBanned) {
+      if (!window.isStrictlyMainSuperAdmin()) {
+        alert("🚫 This channel is banned by the Main Super Admin. Monitors or other users cannot re-add it.");
+        return;
+      }
+      // Main Super Admin is adding it -> automatically unban and unblock its videos!
+      var pendingIds = (window.adminPendingBatchChannel && Array.isArray(window.adminPendingBatchChannel.videoIds))
+        ? window.adminPendingBatchChannel.videoIds
+        : [];
+      window.superAdminCleanChannelBanRecord(chName, pendingIds);
+      if (typeof showSyncToast === "function") {
+        showSyncToast("🔓 Main Super Admin Override: Unbanned '" + chName + "' and importing now...");
+      }
+    } else if (window.isStrictlyMainSuperAdmin()) {
+      // Even if channel name wasn't in bannedChannels, make sure none of the incoming video IDs are stuck in blockedVideoIds!
+      var batchIds = (window.adminPendingBatchChannel && Array.isArray(window.adminPendingBatchChannel.videoIds))
+        ? window.adminPendingBatchChannel.videoIds
+        : [];
+      var urlInp = document.getElementById("adminYtUrlInput");
+      var singleId = (typeof extractYouTubeId === "function" && urlInp) ? extractYouTubeId(urlInp.value) : null;
+      if (singleId) batchIds = batchIds.concat([singleId]);
+      if (batchIds.length > 0) {
+        window.superAdminCleanChannelBanRecord(chName, batchIds);
+      }
+    }
+
+    if (origAdminAddGlobalVideo) {
+      origAdminAddGlobalVideo();
+    }
+
+    // After origAdminAddGlobalVideo finishes, ensure none of the newly added videos of this channel are in blockedVideoIds
+    if (window.isStrictlyMainSuperAdmin() && chName) {
+      setTimeout(function() {
+        window.superAdminCleanChannelBanRecord(chName, []);
+        if (typeof window.renderVideosNow === "function") window.renderVideosNow();
+        if (typeof window.renderAdminActiveVideosCatalog === "function") window.renderAdminActiveVideosCatalog();
+      }, 300);
+    }
+  };
+
+  // 4. Hide the "Banned Channels (Click to Unban)" box from Monitors so only Main Super Admin can unban
+  var origRenderCatalog = window.renderAdminActiveVideosCatalog;
+  if (typeof origRenderCatalog === "function") {
+    window.renderAdminActiveVideosCatalog = function() {
+      origRenderCatalog();
+      var bannedBox = document.getElementById("adminBannedChannelsBox");
+      if (bannedBox && !window.isStrictlyMainSuperAdmin()) {
+        bannedBox.classList.add("hidden");
+      }
+    };
+  }
+})();
+// === QAAF V19 SUPER ADMIN UNBAN & RE-ADD CHANNEL OVERRIDE END ===
