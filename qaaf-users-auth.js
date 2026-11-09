@@ -1985,3 +1985,295 @@
   }
 })();
 // === QAAF V19 SUPER ADMIN UNBAN & RE-ADD CHANNEL OVERRIDE END ===
+
+// === QAAF V21 SLEEK GAMES ZONE & REAL QURANIC GAMES START ===
+(function initQaafSleekGamesZoneAndRealQuranicGames() {
+  window.activeGamesSubTab = "qaaf_games"; // 'qaaf_games' | 'quranic' | '3d_games'
+
+  // Define the REAL Games Catalog (4 QAAF 2D Games + 4 REAL Quranic Games from "Qaaf quran Games" folder + Empty 3D Games)
+  var REAL_GAMES_CATALOG = [
+    // 1. QAAF Games (Simple 2D Games)
+    {
+      id: "g1",
+      categoryGroup: "qaaf_games",
+      title: "Islamic Quiz Adventure",
+      icon: "🕋",
+      launchUrl: "./qaaf-games.html?game=g1"
+    },
+    {
+      id: "g2",
+      categoryGroup: "qaaf_games",
+      title: "Arabic Alphabet Puzzle",
+      icon: "🔤",
+      launchUrl: "./qaaf-games.html?game=g2"
+    },
+    {
+      id: "g3",
+      categoryGroup: "qaaf_games",
+      title: "Halal Word Builder",
+      icon: "🧩",
+      launchUrl: "./qaaf-games.html?game=g3"
+    },
+    {
+      id: "g4",
+      categoryGroup: "qaaf_games",
+      title: "Prophets Timeline Match",
+      icon: "🌟",
+      launchUrl: "./qaaf-games.html?game=g4"
+    },
+
+    // 2. QAAF Quranic Games (Connected directly to K:\Qaaf Tube\Qaaf quran Games\)
+    {
+      id: "qg_hub",
+      categoryGroup: "quranic",
+      title: "QAAF Quranic Games Hub (قرآنی گیمز ہب)",
+      icon: "📖",
+      launchUrl: "./Qaaf%20quran%20Games/qaaf-Quran-games.html"
+    },
+    {
+      id: "qg_01",
+      categoryGroup: "quranic",
+      title: "1. Ayat Al-Birr — آیت البر (البقرۃ 2:177)",
+      icon: "🕋",
+      launchUrl: "./Qaaf%20quran%20Games/game-01-ayat-al-birr.html"
+    },
+    {
+      id: "qg_02",
+      categoryGroup: "quranic",
+      title: "2. Sifat Al-Mu'minun — صفات المؤمنین (23:1-11)",
+      icon: "🌟",
+      launchUrl: "./Qaaf%20quran%20Games/game-02-sifat-al-muminun.html"
+    },
+    {
+      id: "qg_03",
+      categoryGroup: "quranic",
+      title: "3. Surah Al-Asr — سورۃ العصر (103:1-3)",
+      icon: "⏳",
+      launchUrl: "./Qaaf%20quran%20Games/game-03-surah-al-asr.html"
+    }
+    // 3. QAAF 3D Games: kept empty while under development
+  ];
+
+  if (typeof gamesCatalog !== "undefined" && Array.isArray(gamesCatalog)) {
+    gamesCatalog.length = 0;
+    REAL_GAMES_CATALOG.forEach(function(g) { gamesCatalog.push(g); });
+  }
+  window.gamesCatalog = REAL_GAMES_CATALOG;
+
+  // Ensure installedGameIds is loaded
+  if (typeof installedGameIds === "undefined" || !Array.isArray(installedGameIds)) {
+    window.installedGameIds = JSON.parse(localStorage.getItem("qaaf_installed_games") || '["g1","qg_hub","qg_01","qg_02","qg_03"]');
+  }
+
+  // 1. FIX HEADER VIDEOS vs GAMES RED BUTTON + HIDE SEARCH & CATEGORY BAR WHEN IN GAMES
+  function updateHeaderTabsAndTopBarsForMode(tab) {
+    var tV = document.getElementById("tabVideosBtn");
+    var tG = document.getElementById("tabGamesBtn");
+    var vSec = document.getElementById("videosSection");
+    var gSec = document.getElementById("gamesSection");
+    var catBar = document.getElementById("categoryBar");
+    var catBarStickyWrap = catBar ? catBar.parentElement : null;
+    var searchBarWrap = document.getElementById("qaafTopSearchAndBellBar");
+    var searchInp = document.getElementById("qaafSearchInput");
+    var reqBellBtn = document.getElementById("qaafNotifBellBtn");
+
+    if (tab === "games") {
+      if (vSec) vSec.classList.add("hidden");
+      if (gSec) gSec.classList.remove("hidden");
+
+      // Make Games button RED and Videos button transparent
+      if (tG) {
+        tG.className = "px-2.5 sm:px-3.5 py-1 rounded-full text-xs font-extrabold text-white shadow flex items-center gap-1 transition cursor-pointer";
+        tG.style.setProperty("background", "#e11d48", "important");
+        tG.style.setProperty("color", "#ffffff", "important");
+      }
+      if (tV) {
+        tV.className = "px-2.5 sm:px-3.5 py-1 rounded-full text-xs font-extrabold text-slate-300 hover:text-white flex items-center gap-1 transition cursor-pointer";
+        tV.style.setProperty("background", "transparent", "important");
+        tV.style.setProperty("color", "#cbd5e1", "important");
+        tV.style.setProperty("box-shadow", "none", "important");
+      }
+
+      // Hide Category Bar, Search Bar & Video Request button so Games Zone is right at the top!
+      if (catBarStickyWrap) catBarStickyWrap.classList.add("hidden");
+      if (searchBarWrap) searchBarWrap.classList.add("hidden");
+      if (searchInp && searchInp.closest("div.mb-4, div.space-y-2")) {
+        searchInp.closest("div.mb-4, div.space-y-2").classList.add("hidden");
+      }
+      if (reqBellBtn && reqBellBtn.parentElement && reqBellBtn.parentElement.id !== "headerRightControls") {
+        reqBellBtn.parentElement.classList.add("hidden");
+      }
+    } else {
+      if (gSec) gSec.classList.add("hidden");
+      if (vSec) vSec.classList.remove("hidden");
+
+      // Make Videos button RED and Games button transparent
+      if (tV) {
+        tV.className = "px-2.5 sm:px-3.5 py-1 rounded-full text-xs font-extrabold text-white shadow flex items-center gap-1 transition cursor-pointer";
+        tV.style.setProperty("background", "#e11d48", "important");
+        tV.style.setProperty("color", "#ffffff", "important");
+      }
+      if (tG) {
+        tG.className = "px-2.5 sm:px-3.5 py-1 rounded-full text-xs font-extrabold text-slate-300 hover:text-white flex items-center gap-1 transition cursor-pointer";
+        tG.style.setProperty("background", "transparent", "important");
+        tG.style.setProperty("color", "#cbd5e1", "important");
+        tG.style.setProperty("box-shadow", "none", "important");
+      }
+
+      // Show Category Bar, Search Bar & Video Request button again in Videos mode
+      if (catBarStickyWrap) catBarStickyWrap.classList.remove("hidden");
+      if (searchBarWrap) searchBarWrap.classList.remove("hidden");
+      if (searchInp && searchInp.closest("div.mb-4, div.space-y-2")) {
+        searchInp.closest("div.mb-4, div.space-y-2").classList.remove("hidden");
+      }
+      if (reqBellBtn && reqBellBtn.parentElement && reqBellBtn.parentElement.id !== "headerRightControls") {
+        reqBellBtn.parentElement.classList.remove("hidden");
+      }
+    }
+  }
+
+  window.switchKidsTab = function(tab) {
+    currentActiveKidsTab = tab || "videos";
+    window.currentActiveKidsTab = currentActiveKidsTab;
+    updateHeaderTabsAndTopBarsForMode(currentActiveKidsTab);
+    if (currentActiveKidsTab === "games") {
+      window.renderGames();
+    } else if (typeof window.renderVideosNow === "function") {
+      window.renderVideosNow();
+    }
+  };
+
+  window.selectGamesSubTab = function(gTab) {
+    window.activeGamesSubTab = gTab || "qaaf_games";
+    window.renderGames();
+  };
+
+  window.installQaafGameInstant = function(gameId, ev) {
+    if (ev && ev.stopPropagation) ev.stopPropagation();
+    if (!Array.isArray(installedGameIds)) window.installedGameIds = [];
+    if (installedGameIds.indexOf(gameId) === -1) {
+      installedGameIds.push(gameId);
+      localStorage.setItem("qaaf_installed_games", JSON.stringify(installedGameIds));
+    }
+    window.renderGames();
+  };
+
+  // 2. SLEEK MINIMAL 1-LINE GAMES RENDERER
+  window.renderGames = function() {
+    var grid = document.getElementById("gamesGrid");
+    if (!grid) return;
+
+    var curTab = window.activeGamesSubTab || "qaaf_games";
+    var countQaaf = REAL_GAMES_CATALOG.filter(function(g) { return g.categoryGroup === "qaaf_games"; }).length;
+    var countQuran = REAL_GAMES_CATALOG.filter(function(g) { return g.categoryGroup === "quranic"; }).length;
+    var count3D = REAL_GAMES_CATALOG.filter(function(g) { return g.categoryGroup === "3d_games"; }).length;
+
+    var navHtml =
+      '<div class="col-span-full grid grid-cols-1 sm:grid-cols-3 gap-2 mb-1">' +
+        '<button type="button" onclick="selectGamesSubTab(\'qaaf_games\')" class="p-3 rounded-2xl border-2 text-left transition flex items-center justify-between cursor-pointer ' +
+          (curTab === "qaaf_games" ? "bg-emerald-600/25 border-emerald-400 text-white shadow-lg" : "bg-[#12161f] border-slate-800 text-slate-300 hover:border-slate-700") + '">' +
+          '<div class="flex items-center gap-2.5 min-w-0"><span class="text-2xl shrink-0">🎮</span><div class="truncate"><div class="text-xs sm:text-sm font-extrabold truncate">1. QAAF Games</div><div class="text-[10px] text-slate-400 truncate">Simple Puzzles, Quiz &amp; Builder</div></div></div>' +
+          '<span class="bg-black/50 px-2.5 py-1 rounded-full text-[10px] font-extrabold text-emerald-300 shrink-0">' + countQaaf + ' Games</span>' +
+        '</button>' +
+
+        '<button type="button" onclick="selectGamesSubTab(\'quranic\')" class="p-3 rounded-2xl border-2 text-left transition flex items-center justify-between cursor-pointer ' +
+          (curTab === "quranic" ? "bg-amber-500/25 border-amber-400 text-white shadow-lg" : "bg-[#12161f] border-slate-800 text-slate-300 hover:border-slate-700") + '">' +
+          '<div class="flex items-center gap-2.5 min-w-0"><span class="text-2xl shrink-0">📖</span><div class="truncate"><div class="text-xs sm:text-sm font-extrabold truncate">2. QAAF Quranic Games</div><div class="text-[10px] text-slate-400 truncate">Ayah-by-Ayah Interactive Games</div></div></div>' +
+          '<span class="bg-black/50 px-2.5 py-1 rounded-full text-[10px] font-extrabold text-amber-300 shrink-0">' + countQuran + ' Games</span>' +
+        '</button>' +
+
+        '<button type="button" onclick="selectGamesSubTab(\'3d_games\')" class="p-3 rounded-2xl border-2 text-left transition flex items-center justify-between cursor-pointer ' +
+          (curTab === "3d_games" ? "bg-blue-600/25 border-blue-400 text-white shadow-lg" : "bg-[#12161f] border-slate-800 text-slate-300 hover:border-slate-700") + '">' +
+          '<div class="flex items-center gap-2.5 min-w-0"><span class="text-2xl shrink-0">🏎️</span><div class="truncate"><div class="text-xs sm:text-sm font-extrabold truncate">3. QAAF 3D Games</div><div class="text-[10px] text-slate-400 truncate">3D Adventures for Older Kids</div></div></div>' +
+          (count3D > 0 ? ('<span class="bg-black/50 px-2.5 py-1 rounded-full text-[10px] font-extrabold text-blue-300 shrink-0">' + count3D + ' Games</span>') : '<span class="bg-black/40 px-2 py-0.5 rounded-full text-[10px] font-bold text-slate-500 shrink-0">Soon</span>') +
+        '</button>' +
+      '</div>';
+
+    var filteredGames = REAL_GAMES_CATALOG.filter(function(g) { return g.categoryGroup === curTab; });
+
+    var cardsHtml = "";
+    filteredGames.forEach(function(g) {
+      var isInstalled = Array.isArray(installedGameIds) && installedGameIds.indexOf(g.id) !== -1;
+
+      // Sleek minimal 1-line bar: Big clear Logo + Single-line Title.
+      // If NOT installed: Install button below. Once installed: Install button disappears completely & tapping row plays the game!
+      cardsHtml +=
+        '<div onclick="' + (isInstalled ? ("openInstalledGameModal('" + g.id + "')") : ("installQaafGameInstant('" + g.id + "', event)")) + '" class="bg-[#121822] hover:bg-[#182232] border ' + (isInstalled ? 'border-emerald-500/45 shadow-md' : 'border-slate-800') + ' rounded-2xl px-3.5 py-2.5 transition cursor-pointer group flex flex-col justify-center">' +
+          '<div class="flex items-center justify-between gap-3">' +
+            '<div class="flex items-center gap-3 min-w-0 flex-1">' +
+              '<div class="w-11 h-11 rounded-xl bg-slate-800/90 border border-white/10 flex items-center justify-center text-2xl shrink-0 shadow group-hover:scale-105 transition">' +
+                g.icon +
+              '</div>' +
+              '<h3 class="text-sm sm:text-base font-extrabold text-white truncate group-hover:text-emerald-300 transition">' +
+                g.title +
+              '</h3>' +
+            '</div>' +
+            (isInstalled ? (
+              '<div class="flex items-center gap-1.5 shrink-0">' +
+                '<span class="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 group-hover:bg-emerald-500 group-hover:text-black flex items-center justify-center text-xs font-extrabold transition">▶</span>' +
+              '</div>'
+            ) : '') +
+          '</div>' +
+          (!isInstalled ? (
+            '<button type="button" onclick="installQaafGameInstant(\'' + g.id + '\', event)" class="mt-2.5 w-full bg-blue-600 hover:bg-blue-500 text-white py-1.5 rounded-xl text-xs font-extrabold shadow transition cursor-pointer">' +
+              '⬇️ Install Game' +
+            '</button>'
+          ) : '') +
+        '</div>';
+    });
+
+    grid.innerHTML = navHtml + cardsHtml;
+  };
+
+  // 3. LAUNCH EXACT REAL GAME FILE WHEN CLICKED
+  window.openInstalledGameModal = function(gameId) {
+    var game = REAL_GAMES_CATALOG.find(function(g) { return g.id === gameId; });
+    if (!game) return;
+
+    var activeLang = window.preferredContentLang || localStorage.getItem("qaaf_preferred_content_lang") || "ur";
+    var gLang = (activeLang === "ar" || activeLang === "en") ? activeLang : "ur";
+    var sep = game.launchUrl.indexOf("?") === -1 ? "?" : "&";
+    var targetSrc = game.launchUrl + sep + "lang=" + encodeURIComponent(gLang) + "&v=" + Date.now();
+
+    var modal = document.getElementById("qaafActiveGamePlayModal");
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.id = "qaafActiveGamePlayModal";
+      modal.className = "fixed inset-0 z-[250] bg-[#080a0f] flex flex-col hidden";
+      modal.innerHTML =
+        '<div class="h-12 bg-[#11151e] border-b border-emerald-500/30 px-3 sm:px-5 flex items-center justify-between shrink-0">' +
+          '<div class="flex items-center gap-2 min-w-0">' +
+            '<span id="activeGameModalIcon" class="text-lg">🎮</span>' +
+            '<h3 id="activeGameModalTitle" class="text-xs sm:text-sm font-extrabold text-white truncate">QAAF Islamic Game</h3>' +
+          '</div>' +
+          '<button type="button" onclick="closeInstalledGameModal()" class="bg-rose-600 hover:bg-rose-500 text-white px-3.5 py-1 rounded-full text-xs font-extrabold shadow cursor-pointer">' +
+            '⬅️ Back to Games' +
+          '</button>' +
+        '</div>' +
+        '<iframe id="activeGameModalIframe" class="w-full flex-1 border-0 bg-[#080a0f]" allow="autoplay; fullscreen"></iframe>';
+      document.body.appendChild(modal);
+    }
+
+    var iconEl = document.getElementById("activeGameModalIcon");
+    var titleEl = document.getElementById("activeGameModalTitle");
+    var frameEl = document.getElementById("activeGameModalIframe");
+
+    if (iconEl) iconEl.innerText = game.icon || "🎮";
+    if (titleEl) titleEl.innerText = game.title;
+    if (frameEl) frameEl.src = targetSrc;
+    modal.classList.remove("hidden");
+  };
+
+  window.closeInstalledGameModal = function() {
+    var modal = document.getElementById("qaafActiveGamePlayModal");
+    var frameEl = document.getElementById("activeGameModalIframe");
+    if (frameEl) frameEl.src = "about:blank";
+    if (modal) modal.classList.add("hidden");
+  };
+
+  if (typeof currentActiveKidsTab !== "undefined" && currentActiveKidsTab === "games") {
+    updateHeaderTabsAndTopBarsForMode("games");
+    window.renderGames();
+  }
+})();
+// === QAAF V21 SLEEK GAMES ZONE & REAL QURANIC GAMES END ===
