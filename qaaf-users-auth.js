@@ -2153,7 +2153,34 @@
 
   // 2. SLEEK MINIMAL 1-LINE GAMES RENDERER
   window.renderGames = function() {
-    if (!document.getElementById("kidsTotalStarsBadge")) { var sb = document.createElement("span"); sb.id = "kidsTotalStarsBadge"; sb.className = "hidden"; document.body.appendChild(sb); }
+    if (!document.getElementById("kidsTotalStarsBadge")) {
+      var sb = document.createElement("span");
+      sb.id = "kidsTotalStarsBadge";
+      sb.className = "hidden";
+      document.body.appendChild(sb);
+    }
+
+    var gSec = document.getElementById("gamesSection");
+    if (gSec && !gSec.classList.contains("hidden")) {
+      updateHeaderTabsAndTopBarsForMode("games");
+    }
+
+    // Strip any old box ("Support QAAF", "1 Stars") or duplicate fake 3-button bars inside #gamesSection
+    if (gSec) {
+      Array.prototype.slice.call(gSec.children).forEach(function(child) {
+        if (child.id !== "gamesGrid" && child.id !== "qaafSimpleGamesHeading" && child.id !== "kidsTotalStarsBadge") {
+          child.remove();
+        }
+      });
+      if (!document.getElementById("qaafSimpleGamesHeading")) {
+        var h2 = document.createElement("h2");
+        h2.id = "qaafSimpleGamesHeading";
+        h2.className = "text-base sm:text-lg font-extrabold text-white px-1 flex items-center gap-2";
+        h2.innerHTML = "<span>🎮</span> <span>QAAF Kids Islamic Games Zone</span>";
+        gSec.insertBefore(h2, gSec.firstChild);
+      }
+    }
+
     var grid = document.getElementById("gamesGrid");
     if (!grid) return;
 
