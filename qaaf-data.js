@@ -777,6 +777,8 @@ const globalLanguagesList = [
         isPromoBarEnabled: isPromoBarEnabled !== false,
         parentRequestsQueue: window.parentRequestsQueue || [],
         registeredUsersJson: JSON.stringify(window.registeredUsersMap || {}),
+        channelPlaylistsJson: JSON.stringify(window.qaafRealChannelPlaylistsMap || {}),
+        playlistVideosCacheJson: JSON.stringify(window.qaafPlaylistVideosCache || {}),
         qaafSecurityToken: "QAAF_PROTECTED_TOKEN_786_99_MAKKAH",
         updatedAt: Date.now()
       };

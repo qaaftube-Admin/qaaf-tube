@@ -243,43 +243,129 @@
   var isFetchingChannelPls = {};
   var isFetchingSinglePlVids = false;
 
-  // Sync Real Channel Playlists & Blocked Playlists with Firebase Cloud
-  function pullChannelPlaylistsFromCloud() {
-    fetch(getFbBase() + "/qaaf_channel_playlists_db.json?t=" + Date.now(), { cache: "no-store" })
-      .then(function(r) { return r.ok ? r.json() : null; })
-      .then(function(data) {
-        if (!data || typeof data !== "object") return;
-        if (data.playlistsByChannel && typeof data.playlistsByChannel === "object") {
-          window.qaafRealChannelPlaylistsMap = Object.assign({}, window.qaafRealChannelPlaylistsMap, data.playlistsByChannel);
-          localStorage.setItem("qaaf_real_channel_playlists_v1", JSON.stringify(window.qaafRealChannelPlaylistsMap));
-        }
-        if (Array.isArray(data.blockedPlaylistIds)) {
-          window.qaafBlockedPlaylistIds = data.blockedPlaylistIds;
-          localStorage.setItem("qaaf_blocked_playlist_ids", JSON.stringify(window.qaafBlockedPlaylistIds));
-        }
-      }).catch(function() {});
-  }
+  // 1. PERMANENT DATABASE SYNC FOR CHANNEL PLAYLISTS & PLAYLIST VIDEO LISTS
+  function savePlaylistsToLocalAndCloudDb() {
+    try {
+      localStorage.setItem("qaaf_real_channel_playlists_v1", JSON.stringify(window.qaafRealChannelPlaylistsMap));
+      localStorage.setItem("qaaf_blocked_playlist_ids", JSON.stringify(window.qaafBlockedPlaylistIds));
+      localStorage.setItem("qaaf_playlist_videos_cache_v1", JSON.stringify(window.qaafPlaylistVideosCache));
+    } catch (e) {}
 
-  function pushChannelPlaylistsToCloud() {
-    fetch(getFbBase() + "/qaaf_channel_playlists_db.json", {
-      method: "PATCH",
+    var base = getFbBase();
+    var plJsonStr = JSON.stringify(window.qaafRealChannelPlaylistsMap || {});
+    var cacheJsonStr = JSON.stringify(window.qaafPlaylistVideosCache || {});
+
+    // Save inside qaaf_global_state AND dedicated node so every user gets it instantly on page load!
+    fetch(base + "/qaaf_global_state/channelPlaylistsJson.json", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(plJsonStr)
+    }).catch(function() {});
+
+    fetch(base + "/qaaf_global_state/playlistVideosCacheJson.json", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(cacheJsonStr)
+    }).catch(function() {});
+
+    fetch(base + "/qaaf_channel_playlists_db.json", {
+      method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        playlistsByChannel: window.qaafRealChannelPlaylistsMap,
-        blockedPlaylistIds: window.qaafBlockedPlaylistIds,
+        playlistsJson: plJsonStr,
+        playlistVideosJson: cacheJsonStr,
+        blockedPlaylistIds: window.qaafBlockedPlaylistIds || [],
         updatedAt: Date.now()
       })
     }).catch(function() {});
   }
 
-  pullChannelPlaylistsFromCloud();
+  function pullSavedPlaylistsFromCloudDb() {
+    var base = getFbBase();
+    Promise.all([
+      fetch(base + "/qaaf_global_state/channelPlaylistsJson.json?t=" + Date.now()).then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; }),
+      fetch(base + "/qaaf_global_state/playlistVideosCacheJson.json?t=" + Date.now()).then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; }),
+      fetch(base + "/qaaf_channel_playlists_db.json?t=" + Date.now()).then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; })
+    ]).then(function(res) {
+      var gPlStr = res[0];
+      var gCacheStr = res[1];
+      var dbNode = res[2];
+      var changed = false;
+
+      if (typeof gPlStr === "string" && gPlStr.indexOf("{") === 0) {
+        try {
+          var parsedPls = JSON.parse(gPlStr);
+          Object.keys(parsedPls || {}).forEach(function(ch) {
+            if (!window.qaafRealChannelPlaylistsMap[ch] || window.qaafRealChannelPlaylistsMap[ch].length === 0) {
+              window.qaafRealChannelPlaylistsMap[ch] = parsedPls[ch];
+              changed = true;
+            }
+          });
+        } catch (e) {}
+      }
+
+      if (typeof gCacheStr === "string" && gCacheStr.indexOf("{") === 0) {
+        try {
+          var parsedCache = JSON.parse(gCacheStr);
+          Object.keys(parsedCache || {}).forEach(function(plId) {
+            if (!window.qaafPlaylistVideosCache[plId] || window.qaafPlaylistVideosCache[plId].length === 0) {
+              window.qaafPlaylistVideosCache[plId] = parsedCache[plId];
+              changed = true;
+            }
+          });
+        } catch (e) {}
+      }
+
+      if (dbNode && typeof dbNode === "object") {
+        if (typeof dbNode.playlistsJson === "string") {
+          try {
+            var p2 = JSON.parse(dbNode.playlistsJson);
+            Object.keys(p2 || {}).forEach(function(ch) {
+              if (!window.qaafRealChannelPlaylistsMap[ch] || window.qaafRealChannelPlaylistsMap[ch].length === 0) {
+                window.qaafRealChannelPlaylistsMap[ch] = p2[ch];
+                changed = true;
+              }
+            });
+          } catch (e) {}
+        }
+        if (typeof dbNode.playlistVideosJson === "string") {
+          try {
+            var c2 = JSON.parse(dbNode.playlistVideosJson);
+            Object.keys(c2 || {}).forEach(function(plId) {
+              if (!window.qaafPlaylistVideosCache[plId] || window.qaafPlaylistVideosCache[plId].length === 0) {
+                window.qaafPlaylistVideosCache[plId] = c2[plId];
+                changed = true;
+              }
+            });
+          } catch (e) {}
+        }
+        if (Array.isArray(dbNode.blockedPlaylistIds)) {
+          window.qaafBlockedPlaylistIds = dbNode.blockedPlaylistIds;
+          localStorage.setItem("qaaf_blocked_playlist_ids", JSON.stringify(window.qaafBlockedPlaylistIds));
+        }
+      }
+
+      if (changed) {
+        try {
+          localStorage.setItem("qaaf_real_channel_playlists_v1", JSON.stringify(window.qaafRealChannelPlaylistsMap));
+          localStorage.setItem("qaaf_playlist_videos_cache_v1", JSON.stringify(window.qaafPlaylistVideosCache));
+        } catch (e) {}
+        if (typeof window.renderVideosNow === "function") window.renderVideosNow();
+      } else if (Object.keys(window.qaafRealChannelPlaylistsMap).length > 0) {
+        // Push local already-fetched playlists up to cloud so all other devices get them immediately!
+        savePlaylistsToLocalAndCloudDb();
+      }
+    });
+  }
+
+  pullSavedPlaylistsFromCloudDb();
 
   var CHANNEL_UI_LABELS = {
-    en: { backAll: "⬅️ All Channels", tabVideos: "🎬 Videos", tabShorts: "⚡ Shorts", tabPlaylists: "📂 Playlists", verifiedCh: "Verified Islamic Channel", singleVidCh: "Selected Videos Channel", videosCount: "videos", openPl: "View full playlist", backPl: "⬅️ Back to Playlists", noShorts: "No Shorts in this channel yet.", noPlaylists: "No official YouTube playlists found for this channel.", loadingPls: "⏳ Loading official YouTube playlists for this channel...", loadingPlVids: "⏳ Loading playlist videos...", refreshPls: "🔄 Sync YouTube Playlists" },
-    ur: { backAll: "⬅️ تمام چینلز", tabVideos: "🎬 ویڈیوز", tabShorts: "⚡ شارٹس", tabPlaylists: "📂 پلے لسٹس", verifiedCh: "تصدیق شدہ اسلامی چینل", singleVidCh: "منتخب ویڈیوز والا چینل", videosCount: "ویڈیوز", openPl: "پوری پلے لسٹ دیکھیں", backPl: "⬅️ تمام پلے لسٹس پر واپس", noShorts: "اس چینل میں ابھی کوئی شارٹس نہیں ہیں۔", noPlaylists: "اس چینل پر کوئی یوٹیوب پلے لسٹ نہیں ملی۔", loadingPls: "⏳ یوٹیوب سے اس چینل کی اصل پلے لسٹس منگوائی جا رہی ہیں...", loadingPlVids: "⏳ پلے لسٹ کی ویڈیوز لوڈ ہو رہی ہیں...", refreshPls: "🔄 پلے لسٹس تازہ کریں" },
-    ar: { backAll: "⬅️ جميع القنوات", tabVideos: "🎬 الفيديوهات", tabShorts: "⚡ المقاطع القصيرة", tabPlaylists: "📂 قوائم التشغيل", verifiedCh: "قناة إسلامية موثقة", singleVidCh: "قناة فيديوهات مختارة", videosCount: "فيديو", openPl: "عرض قائمة التشغيل الكاملة", backPl: "⬅️ العودة لقوائم التشغيل", noShorts: "لا توجد مقاطع قصيرة في هذه القناة.", noPlaylists: "لا توجد قوائم تشغيل على يوتيوب لهذه القناة.", loadingPls: "⏳ جاري جلب قوائم التشغيل الأصلية من يوتيوب...", loadingPlVids: "⏳ جاري تحميل فيديوهات القائمة...", refreshPls: "🔄 تحديث القوائم" },
-    hi: { backAll: "⬅️ सभी चैनल", tabVideos: "🎬 वीडियो", tabShorts: "⚡ शॉर्ट्स", tabPlaylists: "📂 प्लेलिस्ट", verifiedCh: "सत्यापित इस्लामी चैनल", singleVidCh: "चयनित वीडियो चैनल", videosCount: "वीडियो", openPl: "पूरी प्लेलिस्ट देखें", backPl: "⬅️ सभी प्लेलिस्ट पर वापस", noShorts: "इस चैनल में अभी कोई शॉर्ट्स नहीं हैं।", noPlaylists: "इस चैनल पर कोई यूट्यूब प्लेलिस्ट नहीं मिली।", loadingPls: "⏳ यूट्यूब से असली प्लेलिस्ट लोड हो रही हैं...", loadingPlVids: "⏳ प्लेलिस्ट के वीडियो लोड हो रहे हैं...", refreshPls: "🔄 प्लेलिस्ट अपडेट करें" },
-    bn: { backAll: "⬅️ সব চ্যানেল", tabVideos: "🎬 ভিডিও", tabShorts: "⚡ শর্টস", tabPlaylists: "📂 প্লেলিস্ট", verifiedCh: "যাচাইকৃত ইসলামিক চ্যানেল", singleVidCh: "নির্বাচিত ভিডিও চ্যানেল", videosCount: "ভিডিও", openPl: "সম্পূর্ণ প্লেলিস্ট দেখুন", backPl: "⬅️ সব প্লেলিস্টে ফিরে যান", noShorts: "এই চ্যানেলে কোনো শর্টস নেই।", noPlaylists: "এই চ্যানেলে কোনো ইউটিউব প্লেলিস্ট পাওয়া যায়নি।", loadingPls: "⏳ ইউটিউব থেকে আসল প্লেলিস্ট লোড হচ্ছে...", loadingPlVids: "⏳ প্লেলিস্টের ভিডিও লোড হচ্ছে...", refreshPls: "🔄 প্লেলিস্ট রিফ্রেশ করুন" }
+    en: { backAll: "⬅️ All Channels", tabVideos: "🎬 Videos", tabShorts: "⚡ Shorts", tabPlaylists: "📂 Playlists", verifiedCh: "Verified Islamic Channel", singleVidCh: "Selected Videos Channel", videosCount: "videos", openPl: "View full playlist", backPl: "⬅️ Back to Playlists", noShorts: "No Shorts in this channel yet.", noPlaylists: "No official YouTube playlists found for this channel.", loadingPls: "⏳ Preparing channel playlists...", loadingPlVids: "⏳ Opening playlist videos...", refreshPls: "🔄 Update Playlists" },
+    ur: { backAll: "⬅️ تمام چینلز", tabVideos: "🎬 ویڈیوز", tabShorts: "⚡ شارٹس", tabPlaylists: "📂 پلے لسٹس", verifiedCh: "تصدیق شدہ اسلامی چینل", singleVidCh: "منتخب ویڈیوز والا چینل", videosCount: "ویڈیوز", openPl: "پوری پلے لسٹ دیکھیں", backPl: "⬅️ تمام پلے لسٹس پر واپس", noShorts: "اس چینل میں ابھی کوئی شارٹس نہیں ہیں۔", noPlaylists: "اس چینل پر کوئی یوٹیوب پلے لسٹ نہیں ملی۔", loadingPls: "⏳ پلے لسٹس کھل رہی ہیں...", loadingPlVids: "⏳ پلے لسٹ کی ویڈیوز کھل رہی ہیں...", refreshPls: "🔄 پلے لسٹس اپ ڈیٹ کریں" },
+    ar: { backAll: "⬅️ جميع القنوات", tabVideos: "🎬 الفيديوهات", tabShorts: "⚡ المقاطع القصيرة", tabPlaylists: "📂 قوائم التشغيل", verifiedCh: "قناة إسلامية موثقة", singleVidCh: "قناة فيديوهات مختارة", videosCount: "فيديو", openPl: "عرض قائمة التشغيل الكاملة", backPl: "⬅️ العودة لقوائم التشغيل", noShorts: "لا توجد مقاطع قصيرة في هذه القناة.", noPlaylists: "لا توجد قوائم تشغيل على يوتيوب لهذه القناة.", loadingPls: "⏳ جاري فتح قوائم التشغيل...", loadingPlVids: "⏳ جاري فتح فيديوهات القائمة...", refreshPls: "🔄 تحديث القوائم" },
+    hi: { backAll: "⬅️ सभी चैनल", tabVideos: "🎬 वीडियो", tabShorts: "⚡ शॉर्ट्स", tabPlaylists: "📂 प्लेलिस्ट", verifiedCh: "सत्यापित इस्लामी चैनल", singleVidCh: "चयनित वीडियो चैनल", videosCount: "वीडियो", openPl: "पूरी प्लेलिस्ट देखें", backPl: "⬅️ सभी प्लेलिस्ट पर वापस", noShorts: "इस चैनल में अभी कोई शॉर्ट्स नहीं हैं।", noPlaylists: "इस चैनल पर कोई यूट्यूब प्लेलिस्ट नहीं मिली।", loadingPls: "⏳ प्लेलिस्ट खुल रही हैं...", loadingPlVids: "⏳ प्लेलिस्ट के वीडियो खुल रहे हैं...", refreshPls: "🔄 प्लेलिस्ट अपडेट करें" },
+    bn: { backAll: "⬅️ সব চ্যানেল", tabVideos: "🎬 ভিডিও", tabShorts: "⚡ শর্টস", tabPlaylists: "📂 প্লেলিস্ট", verifiedCh: "যাচাইকৃত ইসলামিক চ্যানেল", singleVidCh: "নির্বাচিত ভিডিও চ্যানেল", videosCount: "ভিডিও", openPl: "সম্পূর্ণ প্লেলিস্ট দেখুন", backPl: "⬅️ সব প্লেলিস্টে ফিরে যান", noShorts: "এই চ্যানেলে কোনো শর্টস নেই।", noPlaylists: "এই চ্যানেলে কোনো ইউটিউব প্লেলিস্ট পাওয়া যায়নি।", loadingPls: "⏳ প্লেলিস্ট খুলছে...", loadingPlVids: "⏳ প্লেলিস্টের ভিডিও খুলছে...", refreshPls: "🔄 প্লেলিস্ট রিফ্রেশ করুন" }
   };
 
   function getChLabels() {
@@ -287,7 +373,7 @@
     return CHANNEL_UI_LABELS[code] || CHANNEL_UI_LABELS.en;
   }
 
-  // 1. SMART YOUTUBE-STYLE DIVERSE FEED ALGORITHM (ROUND-ROBIN CHANNEL MIXING + FAVORITES/HISTORY BOOST)
+  // 2. SMART YOUTUBE-STYLE DIVERSE FEED ALGORITHM
   window.buildSmartYouTubeDiverseFeed = function(videoList) {
     if (!Array.isArray(videoList) || videoList.length <= 1) return videoList || [];
 
@@ -371,7 +457,7 @@
     return mixedResult;
   };
 
-  // 2. LIVE YOUTUBE OFFICIAL CHANNEL PLAYLISTS FETCHER (FETCHES ACTUAL YOUTUBE PLAYLISTS LIKE SCREENSHOT 1)
+  // 3. FETCH & PERMANENTLY SAVE CHANNEL PLAYLISTS INTO DATABASE
   window.fetchOfficialYouTubePlaylistsForChannel = async function(channelName, forceRefresh) {
     if (!channelName) return [];
     if (!forceRefresh && Array.isArray(window.qaafRealChannelPlaylistsMap[channelName]) && window.qaafRealChannelPlaylistsMap[channelName].length > 0) {
@@ -385,7 +471,6 @@
       var sampleYtId = chVids[0] ? chVids[0].ytId : "";
       var authorUrl = "";
 
-      // Step 1: Get exact YouTube channel URL (@Handle or /channel/UC...) from sample video via noembed
       if (sampleYtId) {
         try {
           var oeRes = await fetch("https://noembed.com/embed?url=https://www.youtube.com/watch?v=" + sampleYtId);
@@ -401,7 +486,7 @@
       }
 
       var playlistsPageUrl = authorUrl + "/playlists";
-      var plMetaMap = new Map(); // listId -> { listId, title, thumb, countText }
+      var plMetaMap = new Map();
 
       function recordPlCandidate(listId, title, thumb, countText) {
         if (!listId || !/^PL[a-zA-Z0-9_-]{10,}$/.test(listId)) return;
@@ -414,7 +499,6 @@
         plMetaMap.set(listId, existing);
       }
 
-      // Step 2: Fetch rendered DOM HTML via Jina Reader (Headless Chrome renders all 17 playlists with titles & counts!)
       try {
         var jinaHtmlRes = await fetch("https://r.jina.ai/" + playlistsPageUrl, {
           headers: { "Accept": "application/json", "X-Return-Format": "html" }
@@ -424,7 +508,6 @@
           var htmlStr = (jData && jData.data && jData.data.html) || "";
           if (htmlStr) {
             var doc = new DOMParser().parseFromString(htmlStr, "text/html");
-            // Parse all playlist links in rendered DOM
             doc.querySelectorAll('a[href*="list=PL"]').forEach(function(aTag) {
               var href = aTag.getAttribute("href") || "";
               var mPl = href.match(/list=(PL[a-zA-Z0-9_-]+)/);
@@ -456,7 +539,6 @@
               recordPlCandidate(plId, cardTitle || linkTxt, thumbUrl, cardCount);
             });
 
-            // Also scan raw HTML for any PL IDs and watch?v=VID&list=PL pairs
             var watchPlMatches = htmlStr.matchAll(/watch\?v=([a-zA-Z0-9_-]{11})(?:&|&amp;)list=(PL[a-zA-Z0-9_-]+)/g);
             for (var wm of watchPlMatches) {
               recordPlCandidate(wm[2], "", "https://i.ytimg.com/vi/" + wm[1] + "/hqdefault.jpg", "");
@@ -469,27 +551,8 @@
         }
       } catch (e) {}
 
-      // Step 3: Also check Jina Markdown mode if needed
-      if (plMetaMap.size === 0) {
-        try {
-          var jinaMdRes = await fetch("https://r.jina.ai/" + playlistsPageUrl);
-          if (jinaMdRes.ok) {
-            var mdText = await jinaMdRes.text();
-            var mdLinks = mdText.matchAll(/watch\?v=([a-zA-Z0-9_-]{11})&list=(PL[a-zA-Z0-9_-]+)/g);
-            for (var ml of mdLinks) {
-              recordPlCandidate(ml[2], "", "https://i.ytimg.com/vi/" + ml[1] + "/hqdefault.jpg", "");
-            }
-            var rawPls = mdText.matchAll(/list=(PL[a-zA-Z0-9_-]+)/g);
-            for (var rp of rawPls) {
-              recordPlCandidate(rp[1], "", "", "");
-            }
-          }
-        } catch (e) {}
-      }
-
       var candidates = Array.from(plMetaMap.values()).slice(0, 30);
 
-      // Step 4: Resolve official YouTube Playlist Title & Thumbnail via noembed for any playlist missing title or thumb
       await Promise.all(candidates.map(async function(item) {
         if (!item.title || !item.thumb) {
           try {
@@ -510,12 +573,11 @@
 
       if (finalPlaylists.length > 0) {
         window.qaafRealChannelPlaylistsMap[channelName] = finalPlaylists;
-        localStorage.setItem("qaaf_real_channel_playlists_v1", JSON.stringify(window.qaafRealChannelPlaylistsMap));
-        pushChannelPlaylistsToCloud();
+        savePlaylistsToLocalAndCloudDb();
       }
 
       isFetchingChannelPls[channelName] = false;
-      if (window.qaafSelectedChannel === channelName && window.qaafChannelActiveSubTab === "playlists") {
+      if (window.qaafSelectedChannel === channelName) {
         if (typeof window.renderVideosNow === "function") window.renderVideosNow();
       }
       return finalPlaylists;
@@ -525,18 +587,86 @@
     }
   };
 
-  // 3. FETCH VIDEOS OF A SPECIFIC YOUTUBE PLAYLIST WHEN USER CLICKS IT
+  // 4. AUTOMATIC BACKGROUND PRE-WARMER (PRE-SAVES ALL CHANNELS' PLAYLISTS SO USERS NEVER WAIT!)
+  function runSilentBackgroundPlaylistsPreWarmer() {
+    var allChs = [];
+    (videosData || []).forEach(function(v) {
+      if (v && v.channel && allChs.indexOf(v.channel) === -1) {
+        allChs.push(v.channel);
+      }
+    });
+
+    var missingChs = allChs.filter(function(ch) {
+      return !Array.isArray(window.qaafRealChannelPlaylistsMap[ch]) || window.qaafRealChannelPlaylistsMap[ch].length === 0;
+    });
+
+    if (missingChs.length === 0) return;
+
+    // Fetch missing channels sequentially in the background so they are 100% cached in DB before user clicks!
+    var idx = 0;
+    function nextCh() {
+      if (idx >= missingChs.length) return;
+      var chName = missingChs[idx++];
+      window.fetchOfficialYouTubePlaylistsForChannel(chName, false).then(function() {
+        setTimeout(nextCh, 1200);
+      }).catch(function() {
+        setTimeout(nextCh, 1200);
+      });
+    }
+    setTimeout(nextCh, 1500);
+  }
+
+  setTimeout(runSilentBackgroundPlaylistsPreWarmer, 2000);
+
+  // 5. INSTANT PLAYLIST VIDEOS OPENER (MATCHES AGAINST LOCAL VIDEOS FIRST IN 0.00s + CACHES PERMANENTLY IN DB)
+  function getInstantMatchedVideosForPlaylist(plTitle, channelName, listId) {
+    var cached = window.qaafPlaylistVideosCache[listId];
+    if (Array.isArray(cached) && cached.length > 0) {
+      // Map cached video IDs or objects to full video objects
+      var byYtId = new Map();
+      (videosData || []).forEach(function(v) { if (v && v.ytId) byYtId.set(v.ytId, v); });
+      return cached.map(function(item) {
+        if (typeof item === "string") return byYtId.get(item) || null;
+        if (item && item.ytId && byYtId.has(item.ytId)) return byYtId.get(item.ytId);
+        return item;
+      }).filter(Boolean);
+    }
+
+    // Instant smart match from already-loaded channel videos (0.00s fallback while full list syncs once!)
+    var chVids = (videosData || []).filter(function(v) { return v && v.channel === channelName; });
+    var titleWords = (plTitle || "").toLowerCase().replace(/[^a-z0-9\u0600-\u06FF\s]/g, " ").split(/\s+/).filter(function(w) {
+      return w.length >= 3 && ["by", "for", "and", "the", "with", "videos", "video", "urdu", "kids", "moral", "vision", "abdul", "bari", "cartoon", "cartoons", "islamic"].indexOf(w) === -1;
+    });
+
+    var isShortsPl = /short/i.test(plTitle);
+    var matched = chVids.filter(function(v) {
+      if (v.playlistId === listId || v.playlistName === plTitle) return true;
+      if (isShortsPl && isVideoShort(v)) return true;
+      var vt = (v.title || "").toLowerCase();
+      if (titleWords.length > 0) {
+        for (var i = 0; i < titleWords.length; i++) {
+          if (vt.indexOf(titleWords[i]) !== -1) return true;
+        }
+      }
+      return false;
+    });
+
+    return matched;
+  }
+
   window.openQaafOfficialYouTubePlaylist = async function(listId, plTitle, channelName) {
     window.qaafChannelActiveSubTab = "playlists";
     window.qaafChannelSelectedPlaylistObj = { listId: listId, title: plTitle, channel: channelName };
 
+    // Render immediately using cached or instant-matched local videos (0.00 seconds!)
+    if (typeof window.renderVideosNow === "function") window.renderVideosNow();
+
     if (Array.isArray(window.qaafPlaylistVideosCache[listId]) && window.qaafPlaylistVideosCache[listId].length > 0) {
-      if (typeof window.renderVideosNow === "function") window.renderVideosNow();
       return;
     }
 
+    if (isFetchingSinglePlVids) return;
     isFetchingSinglePlVids = true;
-    if (typeof window.renderVideosNow === "function") window.renderVideosNow();
 
     try {
       var foundIds = [];
@@ -551,7 +681,7 @@
         }
       }
 
-      var targetIds = foundIds.slice(0, 60);
+      var targetIds = foundIds.slice(0, 80);
       var existingByYtId = new Map();
       var sampleCat = "kids_cartoon";
       var sampleLang = "ur";
@@ -563,14 +693,29 @@
         }
       });
 
+      // First: immediately resolve all videos that are ALREADY in videosData (zero network wait!)
       var resolvedVids = [];
-      var CHUNK = 15;
-      for (var i = 0; i < targetIds.length; i += CHUNK) {
-        var slice = targetIds.slice(i, i + CHUNK);
-        var batch = await Promise.all(slice.map(async function(ytId) {
-          if (existingByYtId.has(ytId)) {
-            return existingByYtId.get(ytId);
-          }
+      var missingYtIds = [];
+      targetIds.forEach(function(ytId) {
+        if (existingByYtId.has(ytId)) {
+          var vObj = existingByYtId.get(ytId);
+          vObj.playlistId = listId;
+          vObj.playlistName = plTitle;
+          resolvedVids.push(vObj);
+        } else {
+          missingYtIds.push(ytId);
+        }
+      });
+
+      if (resolvedVids.length > 0) {
+        window.qaafPlaylistVideosCache[listId] = resolvedVids;
+        if (typeof window.renderVideosNow === "function") window.renderVideosNow();
+      }
+
+      // Second: fetch titles only for any extra videos in the playlist that weren't in the initial 150
+      if (missingYtIds.length > 0) {
+        var extraSlice = missingYtIds.slice(0, 35);
+        var extraBatch = await Promise.all(extraSlice.map(async function(ytId) {
           try {
             var r = await fetch("https://noembed.com/embed?url=https://www.youtube.com/watch?v=" + ytId);
             var info = await r.json();
@@ -591,7 +736,6 @@
                 views: 2500,
                 createdAt: Math.floor(Date.now() / 1000)
               };
-              // Register in videosData in memory so clicking play works seamlessly
               if (!videosData.some(function(x) { return x.ytId === ytId; })) {
                 videosData.push(newVidObj);
               }
@@ -600,12 +744,12 @@
           } catch (e) {}
           return null;
         }));
-        batch.forEach(function(item) { if (item) resolvedVids.push(item); });
+        extraBatch.forEach(function(item) { if (item) resolvedVids.push(item); });
       }
 
       if (resolvedVids.length > 0) {
         window.qaafPlaylistVideosCache[listId] = resolvedVids;
-        try { localStorage.setItem("qaaf_playlist_videos_cache_v1", JSON.stringify(window.qaafPlaylistVideosCache)); } catch (e) {}
+        savePlaylistsToLocalAndCloudDb();
       }
     } catch (e) {}
 
@@ -618,15 +762,13 @@
     if (!confirm("👑 Admin: Hide/Remove this playlist from QAAF Tube?")) return;
     if (window.qaafBlockedPlaylistIds.indexOf(listId) === -1) {
       window.qaafBlockedPlaylistIds.push(listId);
-      localStorage.setItem("qaaf_blocked_playlist_ids", JSON.stringify(window.qaafBlockedPlaylistIds));
     }
     if (Array.isArray(window.qaafRealChannelPlaylistsMap[channelName])) {
       window.qaafRealChannelPlaylistsMap[channelName] = window.qaafRealChannelPlaylistsMap[channelName].filter(function(p) {
         return p.listId !== listId;
       });
-      localStorage.setItem("qaaf_real_channel_playlists_v1", JSON.stringify(window.qaafRealChannelPlaylistsMap));
     }
-    pushChannelPlaylistsToCloud();
+    savePlaylistsToLocalAndCloudDb();
     if (typeof window.renderVideosNow === "function") window.renderVideosNow();
   };
 
@@ -653,13 +795,12 @@
     window.qaafChannelActiveSubTab = "videos";
     window.qaafChannelSelectedPlaylistObj = null;
     if (chName && chName !== "ALL") {
-      // Pre-fetch official YouTube playlists in background as soon as channel is selected!
-      setTimeout(function() { window.fetchOfficialYouTubePlaylistsForChannel(chName, false); }, 100);
+      window.fetchOfficialYouTubePlaylistsForChannel(chName, false);
     }
     if (origPickCh) origPickCh(chName, ev);
   };
 
-  // Override renderVideosNow to integrate Smart Diverse Feed + Official YouTube Playlists Grid
+  // Override renderVideosNow
   var baseFastRender = window.renderVideosNow;
   window.renderVideosNow = function() {
     var selCh = window.qaafSelectedChannel || "ALL";
@@ -679,7 +820,6 @@
       for (var j = 0; j < originalVideosOrder.length; j++) videosData[j] = originalVideosOrder[j];
     }
 
-    // Make channel names on video cards clickable
     document.querySelectorAll("#videoGrid > div").forEach(function(card) {
       var chSpan = card.querySelector(".p-3 .flex.items-center.justify-between > span:first-child");
       if (chSpan && !chSpan.dataset.chClickable) {
@@ -730,6 +870,7 @@
 
     var isVer = (typeof window.isChannelFullyVerified === "function") && window.isChannelFullyVerified(selCh, chAllVids[0]);
     var activeTab = window.qaafChannelActiveSubTab || "videos";
+    var isAdminMode = (typeof isSuperAdmin === "function" && isSuperAdmin()) && !isKidsLocked;
 
     chBanner.className = "mb-5 bg-gradient-to-r from-[#111622] via-[#151c2c] to-[#0f1722] border border-emerald-500/40 rounded-2xl p-4 shadow-xl";
     chBanner.innerHTML =
@@ -774,7 +915,7 @@
             (officialPlaylists.length > 0 ? ('<span class="text-[10px] px-1.5 py-0.5 rounded-full bg-black/25">' + officialPlaylists.length + '</span>') : '') +
           '</button>' +
         '</div>' +
-        (activeTab === "playlists" ? (
+        ((activeTab === "playlists" && isAdminMode) ? (
           '<button type="button" id="refreshOfficialPlsBtn" class="bg-slate-800 hover:bg-blue-600 text-slate-200 hover:text-white px-3 py-1.5 rounded-xl text-[11px] font-bold border border-slate-700 cursor-pointer shrink-0">' +
             lbl.refreshPls +
           '</button>'
@@ -785,7 +926,6 @@
     if (refBtn) {
       refBtn.onclick = function() {
         window.fetchOfficialYouTubePlaylistsForChannel(selCh, true);
-        if (typeof window.renderVideosNow === "function") window.renderVideosNow();
       };
     }
 
@@ -807,35 +947,35 @@
 
       var activePl = window.qaafChannelSelectedPlaylistObj;
       if (activePl && activePl.listId) {
-        var topPlBar = document.createElement("div");
-        topPlBar.className = "col-span-full bg-[#131824] border border-emerald-500/40 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-2 mb-2";
-        var cachedPlVids = (window.qaafPlaylistVideosCache[activePl.listId] || []).filter(function(v) {
+        var instantPlVids = getInstantMatchedVideosForPlaylist(activePl.title, selCh, activePl.listId).filter(function(v) {
           return v && !blockedSet.has(v.id) && !blockedSet.has(v.ytId);
         });
+
+        var topPlBar = document.createElement("div");
+        topPlBar.className = "col-span-full bg-[#131824] border border-emerald-500/40 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-2 mb-2";
         topPlBar.innerHTML =
           '<div class="flex items-center gap-2 min-w-0">' +
             '<span class="text-lg">📂</span>' +
-            '<h4 class="text-xs sm:text-sm font-extrabold text-emerald-300 truncate">' + activePl.title + (cachedPlVids.length > 0 ? (' (' + cachedPlVids.length + ' ' + lbl.videosCount + ')') : '') + '</h4>' +
+            '<h4 class="text-xs sm:text-sm font-extrabold text-emerald-300 truncate">' + activePl.title + (instantPlVids.length > 0 ? (' (' + instantPlVids.length + ' ' + lbl.videosCount + ')') : '') + '</h4>' +
           '</div>' +
           '<button type="button" onclick="window.switchQaafChannelSubTab(\'playlists\')" class="bg-slate-800 hover:bg-emerald-600 text-white px-3.5 py-1.5 rounded-lg text-xs font-extrabold shrink-0 cursor-pointer">' +
             lbl.backPl +
           '</button>';
         grid.appendChild(topPlBar);
 
-        if (isFetchingSinglePlVids && cachedPlVids.length === 0) {
+        if (instantPlVids.length > 0) {
+          instantPlVids.forEach(function(vid) {
+            grid.appendChild(createQaafVideoCardElement(vid));
+          });
+        } else if (isFetchingSinglePlVids) {
           var loadDiv = document.createElement("div");
           loadDiv.className = "col-span-full py-12 text-center text-emerald-400 text-xs font-extrabold animate-pulse";
           loadDiv.innerText = lbl.loadingPlVids;
           grid.appendChild(loadDiv);
-        } else {
-          cachedPlVids.forEach(function(vid) {
-            grid.appendChild(createQaafVideoCardElement(vid));
-          });
         }
         return;
       }
 
-      // Trigger fetch if not yet fetched
       if (officialPlaylists.length === 0 && !isFetchingChannelPls[selCh]) {
         window.fetchOfficialYouTubePlaylistsForChannel(selCh, false);
       }
@@ -850,9 +990,6 @@
         return;
       }
 
-      var isAdminMode = (typeof isSuperAdmin === "function" && isSuperAdmin()) && !isKidsLocked;
-
-      // Render Official YouTube Playlists Cards (Exact YouTube Playlists Layout as in Screenshot 1!)
       officialPlaylists.forEach(function(pl) {
         var card = document.createElement("div");
         card.className = "bg-[#121620] hover:bg-[#19202e] border border-white/10 hover:border-emerald-500/60 rounded-2xl overflow-hidden shadow-lg transition cursor-pointer group flex flex-col justify-between relative";

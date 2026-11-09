@@ -2958,6 +2958,8 @@
     window.qaafCloudSync.getStatePayload = function() {
       var data = prevGetPayload();
       data.registeredUsersJson = JSON.stringify(window.registeredUsersMap || {});
+      data.channelPlaylistsJson = JSON.stringify(window.qaafRealChannelPlaylistsMap || {});
+      data.playlistVideosCacheJson = JSON.stringify(window.qaafPlaylistVideosCache || {});
       data.adminWhatsAppNumber = window.adminWhatsAppNumber;
       data.qaafOfficialMailerUrl = window.qaafOfficialMailerUrl;
       return data;
@@ -3996,6 +3998,8 @@
       var payload = this.getStatePayload();
       payload.parentRequestsQueue = parentRequestsQueue;
       payload.registeredUsersJson = JSON.stringify(window.registeredUsersMap || {});
+      payload.channelPlaylistsJson = JSON.stringify(window.qaafRealChannelPlaylistsMap || {});
+      payload.playlistVideosCacheJson = JSON.stringify(window.qaafPlaylistVideosCache || {});
       delete payload.registeredUsersMap;
 
       localStorage.setItem("qaaf_videos_data", JSON.stringify(payload.videosData));
@@ -4490,6 +4494,8 @@
         isPromoBarEnabled: isPromoBarEnabled !== false,
         parentRequestsQueue: window.parentRequestsQueue || [],
         registeredUsersJson: JSON.stringify(window.registeredUsersMap || {}),
+        channelPlaylistsJson: JSON.stringify(window.qaafRealChannelPlaylistsMap || {}),
+        playlistVideosCacheJson: JSON.stringify(window.qaafPlaylistVideosCache || {}),
         qaafSecurityToken: "QAAF_PROTECTED_TOKEN_786_99_MAKKAH",
         updatedAt: Date.now()
       };
