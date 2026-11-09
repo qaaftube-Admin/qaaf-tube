@@ -1781,7 +1781,15 @@
 
   // Strictly check if current user is the Main Super Admin (NOT Monitor, NOT Parent, NOT Guest)
   window.isStrictlyMainSuperAdmin = function() {
-    return (typeof isSuperAdminLoggedIn !== "undefined" && isSuperAdminLoggedIn === true && !window.isMonitorRoleActive);
+    var role = String(window.currentLoggedInRole || (typeof currentUserRole !== "undefined" ? currentUserRole : "") || localStorage.getItem("qaaf_user_role") || "").toLowerCase();
+    if (role === "monitor" || window.isMonitorRoleActive === true) return false;
+    if (role === "superadmin") return true;
+    if (typeof isSuperAdmin === "function" && isSuperAdmin()) return true;
+    var em = String((typeof currentUserEmail !== "undefined" ? currentUserEmail : "") || localStorage.getItem("qaaf_user_email") || "").toLowerCase();
+    if (em === "qaaftube@gmail.com" || em === "adminqaaftube") return true;
+    var uTab = document.getElementById("admTab_users");
+    if (uTab && uTab.style.display !== "none" && !uTab.classList.contains("hidden")) return true;
+    return false;
   };
 
   function syncUnbanStateToCloudNow() {
@@ -1944,8 +1952,23 @@
       }
     }
 
+    var tempSavedBans = null;
+    if (window.isStrictlyMainSuperAdmin() && Array.isArray(bannedChannels)) {
+      window.superAdminCleanChannelBanRecord(chName, []);
+      tempSavedBans = bannedChannels.filter(Boolean);
+      bannedChannels.length = 0;
+    }
     if (origAdminAddGlobalVideo) {
       origAdminAddGlobalVideo();
+    }
+    if (tempSavedBans !== null && Array.isArray(bannedChannels)) {
+      var lowerTarget = String(chName || "").trim().toLowerCase();
+      tempSavedBans.forEach(function(bItem) {
+        var lb = String(bItem || "").trim().toLowerCase();
+        if (lb && lb !== lowerTarget && bannedChannels.indexOf(bItem) === -1) {
+          bannedChannels.push(bItem);
+        }
+      });
     }
 
     // After origAdminAddGlobalVideo finishes, ensure none of the newly added videos of this channel are in blockedVideoIds
