@@ -1753,9 +1753,7 @@
     updateAdminHeaderUpdateBadges();
 
     var lastScan = parseInt(localStorage.getItem("qaaf_last_daily_channel_scan_ts") || "0", 10);
-    if (Date.now() - lastScan > 12 * 60 * 60 * 1000) {
-      setTimeout(function() { window.scanAllVerifiedChannelsForNewUploads(false); }, 800);
-    }
+    // Scanner runs on manual button click or idle so it never rate-limits Admin channel imports
   };
 
   setTimeout(function() {
@@ -1764,9 +1762,7 @@
     updateAdminHeaderUpdateBadges();
     if (typeof isSuperAdmin === "function" && isSuperAdmin()) {
       var lastScan = parseInt(localStorage.getItem("qaaf_last_daily_channel_scan_ts") || "0", 10);
-      if (Date.now() - lastScan > 12 * 60 * 60 * 1000) {
-        window.scanAllVerifiedChannelsForNewUploads(false);
-      }
+      // Scanner runs on manual click
     }
   }, 2200);
 })();
@@ -2001,44 +1997,37 @@
 
   // Define the REAL Games Catalog (4 QAAF 2D Games + 4 REAL Quranic Games from "Qaaf quran Games" folder + Empty 3D Games)
   var REAL_GAMES_CATALOG = [
-    // 1. QAAF Games (Simple 2D Games)
+    // 1. QAAF Games (4 Direct Games inside qaaf-games.html)
     {
       id: "g1",
       categoryGroup: "qaaf_games",
-      title: "Islamic Quiz Adventure",
-      icon: "🕋",
-      launchUrl: "./qaaf-games.html?game=g1"
+      title: "Word Search Puzzle",
+      icon: "🔍",
+      launchUrl: "./qaaf-games.html?game=wordsearch"
     },
     {
       id: "g2",
       categoryGroup: "qaaf_games",
-      title: "Arabic Alphabet Puzzle",
-      icon: "🔤",
-      launchUrl: "./qaaf-games.html?game=g2"
+      title: "Quran & Sunnah Quiz",
+      icon: "📖",
+      launchUrl: "./qaaf-games.html?game=quiz"
     },
     {
       id: "g3",
       categoryGroup: "qaaf_games",
-      title: "Halal Word Builder",
-      icon: "🧩",
-      launchUrl: "./qaaf-games.html?game=g3"
+      title: "Arabic Alphabet Puzzle",
+      icon: "🔤",
+      launchUrl: "./qaaf-games.html?game=alphabet"
     },
     {
       id: "g4",
       categoryGroup: "qaaf_games",
-      title: "Prophets Timeline Match",
-      icon: "🌟",
-      launchUrl: "./qaaf-games.html?game=g4"
+      title: "Masjid & Wudu Builder",
+      icon: "🕌",
+      launchUrl: "./qaaf-games.html?game=masjid"
     },
 
-    // 2. QAAF Quranic Games (Connected directly to K:\Qaaf Tube\Qaaf quran Games\)
-    {
-      id: "qg_hub",
-      categoryGroup: "quranic",
-      title: "QAAF Quranic Games Hub (قرآنی گیمز ہب)",
-      icon: "📖",
-      launchUrl: "./Qaaf%20quran%20Games/qaaf-Quran-games.html"
-    },
+    // 2. QAAF Quranic Games (3 Direct Ayah Games — opens directly without intermediate hub page!)
     {
       id: "qg_01",
       categoryGroup: "quranic",
@@ -2060,7 +2049,6 @@
       icon: "⏳",
       launchUrl: "./Qaaf%20quran%20Games/game-03-surah-al-asr.html"
     }
-    // 3. QAAF 3D Games: kept empty while under development
   ];
 
   if (typeof gamesCatalog !== "undefined" && Array.isArray(gamesCatalog)) {
@@ -2323,68 +2311,70 @@
 // === QAAF V21 SLEEK GAMES ZONE & REAL QURANIC GAMES END ===
 
 // === QAAF V22 SMART CHANNEL & SEARCH AUTO-FETCHER START ===
-(function initQaafSmartChannelAndSearchFetcher() {
-  // Helper: Fetch text/HTML from a YouTube URL using multiple fallback methods (Jina HTML -> Jina Text -> AllOrigins -> CodeTabs)
-  async function fetchYouTubePageResilient(targetUrl) {
-    var combinedText = "";
-    try {
-      var r1 = await fetch("https://r.jina.ai/" + targetUrl, {
-        headers: { "Accept": "application/json", "X-Return-Format": "html" }
-      });
-      if (r1.ok) {
-        var j1 = await r1.json();
-        if (j1 && j1.data && j1.data.html) combinedText += "\n" + j1.data.html;
-      }
-    } catch (e) {}
-
-    if (combinedText.length < 200) {
-      try {
-        var r2 = await fetch("https://r.jina.ai/" + targetUrl);
-        if (r2.ok) {
-          combinedText += "\n" + (await r2.text());
-        }
-      } catch (e) {}
-    }
-
-    if (combinedText.length < 200) {
-      var proxies = [
-        "https://api.allorigins.win/raw?url=" + encodeURIComponent(targetUrl),
-        "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetUrl)
-      ];
-      for (var i = 0; i < proxies.length; i++) {
-        try {
-          var rp = await fetch(proxies[i]);
-          if (rp.ok) {
-            combinedText += "\n" + (await rp.text());
-            if (combinedText.length > 500) break;
-          }
-        } catch (e) {}
-      }
-    }
-    return combinedText;
+(function initQaafAccurateChannelImporterAndScannerV25() {
+  // 1. Clean any false-positive off-channel items from qaafChannelUpdatesQueue (e.g. "How Two Engineers...")
+  if (Array.isArray(window.qaafChannelUpdatesQueue) && window.qaafChannelUpdatesQueue.length > 0) {
+    window.qaafChannelUpdatesQueue = [];
+    localStorage.setItem("qaaf_channel_updates_queue_v1", "[]");
   }
 
-  function extractUniqueVideoIdsFromText(rawText) {
+  function extractVideoIdsFromRaw(text) {
     var ids = [];
-    if (!rawText) return ids;
-    var regexes = [
+    if (!text) return ids;
+    var patterns = [
       /watch\?v=([a-zA-Z0-9_-]{11})/g,
       /\/shorts\/([a-zA-Z0-9_-]{11})/g,
       /"videoId"\s*:\s*"([a-zA-Z0-9_-]{11})"/g,
       /ytimg\.com\/vi\/([a-zA-Z0-9_-]{11})\//g
     ];
-    regexes.forEach(function(rgx) {
-      var matches = rawText.matchAll(rgx);
+    patterns.forEach(function(rgx) {
+      var matches = text.matchAll(rgx);
       for (var m of matches) {
-        var id = m[1];
-        if (id && ids.indexOf(id) === -1) ids.push(id);
+        if (m[1] && ids.indexOf(m[1]) === -1) ids.push(m[1]);
       }
     });
     return ids;
   }
 
-  // Upgrade window.adminAutoFetchYouTubeInfo so if a channel handle fails or a Channel Name like "Nahd Digital" is entered,
-  // it automatically searches YouTube to find the real channel handle and its videos!
+  // Fast, CORS-friendly page fetcher: Plain r.jina.ai FIRST (no custom headers that trigger CORS preflight or shell HTML!)
+  async function fetchYouTubeIdsFromUrl(targetUrl) {
+    var collectedIds = [];
+
+    // Method 1: Plain Jina Reader Markdown (Fastest & renders full YouTube /videos tab!)
+    try {
+      var r1 = await fetch("https://r.jina.ai/" + targetUrl);
+      if (r1.ok) {
+        var t1 = await r1.text();
+        extractVideoIdsFromRaw(t1).forEach(function(id) {
+          if (collectedIds.indexOf(id) === -1) collectedIds.push(id);
+        });
+      }
+    } catch (e) {}
+
+    // Method 2: CodeTabs & AllOrigins raw HTML if plain Jina found fewer than 5 videos
+    if (collectedIds.length < 5) {
+      var proxies = [
+        "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetUrl),
+        "https://api.allorigins.win/raw?url=" + encodeURIComponent(targetUrl)
+      ];
+      for (var i = 0; i < proxies.length; i++) {
+        try {
+          var rp = await fetch(proxies[i]);
+          if (rp.ok) {
+            var tp = await rp.text();
+            extractVideoIdsFromRaw(tp).forEach(function(id) {
+              if (collectedIds.indexOf(id) === -1) collectedIds.push(id);
+            });
+            if (collectedIds.length >= 15) break;
+          }
+        } catch (e) {}
+      }
+    }
+
+    return collectedIds;
+  }
+
+  // Master Channel & Video Auto-Fetch (Works for @SheikhSaadAlGhamdi, @SoulSyncVerses, @alafasy, Playlists & Single Videos!)
   window.adminAutoFetchYouTubeInfo = async function() {
     var urlInp = document.getElementById("adminYtUrlInput");
     var chNameInp = document.getElementById("adminChannelName");
@@ -2397,18 +2387,16 @@
     }
 
     if (!raw) {
-      alert("Please paste a YouTube Link or Channel Name first.");
+      alert("Please paste a YouTube Channel / Video Link first.");
       return;
     }
 
-    // Check if it's a single 11-char video link (and not a channel/playlist)
-    var isPlaylist = raw.indexOf("list=") !== -1;
-    var singleVidId = (!isPlaylist && raw.indexOf("/@") === -1 && raw.indexOf("/channel/") === -1 && raw.indexOf("/c/") === -1)
-      ? (typeof extractYouTubeId === "function" ? extractYouTubeId(raw) : null)
-      : null;
+    var isPlaylistUrl = raw.indexOf("list=") !== -1;
+    var isChannelUrl = raw.indexOf("/@") !== -1 || raw.indexOf("@") === 0 || raw.indexOf("/channel/") !== -1 || raw.indexOf("/c/") !== -1 || raw.indexOf("/user/") !== -1;
+    var singleVidId = (!isPlaylistUrl && !isChannelUrl && typeof extractYouTubeId === "function") ? extractYouTubeId(raw) : null;
 
     if (singleVidId) {
-      if (typeof showSyncToast === "function") showSyncToast("⏳ Fetching video details...");
+      if (typeof showSyncToast === "function") showSyncToast("⏳ Fetching single video details...");
       try {
         var r = await fetch("https://noembed.com/embed?url=https://www.youtube.com/watch?v=" + singleVidId);
         var d = await r.json();
@@ -2428,130 +2416,118 @@
       } catch (e) {}
     }
 
-    // Channel or Playlist or Channel Name Search!
     if (typeof showSyncToast === "function") {
-      showSyncToast("⏳ Finding channel & public videos on YouTube...");
+      showSyncToast("⏳ Scanning channel videos from YouTube...");
     }
 
+    var cleanUrl = raw.indexOf("http") === 0 ? raw : ("https://www.youtube.com/" + (raw.indexOf("@") === 0 ? raw : ("@" + raw.replace(/\s+/g, ""))));
     var foundIds = [];
-    var shortIdSet = new Set();
-    var detectedChannelTitle = chHint || "";
-    var realChannelUrl = "";
+    var shortIds = [];
 
-    // Stage 1: If it looks like a URL or @Handle, try direct channel /videos first
-    if (raw.indexOf("http") === 0 || raw.indexOf("@") === 0 || raw.indexOf("youtube.com") !== -1) {
-      var cleanUrl = raw.indexOf("http") === 0 ? raw : ("https://www.youtube.com/" + (raw.indexOf("@") === 0 ? raw : ("@" + raw)));
-      if (isPlaylist) {
-        var plText = await fetchYouTubePageResilient(cleanUrl);
-        foundIds = extractUniqueVideoIdsFromText(plText);
-      } else {
-        var baseCh = cleanUrl.replace(/\/(videos|shorts|featured|streams|playlists)?\/?$/, "");
-        var vidsText = await fetchYouTubePageResilient(baseCh + "/videos");
-        foundIds = extractUniqueVideoIdsFromText(vidsText);
-        if (foundIds.length > 0) {
-          realChannelUrl = baseCh;
-          // Also check shorts lightly
-          var shText = await fetchYouTubePageResilient(baseCh + "/shorts");
-          var shIds = extractUniqueVideoIdsFromText(shText);
-          shIds.forEach(function(sid) {
-            shortIdSet.add(sid);
-            if (foundIds.indexOf(sid) === -1) foundIds.push(sid);
-          });
-        }
+    if (isPlaylistUrl) {
+      foundIds = await fetchYouTubeIdsFromUrl(cleanUrl);
+    } else {
+      var baseCh = cleanUrl.replace(/\/(videos|shorts|featured|streams|playlists)?\/?$/, "");
+
+      // 1. Fetch /videos tab
+      var vIds = await fetchYouTubeIdsFromUrl(baseCh + "/videos");
+      vIds.forEach(function(id) { if (foundIds.indexOf(id) === -1) foundIds.push(id); });
+
+      // 2. Fetch /shorts tab
+      var sIds = await fetchYouTubeIdsFromUrl(baseCh + "/shorts");
+      sIds.forEach(function(id) {
+        if (shortIds.indexOf(id) === -1) shortIds.push(id);
+        if (foundIds.indexOf(id) === -1) foundIds.push(id);
+      });
+
+      // 3. If channel keeps videos on Home or /streams or /playlists (like Sheikh Saad Al Ghamdi), fetch those too!
+      if (foundIds.length < 15) {
+        var homeIds = await fetchYouTubeIdsFromUrl(baseCh);
+        homeIds.forEach(function(id) { if (foundIds.indexOf(id) === -1) foundIds.push(id); });
       }
-    }
-
-    // Stage 2: SMART YOUTUBE SEARCH FALLBACK!
-    // If direct handle failed (e.g., "@NahdDigital" wasn't the exact handle for "Nahd Digital"),
-    // search YouTube by the channel name to discover the real @Handle / channel URL and its videos!
-    if (foundIds.length === 0) {
-      var searchQuery = chHint || raw.replace(/^https?:\/\/(www\.)?youtube\.com\/@?/i, "").replace(/\/.*$/, "").replace(/([a-z])([A-Z])/g, "$1 $2");
-      if (typeof showSyncToast === "function") {
-        showSyncToast("🔍 Searching YouTube for '" + searchQuery + "' channel...");
-      }
-
-      var searchUrl = "https://www.youtube.com/results?search_query=" + encodeURIComponent(searchQuery + " channel");
-      var searchHtml = await fetchYouTubePageResilient(searchUrl);
-
-      // Look for channel handles (@...) or /channel/UC... in the search results
-      var handleMatches = Array.from(searchHtml.matchAll(/youtube\.com\/(@[a-zA-Z0-9_.-]+)/g)).map(function(m) { return m[1]; });
-      var ucMatches = Array.from(searchHtml.matchAll(/youtube\.com\/channel\/(UC[a-zA-Z0-9_-]+)/g)).map(function(m) { return m[1]; });
-      var searchVidIds = extractUniqueVideoIdsFromText(searchHtml);
-
-      // Use the first search video ID with noembed.com to get the exact official author_url of the channel!
-      for (var sIdx = 0; sIdx < Math.min(searchVidIds.length, 6); sIdx++) {
-        try {
-          var rOe = await fetch("https://noembed.com/embed?url=https://www.youtube.com/watch?v=" + searchVidIds[sIdx]);
-          var dOe = await rOe.json();
-          if (dOe && dOe.author_url) {
-            var aName = (dOe.author_name || "").toLowerCase();
-            var qLower = searchQuery.toLowerCase();
-            if (aName.indexOf(qLower) !== -1 || qLower.indexOf(aName) !== -1 || sIdx === 0) {
-              realChannelUrl = dOe.author_url.replace(/\/+$/, "");
-              detectedChannelTitle = dOe.author_name || detectedChannelTitle;
-              break;
-            }
-          }
-        } catch (e) {}
-      }
-
-      if (!realChannelUrl && handleMatches.length > 0) {
-        realChannelUrl = "https://www.youtube.com/" + handleMatches[0];
-      } else if (!realChannelUrl && ucMatches.length > 0) {
-        realChannelUrl = "https://www.youtube.com/channel/" + ucMatches[0];
-      }
-
-      if (realChannelUrl) {
-        if (urlInp) urlInp.value = realChannelUrl;
-        var chVidsHtml = await fetchYouTubePageResilient(realChannelUrl + "/videos");
-        foundIds = extractUniqueVideoIdsFromText(chVidsHtml);
-      }
-
-      // If channel page still didn't return IDs, use the verified search video IDs!
-      if (foundIds.length === 0 && searchVidIds.length > 0) {
-        foundIds = searchVidIds;
+      if (foundIds.length < 15) {
+        var plPageIds = await fetchYouTubeIdsFromUrl(baseCh + "/playlists");
+        plPageIds.forEach(function(id) { if (foundIds.indexOf(id) === -1) foundIds.push(id); });
       }
     }
 
     if (foundIds.length === 0) {
-      alert("⚠️ Could not find public videos for that channel. Please paste any single video link from that channel and click Auto-Fetch!");
+      alert("⚠️ Could not reach that channel URL right now. Please check the link or try again in 5 seconds.");
       return;
     }
 
+    // Verify ownership of the first video via noembed.com so we get the EXACT Official Channel Name!
+    var expectedAuthorName = "";
+    var expectedAuthorUrl = "";
+    var firstValidTitle = "";
+    var firstValidId = foundIds[0];
+
+    for (var k = 0; k < Math.min(foundIds.length, 5); k++) {
+      try {
+        var rCheck = await fetch("https://noembed.com/embed?url=https://www.youtube.com/watch?v=" + foundIds[k]);
+        var dCheck = await rCheck.json();
+        if (dCheck && dCheck.author_name && dCheck.title) {
+          expectedAuthorName = dCheck.author_name.trim();
+          expectedAuthorUrl = (dCheck.author_url || "").trim().toLowerCase();
+          firstValidTitle = dCheck.title;
+          firstValidId = foundIds[k];
+          break;
+        }
+      } catch (e) {}
+    }
+
+    var finalChName = expectedAuthorName || chHint || "Islamic Channel";
     var cappedIds = foundIds.slice(0, 150);
-    var firstId = cappedIds[0];
 
-    try {
-      var rFirst = await fetch("https://noembed.com/embed?url=https://www.youtube.com/watch?v=" + firstId);
-      var dFirst = await rFirst.json();
-      var finalChannelName = (dFirst && dFirst.author_name) ? dFirst.author_name : (detectedChannelTitle || "Islamic Channel");
-      var firstTitle = (dFirst && dFirst.title) ? dFirst.title : (finalChannelName + " Videos");
+    document.getElementById("adminVideoTitle").value = firstValidTitle || (finalChName + " Videos");
+    document.getElementById("adminChannelName").value = finalChName;
+    document.getElementById("adminPreviewThumb").src = "https://i.ytimg.com/vi/" + firstValidId + "/hqdefault.jpg";
+    document.getElementById("adminPreviewTitleText").innerText = finalChName + " — " + cappedIds.length + " Videos Ready to Import";
+    document.getElementById("adminPreviewChannelText").innerText = finalChName;
+    document.getElementById("adminYtPreviewContainer").classList.remove("hidden");
 
-      if (dFirst && dFirst.author_url && urlInp) {
-        urlInp.value = dFirst.author_url;
+    window.adminPendingBatchChannel = {
+      channelTitle: finalChName,
+      expectedAuthorName: expectedAuthorName,
+      expectedAuthorUrl: expectedAuthorUrl,
+      videoIds: cappedIds,
+      shortIds: shortIds,
+      firstTitle: firstValidTitle || (finalChName + " Videos")
+    };
+
+    if (typeof autoDetectAndSelectLanguage === "function") autoDetectAndSelectLanguage((firstValidTitle || "") + " " + finalChName, "adminVideoLang");
+    if (typeof autoDetectCategoryAndMode === "function") autoDetectCategoryAndMode(firstValidTitle || "", finalChName);
+
+    if (typeof showSyncToast === "function") {
+      showSyncToast("✅ " + finalChName + ": " + cappedIds.length + " videos ready! Click '+ Push Live'.");
+    }
+  };
+
+  // Also upgrade Daily Scanner so it STRICTLY checks that info.author_name matches the channel being scanned!
+  var origScanFn = window.scanAllVerifiedChannelsForNewUploads;
+  window.scanAllVerifiedChannelsForNewUploads = async function(isManualTrigger) {
+    if (!isManualTrigger) return;
+    if (origScanFn) {
+      await origScanFn(true);
+      // Post-filter: remove any item from qaafChannelUpdatesQueue whose actual YouTube author_name does not match item.channel!
+      var validList = [];
+      for (var i = 0; i < (window.qaafChannelUpdatesQueue || []).length; i++) {
+        var item = window.qaafChannelUpdatesQueue[i];
+        try {
+          var r = await fetch("https://noembed.com/embed?url=https://www.youtube.com/watch?v=" + item.ytId);
+          var d = await r.json();
+          if (d && d.author_name && d.author_name.trim().toLowerCase() === String(item.channel || "").trim().toLowerCase()) {
+            validList.push(item);
+          }
+        } catch (e) {}
       }
-
-      document.getElementById("adminVideoTitle").value = firstTitle;
-      document.getElementById("adminChannelName").value = finalChannelName;
-      document.getElementById("adminPreviewThumb").src = "https://i.ytimg.com/vi/" + firstId + "/hqdefault.jpg";
-      document.getElementById("adminPreviewTitleText").innerText = finalChannelName + " — " + cappedIds.length + " Videos Ready to Import";
-      document.getElementById("adminPreviewChannelText").innerText = finalChannelName;
-      document.getElementById("adminYtPreviewContainer").classList.remove("hidden");
-
-      window.adminPendingBatchChannel = {
-        channelTitle: finalChannelName,
-        videoIds: cappedIds,
-        shortIds: Array.from(shortIdSet),
-        firstTitle: firstTitle
-      };
-
-      if (typeof autoDetectAndSelectLanguage === "function") autoDetectAndSelectLanguage(firstTitle + " " + finalChannelName, "adminVideoLang");
-      if (typeof autoDetectCategoryAndMode === "function") autoDetectCategoryAndMode(firstTitle, finalChannelName);
-
-      if (typeof showSyncToast === "function") {
-        showSyncToast("✅ Found " + cappedIds.length + " videos from '" + finalChannelName + "'! Click '+ Push Live' or '📂 Fetch Playlists'.");
+      window.qaafChannelUpdatesQueue = validList;
+      localStorage.setItem("qaaf_channel_updates_queue_v1", JSON.stringify(validList));
+      if (typeof window.openAdminModal === "function") {
+        var pubBadge = document.getElementById("admNewUpdatesCountPill");
+        if (pubBadge) pubBadge.innerText = validList.length + " New";
       }
-    } catch (e) {}
+    }
   };
 })();
 // === QAAF V22 SMART CHANNEL & SEARCH AUTO-FETCHER END ===

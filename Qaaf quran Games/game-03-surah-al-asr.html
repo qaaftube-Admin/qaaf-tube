@@ -4340,5 +4340,15 @@ window.ready = Promise.all([BirrAnimEngine.ready, MuminunAnimEngine.ready, AsrAn
     });
   })();
   </script>
+<script>
+document.addEventListener("click", function(e) {
+  var a = e.target.closest('a[href*="qaaf-Quran-games.html"], button[onclick*="qaaf-Quran-games.html"]');
+  if (a && window.parent && typeof window.parent.closeInstalledGameModal === "function") {
+    e.preventDefault();
+    e.stopPropagation();
+    window.parent.closeInstalledGameModal();
+  }
+}, true);
+</script>
 </body>
 </html>

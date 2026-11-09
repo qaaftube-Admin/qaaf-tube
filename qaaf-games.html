@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ur" dir="rtl">
 <head>
   <meta charset="UTF-8" />
@@ -5301,5 +5301,66 @@
       switchGame(initialGame);
     });
   </script>
+<!-- QAAF DIRECT GAME LAUNCH & HIDE DROPDOWN START -->
+<style>
+  /* Hide the internal yellow game switcher dropdown button so games are selected from the main list */
+  #gameDropdownBtn, #gameSelectDropdown, .game-switcher-dropdown, button[onclick*="toggleGameMenu"], button[onclick*="toggleDropdown"] {
+    display: none !important;
+  }
+</style>
+<script>
+(function() {
+  function hideYellowSwitcherAndSelectGame() {
+    var params = new URLSearchParams(window.location.search);
+    var targetGame = (params.get("game") || "").toLowerCase();
+
+    // Hide any button in the top bar that contains "Word Search Puzzle" or dropdown arrow ▾
+    document.querySelectorAll("button, div").forEach(function(el) {
+      var txt = (el.innerText || "").trim();
+      if ((txt.indexOf("Word Search Puzzle") !== -1 || txt.indexOf("Quran & Sunnah Quiz") !== -1 || txt.indexOf("Arabic Alphabet") !== -1 || txt.indexOf("Masjid & Wudu Builder") !== -1) && el.tagName === "BUTTON" && el.querySelectorAll("button").length === 0) {
+        if (txt.indexOf("▾") !== -1 || txt.indexOf("▼") !== -1 || el.className.indexOf("amber") !== -1 || el.className.indexOf("yellow") !== -1) {
+          el.style.setProperty("display", "none", "important");
+        }
+      }
+    });
+
+    if (!targetGame) return;
+
+    // Try direct game switching functions if defined in qaaf-games.html
+    var fnNames = ["switchGame", "selectGame", "loadGame", "setActiveGame", "changeGame", "openGame"];
+    for (var i = 0; i < fnNames.length; i++) {
+      if (typeof window[fnNames[i]] === "function") {
+        try { window[fnNames[i]](targetGame); } catch (e) {}
+      }
+    }
+
+    // Also match and click the corresponding menu item by text
+    var matchKeywords = {
+      "wordsearch": "Word Search",
+      "quiz": "Quran & Sunnah Quiz",
+      "alphabet": "Arabic Alphabet",
+      "masjid": "Masjid & Wudu"
+    };
+    var kw = matchKeywords[targetGame] || "";
+    if (kw) {
+      document.querySelectorAll("button, a, li, div").forEach(function(item) {
+        var t = (item.innerText || "").trim();
+        if (t.indexOf(kw) !== -1 && item.children.length <= 2) {
+          try { item.click(); } catch (e) {}
+        }
+      });
+    }
+  }
+
+  window.addEventListener("DOMContentLoaded", function() {
+    setTimeout(hideYellowSwitcherAndSelectGame, 50);
+    setTimeout(hideYellowSwitcherAndSelectGame, 300);
+  });
+  window.addEventListener("load", function() {
+    setTimeout(hideYellowSwitcherAndSelectGame, 100);
+  });
+})();
+</script>
+<!-- QAAF DIRECT GAME LAUNCH & HIDE DROPDOWN END -->
 </body>
 </html>
