@@ -681,7 +681,7 @@
         }
       }
 
-      var targetIds = foundIds.slice(0, 80);
+      var targetIds = foundIds.slice(0, 150);
       var existingByYtId = new Map();
       var sampleCat = "kids_cartoon";
       var sampleLang = "ur";
@@ -1383,7 +1383,7 @@
         }
       } catch (e) {}
 
-      var capIds = foundVidIds.slice(0, 50);
+      var capIds = foundVidIds.slice(0, 150);
       var plResolvedVids = [];
       var CHUNK = 15;
       for (var c = 0; c < capIds.length; c += CHUNK) {
@@ -2080,14 +2080,18 @@
         tV.style.setProperty("box-shadow", "none", "important");
       }
 
-      // Hide Category Bar, Search Bar & Video Request button so Games Zone is right at the top!
-      if (catBarStickyWrap) catBarStickyWrap.classList.add("hidden");
+      // Hide ONLY Category Bar, Search Bar & Video Request button (NEVER hide <main> or #appBody!)
+      var mainEl = document.querySelector("main");
+      if (mainEl) mainEl.classList.remove("hidden");
+      document.body.classList.remove("hidden");
+      if (catBar && catBar.closest("div.sticky")) catBar.closest("div.sticky").classList.add("hidden");
       if (searchBarWrap) searchBarWrap.classList.add("hidden");
-      if (searchInp && searchInp.closest("div.mb-4, div.space-y-2")) {
-        searchInp.closest("div.mb-4, div.space-y-2").classList.add("hidden");
-      }
-      if (reqBellBtn && reqBellBtn.parentElement && reqBellBtn.parentElement.id !== "headerRightControls") {
-        reqBellBtn.parentElement.classList.add("hidden");
+      if (reqBellBtn && reqBellBtn.id === "qaafNotifBellBtn") {
+        if (reqBellBtn.parentElement && reqBellBtn.parentElement.tagName !== "MAIN" && reqBellBtn.parentElement.tagName !== "BODY" && reqBellBtn.parentElement.id !== "headerRightControls") {
+          reqBellBtn.parentElement.classList.add("hidden");
+        } else {
+          reqBellBtn.classList.add("hidden");
+        }
       }
     } else {
       if (gSec) gSec.classList.add("hidden");
@@ -2107,13 +2111,16 @@
       }
 
       // Show Category Bar, Search Bar & Video Request button again in Videos mode
-      if (catBarStickyWrap) catBarStickyWrap.classList.remove("hidden");
+      var mainEl2 = document.querySelector("main");
+      if (mainEl2) mainEl2.classList.remove("hidden");
+      document.body.classList.remove("hidden");
+      if (catBar && catBar.closest("div.sticky")) catBar.closest("div.sticky").classList.remove("hidden");
       if (searchBarWrap) searchBarWrap.classList.remove("hidden");
-      if (searchInp && searchInp.closest("div.mb-4, div.space-y-2")) {
-        searchInp.closest("div.mb-4, div.space-y-2").classList.remove("hidden");
-      }
-      if (reqBellBtn && reqBellBtn.parentElement && reqBellBtn.parentElement.id !== "headerRightControls") {
-        reqBellBtn.parentElement.classList.remove("hidden");
+      if (reqBellBtn && reqBellBtn.id === "qaafNotifBellBtn") {
+        if (reqBellBtn.parentElement && reqBellBtn.parentElement.tagName !== "MAIN" && reqBellBtn.parentElement.tagName !== "BODY" && reqBellBtn.parentElement.id !== "headerRightControls") {
+          reqBellBtn.parentElement.classList.remove("hidden");
+        }
+        reqBellBtn.classList.remove("hidden");
       }
     }
   }
@@ -2146,6 +2153,7 @@
 
   // 2. SLEEK MINIMAL 1-LINE GAMES RENDERER
   window.renderGames = function() {
+    if (!document.getElementById("kidsTotalStarsBadge")) { var sb = document.createElement("span"); sb.id = "kidsTotalStarsBadge"; sb.className = "hidden"; document.body.appendChild(sb); }
     var grid = document.getElementById("gamesGrid");
     if (!grid) return;
 
