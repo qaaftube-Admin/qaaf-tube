@@ -1891,28 +1891,11 @@
       launchUrl: "./qaaf-games.html?game=masjid"
     },
 
-    // 2. QAAF Quranic Games (3 Direct Ayah Games)
-    {
-      id: "qg_01",
-      categoryGroup: "quranic",
-      title: "1. Ayat Al-Birr — آیت البر (البقرۃ 2:177)",
-      icon: "🕋",
-      launchUrl: "./Qaaf%20quran%20Games/game-01-ayat-al-birr.html"
-    },
-    {
-      id: "qg_02",
-      categoryGroup: "quranic",
-      title: "2. Sifat Al-Mu'minun — صفات المؤمنین (23:1-11)",
-      icon: "🌟",
-      launchUrl: "./Qaaf%20quran%20Games/game-02-sifat-al-muminun.html"
-    },
-    {
-      id: "qg_03",
-      categoryGroup: "quranic",
-      title: "3. Surah Al-Asr — سورۃ العصر (103:1-3)",
-      icon: "⏳",
-      launchUrl: "./Qaaf%20quran%20Games/game-03-surah-al-asr.html"
-    }
+    // 2. QAAF Quranic Games (Auto-Discovered from Qaaf quran Games folder)
+    {"id": "qg_01", "categoryGroup": "quranic", "title": "1. Ayat Al-Birr — آیت البر (البقرۃ 2:177)", "icon": "🕋", "launchUrl": "./Qaaf%20quran%20Games/game-01-ayat-al-birr.html"},
+    {"id": "qg_02", "categoryGroup": "quranic", "title": "2. Sifat Al-Mu'minun — صفات المؤمنین (23:1-11)", "icon": "🌟", "launchUrl": "./Qaaf%20quran%20Games/game-02-sifat-al-muminun.html"},
+    {"id": "qg_03", "categoryGroup": "quranic", "title": "3. Surah Al-Asr — سورۃ العصر (103:1-3)", "icon": "⏳", "launchUrl": "./Qaaf%20quran%20Games/game-03-surah-al-asr.html"},
+    {"id": "qg_04", "categoryGroup": "quranic", "title": "4. QAAF Tube - قرآنی کھیل", "icon": "📖", "launchUrl": "./Qaaf%20quran%20Games/qaaf-Quran-games.html"}
   ];
 
   if (typeof gamesCatalog !== "undefined" && Array.isArray(gamesCatalog)) {
@@ -2135,3 +2118,420 @@
 
   window.renderGames();
 })();
+
+// =========================================================================
+// SECTION 5: ADMIN SPECIAL ANNOUNCEMENT / GREETING POPUP ENGINE (LIVE CLOUD)
+// =========================================================================
+(function initQaafSpecialAnnouncementEngine() {
+  var FIREBASE_DEFAULT_URL = "https://qaaftube-6f251-default-rtdb.firebaseio.com";
+  function getFbBase() {
+    return (localStorage.getItem("qaaf_firebase_db_url") || FIREBASE_DEFAULT_URL).replace(/\/+$/, "");
+  }
+
+  var DEFAULT_ANNOUNCEMENT = {
+    enabled: false,
+    badge: "🌙 QAAF Tube Special Message",
+    title: "جمعہ مبارک — Jummah Mubarak!",
+    message: "رسول اللہ ﷺ نے فرمایا: جمعہ کے دن مجھ پر کثرت سے درود بھیجا کرو۔ آج سورۃ الکہف کی تلاوت اور درود شریف کا خاص اہتمام فرمائیں۔",
+    theme: "emerald",
+    imageUrl: "",
+    actionText: "",
+    actionUrl: "",
+    frequency: "once_per_session",
+    updatedAt: 0
+  };
+
+  window.qaafSpecialAnnouncement = Object.assign({}, DEFAULT_ANNOUNCEMENT);
+  try {
+    var savedLocal = localStorage.getItem("qaaf_special_announcement_v1");
+    if (savedLocal) {
+      window.qaafSpecialAnnouncement = Object.assign({}, DEFAULT_ANNOUNCEMENT, JSON.parse(savedLocal));
+    }
+  } catch (e) {}
+
+  var QUICK_TEMPLATES = {
+    jummah: {
+      badge: "🕌 جمعہ مبارک • Jummah Mubarak",
+      title: "جمعہ کا بابرکت دن مبارک ہو!",
+      message: "رسول اللہ ﷺ نے فرمایا: جمعہ کے دن مجھ پر کثرت سے درود شریف بھیجا کرو۔ آج سورۃ الکہف کی تلاوت، دعاؤں اور درود شریف کا خاص اہتمام فرمائیں۔",
+      theme: "emerald",
+      actionText: "",
+      actionUrl: ""
+    },
+    eid: {
+      badge: "🎉 عید مبارک • Eid Mubarak",
+      title: "قاف ٹیوب کی جانب سے دلی عید مبارک!",
+      message: "تَقَبَّلَ اللّٰهُ مِنَّا وَمِنْكُمْ — اللہ تعالیٰ ہماری اور آپ کی تمام عبادات اور نیک اعمال قبول فرمائے۔ آپ کو اور آپ کے پورے خاندان کو دل کی گہرائیوں سے عید مبارک!",
+      theme: "amber",
+      actionText: "",
+      actionUrl: ""
+    },
+    ramadan: {
+      badge: "🌙 رمضان مبارک • Ramadan Kareem",
+      title: "رمضان المبارک کا بابرکت مہینہ مبارک ہو!",
+      message: "اللہ تعالیٰ اس بابرکت مہینے میں ہمارے روزے، نمازیں اور تلاوتِ قرآن قبول فرمائے اور ہمیں کامل تقویٰ نصیب فرمائے۔ آمین۔",
+      theme: "teal",
+      actionText: "",
+      actionUrl: ""
+    },
+    support: {
+      badge: "🤝 صدقہ جاریہ • Support QAAF Tube",
+      title: "محفوظ اسلامی پلیٹ فارم میں ہمارا ساتھ دیں",
+      message: "قاف ٹیوب مسلمان بچوں اور خاندانوں کے لیے سو فیصد موسیقی، ساز اور غیر شرعی اشتہارات سے پاک اسلامی پلیٹ فارم ہے۔ اس صدقہ جاریہ کو مزید بہتر بنانے اور پھیلانے میں ہمارے ساتھ تعاون فرمائیں۔",
+      theme: "emerald",
+      actionText: "📩 Contact: contactqaaftube@gmail.com",
+      actionUrl: "mailto:contactqaaftube@gmail.com"
+    },
+    update: {
+      badge: "✨ نیا فیچر • New QAAF Update",
+      title: "الحمد للہ! نئے قرآنی گیمز اور پلے لسٹس شامل کر دی گئیں",
+      message: "اب آپ قاف ٹیوب پر حرمین شریفین کے قاریوں کی مکمل ۱۱۴ سورتوں کی پلے لسٹس سن سکتے ہیں اور بچوں کے موڈ میں نئے قرآنی آیات والے گیمز کھیل سکتے ہیں!",
+      theme: "blue",
+      actionText: "",
+      actionUrl: ""
+    }
+  };
+
+  window.applyAdminAnnouncementTemplate = function(tplKey) {
+    var tpl = QUICK_TEMPLATES[tplKey];
+    if (!tpl) return;
+    var bEl = document.getElementById("admAnnounceBadge");
+    var tEl = document.getElementById("admAnnounceTitle");
+    var mEl = document.getElementById("admAnnounceMessage");
+    var thEl = document.getElementById("admAnnounceTheme");
+    var atEl = document.getElementById("admAnnounceActionText");
+    var auEl = document.getElementById("admAnnounceActionUrl");
+
+    if (bEl) bEl.value = tpl.badge;
+    if (tEl) tEl.value = tpl.title;
+    if (mEl) mEl.value = tpl.message;
+    if (thEl) thEl.value = tpl.theme;
+    if (atEl) atEl.value = tpl.actionText || "";
+    if (auEl) auEl.value = tpl.actionUrl || "";
+  };
+
+  function populateAdminAnnouncementInputs() {
+    var cfg = window.qaafSpecialAnnouncement || DEFAULT_ANNOUNCEMENT;
+    var enEl = document.getElementById("admAnnounceEnabled");
+    var bEl = document.getElementById("admAnnounceBadge");
+    var tEl = document.getElementById("admAnnounceTitle");
+    var mEl = document.getElementById("admAnnounceMessage");
+    var thEl = document.getElementById("admAnnounceTheme");
+    var frEl = document.getElementById("admAnnounceFreq");
+    var imgEl = document.getElementById("admAnnounceImage");
+    var atEl = document.getElementById("admAnnounceActionText");
+    var auEl = document.getElementById("admAnnounceActionUrl");
+    var stBadge = document.getElementById("admAnnounceStatusBadge");
+
+    if (enEl) enEl.checked = !!cfg.enabled;
+    if (bEl) bEl.value = cfg.badge || "";
+    if (tEl) tEl.value = cfg.title || "";
+    if (mEl) mEl.value = cfg.message || "";
+    if (thEl) thEl.value = cfg.theme || "emerald";
+    if (frEl) frEl.value = cfg.frequency || "once_per_session";
+    if (imgEl) imgEl.value = cfg.imageUrl || "";
+    if (atEl) atEl.value = cfg.actionText || "";
+    if (auEl) auEl.value = cfg.actionUrl || "";
+    if (stBadge) {
+      stBadge.className = cfg.enabled
+        ? "px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-500 text-black shadow"
+        : "px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-slate-800 text-slate-400 border border-slate-700";
+      stBadge.innerText = cfg.enabled ? "🟢 LIVE ON WEBSITE" : "⚪ CURRENTLY OFF";
+    }
+  }
+
+  function injectAdminAnnouncementControlBox() {
+    var sponsorPane = document.getElementById("admPane_sponsor");
+    if (!sponsorPane || document.getElementById("admSpecialAnnouncementBox")) return;
+
+    var box = document.createElement("div");
+    box.id = "admSpecialAnnouncementBox";
+    box.className = "bg-gradient-to-br from-[#0f1722] via-[#111927] to-[#0d131d] border-2 border-emerald-500/40 rounded-2xl p-4 space-y-3.5 text-xs mb-4 shadow-xl";
+    box.innerHTML =
+      '<div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">' +
+        '<div>' +
+          '<h4 class="text-sm font-extrabold text-emerald-300 flex items-center gap-2">' +
+            '<span>📢</span> <span>Special Popup Announcement &amp; Greeting Card (جمعہ / عید / تعاون کا پیغام)</span>' +
+          '</h4>' +
+          '<p class="text-[11px] text-slate-400 mt-0.5">Show a beautiful Islamic popup message for Eid, Jummah, Ramadan, or Support when users open QAAF Tube.</p>' +
+        '</div>' +
+        '<div class="flex items-center gap-2.5">' +
+          '<span id="admAnnounceStatusBadge" class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-slate-800 text-slate-400">⚪ CURRENTLY OFF</span>' +
+          '<label class="flex items-center gap-2 bg-black/60 border border-emerald-500/40 px-3 py-1.5 rounded-xl cursor-pointer font-extrabold text-white">' +
+            '<input id="admAnnounceEnabled" type="checkbox" class="accent-emerald-500 w-4 h-4 rounded cursor-pointer" onchange="window.saveAdminSpecialAnnouncement(false)" />' +
+            '<span>Enable Popup</span>' +
+          '</label>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="space-y-1.5">' +
+        '<div class="text-[11px] font-extrabold text-amber-300">⚡ 1-Click Ready Templates (تیار شدہ پیغامات):</div>' +
+        '<div class="flex flex-wrap items-center gap-1.5">' +
+          '<button type="button" onclick="window.applyAdminAnnouncementTemplate(\'jummah\')" class="bg-emerald-950/80 hover:bg-emerald-800 text-emerald-200 border border-emerald-500/40 px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition">🕌 جمعہ مبارک</button>' +
+          '<button type="button" onclick="window.applyAdminAnnouncementTemplate(\'eid\')" class="bg-amber-950/80 hover:bg-amber-800 text-amber-200 border border-amber-500/40 px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition">🎉 عید مبارک</button>' +
+          '<button type="button" onclick="window.applyAdminAnnouncementTemplate(\'ramadan\')" class="bg-teal-950/80 hover:bg-teal-800 text-teal-200 border border-teal-500/40 px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition">🌙 رمضان مبارک</button>' +
+          '<button type="button" onclick="window.applyAdminAnnouncementTemplate(\'support\')" class="bg-blue-950/80 hover:bg-blue-800 text-blue-200 border border-blue-500/40 px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition">🤝 تعاون / صدقہ جاریہ</button>' +
+          '<button type="button" onclick="window.applyAdminAnnouncementTemplate(\'update\')" class="bg-purple-950/80 hover:bg-purple-800 text-purple-200 border border-purple-500/40 px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition">✨ نیا اعلان</button>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">' +
+        '<div>' +
+          '<label class="block text-[10px] font-bold text-slate-400 mb-1">Top Badge Text</label>' +
+          '<input id="admAnnounceBadge" type="text" placeholder="🌙 QAAF Tube Special Message" class="w-full bg-black/70 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold" />' +
+        '</div>' +
+        '<div>' +
+          '<label class="block text-[10px] font-bold text-slate-400 mb-1">Color Theme</label>' +
+          '<select id="admAnnounceTheme" class="w-full bg-black/70 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold">' +
+            '<option value="emerald">🟢 Islamic Emerald Green</option>' +
+            '<option value="amber">🟡 Festive Golden / Eid</option>' +
+            '<option value="teal">🩵 Royal Teal / Ramadan</option>' +
+            '<option value="blue">🔵 Night Sapphire Blue</option>' +
+          '</select>' +
+        '</div>' +
+        '<div>' +
+          '<label class="block text-[10px] font-bold text-slate-400 mb-1">When to Show</label>' +
+          '<select id="admAnnounceFreq" class="w-full bg-black/70 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold">' +
+            '<option value="once_per_session">Once Per Visit (Recommended)</option>' +
+            '<option value="once_per_day">Once Per Day</option>' +
+            '<option value="always_on_load">Every Page Refresh</option>' +
+          '</select>' +
+        '</div>' +
+      '</div>' +
+
+      '<div>' +
+        '<label class="block text-[10px] font-bold text-slate-400 mb-1">Main Heading / Title (اردو / عربی / English)</label>' +
+        '<input id="admAnnounceTitle" type="text" dir="auto" placeholder="جمعہ مبارک — Jummah Mubarak!" class="w-full bg-black/70 border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white font-extrabold" />' +
+      '</div>' +
+
+      '<div>' +
+        '<label class="block text-[10px] font-bold text-slate-400 mb-1">Announcement Message Body (تفصیلی پیغام)</label>' +
+        '<textarea id="admAnnounceMessage" rows="3" dir="auto" placeholder="اپنا پیغام یہاں لکھیں..." class="w-full bg-black/70 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 leading-relaxed"></textarea>' +
+      '</div>' +
+
+      '<div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">' +
+        '<div>' +
+          '<label class="block text-[10px] font-bold text-slate-400 mb-1">Optional Banner Image URL</label>' +
+          '<input id="admAnnounceImage" type="text" placeholder="https://... (optional)" class="w-full bg-black/70 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white" />' +
+        '</div>' +
+        '<div>' +
+          '<label class="block text-[10px] font-bold text-slate-400 mb-1">Optional Action Button Label</label>' +
+          '<input id="admAnnounceActionText" type="text" placeholder="e.g. 📩 Contact Us (optional)" class="w-full bg-black/70 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white" />' +
+        '</div>' +
+        '<div>' +
+          '<label class="block text-[10px] font-bold text-slate-400 mb-1">Optional Action Button Link</label>' +
+          '<input id="admAnnounceActionUrl" type="text" placeholder="mailto:contactqaaftube@gmail.com" class="w-full bg-black/70 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white" />' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="pt-2 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2">' +
+        '<button type="button" onclick="window.showQaafSpecialAnnouncementModal(true)" class="bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 px-3.5 py-2 rounded-xl text-xs font-extrabold cursor-pointer transition">' +
+          '👁️ Preview Popup Now' +
+        '</button>' +
+        '<button type="button" onclick="window.saveAdminSpecialAnnouncement(true)" class="bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white px-5 py-2 rounded-xl text-xs font-extrabold shadow-lg cursor-pointer transition">' +
+          '💾 Save &amp; Publish Announcement Live' +
+        '</button>' +
+      '</div>';
+
+    sponsorPane.insertBefore(box, sponsorPane.firstChild);
+    populateAdminAnnouncementInputs();
+  }
+
+  window.saveAdminSpecialAnnouncement = function(showPreviewToast) {
+    var enEl = document.getElementById("admAnnounceEnabled");
+    var bEl = document.getElementById("admAnnounceBadge");
+    var tEl = document.getElementById("admAnnounceTitle");
+    var mEl = document.getElementById("admAnnounceMessage");
+    var thEl = document.getElementById("admAnnounceTheme");
+    var frEl = document.getElementById("admAnnounceFreq");
+    var imgEl = document.getElementById("admAnnounceImage");
+    var atEl = document.getElementById("admAnnounceActionText");
+    var auEl = document.getElementById("admAnnounceActionUrl");
+
+    var updated = {
+      enabled: enEl ? !!enEl.checked : false,
+      badge: (bEl ? bEl.value : "").trim() || "🌙 QAAF Tube Special Message",
+      title: (tEl ? tEl.value : "").trim() || "جمعہ مبارک — Jummah Mubarak!",
+      message: (mEl ? mEl.value : "").trim(),
+      theme: (thEl ? thEl.value : "emerald"),
+      frequency: (frEl ? frEl.value : "once_per_session"),
+      imageUrl: (imgEl ? imgEl.value : "").trim(),
+      actionText: (atEl ? atEl.value : "").trim(),
+      actionUrl: (auEl ? auEl.value : "").trim(),
+      updatedAt: Date.now()
+    };
+
+    window.qaafSpecialAnnouncement = updated;
+    try {
+      localStorage.setItem("qaaf_special_announcement_v1", JSON.stringify(updated));
+      sessionStorage.removeItem("qaaf_announce_seen_session");
+    } catch (e) {}
+
+    populateAdminAnnouncementInputs();
+
+    var base = getFbBase();
+    fetch(base + "/qaaf_special_announcement.json", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updated)
+    }).catch(function() {});
+
+    fetch(base + "/qaaf_global_state/specialAnnouncementJson.json", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(JSON.stringify(updated))
+    }).catch(function() {});
+
+    if (showPreviewToast && typeof showSyncToast === "function") {
+      showSyncToast(updated.enabled ? "✅ Special Announcement Published Live!" : "⚪ Special Announcement Turned Off.");
+    }
+  };
+
+  window.closeQaafSpecialAnnouncementModal = function() {
+    var modal = document.getElementById("qaafSpecialAnnouncementPopupModal");
+    if (modal) modal.classList.add("hidden");
+    try {
+      var cfg = window.qaafSpecialAnnouncement || DEFAULT_ANNOUNCEMENT;
+      sessionStorage.setItem("qaaf_announce_seen_session", String(cfg.updatedAt || 1));
+      localStorage.setItem("qaaf_announce_seen_day", new Date().toDateString() + "_" + String(cfg.updatedAt || 1));
+    } catch (e) {}
+  };
+
+  window.showQaafSpecialAnnouncementModal = function(isAdminPreview) {
+    var cfg = window.qaafSpecialAnnouncement || DEFAULT_ANNOUNCEMENT;
+    if (isAdminPreview && document.getElementById("admAnnounceTitle")) {
+      cfg = {
+        enabled: true,
+        badge: (document.getElementById("admAnnounceBadge").value || "").trim() || "🌙 QAAF Tube Special Message",
+        title: (document.getElementById("admAnnounceTitle").value || "").trim() || "جمعہ مبارک!",
+        message: (document.getElementById("admAnnounceMessage").value || "").trim(),
+        theme: document.getElementById("admAnnounceTheme").value || "emerald",
+        imageUrl: (document.getElementById("admAnnounceImage").value || "").trim(),
+        actionText: (document.getElementById("admAnnounceActionText").value || "").trim(),
+        actionUrl: (document.getElementById("admAnnounceActionUrl").value || "").trim()
+      };
+    }
+
+    if (!isAdminPreview && !cfg.enabled) return;
+
+    var themeStyles = {
+      emerald: {
+        border: "border-emerald-500/60",
+        bg: "from-[#0b1f1a] via-[#0e1722] to-[#091318]",
+        badgeBg: "bg-emerald-500/20 text-emerald-300 border-emerald-400/40",
+        btnBg: "from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white"
+      },
+      amber: {
+        border: "border-amber-500/60",
+        bg: "from-[#221a0b] via-[#171620] to-[#121018]",
+        badgeBg: "bg-amber-500/20 text-amber-300 border-amber-400/40",
+        btnBg: "from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black"
+      },
+      teal: {
+        border: "border-teal-500/60",
+        bg: "from-[#0a2024] via-[#0f1824] to-[#09121a]",
+        badgeBg: "bg-teal-500/20 text-teal-300 border-teal-400/40",
+        btnBg: "from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-black"
+      },
+      blue: {
+        border: "border-blue-500/60",
+        bg: "from-[#0d192b] via-[#101726] to-[#0a101d]",
+        badgeBg: "bg-blue-500/20 text-blue-300 border-blue-400/40",
+        btnBg: "from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white"
+      }
+    };
+    var ts = themeStyles[cfg.theme] || themeStyles.emerald;
+
+    var modal = document.getElementById("qaafSpecialAnnouncementPopupModal");
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.id = "qaafSpecialAnnouncementPopupModal";
+      document.body.appendChild(modal);
+    }
+
+    modal.className = "fixed inset-0 z-[320] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4";
+    modal.innerHTML =
+      '<div class="relative w-full max-w-md bg-gradient-to-br ' + ts.bg + ' border-2 ' + ts.border + ' rounded-3xl p-5 sm:p-6 shadow-2xl text-center space-y-4 animate-fadeIn">' +
+        '<button type="button" onclick="window.closeQaafSpecialAnnouncementModal()" class="absolute top-3.5 right-3.5 w-8 h-8 rounded-full bg-white/10 hover:bg-rose-600 text-slate-300 hover:text-white flex items-center justify-center text-sm font-extrabold transition cursor-pointer">✕</button>' +
+        '<div class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full border text-xs font-extrabold ' + ts.badgeBg + '">' +
+          cfg.badge +
+        '</div>' +
+        (cfg.imageUrl ? (
+          '<div class="rounded-2xl overflow-hidden border border-white/15 bg-black/40 max-h-48 flex items-center justify-center">' +
+            '<img src="' + cfg.imageUrl + '" alt="" class="w-full max-h-48 object-cover" />' +
+          '</div>'
+        ) : '') +
+        '<h3 dir="auto" class="text-lg sm:text-xl font-extrabold text-white leading-snug">' + cfg.title + '</h3>' +
+        (cfg.message ? (
+          '<p dir="auto" class="text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-line bg-black/35 border border-white/10 rounded-2xl p-3.5">' + cfg.message + '</p>'
+        ) : '') +
+        '<div class="pt-1 flex flex-wrap items-center justify-center gap-2.5">' +
+          (cfg.actionText && cfg.actionUrl ? (
+            '<a href="' + cfg.actionUrl + '" target="_blank" rel="noopener" class="bg-white/15 hover:bg-white/25 text-white border border-white/20 px-4 py-2.5 rounded-xl text-xs font-extrabold transition">' +
+              cfg.actionText +
+            '</a>'
+          ) : '') +
+          '<button type="button" onclick="window.closeQaafSpecialAnnouncementModal()" class="bg-gradient-to-r ' + ts.btnBg + ' px-6 py-2.5 rounded-xl text-xs font-extrabold shadow-lg cursor-pointer transition">' +
+            'جزاک اللہ خیراً • بند کریں' +
+          '</button>' +
+        '</div>' +
+      '</div>';
+
+    modal.classList.remove("hidden");
+  };
+
+  function checkAndAutoShowAnnouncement() {
+    var cfg = window.qaafSpecialAnnouncement;
+    if (!cfg || !cfg.enabled) return;
+    var stamp = String(cfg.updatedAt || 1);
+    if (cfg.frequency === "once_per_session") {
+      if (sessionStorage.getItem("qaaf_announce_seen_session") === stamp) return;
+    } else if (cfg.frequency === "once_per_day") {
+      if (localStorage.getItem("qaaf_announce_seen_day") === (new Date().toDateString() + "_" + stamp)) return;
+    }
+    window.showQaafSpecialAnnouncementModal(false);
+  }
+
+  function pullSpecialAnnouncementFromCloud() {
+    var base = getFbBase();
+    fetch(base + "/qaaf_special_announcement.json?t=" + Date.now())
+      .then(function(r) { return r.ok ? r.json() : null; })
+      .then(function(data) {
+        if (data && typeof data === "object" && typeof data.enabled === "boolean") {
+          window.qaafSpecialAnnouncement = Object.assign({}, DEFAULT_ANNOUNCEMENT, data);
+          try { localStorage.setItem("qaaf_special_announcement_v1", JSON.stringify(window.qaafSpecialAnnouncement)); } catch (e) {}
+          populateAdminAnnouncementInputs();
+          setTimeout(checkAndAutoShowAnnouncement, 600);
+        } else {
+          setTimeout(checkAndAutoShowAnnouncement, 600);
+        }
+      })
+      .catch(function() {
+        setTimeout(checkAndAutoShowAnnouncement, 600);
+      });
+  }
+
+  var prevAdmOpen = window.openAdminModal;
+  window.openAdminModal = function() {
+    if (prevAdmOpen) prevAdmOpen();
+    injectAdminAnnouncementControlBox();
+    populateAdminAnnouncementInputs();
+  };
+
+  // Also fix duplicate "Most Recent Most Recent" & "Most Viewed Most Viewed" button labels
+  function cleanDuplicateSortLabels() {
+    document.querySelectorAll("button").forEach(function(btn) {
+      var txt = (btn.innerText || "").trim();
+      if (txt === "Most Recent Most Recent") {
+        btn.innerHTML = '<span>🕒</span> <span>Most Recent</span>';
+      } else if (txt === "Most Viewed Most Viewed") {
+        btn.innerHTML = '<span>🔥</span> <span>Most Viewed</span>';
+      }
+    });
+  }
+
+  setInterval(cleanDuplicateSortLabels, 1000);
+  setTimeout(injectAdminAnnouncementControlBox, 1200);
+  pullSpecialAnnouncementFromCloud();
+})();
+
