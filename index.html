@@ -13,9 +13,9 @@
   <link rel="canonical" href="https://qaaftube.com/" />
 
   <!-- OFFICIAL QAAF TUBE LOGO FAVICON (TAB ICON, GOOGLE SEARCH ICON & APPLE TOUCH ICON) -->
-  <link rel="icon" type="image/svg+xml" href="./favicon.svg?v=34.0" />
-  <link rel="shortcut icon" type="image/svg+xml" href="./favicon.svg?v=34.0" />
-  <link rel="apple-touch-icon" href="./favicon.svg?v=34.0" />
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg?v=35.0" />
+  <link rel="shortcut icon" type="image/svg+xml" href="./favicon.svg?v=35.0" />
+  <link rel="apple-touch-icon" href="./favicon.svg?v=35.0" />
 
   <!-- OPEN GRAPH & SOCIAL / WHATSAPP / GOOGLE PREVIEW TAGS -->
   <meta property="og:type" content="website" />
@@ -72,7 +72,7 @@
 
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./qaaf-styles.css?v=34.0" />
+    <link rel="stylesheet" href="./qaaf-styles.css?v=35.0" />
 </head>
 <body id="appBody" class="bg-islamic-family min-h-screen flex flex-col justify-between pb-28 transition-colors duration-500">
 
@@ -523,14 +523,14 @@
       </div>
 
       <!-- 1. Add Global Channel / Video (One-Click Auto-Fetch) -->
-                <!-- Special Popup Announcement & Greeting Card (Eid / Jummah / Ramadan / Support) -->
+                          <!-- Special Popup Announcement & Greeting Card (Eid / Jummah / Ramadan / Support) -->
           <div id="admSpecialAnnouncementBox" class="bg-gradient-to-br from-[#0f1722] via-[#111927] to-[#0d131d] border-2 border-emerald-500/40 rounded-2xl p-4 space-y-3.5 text-xs mb-4 shadow-xl">
             <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
               <div>
                 <h4 class="text-sm font-extrabold text-emerald-300 flex items-center gap-2">
-                  <span>📢</span> <span>Special Popup Announcement &amp; Greeting Card (جمعہ / عید / تعاون کا پیغام)</span>
+                  <span>📢</span> <span>Special Popup Announcement &amp; Greeting Card</span>
                 </h4>
-                <p class="text-[11px] text-slate-400 mt-0.5">Show a beautiful Islamic popup message for Eid, Jummah, Ramadan, or Support when users open QAAF Tube.</p>
+                <p class="text-[11px] text-slate-400 mt-0.5">Show a customizable popup card for Jummah, Eid, Ramadan, Updates, or Support.</p>
               </div>
               <div class="flex items-center gap-2.5">
                 <span id="admAnnounceStatusBadge" class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-slate-800 text-slate-400">⚪ CURRENTLY OFF</span>
@@ -542,24 +542,40 @@
             </div>
 
             <div class="space-y-1.5">
-              <div class="text-[11px] font-extrabold text-amber-300">⚡ 1-Click Ready Templates (تیار شدہ پیغامات):</div>
+              <div class="text-[11px] font-extrabold text-amber-300">⚡ 1-Click Ready Presets (English Default — Editable in Any Language):</div>
               <div class="flex flex-wrap items-center gap-1.5">
-                <button type="button" onclick="window.applyAdminAnnouncementTemplate('jummah')" class="bg-emerald-950/80 hover:bg-emerald-800 text-emerald-200 border border-emerald-500/40 px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition">🕌 جمعہ مبارک</button>
-                <button type="button" onclick="window.applyAdminAnnouncementTemplate('eid')" class="bg-amber-950/80 hover:bg-amber-800 text-amber-200 border border-amber-500/40 px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition">🎉 عید مبارک</button>
-                <button type="button" onclick="window.applyAdminAnnouncementTemplate('ramadan')" class="bg-teal-950/80 hover:bg-teal-800 text-teal-200 border border-teal-500/40 px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition">🌙 رمضان مبارک</button>
-                <button type="button" onclick="window.applyAdminAnnouncementTemplate('support')" class="bg-blue-950/80 hover:bg-blue-800 text-blue-200 border border-blue-500/40 px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition">🤝 تعاون / صدقہ جاریہ</button>
-                <button type="button" onclick="window.applyAdminAnnouncementTemplate('update')" class="bg-purple-950/80 hover:bg-purple-800 text-purple-200 border border-purple-500/40 px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition">✨ نیا اعلان</button>
+                <button type="button" onclick="window.applyAdminAnnouncementTemplate('jummah')" class="bg-emerald-950/80 hover:bg-emerald-800 text-emerald-200 border border-emerald-500/40 px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition">🕌 Jummah Mubarak</button>
+                <button type="button" onclick="window.applyAdminAnnouncementTemplate('eid')" class="bg-amber-950/80 hover:bg-amber-800 text-amber-200 border border-amber-500/40 px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition">🎉 Eid Mubarak</button>
+                <button type="button" onclick="window.applyAdminAnnouncementTemplate('ramadan')" class="bg-teal-950/80 hover:bg-teal-800 text-teal-200 border border-teal-500/40 px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition">🌙 Ramadan Mubarak</button>
+                <button type="button" onclick="window.applyAdminAnnouncementTemplate('support')" class="bg-blue-950/80 hover:bg-blue-800 text-blue-200 border border-blue-500/40 px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition">🤝 Support QAAF Tube</button>
+                <button type="button" onclick="window.applyAdminAnnouncementTemplate('update')" class="bg-purple-950/80 hover:bg-purple-800 text-purple-200 border border-purple-500/40 px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition">✨ New Update</button>
               </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
+              <div>
+                <label class="block text-[10px] font-bold text-slate-400 mb-1">Target Region</label>
+                <select id="admAnnounceRegion" class="w-full bg-black/70 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-bold">
+                  <option value="GLOBAL">🌍 Global (All Regions)</option>
+                  <option value="PK">🇵🇰 Pakistan (Urdu / EN)</option>
+                  <option value="IN">🇮🇳 India (English / HI / UR)</option>
+                  <option value="SA">🇸🇦 Arab World (Arabic)</option>
+                  <option value="US">🇬🇧🇺🇸 US / UK / West (English)</option>
+                  <option value="BD">🇧🇩 Bangladesh (Bengali)</option>
+                  <option value="TR">🇹🇷 Turkey (Turkish)</option>
+                  <option value="MY">🇲🇾 Malaysia (Malay)</option>
+                  <option value="ID">🇮🇩 Indonesia (Indonesian)</option>
+                  <option value="FR">🇫🇷 France / Europe (French)</option>
+                  <option value="RU">🇷🇺 Russia / CIS (Russian)</option>
+                </select>
+              </div>
               <div>
                 <label class="block text-[10px] font-bold text-slate-400 mb-1">Top Badge Text</label>
                 <input id="admAnnounceBadge" type="text" placeholder="🌙 QAAF Tube Special Message" class="w-full bg-black/70 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold" />
               </div>
               <div>
                 <label class="block text-[10px] font-bold text-slate-400 mb-1">Color Theme</label>
-                <select id="admAnnounceTheme" class="w-full bg-black/70 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold">
+                <select id="admAnnounceTheme" class="w-full bg-black/70 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-bold">
                   <option value="emerald">🟢 Islamic Emerald Green</option>
                   <option value="amber">🟡 Festive Golden / Eid</option>
                   <option value="teal">🩵 Royal Teal / Ramadan</option>
@@ -568,7 +584,7 @@
               </div>
               <div>
                 <label class="block text-[10px] font-bold text-slate-400 mb-1">When to Show</label>
-                <select id="admAnnounceFreq" class="w-full bg-black/70 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold">
+                <select id="admAnnounceFreq" class="w-full bg-black/70 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-bold">
                   <option value="once_per_session">Once Per Visit (Recommended)</option>
                   <option value="once_per_day">Once Per Day</option>
                   <option value="always_on_load">Every Page Refresh</option>
@@ -577,19 +593,26 @@
             </div>
 
             <div>
-              <label class="block text-[10px] font-bold text-slate-400 mb-1">Main Heading / Title (اردو / عربی / English)</label>
-              <input id="admAnnounceTitle" type="text" dir="auto" placeholder="جمعہ مبارک — Jummah Mubarak!" class="w-full bg-black/70 border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white font-extrabold" />
+              <label class="block text-[10px] font-bold text-slate-400 mb-1">Main Heading / Title (English / اردو / عربي)</label>
+              <input id="admAnnounceTitle" type="text" dir="auto" placeholder="Jummah Mubarak from QAAF Tube!" class="w-full bg-black/70 border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white font-extrabold qaaf-announce-auto-font" />
             </div>
 
             <div>
-              <label class="block text-[10px] font-bold text-slate-400 mb-1">Announcement Message Body (تفصیلی پیغام)</label>
-              <textarea id="admAnnounceMessage" rows="3" dir="auto" placeholder="اپنا پیغام یہاں لکھیں..." class="w-full bg-black/70 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 leading-relaxed"></textarea>
+              <label class="block text-[10px] font-bold text-slate-400 mb-1">Announcement Message Body</label>
+              <textarea id="admAnnounceMessage" rows="3" dir="auto" placeholder="Write your announcement message here..." class="w-full bg-black/70 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 qaaf-announce-auto-font"></textarea>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">Optional Banner Image URL</label>
-                <input id="admAnnounceImage" type="text" placeholder="https://... (optional)" class="w-full bg-black/70 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white" />
+                <label class="block text-[10px] font-bold text-slate-400 mb-1">Banner Image (Upload from Phone/PC or URL)</label>
+                <div class="flex items-center gap-1.5">
+                  <label class="bg-emerald-700 hover:bg-emerald-600 text-white px-2.5 py-1.5 rounded-xl text-[11px] font-extrabold cursor-pointer shrink-0 shadow flex items-center gap-1">
+                    <span>📤 Upload</span>
+                    <input type="file" accept="image/*" onchange="window.handleAdminAnnouncementImageUpload(event)" class="hidden" />
+                  </label>
+                  <input id="admAnnounceImage" type="text" placeholder="Or paste URL..." class="w-full bg-black/70 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white min-w-0" />
+                  <button type="button" onclick="window.clearAdminAnnouncementImage()" class="bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white px-2 py-1.5 rounded-xl text-[11px] font-bold shrink-0 cursor-pointer" title="Remove Image">✕</button>
+                </div>
               </div>
               <div>
                 <label class="block text-[10px] font-bold text-slate-400 mb-1">Optional Action Button Label</label>
@@ -610,118 +633,6 @@
               </button>
             </div>
           </div>
-
-<div class="bg-slate-900/90 p-3.5 rounded-xl border border-slate-800 space-y-2.5">
-        <div class="flex items-center justify-between">
-          <h4 class="text-xs font-extrabold text-emerald-400">🌍 1. Push New Channel / Video to All Users</h4>
-          <span class="text-[10px] text-slate-400 font-medium">YouTube URL / ID Auto-Fetch</span>
-        </div>
-
-        <!-- YouTube URL or ID Auto-Fetch Row -->
-        <div class="flex items-center gap-2">
-          <input id="adminYtUrlInput" type="text" placeholder="YouTube Video URL or 11-char ID (e.g. youtu.be/...)" oninput="handleAdminYtInput(this.value)" class="flex-1 bg-black border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:border-emerald-500 outline-none" />
-          <button type="button" onclick="adminAutoFetchYouTubeInfo()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow shrink-0 flex items-center gap-1 transition">
-            <span>✨</span> <span>Auto-Fetch</span>
-          </button>
-        </div>
-
-        <!-- Live Thumbnail Preview Box -->
-        <div id="adminYtPreviewContainer" class="hidden bg-black/70 border border-slate-800 rounded-xl p-2.5 flex items-center gap-3">
-          <img id="adminYtPreviewImg" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E" alt="Thumbnail preview" class="w-24 h-14 object-cover rounded-lg border border-white/10 shrink-0" onerror="this.src=''" />
-          <div class="min-w-0 flex-1 text-xs">
-            <p id="adminYtPreviewTitle" class="text-white font-bold truncate">Title preview</p>
-            <p id="adminYtPreviewChannel" class="text-slate-400 text-[11px] truncate">Channel preview</p>
-            <p class="text-emerald-400 text-[10px] font-semibold mt-0.5">✓ Video detected & ready to push</p>
-          </div>
-        </div>
-
-        <!-- Video Title & Channel Name Inputs -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-          <input id="adminVideoTitle" type="text" placeholder="Video or Series Title..." class="bg-black border border-slate-700 rounded-lg px-3 py-1.5 text-white" />
-          <input id="adminChannelName" type="text" placeholder="Channel Name" class="bg-black border border-slate-700 rounded-lg px-3 py-1.5 text-white" />
-        </div>
-
-        <!-- Mobile-friendly 1-col on mobile, 3-col on sm screens -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-          <select id="adminVideoLang" class="bg-black border border-slate-700 rounded-lg px-2.5 py-1.5 text-white">
-            <option value="global">🌍 Global (All Languages)</option>
-            <option value="en">🇬🇧 English</option>
-            <option value="ar">🇸🇦 Arabic (العربية)</option>
-            <option value="ur">🇵🇰 Urdu (اردو)</option>
-            <option value="hi">🇮🇳 Hindi (हिन्दी)</option>
-            <option value="bn">🇧🇩 Bengali (বাংলা)</option>
-            <option value="tr">🇹🇷 Turkish (Türkçe)</option>
-            <option value="ms">🇲🇾 Malay (Melayu)</option>
-            <option value="id">🇮🇩 Indonesian (Bahasa)</option>
-            <option value="fr">🇫🇷 French (Français)</option>
-            <option value="de">🇩🇪 German (Deutsch)</option>
-            <option value="it">🇮🇹 Italian (Italiano)</option>
-            <option value="es">🇪🇸 Spanish (Español)</option>
-            <option value="ru">🇷🇺 Russian (Русский)</option>
-</select>
-          <select id="adminVideoCat" class="bg-black border border-slate-700 rounded-lg px-2.5 py-1.5 text-white">
-            <option value="kids_cartoon">🌟 Kids Cartoon</option>
-            <option value="stories">📖 Prophet Stories</option>
-            <option value="quran">🕋 Quran & Tajweed</option>
-            <option value="bayan">🎙️ Adult Bayan</option>
-          </select>
-          <button onclick="adminAddGlobalVideo()" class="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-extrabold py-1.5 shadow">➕ Push Live</button>
-        </div>
-      </div>
-<!-- 1B. Parent Requested Channels & Videos Queue (Mobile & PC Review) -->
-      <div class="bg-slate-900/90 p-3.5 rounded-xl border border-blue-500/40 space-y-2">
-        <div class="flex items-center justify-between">
-          <h4 class="text-xs font-extrabold text-blue-300">📥 Parent Requested Channels & Videos (Check Music & Approve)</h4>
-          <span id="adminReqCountBadge" class="bg-blue-600 text-white px-2 py-0.5 rounded-full text-[10px] font-extrabold">0</span>
-        </div>
-        <div id="adminParentRequestsList" class="space-y-2 text-xs"></div>
-      </div>
-      <!-- 2. Flagged Videos Queue -->
-      <div class="bg-slate-900/90 p-3.5 rounded-xl border border-rose-500/30 space-y-2">
-        <h4 class="text-xs font-extrabold text-rose-400">🚩 2. User Flagged Videos Queue (Block Video Only vs Ban Channel)</h4>
-        <div id="adminFlaggedList" class="space-y-2 text-xs"></div>
-      </div>
-
-      <!-- 3. Regional Bottom Sponsor Bar Control (Moving Ticker + Image/GIF Banner + Target URL) -->
-      <div class="bg-slate-900/90 p-3.5 rounded-xl border border-amber-500/30 space-y-2.5">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <h4 class="text-xs font-extrabold text-amber-300">📢 3. Regional Sponsor Bar (Moving Ticker OR Image/GIF Button)</h4>
-          <div class="flex items-center gap-3 text-xs">
-            <label class="flex items-center gap-1 text-slate-300 cursor-pointer">
-              <input type="checkbox" id="adminPromoVisibleToggle" checked onchange="adminTogglePromoBar()" class="accent-emerald-500" />
-              <span>Show Bar</span>
-            </label>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-          <select id="adminPromoRegionSelect" onchange="adminLoadRegionPromo(this.value)" class="bg-black border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-bold">
-            <option value="GLOBAL">🌍 Global (All Regions)</option>
-            <option value="PK">🇵🇰 Pakistan (Urdu)</option>
-            <option value="US_UK">🇬🇧🇺🇸 US / UK (English)</option>
-            <option value="BD">🇧🇩 Bangladesh (Bengali)</option>
-            <option value="AR">🇸🇦 Arab World (Arabic)</option>
-          </select>
-          <select id="adminTickerDirSelect" class="bg-black border border-slate-700 rounded-lg px-2.5 py-1.5 text-white">
-            <option value="rtl">⬅️ Scroll Direction: Right-to-Left</option>
-            <option value="ltr">➡️ Scroll Direction: Left-to-Right</option>
-          </select>
-        </div>
-
-        <div class="space-y-2 text-xs">
-          <input id="adminPromoTextInput" type="text" placeholder="Moving Ticker Text (e.g. For Promotion Contact Us: contactqaaftube@gmail.com)..." class="w-full bg-black border border-slate-700 rounded-lg px-3 py-1.5 text-white" />
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <input id="adminPromoImgInput" type="text" placeholder="Optional Image / GIF URL (Size: 320x36 or 468x36 px)" class="bg-black border border-slate-700 rounded-lg px-3 py-1.5 text-white" />
-            <input id="adminPromoLinkInput" type="text" placeholder="Target Click URL (e.g. https://qaaftube.com)" class="bg-black border border-slate-700 rounded-lg px-3 py-1.5 text-white" />
-          </div>
-        </div>
-
-        <button onclick="adminSaveRegionalPromo()" class="w-full bg-amber-500 hover:bg-amber-400 text-black py-2 rounded-lg text-xs font-extrabold">
-          💾 Update Regional Sponsor Ad Live
-        </button>
-      </div>
-    </div>
-  </div>
 
   <!-- ACCOUNT & SUPER ADMIN LOGIN MODAL -->
   <div id="accountModal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-sm flex items-center justify-center p-4" dir="ltr">
@@ -1173,9 +1084,9 @@
 <!-- QAAF V11.6 THREE-CATEGORY GAMES HUB (1. QAAF GAMES, 2. QAAF QURANIC GAMES, 3. QAAF 3D GAMES) -->
 
   <!-- QAAF TUBE MODULAR JS ENGINES -->
-  <script src="./qaaf-data.js?v=34.0"></script>
-  <script src="./qaaf-admin.js?v=34.0"></script>
-  <script src="./qaaf-player-ui.js?v=34.0"></script>
+  <script src="./qaaf-data.js?v=35.0"></script>
+  <script src="./qaaf-admin.js?v=35.0"></script>
+  <script src="./qaaf-player-ui.js?v=35.0"></script>
 <!-- QAAF V12.6 NATIVE MASTER PATCH START -->
 <style>
   #ytTopControlBar, #qaafFloatingPlayerHud, #qaafHudWakeZoneTop, #qaafQuickTopRightBox {
@@ -1408,7 +1319,7 @@
 })();
 </script>
 <!-- QAAF V12.6 NATIVE MASTER PATCH END -->
-  <script src="./qaaf-users-auth.js?v=34.0"></script>
+  <script src="./qaaf-users-auth.js?v=35.0"></script>
 </body>
 
 </html>
