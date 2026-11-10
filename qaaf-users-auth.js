@@ -646,76 +646,108 @@
   window.harvestAllPlaylistVideoIdsUpTo200 = async function(listId) {
     if (!listId) return [];
     var foundVidIds = [];
+    var officialTotalCount = 0;
+
     function addId(id) {
       if (id && /^[a-zA-Z0-9_-]{11}$/.test(id) && foundVidIds.indexOf(id) === -1) {
         foundVidIds.push(id);
       }
     }
 
+    function normalizeYtRaw(txt) {
+      return String(txt || "")
+        .replace(/\\u0026/g, "&")
+        .replace(/&amp;/g, "&")
+        .replace(/\\\//g, "/");
+    }
+
     var plUrl = "https://www.youtube.com/playlist?list=" + listId;
     try {
       var r1 = await fetch("https://r.jina.ai/" + plUrl);
       if (r1.ok) {
-        var t1 = await r1.text();
-        var m1 = t1.matchAll(/(?:watch\?v=|\/shorts\/|"videoId":")([a-zA-Z0-9_-]{11})/g);
+        var t1 = normalizeYtRaw(await r1.text());
+        var cntM = t1.match(/\b(\d{2,3})\s+videos\b/i);
+        if (cntM && cntM[1]) officialTotalCount = parseInt(cntM[1], 10);
+        var m1 = t1.matchAll(/(?:watch\?v=|\/shorts\/|"videoId"\s*:\s*")([a-zA-Z0-9_-]{11})/g);
         for (var a of m1) addId(a[1]);
       }
     } catch (e) {}
 
-    if (foundVidIds.length < 5) {
+    if (foundVidIds.length < 95) {
       try {
         var r2 = await fetch("https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(plUrl + "&ucbcb=1&hl=en"));
         if (r2.ok) {
-          var t2 = await r2.text();
+          var t2 = normalizeYtRaw(await r2.text());
+          if (!officialTotalCount) {
+            var cntM2 = t2.match(/\b(\d{2,3})\s+videos\b/i);
+            if (cntM2 && cntM2[1]) officialTotalCount = parseInt(cntM2[1], 10);
+          }
           var m2 = t2.matchAll(/(?:watch\?v=|\/shorts\/|"videoId"\s*:\s*")([a-zA-Z0-9_-]{11})/g);
           for (var b of m2) addId(b[1]);
         }
       } catch (e) {}
     }
 
-    // If playlist hit YouTube's 100-video page cap (e.g. >= 95 videos), fetch the remaining videos (101..114+)
-    // using YouTube's Watch Playlist Panel at index=100, strictly matching this exact listId!
+    // If playlist hit YouTube's 100-video initial page cap (foundVidIds.length >= 95),
+    // fetch the remaining videos (101..114+) from YouTube's Watch Playlist Panel!
     if (foundVidIds.length >= 95) {
-      var pivotVidId = foundVidIds[foundVidIds.length - 1];
-      var pivotIdx = foundVidIds.length;
-      var watchContUrl = "https://www.youtube.com/watch?v=" + pivotVidId + "&list=" + listId + "&index=" + pivotIdx;
       var escListId = listId.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
 
       function extractStrictlyFromPlaylistPanel(rawWatchText) {
         if (!rawWatchText) return;
-        // 1. Markdown & HTML links that explicitly carry &list=THIS_LIST_ID
-        var rgxLink = new RegExp("watch\\?v=([a-zA-Z0-9_-]{11})(?:&|&amp;|\\\\u0026)list=" + escListId, "g");
-        var ml = rawWatchText.matchAll(rgxLink);
+        var cleanTxt = normalizeYtRaw(rawWatchText);
+
+        // 1. Any /watch?v=VID&list=THIS_LIST_ID inside ytInitialData or Markdown
+        var rgxLink = new RegExp("watch\\?v=([a-zA-Z0-9_-]{11})&list=" + escListId, "g");
+        var ml = cleanTxt.matchAll(rgxLink);
         for (var x of ml) addId(x[1]);
 
-        // 2. JSON watchEndpoint / playlistPanelVideoRenderer paired with THIS_LIST_ID
-        var rgxJson1 = new RegExp('"videoId"\\s*:\\s*"([a-zA-Z0-9_-]{11})"\\s*,\\s*"playlistId"\\s*:\\s*"' + escListId + '"', "g");
-        var mj1 = rawWatchText.matchAll(rgxJson1);
+        // 2. JSON watchEndpoint with videoId and playlistId
+        var rgxJson1 = new RegExp('"videoId"\\s*:\\s*"([a-zA-Z0-9_-]{11})"[^\\{\\}]{0,120}?"playlistId"\\s*:\\s*"' + escListId + '"', "g");
+        var mj1 = cleanTxt.matchAll(rgxJson1);
         for (var y of mj1) addId(y[1]);
 
-        var rgxJson2 = new RegExp('"playlistPanelVideoRenderer"\\s*:\\s*\\{(?:(?!playlistPanelVideoRenderer).){1,1200}?"videoId"\\s*:\\s*"([a-zA-Z0-9_-]{11})"', "g");
-        var mj2 = rawWatchText.matchAll(rgxJson2);
-        for (var z of mj2) addId(z[1]);
+        // 3. Extract playlistPanelRenderer block and grab all videoIds inside it
+        var panelIdx = cleanTxt.indexOf('"playlistPanelRenderer"');
+        if (panelIdx !== -1) {
+          var panelSlice = cleanTxt.slice(panelIdx, panelIdx + 250000);
+          var mPanel = panelSlice.matchAll(/"playlistPanelVideoRenderer"\s*:\s*\{[\s\S]{1,3500}?"videoId"\s*:\s*"([a-zA-Z0-9_-]{11})"/g);
+          for (var z of mPanel) addId(z[1]);
+        }
       }
 
-      try {
-        var rw1 = await fetch("https://r.jina.ai/" + watchContUrl);
-        if (rw1.ok) extractStrictlyFromPlaylistPanel(await rw1.text());
-      } catch (e) {}
+      var pivotIndices = [foundVidIds.length - 1, Math.min(98, foundVidIds.length - 1)];
+      for (var p = 0; p < pivotIndices.length; p++) {
+        if (foundVidIds.length >= 114) break;
+        var pIdx = pivotIndices[p];
+        var pivotVidId = foundVidIds[pIdx];
+        if (!pivotVidId) continue;
+        var watchContUrl = "https://www.youtube.com/watch?v=" + pivotVidId + "&list=" + listId + "&index=" + (pIdx + 1);
 
-      if (foundVidIds.length <= 100) {
         try {
-          var rw2 = await fetch("https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(watchContUrl + "&ucbcb=1&hl=en"));
-          if (rw2.ok) extractStrictlyFromPlaylistPanel(await rw2.text());
+          var rw1 = await fetch("https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(watchContUrl + "&ucbcb=1&hl=en"));
+          if (rw1.ok) extractStrictlyFromPlaylistPanel(await rw1.text());
         } catch (e) {}
-      }
 
-      if (foundVidIds.length <= 100) {
-        try {
-          var rw3 = await fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(watchContUrl + "&ucbcb=1&hl=en"));
-          if (rw3.ok) extractStrictlyFromPlaylistPanel(await rw3.text());
-        } catch (e) {}
+        if (foundVidIds.length < 110) {
+          try {
+            var rw2 = await fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(watchContUrl + "&ucbcb=1&hl=en"));
+            if (rw2.ok) extractStrictlyFromPlaylistPanel(await rw2.text());
+          } catch (e) {}
+        }
+
+        if (foundVidIds.length < 110) {
+          try {
+            var rw3 = await fetch("https://r.jina.ai/" + watchContUrl);
+            if (rw3.ok) extractStrictlyFromPlaylistPanel(await rw3.text());
+          } catch (e) {}
+        }
       }
+    }
+
+    if (officialTotalCount > foundVidIds.length) {
+      if (!window.qaafPlaylistOfficialCountMap) window.qaafPlaylistOfficialCountMap = {};
+      window.qaafPlaylistOfficialCountMap[listId] = officialTotalCount;
     }
 
     return foundVidIds.slice(0, 200);
@@ -958,12 +990,20 @@
       }
     });
 
+    if (!window.qaafPlaylistOfficialCountMap) {
+      window.qaafPlaylistOfficialCountMap = JSON.parse(localStorage.getItem("qaaf_pl_official_counts_v1") || "{}");
+    }
+
     var officialPlaylists = [];
     combinedPlMap.forEach(function(pl) {
       var matchedVids = getInstantMatchedVideosForPlaylist(pl.title, selCh, pl.listId);
+      if (pl.countText && parseInt(pl.countText, 10) > 101) {
+        window.qaafPlaylistOfficialCountMap[pl.listId] = parseInt(pl.countText, 10);
+      }
+      var knownTotal = window.qaafPlaylistOfficialCountMap[pl.listId] || 0;
       if (matchedVids.length > 0) {
-        pl.countText = String(matchedVids.length);
-        // Always use Surah 1 (first sorted video in the playlist) as the Playlist Card thumbnail!
+        var bestCount = Math.max(matchedVids.length, knownTotal);
+        pl.countText = String(bestCount);
         if (matchedVids[0] && matchedVids[0].ytId) {
           pl.thumb = "https://i.ytimg.com/vi/" + matchedVids[0].ytId + "/hqdefault.jpg";
         }
@@ -978,21 +1018,23 @@
       officialPlaylists = plsWithLocalVids;
     }
 
-    // Background Auto-Completer: If any imported playlist in this channel is stuck at 100 or 101 videos,
-    // automatically fetch its remaining videos (101 to 114) in the background!
+    // Background Auto-Completer: Fetch remaining Surahs (101 to 114) for any playlist that only has 100/101 local videos
     if (!window.qaafAutoCompleting114Map) window.qaafAutoCompleting114Map = {};
     officialPlaylists.forEach(function(pl) {
-      var curCnt = parseInt(pl.countText || "0", 10);
-      if ((curCnt === 100 || curCnt === 101) && !window.qaafAutoCompleting114Map[pl.listId]) {
+      var localMatched = getInstantMatchedVideosForPlaylist(pl.title, selCh, pl.listId);
+      var localCnt = localMatched.length;
+      if ((localCnt >= 95 && localCnt <= 102) && !window.qaafAutoCompleting114Map[pl.listId]) {
         window.qaafAutoCompleting114Map[pl.listId] = true;
         setTimeout(async function() {
           try {
             var fullIds = await window.harvestAllPlaylistVideoIdsUpTo200(pl.listId);
-            if (fullIds.length > curCnt) {
+            if (window.qaafPlaylistOfficialCountMap && window.qaafPlaylistOfficialCountMap[pl.listId]) {
+              localStorage.setItem("qaaf_pl_official_counts_v1", JSON.stringify(window.qaafPlaylistOfficialCountMap));
+            }
+            if (fullIds.length > localCnt) {
               var existingMap = new Map();
               (videosData || []).forEach(function(v) { if (v && v.ytId) existingMap.set(v.ytId, v); });
               var missing = fullIds.filter(function(id) { return !existingMap.has(id); });
-              var newResolved = [];
               for (var k = 0; k < missing.length; k += 15) {
                 var sl = missing.slice(k, k + 15);
                 var bRes = await Promise.all(sl.map(async function(ytId) {
@@ -1027,21 +1069,31 @@
                   if (vo && !existingMap.has(vo.ytId)) {
                     videosData.push(vo);
                     existingMap.set(vo.ytId, vo);
-                    newResolved.push(vo);
                   }
                 });
               }
-              var allPlVids = fullIds.map(function(id) { return existingMap.get(id); }).filter(Boolean);
+              var allPlVids = fullIds.map(function(id) {
+                var vObj = existingMap.get(id);
+                if (vObj) {
+                  vObj.playlistId = pl.listId;
+                  vObj.playlistName = pl.title;
+                }
+                return vObj;
+              }).filter(Boolean);
               allPlVids = sortVideosBySurahOrPlaylistOrder(allPlVids);
               window.qaafPlaylistVideosCache[pl.listId] = allPlVids;
               pl.countText = String(allPlVids.length);
+              window.qaafPlaylistOfficialCountMap[pl.listId] = allPlVids.length;
+              localStorage.setItem("qaaf_pl_official_counts_v1", JSON.stringify(window.qaafPlaylistOfficialCountMap));
               localStorage.setItem("qaaf_videos_data", JSON.stringify(videosData));
               window.savePlaylistsToLocalAndCloudDb();
               if (typeof window.renderVideosNow === "function") window.renderVideosNow();
               if (window.qaafCloudSync) window.qaafCloudSync.pushState("Completed 114 Surahs for " + pl.title);
+            } else if (window.qaafPlaylistOfficialCountMap[pl.listId] > localCnt) {
+              if (typeof window.renderVideosNow === "function") window.renderVideosNow();
             }
           } catch (e) {}
-        }, 500);
+        }, 300);
       }
     });
 
@@ -1049,53 +1101,50 @@
     var activeTab = window.qaafChannelActiveSubTab || "videos";
     var isAdminMode = (typeof isSuperAdmin === "function" && isSuperAdmin()) && !isKidsLocked;
 
-    chBanner.className = "mb-5 bg-gradient-to-r from-[#111622] via-[#151c2c] to-[#0f1722] border border-emerald-500/40 rounded-2xl p-4 shadow-xl";
+    // ULTRA-SLEEK YOUTUBE-STYLE COMPACT CHANNEL BAR (Takes minimal vertical space!)
+    chBanner.className = "mb-2.5 bg-gradient-to-r from-[#101520] via-[#131a28] to-[#0e141f] border border-emerald-500/35 rounded-xl px-2.5 py-2 shadow-md";
     chBanner.innerHTML =
-      '<div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3.5 mb-3">' +
-        '<div class="flex items-center gap-3 min-w-0">' +
-          '<div class="w-12 h-12 rounded-2xl bg-emerald-500/20 border-2 border-emerald-400/60 flex items-center justify-center text-xl font-extrabold text-emerald-300 shadow shrink-0">' +
+      '<div class="flex flex-wrap items-center justify-between gap-2">' +
+        '<div class="flex items-center gap-2 min-w-0">' +
+          '<div class="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-400/60 flex items-center justify-center text-sm font-extrabold text-emerald-300 shrink-0">' +
             selCh.charAt(0).toUpperCase() +
           '</div>' +
           '<div class="min-w-0">' +
-            '<h2 class="text-base sm:text-lg font-extrabold text-white flex items-center gap-1.5 truncate">' +
-              '<span class="truncate">' + selCh + '</span>' +
-              (isVer ? '<span class="bg-emerald-500 text-black text-[10px] px-1.5 py-0.5 rounded-full font-extrabold shrink-0">✓</span>' : '') +
-            '</h2>' +
-            '<p class="text-[11px] text-emerald-400 font-semibold">' +
-              (isVer ? ('🟢 ' + lbl.verifiedCh) : ('🟡 ' + lbl.singleVidCh)) +
-              ' • ' + chAllVids.length + ' ' + lbl.videosCount +
+            '<div class="flex items-center gap-1">' +
+              '<h2 class="text-xs sm:text-sm font-extrabold text-white truncate max-w-[160px] sm:max-w-[260px]">' + selCh + '</h2>' +
+              (isVer ? '<span class="bg-emerald-500 text-black text-[9px] px-1 py-0.2 rounded-full font-extrabold shrink-0">✓</span>' : '') +
+            '</div>' +
+            '<p class="text-[10px] text-emerald-400/90 font-semibold leading-tight">' +
+              chAllVids.length + ' ' + lbl.videosCount +
             '</p>' +
           '</div>' +
         '</div>' +
-        '<button type="button" onclick="window.exitQaafChannelView()" class="bg-slate-800 hover:bg-emerald-600 text-slate-200 hover:text-white px-3.5 py-2 rounded-xl text-xs font-extrabold border border-slate-700 transition cursor-pointer shrink-0">' +
-          lbl.backAll +
-        '</button>' +
-      '</div>' +
-      '<div class="flex items-center justify-between gap-2 flex-wrap">' +
-        '<div class="flex items-center gap-2 overflow-x-auto">' +
-          '<button type="button" onclick="window.switchQaafChannelSubTab(\'videos\')" class="px-4 py-2 rounded-xl text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer shrink-0 ' +
-            (activeTab === "videos" ? "bg-emerald-500 text-black shadow-lg" : "bg-black/60 hover:bg-slate-800 text-slate-300 border border-slate-800") + '">' +
+
+        '<div class="flex items-center gap-1.5 overflow-x-auto max-w-full">' +
+          '<button type="button" onclick="window.switchQaafChannelSubTab(\'videos\')" class="px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition flex items-center gap-1 cursor-pointer shrink-0 ' +
+            (activeTab === "videos" ? "bg-emerald-500 text-black shadow" : "bg-black/60 hover:bg-slate-800 text-slate-300 border border-slate-800") + '">' +
             '<span>' + lbl.tabVideos + '</span>' +
-            '<span class="text-[10px] px-1.5 py-0.5 rounded-full bg-black/25">' + chRegVids.length + '</span>' +
+            '<span class="text-[9px] px-1 py-0.2 rounded bg-black/25">' + chRegVids.length + '</span>' +
           '</button>' +
           (chShortVids.length > 0 ? (
-            '<button type="button" onclick="window.switchQaafChannelSubTab(\'shorts\')" class="px-4 py-2 rounded-xl text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer shrink-0 ' +
-              (activeTab === "shorts" ? "bg-emerald-500 text-black shadow-lg" : "bg-black/60 hover:bg-slate-800 text-slate-300 border border-slate-800") + '">' +
+            '<button type="button" onclick="window.switchQaafChannelSubTab(\'shorts\')" class="px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition flex items-center gap-1 cursor-pointer shrink-0 ' +
+              (activeTab === "shorts" ? "bg-emerald-500 text-black shadow" : "bg-black/60 hover:bg-slate-800 text-slate-300 border border-slate-800") + '">' +
               '<span>' + lbl.tabShorts + '</span>' +
-              '<span class="text-[10px] px-1.5 py-0.5 rounded-full bg-black/25">' + chShortVids.length + '</span>' +
+              '<span class="text-[9px] px-1 py-0.2 rounded bg-black/25">' + chShortVids.length + '</span>' +
             '</button>'
           ) : '') +
-          '<button type="button" onclick="window.switchQaafChannelSubTab(\'playlists\')" class="px-4 py-2 rounded-xl text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer shrink-0 ' +
-            (activeTab === "playlists" ? "bg-emerald-500 text-black shadow-lg" : "bg-black/60 hover:bg-slate-800 text-slate-300 border border-slate-800") + '">' +
+          '<button type="button" onclick="window.switchQaafChannelSubTab(\'playlists\')" class="px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition flex items-center gap-1 cursor-pointer shrink-0 ' +
+            (activeTab === "playlists" ? "bg-emerald-500 text-black shadow" : "bg-black/60 hover:bg-slate-800 text-slate-300 border border-slate-800") + '">' +
             '<span>' + lbl.tabPlaylists + '</span>' +
-            (officialPlaylists.length > 0 ? ('<span class="text-[10px] px-1.5 py-0.5 rounded-full bg-black/25">' + officialPlaylists.length + '</span>') : '') +
+            (officialPlaylists.length > 0 ? ('<span class="text-[9px] px-1 py-0.2 rounded bg-black/25">' + officialPlaylists.length + '</span>') : '') +
+          '</button>' +
+          ((activeTab === "playlists" && isAdminMode) ? (
+            '<button type="button" id="refreshOfficialPlsBtn" class="bg-slate-800 hover:bg-blue-600 text-slate-200 hover:text-white px-2 py-1 rounded-lg text-[10px] font-bold border border-slate-700 cursor-pointer shrink-0" title="Refresh Playlists">🔄</button>'
+          ) : '') +
+          '<button type="button" onclick="window.exitQaafChannelView()" class="bg-slate-800 hover:bg-emerald-600 text-slate-200 hover:text-white px-2.5 py-1 rounded-lg text-[10px] font-extrabold border border-slate-700 transition cursor-pointer shrink-0">' +
+            lbl.backAll +
           '</button>' +
         '</div>' +
-        ((activeTab === "playlists" && isAdminMode) ? (
-          '<button type="button" id="refreshOfficialPlsBtn" class="bg-slate-800 hover:bg-blue-600 text-slate-200 hover:text-white px-3 py-1.5 rounded-xl text-[11px] font-bold border border-slate-700 cursor-pointer shrink-0">' +
-            lbl.refreshPls +
-          '</button>'
-        ) : '') +
       '</div>';
 
     var refBtn = document.getElementById("refreshOfficialPlsBtn");
@@ -1125,13 +1174,13 @@
         });
 
         var topPlBar = document.createElement("div");
-        topPlBar.className = "col-span-full bg-[#131824] border border-emerald-500/40 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-2 mb-2";
+        topPlBar.className = "col-span-full bg-[#131824] border border-emerald-500/40 rounded-xl px-3 py-2 flex flex-wrap items-center justify-between gap-2 mb-1.5";
         topPlBar.innerHTML =
           '<div class="flex items-center gap-2 min-w-0">' +
-            '<span class="text-lg">📂</span>' +
-            '<h4 class="text-xs sm:text-sm font-extrabold text-emerald-300 truncate">' + activePl.title + (instantPlVids.length > 0 ? (' (' + instantPlVids.length + ' ' + lbl.videosCount + ')') : '') + '</h4>' +
+            '<span class="text-sm">📂</span>' +
+            '<h4 class="text-xs font-extrabold text-emerald-300 truncate">' + activePl.title + (instantPlVids.length > 0 ? (' (' + instantPlVids.length + ' ' + lbl.videosCount + ')') : '') + '</h4>' +
           '</div>' +
-          '<button type="button" onclick="window.switchQaafChannelSubTab(\'playlists\')" class="bg-slate-800 hover:bg-emerald-600 text-white px-3.5 py-1.5 rounded-lg text-xs font-extrabold shrink-0 cursor-pointer">' +
+          '<button type="button" onclick="window.switchQaafChannelSubTab(\'playlists\')" class="bg-slate-800 hover:bg-emerald-600 text-white px-2.5 py-1 rounded-lg text-[11px] font-extrabold shrink-0 cursor-pointer">' +
             lbl.backPl +
           '</button>';
         grid.appendChild(topPlBar);
@@ -1142,7 +1191,7 @@
           });
         } else if (isFetchingSinglePlVids) {
           var loadDiv = document.createElement("div");
-          loadDiv.className = "col-span-full py-12 text-center text-emerald-400 text-xs font-extrabold animate-pulse";
+          loadDiv.className = "col-span-full py-10 text-center text-emerald-400 text-xs font-extrabold animate-pulse";
           loadDiv.innerText = lbl.loadingPlVids;
           grid.appendChild(loadDiv);
         }
@@ -1154,18 +1203,18 @@
       }
 
       if (isFetchingChannelPls[selCh] && officialPlaylists.length === 0) {
-        grid.innerHTML = '<div class="col-span-full bg-[#131824] border border-slate-800 rounded-2xl py-12 px-4 text-center text-emerald-400 text-xs sm:text-sm font-extrabold animate-pulse">' + lbl.loadingPls + '</div>';
+        grid.innerHTML = '<div class="col-span-full bg-[#131824] border border-slate-800 rounded-xl py-8 px-4 text-center text-emerald-400 text-xs font-extrabold animate-pulse">' + lbl.loadingPls + '</div>';
         return;
       }
 
       if (officialPlaylists.length === 0) {
-        grid.innerHTML = '<div class="col-span-full py-10 text-center text-slate-400 text-xs font-bold">' + lbl.noPlaylists + '</div>';
+        grid.innerHTML = '<div class="col-span-full py-8 text-center text-slate-400 text-xs font-bold">' + lbl.noPlaylists + '</div>';
         return;
       }
 
       officialPlaylists.forEach(function(pl) {
         var card = document.createElement("div");
-        card.className = "bg-[#121620] hover:bg-[#19202e] border border-white/10 hover:border-emerald-500/60 rounded-2xl overflow-hidden shadow-lg transition cursor-pointer group flex flex-col justify-between relative";
+        card.className = "bg-[#121620] hover:bg-[#19202e] border border-white/10 hover:border-emerald-500/60 rounded-xl overflow-hidden shadow transition cursor-pointer group flex flex-col justify-between relative";
         card.onclick = function() {
           window.openQaafOfficialYouTubePlaylist(pl.listId, pl.title, selCh);
         };
@@ -1176,24 +1225,24 @@
         card.innerHTML =
           '<div class="relative aspect-video bg-slate-900 overflow-hidden">' +
             '<img src="' + thumbImg + '" alt="" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" loading="lazy" />' +
-            '<span class="absolute bottom-2 right-2 bg-black/90 text-white text-[11px] font-extrabold px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow border border-white/15">' +
+            '<span class="absolute bottom-1.5 right-1.5 bg-black/90 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-md flex items-center gap-1 shadow border border-white/15">' +
               '<span>☰</span> <span>' + countBadgeText + '</span>' +
             '</span>' +
           '</div>' +
-          '<div class="p-3.5 flex flex-col justify-between flex-1">' +
+          '<div class="p-2 flex flex-col justify-between flex-1">' +
             '<div>' +
-              '<h4 class="text-xs sm:text-sm font-extrabold text-white line-clamp-2 leading-snug group-hover:text-emerald-400 transition">' + pl.title + '</h4>' +
-              '<p class="text-[11px] text-slate-400 mt-1">Playlist • ' + selCh + '</p>' +
+              '<h4 class="text-[11px] sm:text-xs font-extrabold text-white line-clamp-1 leading-snug group-hover:text-emerald-400 transition">' + pl.title + '</h4>' +
+              '<p class="text-[10px] text-slate-400 mt-0.5 truncate">Playlist • ' + selCh + '</p>' +
             '</div>' +
-            '<div class="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between">' +
-              '<span class="text-[11px] font-extrabold text-emerald-400 group-hover:underline">' + lbl.openPl + ' ➔</span>' +
+            '<div class="mt-1.5 pt-1 border-t border-slate-800/80 flex items-center justify-between">' +
+              '<span class="text-[10px] font-extrabold text-emerald-400 group-hover:underline">' + lbl.openPl + ' ➔</span>' +
             '</div>' +
           '</div>';
 
         if (isAdminMode) {
           var delBtn = document.createElement("button");
           delBtn.type = "button";
-          delBtn.className = "absolute top-2 right-2 z-20 w-7 h-7 rounded-full bg-red-600/90 hover:bg-red-500 text-white flex items-center justify-center text-xs shadow border border-white/20";
+          delBtn.className = "absolute top-1.5 right-1.5 z-20 w-6 h-6 rounded-full bg-red-600/90 hover:bg-red-500 text-white flex items-center justify-center text-[10px] shadow border border-white/20";
           delBtn.title = "Admin: Remove this Playlist";
           delBtn.innerHTML = "🗑️";
           delBtn.onclick = function(e) {
@@ -1780,6 +1829,22 @@
 // =========================================================================
 (function initQaafSleekGamesZoneAndRealQuranicGames() {
   window.activeGamesSubTab = "qaaf_games";
+
+    if (!document.getElementById("qaafSmartCompactGridCss")) {
+    var cgStyle = document.createElement("style");
+    cgStyle.id = "qaafSmartCompactGridCss";
+    cgStyle.textContent = [
+      "#videoGrid { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 0.5rem !important; }",
+      "@media (min-width: 640px) { #videoGrid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 0.65rem !important; } }",
+      "@media (min-width: 900px) { #videoGrid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; gap: 0.75rem !important; } }",
+      "@media (min-width: 1200px) { #videoGrid { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; gap: 0.75rem !important; } }",
+      "#videoGrid > div .p-3 { padding: 0.45rem 0.55rem !important; }",
+      "#videoGrid > div h3, #videoGrid > div h4 { font-size: 0.74rem !important; line-height: 1.25 !important; }",
+      "#qaafTopSearchAndBellBar, #qaafCombinedSearchRequestRow { display: flex !important; flex-wrap: nowrap !important; align-items: center !important; gap: 0.4rem !important; margin-bottom: 0.45rem !important; }",
+      "#qaafTopSearchAndBellBar > div:first-child, #qaafCombinedSearchRequestRow > div:first-child { flex: 1 1 auto !important; min-width: 0 !important; }"
+    ].join("\n");
+    document.head.appendChild(cgStyle);
+  }
 
   if (!document.getElementById("qaafGamesModeStrictCss")) {
     var st = document.createElement("style");
