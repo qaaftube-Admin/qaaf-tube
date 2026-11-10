@@ -1995,7 +1995,50 @@
 (function initQaafSleekGamesZoneAndRealQuranicGames() {
   window.activeGamesSubTab = "qaaf_games"; // 'qaaf_games' | 'quranic' | '3d_games'
 
-  // Define the REAL Games Catalog (4 QAAF 2D Games + 4 REAL Quranic Games from "Qaaf quran Games" folder + Empty 3D Games)
+  // Inject strict CSS rules so whenever Games Mode is active, #categoryBar & Search Bar ALWAYS hide and #tabGamesBtn ALWAYS turns RED!
+  if (!document.getElementById("qaafGamesModeStrictCss")) {
+    var st = document.createElement("style");
+    st.id = "qaafGamesModeStrictCss";
+    st.innerHTML =
+      "body.qaaf-games-mode-active #categoryBar,
+" +
+      "body.qaaf-games-mode-active #qaafTopSearchAndBellBar,
+" +
+      "body.qaaf-games-mode-active #qaafCombinedSearchRequestRow,
+" +
+      "body.qaaf-games-mode-active #videosSection {
+" +
+      "  display: none !important;
+" +
+      "}
+" +
+      "body.qaaf-games-mode-active #tabGamesBtn {
+" +
+      "  background-color: #e11d48 !important;
+" +
+      "  background-image: none !important;
+" +
+      "  color: #ffffff !important;
+" +
+      "  box-shadow: 0 2px 10px rgba(225,29,72,0.45) !important;
+" +
+      "}
+" +
+      "body.qaaf-games-mode-active #tabVideosBtn {
+" +
+      "  background-color: transparent !important;
+" +
+      "  background-image: none !important;
+" +
+      "  color: #94a3b8 !important;
+" +
+      "  box-shadow: none !important;
+" +
+      "}
+";
+    document.head.appendChild(st);
+  }
+
   var REAL_GAMES_CATALOG = [
     // 1. QAAF Games (4 Direct Games inside qaaf-games.html)
     {
@@ -2027,7 +2070,7 @@
       launchUrl: "./qaaf-games.html?game=masjid"
     },
 
-    // 2. QAAF Quranic Games (3 Direct Ayah Games — opens directly without intermediate hub page!)
+    // 2. QAAF Quranic Games (3 Direct Ayah Games)
     {
       id: "qg_01",
       categoryGroup: "quranic",
@@ -2057,84 +2100,47 @@
   }
   window.gamesCatalog = REAL_GAMES_CATALOG;
 
-  // Ensure installedGameIds is loaded
   if (typeof installedGameIds === "undefined" || !Array.isArray(installedGameIds)) {
-    window.installedGameIds = JSON.parse(localStorage.getItem("qaaf_installed_games") || '["g1","qg_hub","qg_01","qg_02","qg_03"]');
+    window.installedGameIds = JSON.parse(localStorage.getItem("qaaf_installed_games") || '["g1","g2","g4","qg_01","qg_02","qg_03"]');
   }
 
-  // 1. FIX HEADER VIDEOS vs GAMES RED BUTTON + HIDE SEARCH & CATEGORY BAR WHEN IN GAMES
   function updateHeaderTabsAndTopBarsForMode(tab) {
-    var tV = document.getElementById("tabVideosBtn");
-    var tG = document.getElementById("tabGamesBtn");
     var vSec = document.getElementById("videosSection");
     var gSec = document.getElementById("gamesSection");
     var catBar = document.getElementById("categoryBar");
-    var catBarStickyWrap = catBar ? catBar.parentElement : null;
-    var searchBarWrap = document.getElementById("qaafTopSearchAndBellBar");
-    var searchInp = document.getElementById("qaafSearchInput");
-    var reqBellBtn = document.getElementById("qaafNotifBellBtn");
+    var catSticky = catBar ? catBar.closest("div.sticky") || catBar.parentElement : null;
 
     if (tab === "games") {
+      document.body.classList.add("qaaf-games-mode-active");
       if (vSec) vSec.classList.add("hidden");
       if (gSec) gSec.classList.remove("hidden");
-
-      // Make Games button RED and Videos button transparent
-      if (tG) {
-        tG.className = "px-2.5 sm:px-3.5 py-1 rounded-full text-xs font-extrabold text-white shadow flex items-center gap-1 transition cursor-pointer";
-        tG.style.setProperty("background", "#e11d48", "important");
-        tG.style.setProperty("color", "#ffffff", "important");
-      }
-      if (tV) {
-        tV.className = "px-2.5 sm:px-3.5 py-1 rounded-full text-xs font-extrabold text-slate-300 hover:text-white flex items-center gap-1 transition cursor-pointer";
-        tV.style.setProperty("background", "transparent", "important");
-        tV.style.setProperty("color", "#cbd5e1", "important");
-        tV.style.setProperty("box-shadow", "none", "important");
-      }
-
-      // Hide ONLY Category Bar, Search Bar & Video Request button (NEVER hide <main> or #appBody!)
-      var mainEl = document.querySelector("main");
-      if (mainEl) mainEl.classList.remove("hidden");
-      document.body.classList.remove("hidden");
-      if (catBar && catBar.closest("div.sticky")) catBar.closest("div.sticky").classList.add("hidden");
-      if (searchBarWrap) searchBarWrap.classList.add("hidden");
-      if (reqBellBtn && reqBellBtn.id === "qaafNotifBellBtn") {
-        if (reqBellBtn.parentElement && reqBellBtn.parentElement.tagName !== "MAIN" && reqBellBtn.parentElement.tagName !== "BODY" && reqBellBtn.parentElement.id !== "headerRightControls") {
-          reqBellBtn.parentElement.classList.add("hidden");
-        } else {
-          reqBellBtn.classList.add("hidden");
-        }
-      }
+      if (catSticky) catSticky.style.setProperty("display", "none", "important");
     } else {
+      document.body.classList.remove("qaaf-games-mode-active");
       if (gSec) gSec.classList.add("hidden");
       if (vSec) vSec.classList.remove("hidden");
-
-      // Make Videos button RED and Games button transparent
-      if (tV) {
-        tV.className = "px-2.5 sm:px-3.5 py-1 rounded-full text-xs font-extrabold text-white shadow flex items-center gap-1 transition cursor-pointer";
-        tV.style.setProperty("background", "#e11d48", "important");
-        tV.style.setProperty("color", "#ffffff", "important");
-      }
-      if (tG) {
-        tG.className = "px-2.5 sm:px-3.5 py-1 rounded-full text-xs font-extrabold text-slate-300 hover:text-white flex items-center gap-1 transition cursor-pointer";
-        tG.style.setProperty("background", "transparent", "important");
-        tG.style.setProperty("color", "#cbd5e1", "important");
-        tG.style.setProperty("box-shadow", "none", "important");
-      }
-
-      // Show Category Bar, Search Bar & Video Request button again in Videos mode
-      var mainEl2 = document.querySelector("main");
-      if (mainEl2) mainEl2.classList.remove("hidden");
-      document.body.classList.remove("hidden");
-      if (catBar && catBar.closest("div.sticky")) catBar.closest("div.sticky").classList.remove("hidden");
-      if (searchBarWrap) searchBarWrap.classList.remove("hidden");
-      if (reqBellBtn && reqBellBtn.id === "qaafNotifBellBtn") {
-        if (reqBellBtn.parentElement && reqBellBtn.parentElement.tagName !== "MAIN" && reqBellBtn.parentElement.tagName !== "BODY" && reqBellBtn.parentElement.id !== "headerRightControls") {
-          reqBellBtn.parentElement.classList.remove("hidden");
-        }
-        reqBellBtn.classList.remove("hidden");
-      }
+      if (catSticky) catSticky.style.removeProperty("display");
     }
   }
+
+  // Keep body class synced if anything else toggles #gamesSection
+  setInterval(function() {
+    var gSec = document.getElementById("gamesSection");
+    var isGamesOpen = gSec && !gSec.classList.contains("hidden");
+    var catBar = document.getElementById("categoryBar");
+    var catSticky = catBar ? catBar.closest("div.sticky") || catBar.parentElement : null;
+    if (isGamesOpen) {
+      if (!document.body.classList.contains("qaaf-games-mode-active")) {
+        document.body.classList.add("qaaf-games-mode-active");
+      }
+      if (catSticky) catSticky.style.setProperty("display", "none", "important");
+    } else {
+      if (document.body.classList.contains("qaaf-games-mode-active")) {
+        document.body.classList.remove("qaaf-games-mode-active");
+        if (catSticky) catSticky.style.removeProperty("display");
+      }
+    }
+  }, 250);
 
   window.switchKidsTab = function(tab) {
     currentActiveKidsTab = tab || "videos";
@@ -2162,7 +2168,11 @@
     window.renderGames();
   };
 
-  // 2. SLEEK MINIMAL 1-LINE GAMES RENDERER
+  // ULTRA-SLEEK COMPACT GAMES RENDERER:
+  // - Larger Main Headings (text-base sm:text-lg font-extrabold)
+  // - Smaller Game Row Names (text-xs sm:text-sm font-bold)
+  // - Thinner Box Heights (py-1.5 px-3)
+  // - Cohesive Teal/Emerald Theme for Quranic Games
   window.renderGames = function() {
     if (!document.getElementById("kidsTotalStarsBadge")) {
       var sb = document.createElement("span");
@@ -2176,48 +2186,68 @@
       updateHeaderTabsAndTopBarsForMode("games");
     }
 
-    // Strip any old box ("Support QAAF", "1 Stars") or duplicate fake 3-button bars inside #gamesSection
     if (gSec) {
       Array.prototype.slice.call(gSec.children).forEach(function(child) {
         if (child.id !== "gamesGrid" && child.id !== "qaafSimpleGamesHeading" && child.id !== "kidsTotalStarsBadge") {
           child.remove();
         }
       });
-      if (!document.getElementById("qaafSimpleGamesHeading")) {
-        var h2 = document.createElement("h2");
+      var h2 = document.getElementById("qaafSimpleGamesHeading");
+      if (!h2) {
+        h2 = document.createElement("h2");
         h2.id = "qaafSimpleGamesHeading";
-        h2.className = "text-base sm:text-lg font-extrabold text-white px-1 flex items-center gap-2";
-        h2.innerHTML = "<span>🎮</span> <span>QAAF Kids Islamic Games Zone</span>";
         gSec.insertBefore(h2, gSec.firstChild);
       }
+      h2.className = "text-lg sm:text-xl font-extrabold text-white px-1 pb-1 flex items-center gap-2 tracking-wide";
+      h2.innerHTML = "<span>🎮</span> <span>QAAF Kids Islamic Games Zone</span>";
     }
 
     var grid = document.getElementById("gamesGrid");
     if (!grid) return;
+    grid.className = "grid grid-cols-1 sm:grid-cols-2 gap-1.5";
 
     var curTab = window.activeGamesSubTab || "qaaf_games";
     var countQaaf = REAL_GAMES_CATALOG.filter(function(g) { return g.categoryGroup === "qaaf_games"; }).length;
     var countQuran = REAL_GAMES_CATALOG.filter(function(g) { return g.categoryGroup === "quranic"; }).length;
     var count3D = REAL_GAMES_CATALOG.filter(function(g) { return g.categoryGroup === "3d_games"; }).length;
 
+    // 3 Main Category Tabs: Larger Headings (text-base sm:text-lg), Slimmer Height (py-2 px-3), Harmonious Emerald/Teal/Cyan Colors
     var navHtml =
-      '<div class="col-span-full grid grid-cols-1 sm:grid-cols-3 gap-2 mb-1">' +
-        '<button type="button" onclick="selectGamesSubTab(\'qaaf_games\')" class="p-3 rounded-2xl border-2 text-left transition flex items-center justify-between cursor-pointer ' +
-          (curTab === "qaaf_games" ? "bg-emerald-600/25 border-emerald-400 text-white shadow-lg" : "bg-[#12161f] border-slate-800 text-slate-300 hover:border-slate-700") + '">' +
-          '<div class="flex items-center gap-2.5 min-w-0"><span class="text-2xl shrink-0">🎮</span><div class="truncate"><div class="text-xs sm:text-sm font-extrabold truncate">1. QAAF Games</div><div class="text-[10px] text-slate-400 truncate">Simple Puzzles, Quiz &amp; Builder</div></div></div>' +
-          '<span class="bg-black/50 px-2.5 py-1 rounded-full text-[10px] font-extrabold text-emerald-300 shrink-0">' + countQaaf + ' Games</span>' +
+      '<div class="col-span-full grid grid-cols-1 sm:grid-cols-3 gap-1.5 mb-1.5">' +
+        '<button type="button" onclick="selectGamesSubTab(\'qaaf_games\')" class="py-2 px-3 rounded-xl border-2 text-left transition flex items-center justify-between cursor-pointer ' +
+          (curTab === "qaaf_games" ? "bg-emerald-600/25 border-emerald-400 text-white shadow-md" : "bg-[#111620] border-slate-800/90 text-slate-300 hover:border-emerald-500/40") + '">' +
+          '<div class="flex items-center gap-2.5 min-w-0">' +
+            '<span class="text-xl shrink-0">🎮</span>' +
+            '<div class="truncate">' +
+              '<div class="text-base sm:text-lg font-extrabold leading-tight truncate text-white">1. QAAF Games</div>' +
+              '<div class="text-[10px] text-slate-400 truncate">Simple Puzzles, Quiz &amp; Builder</div>' +
+            '</div>' +
+          '</div>' +
+          '<span class="bg-emerald-950/90 border border-emerald-500/40 px-2 py-0.5 rounded-full text-[10px] font-extrabold text-emerald-300 shrink-0">' + countQaaf + ' Games</span>' +
         '</button>' +
 
-        '<button type="button" onclick="selectGamesSubTab(\'quranic\')" class="p-3 rounded-2xl border-2 text-left transition flex items-center justify-between cursor-pointer ' +
-          (curTab === "quranic" ? "bg-amber-500/25 border-amber-400 text-white shadow-lg" : "bg-[#12161f] border-slate-800 text-slate-300 hover:border-slate-700") + '">' +
-          '<div class="flex items-center gap-2.5 min-w-0"><span class="text-2xl shrink-0">📖</span><div class="truncate"><div class="text-xs sm:text-sm font-extrabold truncate">2. QAAF Quranic Games</div><div class="text-[10px] text-slate-400 truncate">Ayah-by-Ayah Interactive Games</div></div></div>' +
-          '<span class="bg-black/50 px-2.5 py-1 rounded-full text-[10px] font-extrabold text-amber-300 shrink-0">' + countQuran + ' Games</span>' +
+        '<button type="button" onclick="selectGamesSubTab(\'quranic\')" class="py-2 px-3 rounded-xl border-2 text-left transition flex items-center justify-between cursor-pointer ' +
+          (curTab === "quranic" ? "bg-teal-600/25 border-teal-400 text-white shadow-md" : "bg-[#111620] border-slate-800/90 text-slate-300 hover:border-teal-500/40") + '">' +
+          '<div class="flex items-center gap-2.5 min-w-0">' +
+            '<span class="text-xl shrink-0">📖</span>' +
+            '<div class="truncate">' +
+              '<div class="text-base sm:text-lg font-extrabold leading-tight truncate text-white">2. QAAF Quranic Games</div>' +
+              '<div class="text-[10px] text-slate-400 truncate">Ayah-by-Ayah Interactive Games</div>' +
+            '</div>' +
+          '</div>' +
+          '<span class="bg-teal-950/90 border border-teal-500/40 px-2 py-0.5 rounded-full text-[10px] font-extrabold text-teal-300 shrink-0">' + countQuran + ' Games</span>' +
         '</button>' +
 
-        '<button type="button" onclick="selectGamesSubTab(\'3d_games\')" class="p-3 rounded-2xl border-2 text-left transition flex items-center justify-between cursor-pointer ' +
-          (curTab === "3d_games" ? "bg-blue-600/25 border-blue-400 text-white shadow-lg" : "bg-[#12161f] border-slate-800 text-slate-300 hover:border-slate-700") + '">' +
-          '<div class="flex items-center gap-2.5 min-w-0"><span class="text-2xl shrink-0">🏎️</span><div class="truncate"><div class="text-xs sm:text-sm font-extrabold truncate">3. QAAF 3D Games</div><div class="text-[10px] text-slate-400 truncate">3D Adventures for Older Kids</div></div></div>' +
-          (count3D > 0 ? ('<span class="bg-black/50 px-2.5 py-1 rounded-full text-[10px] font-extrabold text-blue-300 shrink-0">' + count3D + ' Games</span>') : '<span class="bg-black/40 px-2 py-0.5 rounded-full text-[10px] font-bold text-slate-500 shrink-0">Soon</span>') +
+        '<button type="button" onclick="selectGamesSubTab(\'3d_games\')" class="py-2 px-3 rounded-xl border-2 text-left transition flex items-center justify-between cursor-pointer ' +
+          (curTab === "3d_games" ? "bg-cyan-600/25 border-cyan-400 text-white shadow-md" : "bg-[#111620] border-slate-800/90 text-slate-300 hover:border-cyan-500/40") + '">' +
+          '<div class="flex items-center gap-2.5 min-w-0">' +
+            '<span class="text-xl shrink-0">🏎️</span>' +
+            '<div class="truncate">' +
+              '<div class="text-base sm:text-lg font-extrabold leading-tight truncate text-white">3. QAAF 3D Games</div>' +
+              '<div class="text-[10px] text-slate-400 truncate">3D Adventures for Older Kids</div>' +
+            '</div>' +
+          '</div>' +
+          (count3D > 0 ? ('<span class="bg-cyan-950/90 border border-cyan-500/40 px-2 py-0.5 rounded-full text-[10px] font-extrabold text-cyan-300 shrink-0">' + count3D + ' Games</span>') : '<span class="bg-slate-900 border border-slate-700 px-2 py-0.5 rounded-full text-[10px] font-bold text-slate-400 shrink-0">Soon</span>') +
         '</button>' +
       '</div>';
 
@@ -2226,38 +2256,34 @@
     var cardsHtml = "";
     filteredGames.forEach(function(g) {
       var isInstalled = Array.isArray(installedGameIds) && installedGameIds.indexOf(g.id) !== -1;
+      var activeBorder = (curTab === "quranic") ? "border-teal-500/40 hover:border-teal-400" : "border-emerald-500/40 hover:border-emerald-400";
 
-      // Sleek minimal 1-line bar: Big clear Logo + Single-line Title.
-      // If NOT installed: Install button below. Once installed: Install button disappears completely & tapping row plays the game!
+      // Slimmer, sleeker 1-line row (py-1.5 px-3, w-8 h-8 icon, text-xs sm:text-sm font-bold title)
       cardsHtml +=
-        '<div onclick="' + (isInstalled ? ("openInstalledGameModal('" + g.id + "')") : ("installQaafGameInstant('" + g.id + "', event)")) + '" class="bg-[#121822] hover:bg-[#182232] border ' + (isInstalled ? 'border-emerald-500/45 shadow-md' : 'border-slate-800') + ' rounded-2xl px-3.5 py-2.5 transition cursor-pointer group flex flex-col justify-center">' +
-          '<div class="flex items-center justify-between gap-3">' +
-            '<div class="flex items-center gap-3 min-w-0 flex-1">' +
-              '<div class="w-11 h-11 rounded-xl bg-slate-800/90 border border-white/10 flex items-center justify-center text-2xl shrink-0 shadow group-hover:scale-105 transition">' +
+        '<div onclick="' + (isInstalled ? ("openInstalledGameModal('" + g.id + "')") : ("installQaafGameInstant('" + g.id + "', event)")) + '" class="bg-[#111722] hover:bg-[#162030] border ' + (isInstalled ? activeBorder : 'border-slate-800') + ' rounded-xl px-3 py-1.5 transition cursor-pointer group flex flex-col justify-center">' +
+          '<div class="flex items-center justify-between gap-2.5">' +
+            '<div class="flex items-center gap-2.5 min-w-0 flex-1">' +
+              '<div class="w-8 h-8 rounded-lg bg-slate-800/90 border border-white/10 flex items-center justify-center text-base shrink-0 shadow group-hover:scale-105 transition">' +
                 g.icon +
               '</div>' +
-              '<h3 class="text-sm sm:text-base font-extrabold text-white truncate group-hover:text-emerald-300 transition">' +
+              '<h3 class="text-xs sm:text-sm font-bold text-slate-100 truncate group-hover:text-emerald-300 transition">' +
                 g.title +
               '</h3>' +
             '</div>' +
             (isInstalled ? (
-              '<div class="flex items-center gap-1.5 shrink-0">' +
-                '<span class="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 group-hover:bg-emerald-500 group-hover:text-black flex items-center justify-center text-xs font-extrabold transition">▶</span>' +
-              '</div>'
-            ) : '') +
+              '<span class="w-6 h-6 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 group-hover:bg-emerald-500 group-hover:text-black flex items-center justify-center text-[10px] font-extrabold shrink-0 transition">▶</span>'
+            ) : (
+              '<button type="button" onclick="installQaafGameInstant(\'' + g.id + '\', event)" class="bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1 rounded-lg text-[11px] font-extrabold shadow shrink-0 transition cursor-pointer">' +
+                '⬇️ Install' +
+              '</button>'
+            )) +
           '</div>' +
-          (!isInstalled ? (
-            '<button type="button" onclick="installQaafGameInstant(\'' + g.id + '\', event)" class="mt-2.5 w-full bg-blue-600 hover:bg-blue-500 text-white py-1.5 rounded-xl text-xs font-extrabold shadow transition cursor-pointer">' +
-              '⬇️ Install Game' +
-            '</button>'
-          ) : '') +
         '</div>';
     });
 
     grid.innerHTML = navHtml + cardsHtml;
   };
 
-  // 3. LAUNCH EXACT REAL GAME FILE WHEN CLICKED
   window.openInstalledGameModal = function(gameId) {
     var game = REAL_GAMES_CATALOG.find(function(g) { return g.id === gameId; });
     if (!game) return;
@@ -2273,12 +2299,12 @@
       modal.id = "qaafActiveGamePlayModal";
       modal.className = "fixed inset-0 z-[250] bg-[#080a0f] flex flex-col hidden";
       modal.innerHTML =
-        '<div class="h-12 bg-[#11151e] border-b border-emerald-500/30 px-3 sm:px-5 flex items-center justify-between shrink-0">' +
+        '<div class="h-11 bg-[#11151e] border-b border-emerald-500/30 px-3 sm:px-5 flex items-center justify-between shrink-0">' +
           '<div class="flex items-center gap-2 min-w-0">' +
-            '<span id="activeGameModalIcon" class="text-lg">🎮</span>' +
+            '<span id="activeGameModalIcon" class="text-base">🎮</span>' +
             '<h3 id="activeGameModalTitle" class="text-xs sm:text-sm font-extrabold text-white truncate">QAAF Islamic Game</h3>' +
           '</div>' +
-          '<button type="button" onclick="closeInstalledGameModal()" class="bg-rose-600 hover:bg-rose-500 text-white px-3.5 py-1 rounded-full text-xs font-extrabold shadow cursor-pointer">' +
+          '<button type="button" onclick="closeInstalledGameModal()" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-1 rounded-full text-xs font-extrabold shadow cursor-pointer">' +
             '⬅️ Back to Games' +
           '</button>' +
         '</div>' +
@@ -2311,13 +2337,7 @@
 // === QAAF V21 SLEEK GAMES ZONE & REAL QURANIC GAMES END ===
 
 // === QAAF V22 SMART CHANNEL & SEARCH AUTO-FETCHER START ===
-(function initQaafAccurateChannelImporterAndScannerV25() {
-  // 1. Clean any false-positive off-channel items from qaafChannelUpdatesQueue (e.g. "How Two Engineers...")
-  if (Array.isArray(window.qaafChannelUpdatesQueue) && window.qaafChannelUpdatesQueue.length > 0) {
-    window.qaafChannelUpdatesQueue = [];
-    localStorage.setItem("qaaf_channel_updates_queue_v1", "[]");
-  }
-
+(function initQaafMasterChannelAndPlaylistImporterV26() {
   function extractVideoIdsFromRaw(text) {
     var ids = [];
     if (!text) return ids;
@@ -2325,6 +2345,7 @@
       /watch\?v=([a-zA-Z0-9_-]{11})/g,
       /\/shorts\/([a-zA-Z0-9_-]{11})/g,
       /"videoId"\s*:\s*"([a-zA-Z0-9_-]{11})"/g,
+      /<yt:videoId>([a-zA-Z0-9_-]{11})<\/yt:videoId>/g,
       /ytimg\.com\/vi\/([a-zA-Z0-9_-]{11})\//g
     ];
     patterns.forEach(function(rgx) {
@@ -2336,45 +2357,144 @@
     return ids;
   }
 
-  // Fast, CORS-friendly page fetcher: Plain r.jina.ai FIRST (no custom headers that trigger CORS preflight or shell HTML!)
-  async function fetchYouTubeIdsFromUrl(targetUrl) {
-    var collectedIds = [];
-
-    // Method 1: Plain Jina Reader Markdown (Fastest & renders full YouTube /videos tab!)
-    try {
-      var r1 = await fetch("https://r.jina.ai/" + targetUrl);
-      if (r1.ok) {
-        var t1 = await r1.text();
-        extractVideoIdsFromRaw(t1).forEach(function(id) {
-          if (collectedIds.indexOf(id) === -1) collectedIds.push(id);
-        });
-      }
-    } catch (e) {}
-
-    // Method 2: CodeTabs & AllOrigins raw HTML if plain Jina found fewer than 5 videos
-    if (collectedIds.length < 5) {
-      var proxies = [
-        "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetUrl),
-        "https://api.allorigins.win/raw?url=" + encodeURIComponent(targetUrl)
-      ];
-      for (var i = 0; i < proxies.length; i++) {
-        try {
-          var rp = await fetch(proxies[i]);
-          if (rp.ok) {
-            var tp = await rp.text();
-            extractVideoIdsFromRaw(tp).forEach(function(id) {
-              if (collectedIds.indexOf(id) === -1) collectedIds.push(id);
-            });
-            if (collectedIds.length >= 15) break;
-          }
-        } catch (e) {}
-      }
+  function extractChannelUcIdFromRaw(text) {
+    if (!text) return "";
+    var patterns = [
+      /"channelId"\s*:\s*"(UC[a-zA-Z0-9_-]{22})"/,
+      /"externalId"\s*:\s*"(UC[a-zA-Z0-9_-]{22})"/,
+      /"browseId"\s*:\s*"(UC[a-zA-Z0-9_-]{22})"/,
+      /youtube\.com\/channel\/(UC[a-zA-Z0-9_-]{22})/
+    ];
+    for (var i = 0; i < patterns.length; i++) {
+      var m = text.match(patterns[i]);
+      if (m && m[1]) return m[1];
     }
-
-    return collectedIds;
+    return "";
   }
 
-  // Master Channel & Video Auto-Fetch (Works for @SheikhSaadAlGhamdi, @SoulSyncVerses, @alafasy, Playlists & Single Videos!)
+  function extractPlaylistIdsFromRaw(text) {
+    var plIds = [];
+    if (!text) return plIds;
+    var patterns = [
+      /list=(PL[a-zA-Z0-9_-]{10,})/g,
+      /"playlistId"\s*:\s*"(PL[a-zA-Z0-9_-]{10,})"/g,
+      /"contentId"\s*:\s*"(PL[a-zA-Z0-9_-]{10,})"/g
+    ];
+    patterns.forEach(function(rgx) {
+      var matches = text.matchAll(rgx);
+      for (var m of matches) {
+        var pid = m[1];
+        if (pid && plIds.indexOf(pid) === -1) plIds.push(pid);
+      }
+    });
+    return plIds;
+  }
+
+  async function fetchRawFromYouTubeMultiProxy(targetUrl) {
+    var combined = "";
+    var sep = targetUrl.indexOf("?") === -1 ? "?" : "&";
+    var consentSafeUrl = targetUrl + sep + "ucbcb=1&hl=en";
+
+    // 1. Plain Jina Reader (Fastest Markdown renderer)
+    try {
+      var r1 = await fetch("https://r.jina.ai/" + targetUrl);
+      if (r1.ok) combined += "\n" + (await r1.text());
+    } catch (e) {}
+
+    // 2. CodeTabs Proxy (Raw YouTube HTML with ytInitialData JSON!)
+    if (extractVideoIdsFromRaw(combined).length < 15 && extractPlaylistIdsFromRaw(combined).length < 3) {
+      try {
+        var r2 = await fetch("https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(consentSafeUrl));
+        if (r2.ok) combined += "\n" + (await r2.text());
+      } catch (e) {}
+    }
+
+    // 3. AllOrigins Proxy fallback
+    if (extractVideoIdsFromRaw(combined).length < 15 && extractPlaylistIdsFromRaw(combined).length < 3) {
+      try {
+        var r3 = await fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(consentSafeUrl));
+        if (r3.ok) combined += "\n" + (await r3.text());
+      } catch (e) {}
+    }
+
+    return combined;
+  }
+
+  // 1. UPGRADED ADMIN PLAYLIST PICKER FETCHER (Finds all Playlists via Jina + CodeTabs + AllOrigins + Home Tab!)
+  window.adminFetchChannelPlaylistsForPicker = async function() {
+    var urlInp = document.getElementById("adminYtUrlInput");
+    var raw = (urlInp ? urlInp.value : "").trim();
+    if (!raw) {
+      alert("Please paste a YouTube Channel URL first.");
+      return;
+    }
+
+    if (typeof showSyncToast === "function") {
+      showSyncToast("⏳ Scanning all playlists of this channel...");
+    }
+
+    var cleanUrl = raw.indexOf("http") === 0 ? raw : ("https://www.youtube.com/" + (raw.indexOf("@") === 0 ? raw : ("@" + raw.replace(/\s+/g, ""))));
+    var baseChannel = cleanUrl.replace(/\/(videos|shorts|featured|streams|playlists)?\/?$/, "");
+
+    // If user pasted a single video link, resolve its channel author_url first!
+    var singleVid = (raw.indexOf("/@") === -1 && raw.indexOf("/channel/") === -1 && typeof extractYouTubeId === "function") ? extractYouTubeId(raw) : null;
+    if (singleVid) {
+      try {
+        var rOe = await fetch("https://noembed.com/embed?url=https://www.youtube.com/watch?v=" + singleVid);
+        var dOe = await rOe.json();
+        if (dOe && dOe.author_url) baseChannel = dOe.author_url.replace(/\/+$/, "");
+      } catch (e) {}
+    }
+
+    var rawPlaylistsPage = await fetchRawFromYouTubeMultiProxy(baseChannel + "/playlists");
+    var foundPlIds = extractPlaylistIdsFromRaw(rawPlaylistsPage);
+
+    // Also check Home tab if /playlists had fewer than 2 playlists
+    if (foundPlIds.length < 2) {
+      var rawHome = await fetchRawFromYouTubeMultiProxy(baseChannel);
+      extractPlaylistIdsFromRaw(rawHome).forEach(function(pid) {
+        if (foundPlIds.indexOf(pid) === -1) foundPlIds.push(pid);
+      });
+    }
+
+    var detectedChName = (document.getElementById("adminChannelName") ? document.getElementById("adminChannelName").value : "").trim();
+    var candidates = foundPlIds.slice(0, 30).map(function(pid) {
+      return { listId: pid, title: "", thumb: "", countText: "" };
+    });
+
+    await Promise.all(candidates.map(async function(item) {
+      try {
+        var r = await fetch("https://noembed.com/embed?url=https://www.youtube.com/playlist?list=" + item.listId);
+        var info = await r.json();
+        if (info && info.title) item.title = info.title;
+        if (info && info.author_name && !detectedChName) detectedChName = info.author_name;
+        if (info && info.thumbnail_url) {
+          var mV = info.thumbnail_url.match(/\/vi\/([a-zA-Z0-9_-]{11})\//);
+          item.thumb = mV ? ("https://i.ytimg.com/vi/" + mV[1] + "/hqdefault.jpg") : info.thumbnail_url;
+        }
+      } catch (e) {}
+    }));
+
+    window.qaafAdminFetchedPlaylists = candidates.filter(function(x) { return x.listId && x.title; });
+    if (detectedChName) {
+      window.qaafAdminDetectedChannelTitle = detectedChName;
+      var chInp = document.getElementById("adminChannelName");
+      if (chInp && !chInp.value.trim()) chInp.value = detectedChName;
+      window.qaafRealChannelPlaylistsMap[detectedChName] = window.qaafAdminFetchedPlaylists;
+      localStorage.setItem("qaaf_real_channel_playlists_v1", JSON.stringify(window.qaafRealChannelPlaylistsMap));
+    }
+
+    // Trigger picker UI render
+    if (typeof window.setAdminChannelImportMode === "function") {
+      window.setAdminChannelImportMode(window.qaafAdminImportMode || "all_channel");
+    }
+
+    if (typeof showSyncToast === "function") {
+      showSyncToast("📂 Found " + window.qaafAdminFetchedPlaylists.length + " playlists! Select which ones to import below.");
+    }
+  };
+
+  // 2. UPGRADED MASTER CHANNEL & VIDEO AUTO-FETCH (Uses /videos + /shorts + UC->UU Uploads Playlist + XML Feed!)
   window.adminAutoFetchYouTubeInfo = async function() {
     var urlInp = document.getElementById("adminYtUrlInput");
     var chNameInp = document.getElementById("adminChannelName");
@@ -2391,11 +2511,15 @@
       return;
     }
 
+    var modeSelect = document.getElementById("adminVerifyModeSelect");
+    var wantsFullChannel = !modeSelect || modeSelect.value === "channel_verified";
+
     var isPlaylistUrl = raw.indexOf("list=") !== -1;
     var isChannelUrl = raw.indexOf("/@") !== -1 || raw.indexOf("@") === 0 || raw.indexOf("/channel/") !== -1 || raw.indexOf("/c/") !== -1 || raw.indexOf("/user/") !== -1;
     var singleVidId = (!isPlaylistUrl && !isChannelUrl && typeof extractYouTubeId === "function") ? extractYouTubeId(raw) : null;
 
-    if (singleVidId) {
+    // If user pasted a single video URL BUT has "Full Channel" selected, resolve its Channel URL if they want full channel, or fetch single video
+    if (singleVidId && !wantsFullChannel) {
       if (typeof showSyncToast === "function") showSyncToast("⏳ Fetching single video details...");
       try {
         var r = await fetch("https://noembed.com/embed?url=https://www.youtube.com/watch?v=" + singleVidId);
@@ -2408,57 +2532,107 @@
           document.getElementById("adminPreviewChannelText").innerText = d.author_name || "YouTube";
           document.getElementById("adminYtPreviewContainer").classList.remove("hidden");
           window.adminPendingBatchChannel = null;
-          if (typeof autoDetectAndSelectLanguage === "function") autoDetectAndSelectLanguage(d.title + " " + (d.author_name || ""), "adminVideoLang");
-          if (typeof autoDetectCategoryAndMode === "function") autoDetectCategoryAndMode(d.title, d.author_name || "");
-          if (typeof showSyncToast === "function") showSyncToast("✅ Video fetched & ready!");
+          if (typeof showSyncToast === "function") showSyncToast("✅ Single Video fetched & ready!");
           return;
         }
       } catch (e) {}
     }
 
     if (typeof showSyncToast === "function") {
-      showSyncToast("⏳ Scanning channel videos from YouTube...");
+      showSyncToast("⏳ Scanning all channel videos from YouTube...");
     }
 
-    var cleanUrl = raw.indexOf("http") === 0 ? raw : ("https://www.youtube.com/" + (raw.indexOf("@") === 0 ? raw : ("@" + raw.replace(/\s+/g, ""))));
+    var baseCh = raw.indexOf("http") === 0 ? raw : ("https://www.youtube.com/" + (raw.indexOf("@") === 0 ? raw : ("@" + raw.replace(/\s+/g, ""))));
+    if (singleVidId && wantsFullChannel) {
+      try {
+        var rV = await fetch("https://noembed.com/embed?url=https://www.youtube.com/watch?v=" + singleVidId);
+        var dV = await rV.json();
+        if (dV && dV.author_url) baseCh = dV.author_url;
+      } catch (e) {}
+    }
+    baseCh = baseCh.replace(/\/(videos|shorts|featured|streams|playlists)?\/?$/, "");
+
     var foundIds = [];
     var shortIds = [];
+    var channelUcId = "";
 
     if (isPlaylistUrl) {
-      foundIds = await fetchYouTubeIdsFromUrl(cleanUrl);
+      var plRaw = await fetchRawFromYouTubeMultiProxy(raw);
+      foundIds = extractVideoIdsFromRaw(plRaw);
     } else {
-      var baseCh = cleanUrl.replace(/\/(videos|shorts|featured|streams|playlists)?\/?$/, "");
+      // Step 1: Fetch /videos tab
+      var vidsRaw = await fetchRawFromYouTubeMultiProxy(baseCh + "/videos");
+      extractVideoIdsFromRaw(vidsRaw).forEach(function(id) {
+        if (foundIds.indexOf(id) === -1) foundIds.push(id);
+      });
+      channelUcId = extractChannelUcIdFromRaw(vidsRaw);
 
-      // 1. Fetch /videos tab
-      var vIds = await fetchYouTubeIdsFromUrl(baseCh + "/videos");
-      vIds.forEach(function(id) { if (foundIds.indexOf(id) === -1) foundIds.push(id); });
-
-      // 2. Fetch /shorts tab
-      var sIds = await fetchYouTubeIdsFromUrl(baseCh + "/shorts");
-      sIds.forEach(function(id) {
+      // Step 2: Fetch /shorts tab
+      var shRaw = await fetchRawFromYouTubeMultiProxy(baseCh + "/shorts");
+      extractVideoIdsFromRaw(shRaw).forEach(function(id) {
         if (shortIds.indexOf(id) === -1) shortIds.push(id);
         if (foundIds.indexOf(id) === -1) foundIds.push(id);
       });
+      if (!channelUcId) channelUcId = extractChannelUcIdFromRaw(shRaw);
 
-      // 3. If channel keeps videos on Home or /streams or /playlists (like Sheikh Saad Al Ghamdi), fetch those too!
-      if (foundIds.length < 15) {
-        var homeIds = await fetchYouTubeIdsFromUrl(baseCh);
-        homeIds.forEach(function(id) { if (foundIds.indexOf(id) === -1) foundIds.push(id); });
+      // Step 3: If fewer than 20 videos found (like Sheikh Saad Al Ghamdi or Haramain Translations),
+      // use the Channel's UC... -> UU... Official Uploads Playlist + XML Feed + /streams + /playlists!
+      if (foundIds.length < 20) {
+        if (!channelUcId) {
+          var homeRaw = await fetchRawFromYouTubeMultiProxy(baseCh);
+          extractVideoIdsFromRaw(homeRaw).forEach(function(id) {
+            if (foundIds.indexOf(id) === -1) foundIds.push(id);
+          });
+          channelUcId = extractChannelUcIdFromRaw(homeRaw);
+        }
+
+        if (channelUcId && channelUcId.indexOf("UC") === 0) {
+          var uuPlaylistId = "UU" + channelUcId.slice(2);
+          var uuRaw = await fetchRawFromYouTubeMultiProxy("https://www.youtube.com/playlist?list=" + uuPlaylistId);
+          extractVideoIdsFromRaw(uuRaw).forEach(function(id) {
+            if (foundIds.indexOf(id) === -1) foundIds.push(id);
+          });
+
+          var xmlRaw = await fetchRawFromYouTubeMultiProxy("https://www.youtube.com/feeds/videos.xml?channel_id=" + channelUcId);
+          extractVideoIdsFromRaw(xmlRaw).forEach(function(id) {
+            if (foundIds.indexOf(id) === -1) foundIds.push(id);
+          });
+        }
+
+        if (foundIds.length < 20) {
+          var streamsRaw = await fetchRawFromYouTubeMultiProxy(baseCh + "/streams");
+          extractVideoIdsFromRaw(streamsRaw).forEach(function(id) {
+            if (foundIds.indexOf(id) === -1) foundIds.push(id);
+          });
+        }
+
+        if (foundIds.length < 20) {
+          var plsRaw = await fetchRawFromYouTubeMultiProxy(baseCh + "/playlists");
+          extractVideoIdsFromRaw(plsRaw).forEach(function(id) {
+            if (foundIds.indexOf(id) === -1) foundIds.push(id);
+          });
+          // Also pull videos from the first 3 playlists of that channel if needed!
+          var chPlIds = extractPlaylistIdsFromRaw(plsRaw).slice(0, 3);
+          for (var p = 0; p < chPlIds.length; p++) {
+            var onePlRaw = await fetchRawFromYouTubeMultiProxy("https://www.youtube.com/playlist?list=" + chPlIds[p]);
+            extractVideoIdsFromRaw(onePlRaw).forEach(function(id) {
+              if (foundIds.indexOf(id) === -1) foundIds.push(id);
+            });
+          }
+        }
       }
-      if (foundIds.length < 15) {
-        var plPageIds = await fetchYouTubeIdsFromUrl(baseCh + "/playlists");
-        plPageIds.forEach(function(id) { if (foundIds.indexOf(id) === -1) foundIds.push(id); });
-      }
+    }
+
+    if (singleVidId && foundIds.indexOf(singleVidId) === -1) {
+      foundIds.unshift(singleVidId);
     }
 
     if (foundIds.length === 0) {
-      alert("⚠️ Could not reach that channel URL right now. Please check the link or try again in 5 seconds.");
+      alert("⚠️ Could not reach that channel URL right now. Please check the link or paste any video URL from that channel.");
       return;
     }
 
-    // Verify ownership of the first video via noembed.com so we get the EXACT Official Channel Name!
     var expectedAuthorName = "";
-    var expectedAuthorUrl = "";
     var firstValidTitle = "";
     var firstValidId = foundIds[0];
 
@@ -2468,7 +2642,6 @@
         var dCheck = await rCheck.json();
         if (dCheck && dCheck.author_name && dCheck.title) {
           expectedAuthorName = dCheck.author_name.trim();
-          expectedAuthorUrl = (dCheck.author_url || "").trim().toLowerCase();
           firstValidTitle = dCheck.title;
           firstValidId = foundIds[k];
           break;
@@ -2488,8 +2661,6 @@
 
     window.adminPendingBatchChannel = {
       channelTitle: finalChName,
-      expectedAuthorName: expectedAuthorName,
-      expectedAuthorUrl: expectedAuthorUrl,
       videoIds: cappedIds,
       shortIds: shortIds,
       firstTitle: firstValidTitle || (finalChName + " Videos")
@@ -2500,33 +2671,6 @@
 
     if (typeof showSyncToast === "function") {
       showSyncToast("✅ " + finalChName + ": " + cappedIds.length + " videos ready! Click '+ Push Live'.");
-    }
-  };
-
-  // Also upgrade Daily Scanner so it STRICTLY checks that info.author_name matches the channel being scanned!
-  var origScanFn = window.scanAllVerifiedChannelsForNewUploads;
-  window.scanAllVerifiedChannelsForNewUploads = async function(isManualTrigger) {
-    if (!isManualTrigger) return;
-    if (origScanFn) {
-      await origScanFn(true);
-      // Post-filter: remove any item from qaafChannelUpdatesQueue whose actual YouTube author_name does not match item.channel!
-      var validList = [];
-      for (var i = 0; i < (window.qaafChannelUpdatesQueue || []).length; i++) {
-        var item = window.qaafChannelUpdatesQueue[i];
-        try {
-          var r = await fetch("https://noembed.com/embed?url=https://www.youtube.com/watch?v=" + item.ytId);
-          var d = await r.json();
-          if (d && d.author_name && d.author_name.trim().toLowerCase() === String(item.channel || "").trim().toLowerCase()) {
-            validList.push(item);
-          }
-        } catch (e) {}
-      }
-      window.qaafChannelUpdatesQueue = validList;
-      localStorage.setItem("qaaf_channel_updates_queue_v1", JSON.stringify(validList));
-      if (typeof window.openAdminModal === "function") {
-        var pubBadge = document.getElementById("admNewUpdatesCountPill");
-        if (pubBadge) pubBadge.innerText = validList.length + " New";
-      }
     }
   };
 })();
