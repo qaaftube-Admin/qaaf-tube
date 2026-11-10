@@ -575,23 +575,71 @@
     }
   };
 
+  function normalizeWordsForPlaylistMatch(str) {
+    return String(str || "")
+      .toLowerCase()
+      .replace(/mohammad|muhammed|mohamed/g, "muhammad")
+      .replace(/salaah/g, "salah")
+      .replace(/abdur\s*rahman|abdulrahman/g, "abdul rahman")
+      .replace(/yasir|yasser/g, "yasir")
+      .replace(/ash\s*shuraim|al\s*shuraim/g, "shuraim")
+      .replace(/al\s*ghamdi|ghamidi/g, "ghamdi")
+      .replace(/al\s*dosary|aldosari|dossary/g, "dosary")
+      .replace(/al\s*juhany|juhani/g, "juhany")
+      .replace(/al\s*muhanna|muhana/g, "muhanna")
+      .replace(/al\s*qasim|qassim/g, "qasim")
+      .replace(/al\s*budair|budayr/g, "budair")
+      .replace(/hudhaify|huthaify|hudhaifi/g, "hudhaify")
+      .replace(/[^a-z0-9\u0600-\u06FF\s]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
   function getInstantMatchedVideosForPlaylist(plTitle, channelName, listId) {
-    var cached = window.qaafPlaylistVideosCache[listId];
-    if (Array.isArray(cached) && cached.length > 0) {
-      var byYtId = new Map();
-      (videosData || []).forEach(function(v) { if (v && v.ytId) byYtId.set(v.ytId, v); });
-      return cached.map(function(item) {
-        if (typeof item === "string") return byYtId.get(item) || null;
-        if (item && item.ytId && byYtId.has(item.ytId)) return byYtId.get(item.ytId);
-        return item;
-      }).filter(Boolean);
+    var byYtId = new Map();
+    (videosData || []).forEach(function(v) { if (v && v.ytId) byYtId.set(v.ytId, v); });
+
+    var resultsMap = new Map();
+    function addVid(v) {
+      if (v && (v.ytId || v.id)) {
+        resultsMap.set(v.ytId || v.id, v);
+      }
     }
 
+    // 1. Direct videos in videosData with matching playlistId or playlistName
     var chVids = (videosData || []).filter(function(v) { return v && v.channel === channelName; });
-    var matched = chVids.filter(function(v) {
-      return v.playlistId === listId || v.playlistName === plTitle;
+    chVids.forEach(function(v) {
+      if ((listId && v.playlistId === listId) || (plTitle && v.playlistName === plTitle)) {
+        addVid(v);
+      }
     });
-    return matched;
+
+    // 2. Cached playlist videos
+    var cached = window.qaafPlaylistVideosCache[listId];
+    if (Array.isArray(cached) && cached.length > 0) {
+      cached.forEach(function(item) {
+        if (typeof item === "string") {
+          if (byYtId.has(item)) addVid(byYtId.get(item));
+        } else if (item && item.ytId) {
+          addVid(byYtId.get(item.ytId) || item);
+        }
+      });
+    }
+
+    // 3. Smart Title / Sheikh Name matcher across the channel's existing videos
+    if (plTitle) {
+      var normPl = normalizeWordsForPlaylistMatch(plTitle.replace(/^sheikh\s+/i, ""));
+      var keyTokens = normPl.split(" ").filter(function(w) { return w.length >= 3 && w !== "sheikh" && w !== "al"; });
+      if (keyTokens.length > 0) {
+        chVids.forEach(function(v) {
+          var normVidTitle = normalizeWordsForPlaylistMatch((v.title || "") + " " + (v.playlistName || ""));
+          var allMatched = keyTokens.every(function(tk) { return normVidTitle.indexOf(tk) !== -1; });
+          if (allMatched) addVid(v);
+        });
+      }
+    }
+
+    return Array.from(resultsMap.values());
   }
 
   window.openQaafOfficialYouTubePlaylist = async function(listId, plTitle, channelName) {
@@ -798,9 +846,74 @@
     });
     var chRegVids = chAllVids.filter(function(v) { return !isVideoShort(v); });
     var chShortVids = chAllVids.filter(function(v) { return isVideoShort(v); });
-    var officialPlaylists = (window.qaafRealChannelPlaylistsMap[selCh] || []).filter(function(p) {
-      return p && p.listId && !blockedPlSet.has(p.listId);
+
+    // Reassign any orphan "Islamic Channel" videos/playlists to Haramain Translations if applicable
+    if (Array.isArray(videosData)) {
+      var hasHaramain = videosData.some(function(v) { return v && v.channel === "Haramain Translations"; });
+      if (hasHaramain) {
+        videosData.forEach(function(v) {
+          if (v && v.channel === "Islamic Channel") v.channel = "Haramain Translations";
+        });
+        if (Array.isArray(window.qaafRealChannelPlaylistsMap["Islamic Channel"]) && window.qaafRealChannelPlaylistsMap["Islamic Channel"].length > 0) {
+          var existingH = window.qaafRealChannelPlaylistsMap["Haramain Translations"] || [];
+          var existingHIds = new Set(existingH.map(function(p) { return p.listId; }));
+          window.qaafRealChannelPlaylistsMap["Islamic Channel"].forEach(function(p) {
+            if (p && p.listId && !existingHIds.has(p.listId)) {
+              existingH.push(p);
+              existingHIds.add(p.listId);
+            }
+          });
+          window.qaafRealChannelPlaylistsMap["Haramain Translations"] = existingH;
+          delete window.qaafRealChannelPlaylistsMap["Islamic Channel"];
+        }
+      }
+    }
+
+    // Build combined Playlists list for this channel from:
+    // 1) window.qaafRealChannelPlaylistsMap[selCh]
+    // 2) Any playlistId + playlistName already tagged on videos of this channel in videosData
+    // 3) Auto-grouped Sheikh series if Haramain Translations has videos of multiple Sheikhs
+    var combinedPlMap = new Map();
+    (window.qaafRealChannelPlaylistsMap[selCh] || []).forEach(function(p) {
+      if (p && p.listId && !blockedPlSet.has(p.listId)) {
+        combinedPlMap.set(p.listId, Object.assign({}, p));
+      }
     });
+
+    chAllVids.forEach(function(v) {
+      if (v && v.playlistId && !blockedPlSet.has(v.playlistId)) {
+        if (!combinedPlMap.has(v.playlistId)) {
+          combinedPlMap.set(v.playlistId, {
+            listId: v.playlistId,
+            title: v.playlistName || ("Playlist (" + v.playlistId.slice(0, 6) + ")"),
+            thumb: "https://i.ytimg.com/vi/" + v.ytId + "/hqdefault.jpg",
+            countText: ""
+          });
+        }
+      }
+    });
+
+    // Update each playlist's live video count & thumbnail from matched videos
+    var officialPlaylists = [];
+    combinedPlMap.forEach(function(pl) {
+      var matchedVids = getInstantMatchedVideosForPlaylist(pl.title, selCh, pl.listId);
+      if (matchedVids.length > 0) {
+        pl.countText = String(matchedVids.length);
+        if (!pl.thumb && matchedVids[0] && matchedVids[0].ytId) {
+          pl.thumb = "https://i.ytimg.com/vi/" + matchedVids[0].ytId + "/hqdefault.jpg";
+        }
+      }
+      officialPlaylists.push(pl);
+    });
+
+    // If user imported By Playlists Only (some playlists have matched videos in our catalog),
+    // show playlists that have videos first!
+    var plsWithLocalVids = officialPlaylists.filter(function(p) {
+      return getInstantMatchedVideosForPlaylist(p.title, selCh, p.listId).length > 0;
+    });
+    if (plsWithLocalVids.length > 0) {
+      officialPlaylists = plsWithLocalVids;
+    }
 
     var isVer = (typeof window.isChannelFullyVerified === "function") && window.isChannelFullyVerified(selCh, chAllVids[0]);
     var activeTab = window.qaafChannelActiveSubTab || "videos";
@@ -1128,6 +1241,48 @@
     box.classList.remove("hidden");
   }
 
+  // One-time cleanup: clear accidental checkbox blocks from qaafBlockedPlaylistIds
+  if (!localStorage.getItem("qaaf_v29_unblocked_playlists_fix")) {
+    window.qaafBlockedPlaylistIds = [];
+    localStorage.setItem("qaaf_blocked_playlist_ids", "[]");
+    localStorage.setItem("qaaf_v29_unblocked_playlists_fix", "1");
+  }
+
+  async function detectChannelNameFromUrlOrVideos(rawUrl, fallbackPls) {
+    var chInp = document.getElementById("adminChannelName");
+    var existingVal = (chInp ? chInp.value : "").trim();
+    if (existingVal && existingVal !== "Islamic Channel") return existingVal;
+
+    if (rawUrl) {
+      var lowerU = rawUrl.toLowerCase();
+      if (lowerU.indexOf("haramain") !== -1) {
+        if (chInp) chInp.value = "Haramain Translations";
+        return "Haramain Translations";
+      }
+      if (lowerU.indexOf("ghamdi") !== -1) {
+        var gMatch = (videosData || []).find(function(v) { return v && v.channel && v.channel.toLowerCase().indexOf("ghamdi") !== -1; });
+        var gName = gMatch ? gMatch.channel : "Sheikh Saad Al Ghamdi";
+        if (chInp) chInp.value = gName;
+        return gName;
+      }
+    }
+
+    if (Array.isArray(fallbackPls) && fallbackPls[0] && fallbackPls[0].sampleVidId) {
+      try {
+        var r = await fetch("https://noembed.com/embed?url=https://www.youtube.com/watch?v=" + fallbackPls[0].sampleVidId);
+        var d = await r.json();
+        if (d && d.author_name) {
+          var detected = d.author_name.trim();
+          if (chInp) chInp.value = detected;
+          window.qaafAdminDetectedChannelTitle = detected;
+          return detected;
+        }
+      } catch (e) {}
+    }
+
+    return window.qaafAdminDetectedChannelTitle || "Haramain Translations";
+  }
+
   window.adminFetchChannelPlaylistsForPicker = async function() {
     ensureAdminPlaylistSelectorUI();
     var urlInp = document.getElementById("adminYtUrlInput");
@@ -1146,12 +1301,18 @@
 
     var pls = await window.discoverYouTubePlaylistsForChannel(chName, rawUrl);
     window.qaafAdminFetchedPlaylists = pls;
-    if (pls.length > 0 && pls[0].authorName && !chName) {
-      chName = pls[0].authorName;
-      if (chInp) chInp.value = chName;
+
+    chName = await detectChannelNameFromUrlOrVideos(rawUrl, pls);
+    if (chName && chInp && !chInp.value.trim()) {
+      chInp.value = chName;
     }
+
     if (chName && pls.length > 0) {
-      window.qaafRealChannelPlaylistsMap[chName] = pls;
+      var prevPls = window.qaafRealChannelPlaylistsMap[chName] || [];
+      var mergedMap = new Map();
+      prevPls.forEach(function(p) { if (p && p.listId) mergedMap.set(p.listId, p); });
+      pls.forEach(function(p) { if (p && p.listId) mergedMap.set(p.listId, p); });
+      window.qaafRealChannelPlaylistsMap[chName] = Array.from(mergedMap.values());
       window.savePlaylistsToLocalAndCloudDb();
     }
 
@@ -1166,10 +1327,8 @@
     if (allPls.length === 0) return;
 
     var checkedIds = [];
-    var uncheckedIds = [];
     document.querySelectorAll(".adm-pl-picker-chk").forEach(function(cb) {
       if (cb.checked) checkedIds.push(cb.value);
-      else uncheckedIds.push(cb.value);
     });
 
     if (checkedIds.length === 0) {
@@ -1178,13 +1337,21 @@
     }
 
     var selectedPls = allPls.filter(function(p) { return checkedIds.indexOf(p.listId) !== -1; });
-    var chName = (document.getElementById("adminChannelName") ? document.getElementById("adminChannelName").value : "").trim() || window.qaafAdminDetectedChannelTitle || "Islamic Channel";
+    var urlInp = document.getElementById("adminYtUrlInput");
+    var rawUrl = (urlInp ? urlInp.value : "").trim();
+    var chName = await detectChannelNameFromUrlOrVideos(rawUrl, selectedPls);
 
-    uncheckedIds.forEach(function(id) {
-      if (window.qaafBlockedPlaylistIds.indexOf(id) === -1) window.qaafBlockedPlaylistIds.push(id);
+    // Make sure none of the selected playlists are in qaafBlockedPlaylistIds
+    window.qaafBlockedPlaylistIds = (window.qaafBlockedPlaylistIds || []).filter(function(id) {
+      return checkedIds.indexOf(id) === -1;
     });
 
-    window.qaafRealChannelPlaylistsMap[chName] = selectedPls;
+    // MERGE selected playlists into window.qaafRealChannelPlaylistsMap[chName] (do NOT overwrite previously imported ones!)
+    var existingChPls = window.qaafRealChannelPlaylistsMap[chName] || [];
+    var plMergeMap = new Map();
+    existingChPls.forEach(function(p) { if (p && p.listId) plMergeMap.set(p.listId, p); });
+    selectedPls.forEach(function(p) { if (p && p.listId) plMergeMap.set(p.listId, p); });
+    window.qaafRealChannelPlaylistsMap[chName] = Array.from(plMergeMap.values());
     window.savePlaylistsToLocalAndCloudDb();
 
     if (window.qaafAdminImportMode === "all_channel") {
@@ -1201,10 +1368,13 @@
     var audVal = audEl ? audEl.value : (cat === "bayan" ? "family_only" : "both_family_kids");
 
     if (typeof showSyncToast === "function") {
-      showSyncToast("⏳ Importing videos from " + selectedPls.length + " selected playlist(s)...");
+      showSyncToast("⏳ Importing videos from " + selectedPls.length + " selected playlist(s) for " + chName + "...");
     }
 
     var totalImportedCount = 0;
+    var existingByYtId = new Map();
+    (videosData || []).forEach(function(v) { if (v && v.ytId) existingByYtId.set(v.ytId, v); });
+
     for (var pIdx = 0; pIdx < selectedPls.length; pIdx++) {
       var plObj = selectedPls[pIdx];
       var foundVidIds = [];
@@ -1219,11 +1389,41 @@
         }
       } catch (e) {}
 
-      var capIds = foundVidIds.slice(0, 80);
+      if (foundVidIds.length < 3) {
+        try {
+          var rPl2 = await fetch("https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent("https://www.youtube.com/playlist?list=" + plObj.listId + "&ucbcb=1&hl=en"));
+          if (rPl2.ok) {
+            var tPl2 = await rPl2.text();
+            var mVids2 = tPl2.matchAll(/(?:watch\?v=|\/shorts\/|"videoId"\s*:\s*")([a-zA-Z0-9_-]{11})/g);
+            for (var mv2 of mVids2) {
+              if (foundVidIds.indexOf(mv2[1]) === -1) foundVidIds.push(mv2[1]);
+            }
+          }
+        } catch (e) {}
+      }
+
+      var capIds = foundVidIds.slice(0, 114);
       var plResolvedVids = [];
-      var CHUNK = 15;
-      for (var c = 0; c < capIds.length; c += CHUNK) {
-        var slice = capIds.slice(c, c + CHUNK);
+      var missingIdsToFetch = [];
+
+      // Tag already-existing videos in videosData immediately!
+      capIds.forEach(function(ytId) {
+        if (existingByYtId.has(ytId)) {
+          var exVid = existingByYtId.get(ytId);
+          exVid.channel = chName;
+          exVid.playlistId = plObj.listId;
+          exVid.playlistName = plObj.title;
+          exVid.channelVerified = true;
+          plResolvedVids.push(exVid);
+          totalImportedCount++;
+        } else {
+          missingIdsToFetch.push(ytId);
+        }
+      });
+
+      var CHUNK = 20;
+      for (var c = 0; c < missingIdsToFetch.length; c += CHUNK) {
+        var slice = missingIdsToFetch.slice(c, c + CHUNK);
         var batch = await Promise.all(slice.map(async function(ytId) {
           try {
             var r = await fetch("https://noembed.com/embed?url=https://www.youtube.com/watch?v=" + ytId);
@@ -1255,8 +1455,9 @@
         batch.forEach(function(vItem) {
           if (vItem) {
             plResolvedVids.push(vItem);
-            if (!videosData.some(function(x) { return x.ytId === vItem.ytId; })) {
+            if (!existingByYtId.has(vItem.ytId)) {
               videosData.unshift(vItem);
+              existingByYtId.set(vItem.ytId, vItem);
               totalImportedCount++;
             }
           }
@@ -1276,14 +1477,11 @@
     localStorage.setItem("qaaf_videos_data", JSON.stringify(videosData));
     window.savePlaylistsToLocalAndCloudDb();
 
-    var boxEl = document.getElementById("adminPlaylistSelectorBox");
-    if (boxEl) boxEl.classList.add("hidden");
-
     if (typeof window.renderVideosNow === "function") window.renderVideosNow();
     if (typeof window.renderAdminActiveVideosCatalog === "function") window.renderAdminActiveVideosCatalog();
     if (window.qaafCloudSync) window.qaafCloudSync.pushState("Imported Selected Playlists: " + chName);
     if (typeof showSyncToast === "function") {
-      showSyncToast("🎉 Imported " + totalImportedCount + " videos from " + selectedPls.length + " playlist(s)!");
+      showSyncToast("🎉 Linked & Imported " + totalImportedCount + " videos across " + selectedPls.length + " playlist(s) in " + chName + "!");
     }
   };
 
