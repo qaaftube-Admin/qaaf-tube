@@ -366,7 +366,7 @@
     return CHANNEL_UI_LABELS[code] || CHANNEL_UI_LABELS.en;
   }
 
-  // Multi-method Playlist Finder (Works via /playlists + Home Tab + YouTube Playlist Search!)
+  // Direct Multi-Engine Playlist Finder (Parses Jina Markdown + YouTube lockupViewModel + Playlist Page Titles directly!)
   window.discoverYouTubePlaylistsForChannel = async function(channelName, channelUrlHint) {
     var baseChannel = (channelUrlHint || "").trim();
     if (!baseChannel && channelName) {
@@ -380,16 +380,35 @@
       }
     }
     if (!baseChannel && channelName) {
-      baseChannel = "https://www.youtube.com/@" + channelName.replace(/\s+/g, "");
+      baseChannel = "https://www.youtube.com/@" + channelName.replace(/\|.*$/, "").trim().replace(/\s+/g, "");
     }
     baseChannel = baseChannel.replace(/\/(videos|shorts|featured|streams|playlists)?\/?$/, "");
 
     var plMetaMap = new Map();
-    function addPl(listId, title, thumb, countText) {
+    function cleanPlTitle(rawT) {
+      if (!rawT) return "";
+      var t = String(rawT)
+        .replace(/\\u0026/g, "&")
+        .replace(/&amp;/g, "&")
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/^#+\s*/, "")
+        .replace(/\s*-\s*YouTube$/i, "")
+        .trim();
+      if (/^(view full playlist|play all|playlist|\d+\s*videos?|!\[image.*)$/i.test(t)) return "";
+      return t;
+    }
+
+    function addPl(listId, title, thumb, countText, sampleVidId) {
       if (!listId || !/^PL[a-zA-Z0-9_-]{10,}$/.test(listId)) return;
-      var ex = plMetaMap.get(listId) || { listId: listId, title: "", thumb: "", countText: "" };
-      if (title && title.length > 2 && !/^(view full playlist|play all|playlist|\d+\s*videos?)$/i.test(title.trim())) {
-        if (!ex.title || title.length > ex.title.length) ex.title = title.trim();
+      var ex = plMetaMap.get(listId) || { listId: listId, title: "", thumb: "", countText: "", sampleVidId: "" };
+      var cTitle = cleanPlTitle(title);
+      if (cTitle && cTitle.length > 2) {
+        if (!ex.title || cTitle.length > ex.title.length) ex.title = cTitle;
+      }
+      if (sampleVidId && /^[a-zA-Z0-9_-]{11}$/.test(sampleVidId)) {
+        if (!ex.sampleVidId) ex.sampleVidId = sampleVidId;
+        if (!ex.thumb) ex.thumb = "https://i.ytimg.com/vi/" + sampleVidId + "/hqdefault.jpg";
       }
       if (thumb && !ex.thumb) ex.thumb = thumb;
       if (countText && !ex.countText) ex.countText = countText;
@@ -398,21 +417,55 @@
 
     function scanRawTextForPlaylists(rawText) {
       if (!rawText) return;
-      var patterns = [
+
+      // 1. Jina Markdown Links: ### [Title](https://www.youtube.com/watch?v=VID&list=PL...) or [### Title](...)
+      var mdLinkRgx = /\[([^\[\]\n]{3,140})\]\(https?:\/\/(?:www\.)?youtube\.com\/(?:watch\?v=([a-zA-Z0-9_-]{11})(?:&|&amp;)list=|playlist\?list=)(PL[a-zA-Z0-9_-]{10,})[^\)]*\)/g;
+      var m1 = rawText.matchAll(mdLinkRgx);
+      for (var a of m1) {
+        var rawLbl = a[1] || "";
+        var vId = a[2] || "";
+        var pId = a[3] || "";
+        var cntMatch = rawLbl.match(/(\d+)\s+videos?/i);
+        var cnt = cntMatch ? cntMatch[1] : "";
+        if (!/!\[image/i.test(rawLbl)) {
+          addPl(pId, rawLbl, "", cnt, vId);
+        } else {
+          addPl(pId, "", "", cnt, vId);
+        }
+      }
+
+      // 2. YouTube 2025/2026 lockupViewModel JSON: "contentId":"PL..." ... "title":{"content":"Title"}
+      var lockupRgx = /"contentId"\s*:\s*"(PL[a-zA-Z0-9_-]{10,})"(?:(?!lockupViewModel).){1,2200}?"title"\s*:\s*\{\s*"content"\s*:\s*"([^"]{2,150})"/g;
+      var m2 = rawText.matchAll(lockupRgx);
+      for (var b of m2) {
+        addPl(b[1], b[2], "", "", "");
+      }
+
+      // 3. Classic gridPlaylistRenderer / playlistRenderer JSON: "playlistId":"PL..." ... "title":{"runs":[{"text":"Title"}]} or {"simpleText":"Title"}
+      var classicRgx = /"playlistId"\s*:\s*"(PL[a-zA-Z0-9_-]{10,})"(?:(?!playlistRenderer).){1,1800}?"title"\s*:\s*\{(?:\s*"simpleText"\s*:\s*"([^"]{2,150})"|\s*"runs"\s*:\s*\[\s*\{\s*"text"\s*:\s*"([^"]{2,150})")/g;
+      var m3 = rawText.matchAll(classicRgx);
+      for (var c of m3) {
+        addPl(c[1], c[2] || c[3] || "", "", "", "");
+      }
+
+      // 4. Watch URLs pairing videoId + listId: watch?v=VID&list=PL...
+      var watchMatches = rawText.matchAll(/watch\?v=([a-zA-Z0-9_-]{11})(?:&|&amp;|\\u0026)list=(PL[a-zA-Z0-9_-]{10,})/g);
+      for (var wm of watchMatches) {
+        addPl(wm[2], "", "", "", wm[1]);
+      }
+
+      // 5. Any remaining PL... IDs in text
+      var barePatterns = [
         /list=(PL[a-zA-Z0-9_-]{10,})/g,
         /"playlistId"\s*:\s*"(PL[a-zA-Z0-9_-]{10,})"/g,
         /"contentId"\s*:\s*"(PL[a-zA-Z0-9_-]{10,})"/g
       ];
-      patterns.forEach(function(rgx) {
+      barePatterns.forEach(function(rgx) {
         var matches = rawText.matchAll(rgx);
         for (var m of matches) {
-          addPl(m[1], "", "", "");
+          addPl(m[1], "", "", "", "");
         }
       });
-      var watchMatches = rawText.matchAll(/watch\?v=([a-zA-Z0-9_-]{11})(?:&|&amp;)list=(PL[a-zA-Z0-9_-]{10,})/g);
-      for (var wm of watchMatches) {
-        addPl(wm[2], "", "https://i.ytimg.com/vi/" + wm[1] + "/hqdefault.jpg", "");
-      }
     }
 
     var urlsToTry = [];
@@ -421,18 +474,19 @@
       urlsToTry.push(baseChannel);
     }
     if (channelName) {
-      urlsToTry.push("https://www.youtube.com/results?search_query=" + encodeURIComponent(channelName + " playlist") + "&sp=EgIQAw%253D%253D");
+      var cleanChQuery = channelName.split("|")[0].trim();
+      urlsToTry.push("https://www.youtube.com/results?search_query=" + encodeURIComponent(cleanChQuery + " playlist") + "&sp=EgIQAw%253D%253D");
     }
 
     for (var uIdx = 0; uIdx < urlsToTry.length; uIdx++) {
       var uUrl = urlsToTry[uIdx];
-      // 1. Plain Jina
+      // 1. Plain Jina Reader
       try {
         var r1 = await fetch("https://r.jina.ai/" + uUrl);
         if (r1.ok) scanRawTextForPlaylists(await r1.text());
       } catch (e) {}
 
-      // 2. CodeTabs raw HTML
+      // 2. CodeTabs Proxy (Raw YouTube HTML with ytInitialData JSON)
       if (plMetaMap.size < 3) {
         try {
           var sep = uUrl.indexOf("?") === -1 ? "?" : "&";
@@ -441,7 +495,7 @@
         } catch (e) {}
       }
 
-      // 3. AllOrigins raw HTML
+      // 3. AllOrigins Proxy (Raw YouTube HTML)
       if (plMetaMap.size < 3) {
         try {
           var sep2 = uUrl.indexOf("?") === -1 ? "?" : "&";
@@ -450,33 +504,50 @@
         } catch (e) {}
       }
 
-      if (plMetaMap.size >= 5) break;
+      if (plMetaMap.size >= 4) break;
     }
 
-    var candidates = Array.from(plMetaMap.values()).slice(0, 28);
-    var resolved = [];
-    var normTargetCh = String(channelName || "").trim().toLowerCase();
+    var candidates = Array.from(plMetaMap.values()).slice(0, 25);
 
+    // Resolve any missing title or thumbnail by checking Jina Playlist Page or sample video oEmbed
     await Promise.all(candidates.map(async function(item) {
-      try {
-        var r = await fetch("https://noembed.com/embed?url=https://www.youtube.com/playlist?list=" + item.listId);
-        var d = await r.json();
-        if (d && d.title) {
-          item.title = d.title;
-          item.authorName = (d.author_name || "").trim();
-          if (d.thumbnail_url && !item.thumb) {
-            var mV = d.thumbnail_url.match(/\/vi\/([a-zA-Z0-9_-]{11})\//);
-            item.thumb = mV ? ("https://i.ytimg.com/vi/" + mV[1] + "/hqdefault.jpg") : d.thumbnail_url;
+      if (!item.title || !item.thumb) {
+        try {
+          var rPl = await fetch("https://r.jina.ai/https://www.youtube.com/playlist?list=" + item.listId);
+          if (rPl.ok) {
+            var txtPl = await rPl.text();
+            var tMatch = txtPl.match(/^Title:\s*(.+?)\s*(?:-\s*YouTube)?$/m);
+            if (tMatch && tMatch[1]) {
+              var cleaned = cleanPlTitle(tMatch[1]);
+              if (cleaned && cleaned.toLowerCase() !== "youtube") item.title = cleaned;
+            }
+            if (!item.thumb) {
+              var vMatch = txtPl.match(/watch\?v=([a-zA-Z0-9_-]{11})/);
+              if (vMatch && vMatch[1]) {
+                item.sampleVidId = vMatch[1];
+                item.thumb = "https://i.ytimg.com/vi/" + vMatch[1] + "/hqdefault.jpg";
+              }
+            }
           }
-          // If discovered via search, verify author matches channel if channelName is known
-          if (!normTargetCh || !item.authorName || item.authorName.toLowerCase().indexOf(normTargetCh.split("|")[0].trim()) !== -1 || normTargetCh.indexOf(item.authorName.toLowerCase()) !== -1) {
-            resolved.push(item);
+        } catch (e) {}
+      }
+
+      if (!item.title && item.sampleVidId) {
+        try {
+          var rVid = await fetch("https://noembed.com/embed?url=https://www.youtube.com/watch?v=" + item.sampleVidId);
+          var dVid = await rVid.json();
+          if (dVid && dVid.title) {
+            item.title = "Playlist: " + dVid.title;
           }
-        }
-      } catch (e) {}
+        } catch (e) {}
+      }
+
+      if (!item.title) {
+        item.title = (channelName ? (channelName.split("|")[0].trim() + " ") : "") + "Playlist (" + item.listId.slice(0, 8) + ")";
+      }
     }));
 
-    return resolved;
+    return candidates.filter(function(x) { return !!x.listId; });
   };
 
   window.fetchOfficialYouTubePlaylistsForChannel = async function(channelName, forceRefresh) {
@@ -1216,27 +1287,82 @@
     }
   };
 
-  // Hook into Auto-Fetch so after Auto-Fetch completes on a channel, it also automatically discovers the channel's playlists!
+  // Store all 150 discovered channel video IDs during Auto-Fetch and guarantee full batch import on "+ Push Live"
+  window.qaafLastFetchedChannelVideoIds = [];
+  window.qaafLastFetchedChannelUrl = "";
+
+  async function harvestUpTo150ChannelVideoIds(rawChannelUrl) {
+    var base = String(rawChannelUrl || "").trim().replace(/\/(videos|shorts|featured|streams|playlists)?\/?$/, "");
+    if (!base) return [];
+    var ids = [];
+    function collectIds(txt) {
+      if (!txt) return;
+      var m = txt.matchAll(/(?:watch\?v=|\/shorts\/|"videoId"\s*:\s*"|\/vi\/)([a-zA-Z0-9_-]{11})/g);
+      for (var x of m) {
+        if (ids.indexOf(x[1]) === -1) ids.push(x[1]);
+        if (ids.length >= 150) break;
+      }
+    }
+    try {
+      var r1 = await fetch("https://r.jina.ai/" + base + "/videos");
+      if (r1.ok) collectIds(await r1.text());
+    } catch (e) {}
+    if (ids.length < 25) {
+      try {
+        var r2 = await fetch("https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(base + "/videos?ucbcb=1&hl=en"));
+        if (r2.ok) collectIds(await r2.text());
+      } catch (e) {}
+    }
+    if (ids.length < 25) {
+      try {
+        var r3 = await fetch("https://r.jina.ai/" + base);
+        if (r3.ok) collectIds(await r3.text());
+      } catch (e) {}
+    }
+    return ids.slice(0, 150);
+  }
+
   var baseAutoFetch = window.adminAutoFetchYouTubeInfo;
   window.adminAutoFetchYouTubeInfo = async function() {
     ensureAdminPlaylistSelectorUI();
+    var urlInp = document.getElementById("adminYtUrlInput");
+    var raw = (urlInp ? urlInp.value : "").trim();
+    var isChannelUrl = raw && (raw.indexOf("/@") !== -1 || raw.indexOf("@") === 0 || raw.indexOf("/channel/") !== -1 || raw.indexOf("/c/") !== -1 || raw.indexOf("/user/") !== -1);
+
     if (baseAutoFetch) {
       await baseAutoFetch();
     }
-    var urlInp = document.getElementById("adminYtUrlInput");
-    var raw = (urlInp ? urlInp.value : "").trim();
-    if (raw && (raw.indexOf("/@") !== -1 || raw.indexOf("@") === 0 || raw.indexOf("/channel/") !== -1)) {
+
+    if (isChannelUrl) {
+      window.qaafLastFetchedChannelUrl = raw;
+      harvestUpTo150ChannelVideoIds(raw).then(function(foundIds) {
+        if (foundIds && foundIds.length > 0) {
+          window.qaafLastFetchedChannelVideoIds = foundIds;
+        }
+      });
       setTimeout(function() {
         window.adminFetchChannelPlaylistsForPicker();
-      }, 400);
+      }, 300);
+    } else {
+      window.qaafLastFetchedChannelVideoIds = [];
     }
   };
 
-  // Override adminAddGlobalVideo so Main Super Admin is never blocked by bannedChannels and playlists are saved
   var origAdminAddGlobalVideo = window.adminAddGlobalVideo;
-  window.adminAddGlobalVideo = function() {
+  window.adminAddGlobalVideo = async function() {
     var chInp = document.getElementById("adminChannelName");
+    var titleInp = document.getElementById("adminVideoTitle");
+    var urlInp = document.getElementById("adminYtUrlInput");
     var chName = (chInp ? chInp.value : "").trim() || (window.adminPendingBatchChannel ? window.adminPendingBatchChannel.channelTitle : "") || "";
+    var rawTitle = (titleInp ? titleInp.value : "").trim();
+    var rawUrl = (urlInp ? urlInp.value : "").trim();
+    var lang = document.getElementById("adminVideoLang") ? document.getElementById("adminVideoLang").value : "global";
+    var cat = document.getElementById("adminVideoCat") ? document.getElementById("adminVideoCat").value : "quran";
+    var audEl = document.getElementById("adminVideoAudience");
+    var audVal = audEl ? audEl.value : (cat === "bayan" ? "family_only" : "both_family_kids");
+
+    var isChannelPack = rawTitle.indexOf("[Channel Pack:") !== -1 || (rawUrl && (rawUrl.indexOf("/@") !== -1 || rawUrl.indexOf("@") === 0 || rawUrl.indexOf("/channel/") !== -1));
+    var countBefore = (videosData || []).filter(function(v) { return v && v.channel === chName; }).length;
 
     var tempSavedBans = null;
     if (window.isStrictlyMainSuperAdmin() && Array.isArray(bannedChannels)) {
@@ -1246,7 +1372,7 @@
     }
 
     if (origAdminAddGlobalVideo) {
-      origAdminAddGlobalVideo();
+      await origAdminAddGlobalVideo();
     }
 
     if (tempSavedBans !== null && Array.isArray(bannedChannels)) {
@@ -1258,6 +1384,82 @@
         }
       });
     }
+
+    // Check if qaaf-admin.js only added 1 video for a full Channel Pack! If so, import all 150 videos now!
+    setTimeout(async function() {
+      var countAfter = (videosData || []).filter(function(v) { return v && v.channel === chName; }).length;
+      if (isChannelPack && chName && (countAfter - countBefore) <= 2) {
+        var batchIds = (window.qaafLastFetchedChannelVideoIds && window.qaafLastFetchedChannelVideoIds.length > 1)
+          ? window.qaafLastFetchedChannelVideoIds
+          : await harvestUpTo150ChannelVideoIds(rawUrl || window.qaafLastFetchedChannelUrl);
+
+        if (batchIds && batchIds.length > 1) {
+          if (typeof showSyncToast === "function") {
+            showSyncToast("⏳ Importing all " + batchIds.length + " videos for " + chName + "...");
+          }
+          var existingYtIds = new Set((videosData || []).map(function(v) { return v && v.ytId; }).filter(Boolean));
+          var missingIds = batchIds.filter(function(id) { return !existingYtIds.has(id); });
+          var addedNow = 0;
+          var CHUNK = 20;
+          for (var i = 0; i < missingIds.length; i += CHUNK) {
+            var slice = missingIds.slice(i, i + CHUNK);
+            var resolved = await Promise.all(slice.map(async function(ytId, idx) {
+              try {
+                var r = await fetch("https://noembed.com/embed?url=https://www.youtube.com/watch?v=" + ytId);
+                var d = await r.json();
+                if (d && d.title) {
+                  return {
+                    id: "v_" + ytId,
+                    ytId: ytId,
+                    title: d.title.replace(/^\[Channel Pack:\s*\d+\s*Videos\]\s*/i, ""),
+                    channel: chName,
+                    lang: lang,
+                    region: lang.toUpperCase(),
+                    category: cat,
+                    audienceMode: audVal,
+                    kidsSafe: (audVal !== "family_only"),
+                    channelVerified: true,
+                    isShort: /#short/i.test(d.title),
+                    isCustomAdded: true,
+                    duration: "12:00",
+                    views: 1500,
+                    createdAt: Math.floor(Date.now() / 1000) - (i + idx)
+                  };
+                }
+              } catch (e) {}
+              return null;
+            }));
+            resolved.forEach(function(vObj) {
+              if (vObj && !videosData.some(function(x) { return x.ytId === vObj.ytId; })) {
+                videosData.unshift(vObj);
+                addedNow++;
+              }
+            });
+          }
+
+          // Also clean "[Channel Pack: 150 Videos]" prefix from the first video if present
+          (videosData || []).forEach(function(v) {
+            if (v && v.channel === chName && typeof v.title === "string") {
+              v.title = v.title.replace(/^\[Channel Pack:\s*\d+\s*Videos\]\s*/i, "");
+              v.channelVerified = true;
+            }
+          });
+
+          if (window.verifiedChannelsList && window.verifiedChannelsList.indexOf(chName) === -1) {
+            window.verifiedChannelsList.push(chName);
+            localStorage.setItem("qaaf_verified_channels", JSON.stringify(window.verifiedChannelsList));
+          }
+
+          localStorage.setItem("qaaf_videos_data", JSON.stringify(videosData));
+          if (typeof window.renderVideosNow === "function") window.renderVideosNow();
+          if (typeof window.renderAdminActiveVideosCatalog === "function") window.renderAdminActiveVideosCatalog();
+          if (window.qaafCloudSync) window.qaafCloudSync.pushState("Imported Full Channel Pack (" + (addedNow + 1) + " videos): " + chName);
+          if (typeof showSyncToast === "function") {
+            showSyncToast("✅ Full Channel Imported: " + chName + " (" + (countAfter + addedNow) + " videos)!");
+          }
+        }
+      }
+    }, 600);
   };
 
   var prevOpenAdm2 = window.openAdminModal;
