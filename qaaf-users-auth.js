@@ -2215,8 +2215,20 @@
   }
 
   function injectAdminAnnouncementControlBox() {
-    var sponsorPane = document.getElementById("admPane_sponsor");
-    if (!sponsorPane || document.getElementById("admSpecialAnnouncementBox")) return;
+    var existingBox = document.getElementById("admSpecialAnnouncementBox");
+    if (existingBox) {
+      populateAdminAnnouncementInputs();
+      return;
+    }
+    var sponsorPane = document.getElementById("admPane_sponsor") || document.getElementById("admPane_sponsors") || document.getElementById("admPane_ads");
+    if (!sponsorPane) {
+      document.querySelectorAll("h3, h4").forEach(function(h) {
+        if ((h.innerText || "").indexOf("Regional Sponsor") !== -1 && h.parentElement && h.parentElement.parentElement) {
+          sponsorPane = h.parentElement.parentElement;
+        }
+      });
+    }
+    if (!sponsorPane) return;
 
     var box = document.createElement("div");
     box.id = "admSpecialAnnouncementBox";
