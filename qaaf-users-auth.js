@@ -639,8 +639,106 @@
       }
     }
 
-    return Array.from(resultsMap.values());
+    return sortVideosBySurahOrPlaylistOrder(Array.from(resultsMap.values()));
   }
+
+  // Fetch ALL videos of a YouTube playlist including >100 continuation (Surahs 101 to 114!)
+  window.harvestAllPlaylistVideoIdsUpTo200 = async function(listId) {
+    if (!listId) return [];
+    var foundVidIds = [];
+    function addId(id) {
+      if (id && /^[a-zA-Z0-9_-]{11}$/.test(id) && foundVidIds.indexOf(id) === -1) {
+        foundVidIds.push(id);
+      }
+    }
+
+    var plUrl = "https://www.youtube.com/playlist?list=" + listId;
+    try {
+      var r1 = await fetch("https://r.jina.ai/" + plUrl);
+      if (r1.ok) {
+        var t1 = await r1.text();
+        var m1 = t1.matchAll(/(?:watch\?v=|\/shorts\/|"videoId":")([a-zA-Z0-9_-]{11})/g);
+        for (var a of m1) addId(a[1]);
+      }
+    } catch (e) {}
+
+    if (foundVidIds.length < 5) {
+      try {
+        var r2 = await fetch("https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(plUrl + "&ucbcb=1&hl=en"));
+        if (r2.ok) {
+          var t2 = await r2.text();
+          var m2 = t2.matchAll(/(?:watch\?v=|\/shorts\/|"videoId"\s*:\s*")([a-zA-Z0-9_-]{11})/g);
+          for (var b of m2) addId(b[1]);
+        }
+      } catch (e) {}
+    }
+
+    // If playlist hit YouTube's 100-video page cap (e.g. >= 95 videos), fetch the remaining videos (101..114+)
+    // using YouTube's Watch Playlist Panel at index=100, strictly matching this exact listId!
+    if (foundVidIds.length >= 95) {
+      var pivotVidId = foundVidIds[foundVidIds.length - 1];
+      var pivotIdx = foundVidIds.length;
+      var watchContUrl = "https://www.youtube.com/watch?v=" + pivotVidId + "&list=" + listId + "&index=" + pivotIdx;
+      var escListId = listId.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
+
+      function extractStrictlyFromPlaylistPanel(rawWatchText) {
+        if (!rawWatchText) return;
+        // 1. Markdown & HTML links that explicitly carry &list=THIS_LIST_ID
+        var rgxLink = new RegExp("watch\\?v=([a-zA-Z0-9_-]{11})(?:&|&amp;|\\\\u0026)list=" + escListId, "g");
+        var ml = rawWatchText.matchAll(rgxLink);
+        for (var x of ml) addId(x[1]);
+
+        // 2. JSON watchEndpoint / playlistPanelVideoRenderer paired with THIS_LIST_ID
+        var rgxJson1 = new RegExp('"videoId"\\s*:\\s*"([a-zA-Z0-9_-]{11})"\\s*,\\s*"playlistId"\\s*:\\s*"' + escListId + '"', "g");
+        var mj1 = rawWatchText.matchAll(rgxJson1);
+        for (var y of mj1) addId(y[1]);
+
+        var rgxJson2 = new RegExp('"playlistPanelVideoRenderer"\\s*:\\s*\\{(?:(?!playlistPanelVideoRenderer).){1,1200}?"videoId"\\s*:\\s*"([a-zA-Z0-9_-]{11})"', "g");
+        var mj2 = rawWatchText.matchAll(rgxJson2);
+        for (var z of mj2) addId(z[1]);
+      }
+
+      try {
+        var rw1 = await fetch("https://r.jina.ai/" + watchContUrl);
+        if (rw1.ok) extractStrictlyFromPlaylistPanel(await rw1.text());
+      } catch (e) {}
+
+      if (foundVidIds.length <= 100) {
+        try {
+          var rw2 = await fetch("https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(watchContUrl + "&ucbcb=1&hl=en"));
+          if (rw2.ok) extractStrictlyFromPlaylistPanel(await rw2.text());
+        } catch (e) {}
+      }
+
+      if (foundVidIds.length <= 100) {
+        try {
+          var rw3 = await fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(watchContUrl + "&ucbcb=1&hl=en"));
+          if (rw3.ok) extractStrictlyFromPlaylistPanel(await rw3.text());
+        } catch (e) {}
+      }
+    }
+
+    return foundVidIds.slice(0, 200);
+  };
+
+  function sortVideosBySurahOrPlaylistOrder(vidsArray) {
+    if (!Array.isArray(vidsArray) || vidsArray.length <= 1) return vidsArray || [];
+    var withSurahCount = 0;
+    vidsArray.forEach(function(v) {
+      if (v && v.title && /\b(?:quran|surah)\s+0*(\d{1,3})\b/i.test(v.title)) withSurahCount++;
+    });
+    if (withSurahCount >= Math.min(5, Math.floor(vidsArray.length * 0.4))) {
+      return vidsArray.slice().sort(function(a, b) {
+        var ma = (a && a.title) ? a.title.match(/\b(?:quran|surah)\s+0*(\d{1,3})\b/i) : null;
+        var mb = (b && b.title) ? b.title.match(/\b(?:quran|surah)\s+0*(\d{1,3})\b/i) : null;
+        var na = ma ? parseInt(ma[1], 10) : 999;
+        var nb = mb ? parseInt(mb[1], 10) : 999;
+        return na - nb;
+      });
+    }
+    return vidsArray;
+  }
+
 
   window.openQaafOfficialYouTubePlaylist = async function(listId, plTitle, channelName) {
     window.qaafChannelActiveSubTab = "playlists";
@@ -648,7 +746,8 @@
 
     if (typeof window.renderVideosNow === "function") window.renderVideosNow();
 
-    if (Array.isArray(window.qaafPlaylistVideosCache[listId]) && window.qaafPlaylistVideosCache[listId].length > 0) {
+    var cachedNow = window.qaafPlaylistVideosCache[listId];
+    if (Array.isArray(cachedNow) && cachedNow.length > 0 && cachedNow.length !== 100 && cachedNow.length !== 101) {
       return;
     }
 
@@ -656,29 +755,7 @@
     isFetchingSinglePlVids = true;
 
     try {
-      var foundIds = [];
-      var plPageUrl = "https://www.youtube.com/playlist?list=" + listId;
-      try {
-        var r1 = await fetch("https://r.jina.ai/" + plPageUrl);
-        if (r1.ok) {
-          var t1 = await r1.text();
-          var m1 = t1.matchAll(/(?:watch\?v=|\/shorts\/|"videoId":")([a-zA-Z0-9_-]{11})/g);
-          for (var x of m1) { if (foundIds.indexOf(x[1]) === -1) foundIds.push(x[1]); }
-        }
-      } catch (e) {}
-
-      if (foundIds.length < 3) {
-        try {
-          var r2 = await fetch("https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(plPageUrl + "&ucbcb=1&hl=en"));
-          if (r2.ok) {
-            var t2 = await r2.text();
-            var m2 = t2.matchAll(/(?:watch\?v=|\/shorts\/|"videoId"\s*:\s*")([a-zA-Z0-9_-]{11})/g);
-            for (var y of m2) { if (foundIds.indexOf(y[1]) === -1) foundIds.push(y[1]); }
-          }
-        } catch (e) {}
-      }
-
-      var targetIds = foundIds.slice(0, 120);
+      var targetIds = await window.harvestAllPlaylistVideoIdsUpTo200(listId);
       var existingByYtId = new Map();
       var sampleCat = "quran";
       var sampleLang = "global";
@@ -703,47 +780,47 @@
         }
       });
 
-      if (resolvedVids.length > 0) {
-        window.qaafPlaylistVideosCache[listId] = resolvedVids;
-        if (typeof window.renderVideosNow === "function") window.renderVideosNow();
-      }
-
       if (missingYtIds.length > 0) {
-        var extraSlice = missingYtIds.slice(0, 40);
-        var extraBatch = await Promise.all(extraSlice.map(async function(ytId) {
-          try {
-            var r = await fetch("https://noembed.com/embed?url=https://www.youtube.com/watch?v=" + ytId);
-            var info = await r.json();
-            if (info && info.title) {
-              var newVidObj = {
-                id: "v_" + ytId,
-                ytId: ytId,
-                title: info.title,
-                channel: channelName,
-                lang: sampleLang,
-                region: sampleLang.toUpperCase(),
-                category: sampleCat,
-                kidsSafe: (sampleCat !== "bayan"),
-                channelVerified: true,
-                playlistId: listId,
-                playlistName: plTitle,
-                duration: "10:00",
-                views: 2500,
-                createdAt: Math.floor(Date.now() / 1000)
-              };
-              if (!videosData.some(function(x) { return x.ytId === ytId; })) {
-                videosData.push(newVidObj);
+        var CHUNK = 20;
+        for (var i = 0; i < missingYtIds.length; i += CHUNK) {
+          var slice = missingYtIds.slice(i, i + CHUNK);
+          var extraBatch = await Promise.all(slice.map(async function(ytId) {
+            try {
+              var r = await fetch("https://noembed.com/embed?url=https://www.youtube.com/watch?v=" + ytId);
+              var info = await r.json();
+              if (info && info.title) {
+                var newVidObj = {
+                  id: "v_" + ytId,
+                  ytId: ytId,
+                  title: info.title,
+                  channel: channelName,
+                  lang: sampleLang,
+                  region: sampleLang.toUpperCase(),
+                  category: sampleCat,
+                  kidsSafe: (sampleCat !== "bayan"),
+                  channelVerified: true,
+                  playlistId: listId,
+                  playlistName: plTitle,
+                  duration: "10:00",
+                  views: 2500,
+                  createdAt: Math.floor(Date.now() / 1000)
+                };
+                if (!videosData.some(function(x) { return x.ytId === ytId; })) {
+                  videosData.push(newVidObj);
+                }
+                return newVidObj;
               }
-              return newVidObj;
-            }
-          } catch (e) {}
-          return null;
-        }));
-        extraBatch.forEach(function(item) { if (item) resolvedVids.push(item); });
+            } catch (e) {}
+            return null;
+          }));
+          extraBatch.forEach(function(item) { if (item) resolvedVids.push(item); });
+        }
       }
 
       if (resolvedVids.length > 0) {
+        resolvedVids = sortVideosBySurahOrPlaylistOrder(resolvedVids);
         window.qaafPlaylistVideosCache[listId] = resolvedVids;
+        localStorage.setItem("qaaf_videos_data", JSON.stringify(videosData));
         window.savePlaylistsToLocalAndCloudDb();
       }
     } catch (e) {}
@@ -847,32 +924,20 @@
     var chRegVids = chAllVids.filter(function(v) { return !isVideoShort(v); });
     var chShortVids = chAllVids.filter(function(v) { return isVideoShort(v); });
 
-    // Reassign any orphan "Islamic Channel" videos/playlists to Haramain Translations if applicable
+    // Clean out the accidental "New Video (0r6BcBXZvUg)" (Story of Ibrahim cartoon) from Haramain Translations
     if (Array.isArray(videosData)) {
-      var hasHaramain = videosData.some(function(v) { return v && v.channel === "Haramain Translations"; });
-      if (hasHaramain) {
-        videosData.forEach(function(v) {
-          if (v && v.channel === "Islamic Channel") v.channel = "Haramain Translations";
-        });
-        if (Array.isArray(window.qaafRealChannelPlaylistsMap["Islamic Channel"]) && window.qaafRealChannelPlaylistsMap["Islamic Channel"].length > 0) {
-          var existingH = window.qaafRealChannelPlaylistsMap["Haramain Translations"] || [];
-          var existingHIds = new Set(existingH.map(function(p) { return p.listId; }));
-          window.qaafRealChannelPlaylistsMap["Islamic Channel"].forEach(function(p) {
-            if (p && p.listId && !existingHIds.has(p.listId)) {
-              existingH.push(p);
-              existingHIds.add(p.listId);
-            }
-          });
-          window.qaafRealChannelPlaylistsMap["Haramain Translations"] = existingH;
-          delete window.qaafRealChannelPlaylistsMap["Islamic Channel"];
+      for (var vIdx = videosData.length - 1; vIdx >= 0; vIdx--) {
+        var itemV = videosData[vIdx];
+        if (!itemV) continue;
+        if (itemV.ytId === "0r6BcBXZvUg" || itemV.id === "v_0r6BcBXZvUg" || /^New Video \([a-zA-Z0-9_-]{11}\)$/i.test(String(itemV.title || "").trim())) {
+          if (itemV.channel === "Haramain Translations") {
+            videosData.splice(vIdx, 1);
+            try { localStorage.setItem("qaaf_videos_data", JSON.stringify(videosData)); } catch (e) {}
+          }
         }
       }
     }
 
-    // Build combined Playlists list for this channel from:
-    // 1) window.qaafRealChannelPlaylistsMap[selCh]
-    // 2) Any playlistId + playlistName already tagged on videos of this channel in videosData
-    // 3) Auto-grouped Sheikh series if Haramain Translations has videos of multiple Sheikhs
     var combinedPlMap = new Map();
     (window.qaafRealChannelPlaylistsMap[selCh] || []).forEach(function(p) {
       if (p && p.listId && !blockedPlSet.has(p.listId)) {
@@ -893,27 +958,92 @@
       }
     });
 
-    // Update each playlist's live video count & thumbnail from matched videos
     var officialPlaylists = [];
     combinedPlMap.forEach(function(pl) {
       var matchedVids = getInstantMatchedVideosForPlaylist(pl.title, selCh, pl.listId);
       if (matchedVids.length > 0) {
         pl.countText = String(matchedVids.length);
-        if (!pl.thumb && matchedVids[0] && matchedVids[0].ytId) {
+        // Always use Surah 1 (first sorted video in the playlist) as the Playlist Card thumbnail!
+        if (matchedVids[0] && matchedVids[0].ytId) {
           pl.thumb = "https://i.ytimg.com/vi/" + matchedVids[0].ytId + "/hqdefault.jpg";
         }
       }
       officialPlaylists.push(pl);
     });
 
-    // If user imported By Playlists Only (some playlists have matched videos in our catalog),
-    // show playlists that have videos first!
     var plsWithLocalVids = officialPlaylists.filter(function(p) {
       return getInstantMatchedVideosForPlaylist(p.title, selCh, p.listId).length > 0;
     });
     if (plsWithLocalVids.length > 0) {
       officialPlaylists = plsWithLocalVids;
     }
+
+    // Background Auto-Completer: If any imported playlist in this channel is stuck at 100 or 101 videos,
+    // automatically fetch its remaining videos (101 to 114) in the background!
+    if (!window.qaafAutoCompleting114Map) window.qaafAutoCompleting114Map = {};
+    officialPlaylists.forEach(function(pl) {
+      var curCnt = parseInt(pl.countText || "0", 10);
+      if ((curCnt === 100 || curCnt === 101) && !window.qaafAutoCompleting114Map[pl.listId]) {
+        window.qaafAutoCompleting114Map[pl.listId] = true;
+        setTimeout(async function() {
+          try {
+            var fullIds = await window.harvestAllPlaylistVideoIdsUpTo200(pl.listId);
+            if (fullIds.length > curCnt) {
+              var existingMap = new Map();
+              (videosData || []).forEach(function(v) { if (v && v.ytId) existingMap.set(v.ytId, v); });
+              var missing = fullIds.filter(function(id) { return !existingMap.has(id); });
+              var newResolved = [];
+              for (var k = 0; k < missing.length; k += 15) {
+                var sl = missing.slice(k, k + 15);
+                var bRes = await Promise.all(sl.map(async function(ytId) {
+                  try {
+                    var r = await fetch("https://noembed.com/embed?url=https://www.youtube.com/watch?v=" + ytId);
+                    var d = await r.json();
+                    if (d && d.title) {
+                      return {
+                        id: "v_" + ytId,
+                        ytId: ytId,
+                        title: d.title,
+                        channel: selCh,
+                        lang: "global",
+                        region: "GLOBAL",
+                        category: "quran",
+                        audienceMode: "both_family_kids",
+                        kidsSafe: true,
+                        channelVerified: true,
+                        playlistId: pl.listId,
+                        playlistName: pl.title,
+                        isShort: false,
+                        isCustomAdded: true,
+                        duration: "10:00",
+                        views: 2500,
+                        createdAt: Math.floor(Date.now() / 1000)
+                      };
+                    }
+                  } catch (e) {}
+                  return null;
+                }));
+                bRes.forEach(function(vo) {
+                  if (vo && !existingMap.has(vo.ytId)) {
+                    videosData.push(vo);
+                    existingMap.set(vo.ytId, vo);
+                    newResolved.push(vo);
+                  }
+                });
+              }
+              var allPlVids = fullIds.map(function(id) { return existingMap.get(id); }).filter(Boolean);
+              allPlVids = sortVideosBySurahOrPlaylistOrder(allPlVids);
+              window.qaafPlaylistVideosCache[pl.listId] = allPlVids;
+              pl.countText = String(allPlVids.length);
+              localStorage.setItem("qaaf_videos_data", JSON.stringify(videosData));
+              window.savePlaylistsToLocalAndCloudDb();
+              if (typeof window.renderVideosNow === "function") window.renderVideosNow();
+              if (window.qaafCloudSync) window.qaafCloudSync.pushState("Completed 114 Surahs for " + pl.title);
+            }
+          } catch (e) {}
+        }, 500);
+      }
+    });
 
     var isVer = (typeof window.isChannelFullyVerified === "function") && window.isChannelFullyVerified(selCh, chAllVids[0]);
     var activeTab = window.qaafChannelActiveSubTab || "videos";
@@ -1377,32 +1507,8 @@
 
     for (var pIdx = 0; pIdx < selectedPls.length; pIdx++) {
       var plObj = selectedPls[pIdx];
-      var foundVidIds = [];
-      try {
-        var rPl = await fetch("https://r.jina.ai/https://www.youtube.com/playlist?list=" + plObj.listId);
-        if (rPl.ok) {
-          var tPl = await rPl.text();
-          var mVids = tPl.matchAll(/(?:watch\?v=|\/shorts\/|"videoId":")([a-zA-Z0-9_-]{11})/g);
-          for (var mv of mVids) {
-            if (foundVidIds.indexOf(mv[1]) === -1) foundVidIds.push(mv[1]);
-          }
-        }
-      } catch (e) {}
-
-      if (foundVidIds.length < 3) {
-        try {
-          var rPl2 = await fetch("https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent("https://www.youtube.com/playlist?list=" + plObj.listId + "&ucbcb=1&hl=en"));
-          if (rPl2.ok) {
-            var tPl2 = await rPl2.text();
-            var mVids2 = tPl2.matchAll(/(?:watch\?v=|\/shorts\/|"videoId"\s*:\s*")([a-zA-Z0-9_-]{11})/g);
-            for (var mv2 of mVids2) {
-              if (foundVidIds.indexOf(mv2[1]) === -1) foundVidIds.push(mv2[1]);
-            }
-          }
-        } catch (e) {}
-      }
-
-      var capIds = foundVidIds.slice(0, 114);
+      var foundVidIds = await window.harvestAllPlaylistVideoIdsUpTo200(plObj.listId);
+      var capIds = foundVidIds.slice(0, 200);
       var plResolvedVids = [];
       var missingIdsToFetch = [];
 
