@@ -1861,37 +1861,11 @@
   }
 
   var REAL_GAMES_CATALOG = [
-    // 1. QAAF Games (4 Direct Games inside qaaf-games.html)
-    {
-      id: "g1",
-      categoryGroup: "qaaf_games",
-      title: "Word Search Puzzle",
-      icon: "🔍",
-      launchUrl: "./qaaf-games.html?game=wordsearch"
-    },
-    {
-      id: "g2",
-      categoryGroup: "qaaf_games",
-      title: "Quran & Sunnah Quiz",
-      icon: "📖",
-      launchUrl: "./qaaf-games.html?game=quiz"
-    },
-    {
-      id: "g3",
-      categoryGroup: "qaaf_games",
-      title: "Arabic Alphabet Puzzle",
-      icon: "🔤",
-      launchUrl: "./qaaf-games.html?game=alphabet"
-    },
-    {
-      id: "g4",
-      categoryGroup: "qaaf_games",
-      title: "Masjid & Wudu Builder",
-      icon: "🕌",
-      launchUrl: "./qaaf-games.html?game=masjid"
-    },
-
-    // 2. QAAF Quranic Games (Auto-Discovered from Qaaf quran Games folder)
+    {"id": "g1", "categoryGroup": "qaaf_games", "title": "1. Word Search Puzzle — الفاظ کی تلاش", "icon": "🔍", "launchUrl": "./qaaf-games/games/wordsearch.html"},
+    {"id": "g2", "categoryGroup": "qaaf_games", "title": "2. Quran & Sunnah Quiz — اسلامی کوئز", "icon": "📖", "launchUrl": "./qaaf-games/games/quiz.html"},
+    {"id": "g3", "categoryGroup": "qaaf_games", "title": "3. Arabic Alphabet Puzzle — حروفِ تہجی", "icon": "🔤", "launchUrl": "./qaaf-games/games/alphabet.html"},
+    {"id": "g4", "categoryGroup": "qaaf_games", "title": "4. Masjid & Wudu Builder — مسجد اور وضو", "icon": "🕌", "launchUrl": "./qaaf-games/games/masjid.html"},
+    {"id": "g5", "categoryGroup": "qaaf_games", "title": "5. Islamic Adhkar Racing — اذکار ریسنگ", "icon": "🏎️", "launchUrl": "./qaaf-games/games/racing.html"},
     {"id": "qg_01", "categoryGroup": "quranic", "title": "1. Ayat Al-Birr — آیت البر (البقرۃ 2:177)", "icon": "🕋", "launchUrl": "./Qaaf%20quran%20Games/game-01-ayat-al-birr.html"},
     {"id": "qg_02", "categoryGroup": "quranic", "title": "2. Sifat Al-Mu'minun — صفات المؤمنین (23:1-11)", "icon": "🌟", "launchUrl": "./Qaaf%20quran%20Games/game-02-sifat-al-muminun.html"},
     {"id": "qg_03", "categoryGroup": "quranic", "title": "3. Surah Al-Asr — سورۃ العصر (103:1-3)", "icon": "⏳", "launchUrl": "./Qaaf%20quran%20Games/game-03-surah-al-asr.html"},
@@ -1905,7 +1879,7 @@
   window.gamesCatalog = REAL_GAMES_CATALOG;
 
   if (typeof installedGameIds === "undefined" || !Array.isArray(installedGameIds)) {
-    window.installedGameIds = JSON.parse(localStorage.getItem("qaaf_installed_games") || '["g1","g2","g4","qg_01","qg_02","qg_03"]');
+    window.installedGameIds = ["g1", "g2", "g3", "g4", "g5", "qg_01", "qg_02", "qg_03", "qg_04"];
   }
 
   function updateHeaderTabsAndTopBarsForMode(tab) {
@@ -2043,7 +2017,7 @@
 
     var cardsHtml = "";
     filteredGames.forEach(function(g) {
-      var isInstalled = Array.isArray(installedGameIds) && installedGameIds.indexOf(g.id) !== -1;
+      var isInstalled = true;
       var activeBorder = (curTab === "quranic") ? "border-teal-500/40 hover:border-teal-400" : "border-emerald-500/40 hover:border-emerald-400";
 
       cardsHtml +=
