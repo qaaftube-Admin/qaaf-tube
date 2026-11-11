@@ -2591,8 +2591,11 @@
       /* Smooth Auto-Hide for Category Bar & Bottom Nav */
       "#categoryBar { transition: transform 0.25s ease, opacity 0.25s ease, max-height 0.25s ease !important; }",
       "#categoryBar.qaaf-bar-autohidden { transform: translateY(-100%) !important; opacity: 0 !important; max-height: 0 !important; padding-top: 0 !important; padding-bottom: 0 !important; margin: 0 !important; overflow: hidden !important; pointer-events: none !important; }",
-      "#qaafMobileBottomNav { transition: transform 0.25s ease !important; }",
-      "#qaafMobileBottomNav.qaaf-nav-autohidden { transform: translateY(100%) !important; }",
+      "#qaafMobileBottomNav { background-color: #090d14 !important; transition: transform 0.22s ease, opacity 0.22s ease !important; }",
+      "#qaafMobileBottomNav.qaaf-nav-autohidden { transform: translateY(100%) !important; opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; }",
+      "#regionalPromoBar { transition: transform 0.22s ease, opacity 0.22s ease !important; }",
+      "body:not(.qaaf-scrolled-down-promo-mode) #regionalPromoBar { transform: translateY(100%) !important; opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; }",
+      "body.qaaf-scrolled-down-promo-mode #regionalPromoBar { transform: translateY(0) !important; opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; }",
 
       /* Hide Drawer & Profile buttons in Kids Mode */
       "body.qaaf-kids-locked #headerDrawerMenuBtn, body.qaaf-kids-locked #bnavProfileBtn { display: none !important; }"
@@ -2769,7 +2772,7 @@
     var nav = document.createElement("nav");
     nav.id = "qaafMobileBottomNav";
     nav.dir = "ltr";
-    nav.className = "fixed bottom-0 left-0 right-0 z-[130] h-14 bg-[#090d14]/98 backdrop-blur-md border-t border-white/10 px-2 flex items-center justify-around shadow-2xl";
+    nav.className = "fixed bottom-0 left-0 right-0 z-[130] h-14 bg-[#090d14] border-t border-slate-800 px-2 flex items-center justify-around shadow-2xl";
     nav.innerHTML =
       '<button type="button" onclick="window.qaafBottomNavAction(\'home\')" id="bnavHomeBtn" class="flex flex-col items-center justify-center gap-1 text-white transition cursor-pointer py-1 px-3">' +
         '<svg viewBox="0 0 24 24" class="w-5 h-5" fill="currentColor"><path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3l9-8z"/></svg>' +
@@ -2846,13 +2849,16 @@
 
     if (isWatchingFull) {
       if (botNav) botNav.classList.add("qaaf-nav-autohidden");
+      document.body.classList.remove("qaaf-scrolled-down-promo-mode");
       return;
     }
 
-    if (curY > lastScrollY + 12 && curY > 70) {
+    if (curY > lastScrollY + 10 && curY > 60) {
       if (catBar) catBar.classList.add("qaaf-bar-autohidden");
       if (botNav) botNav.classList.add("qaaf-nav-autohidden");
+      document.body.classList.add("qaaf-scrolled-down-promo-mode");
     } else if (curY < lastScrollY - 10 || curY < 45) {
+      document.body.classList.remove("qaaf-scrolled-down-promo-mode");
       if (catBar && !document.body.classList.contains("qaaf-games-mode-active")) {
         catBar.classList.remove("qaaf-bar-autohidden");
       }
