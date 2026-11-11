@@ -2544,7 +2544,7 @@
       "body.qaaf-games-mode-active #tabGamesBtn, body.qaaf-games-mode-active #kidsContentSwitcher button:last-child { background-color: #164e3a !important; color: #ffffff !important; }",
 
       /* Hide old main-screen search & request rows */
-      "#qaafNotifBellBtn, #qaafTopSearchAndBellBar, #qaafCombinedSearchRequestRow { display: none !important; }",
+      "#qaafNotifBellBtn, #qaafTopSearchAndBellBar, #qaafCombinedSearchRequestRow, #qaafSearchBarWrapper, .qaaf-old-search-hidden { display: none !important; }",
 
       /* YOUTUBE-STYLE HEADER SEARCH POSITIONING:
          - Desktop (>= 768px): #qaafHeaderCenterSearch sits in the middle of #mainHeader (AFTER QAAF|Tube logo).
@@ -2610,6 +2610,25 @@
 
     var rightControls = document.getElementById("headerRightControls");
     var langCont = document.getElementById("langDropdownContainer");
+
+    /* Hide the old main-screen search bar above Shorts (#qaafSearchInput wrapper) */
+    var oldMainInp = document.getElementById("qaafSearchInput");
+    if (oldMainInp) {
+      var liveDrop = document.getElementById("qaafLiveSearchDropdown");
+      var centerBox = document.getElementById("qaafHeaderCenterSearch");
+      if (liveDrop && centerBox && liveDrop.parentElement !== centerBox) {
+        liveDrop.className = "hidden absolute left-0 right-0 top-full mt-1.5 bg-[#0f141d] border border-emerald-500/40 rounded-2xl shadow-2xl z-[220] max-h-80 overflow-y-auto";
+        centerBox.appendChild(liveDrop);
+      }
+      var oldRow = oldMainInp.closest("#videosSection > div");
+      if (oldRow && oldRow.id !== "qaafShortsShelf" && oldRow.id !== "videoGrid") {
+        oldRow.classList.add("qaaf-old-search-hidden");
+        oldRow.style.setProperty("display", "none", "important");
+      } else if (oldMainInp.parentElement && oldMainInp.parentElement.parentElement) {
+        oldMainInp.parentElement.parentElement.classList.add("qaaf-old-search-hidden");
+        oldMainInp.parentElement.parentElement.style.setProperty("display", "none", "important");
+      }
+    }
 
     /* Remove any old search bar that got injected inside the Left Logo Div (#mainHeader > div:first-child) */
     var leftLogoDiv = header.firstElementChild;
