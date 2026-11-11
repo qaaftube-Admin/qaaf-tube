@@ -933,7 +933,7 @@
 
     // Pure Original MP3 Audio Engine (Zero Browser Robotic SpeechSynthesis!)
     // Supports both K:\Qaaf Tube\audio\games\ (hashed TTS MP3s) and K:\Qaaf Tube\audio\ (existing reciter MP3s: subhanallah.mp3, barakallah.mp3, etc.)
-    const AUDIO_GAMES_DIRS = ['../../audio/games/', '../audio/games/', 'audio/games/', '/audio/games/'];
+    const AUDIO_GAMES_DIRS = ['../../audio/games/', '../../audio/games/', 'audio/games/', '/audio/games/'];
     const AUDIO_ROOT_DIRS = ['../../audio/', '../audio/', 'audio/', '/audio/'];
     let activeMaleVoiceAudio = null;
 
@@ -1027,7 +1027,7 @@
     function _old_unused_speakMashaAllah() {
       if (appState.audioMuted) return;
       playHalalTactileClick('star');
-      const rootPraiseFiles = ['barakallah.mp3', 'jazakallah.mp3', 'subhanallah.mp3', 'alhamdulillah_full.mp3'];
+      const rootPraiseFiles = ['barakallah.mp3', 'jazakallah.mp3', 'subhanallah.mp3', 'short_alhamdulillah.mp3'];
       const chosenRoot = rootPraiseFiles[mashaAllahCycleIdx % rootPraiseFiles.length];
       mashaAllahCycleIdx++;
       if (appState.uiLang === 'ar') {
@@ -2593,7 +2593,7 @@
         const stepDhikrFiles = [
           'bismillah.mp3',
           'subhanallah.mp3',
-          'alhamdulillah_full.mp3',
+          'short_alhamdulillah.mp3',
           'allahuakbar.mp3',
           'barakallah.mp3',
           'jazakallah.mp3'
@@ -4645,7 +4645,7 @@
           speakRaceIslamicPhrase(
             { ur: 'فِي أَمَانِ اللّٰهِ', ar: 'فِي أَمَانِ اللّٰهِ', en: 'Fi Amanillah' },
             { ur: 'اَلْحَمْدُ لِلّٰهِ', ar: 'الْحَمْدُ لِلّٰهِ', en: 'Alhamdulillah' },
-            'alhamdulillah_full.mp3'
+            'short_alhamdulillah.mp3'
           );
         }
       });
@@ -5049,95 +5049,7 @@
       switchGame(initialScreen);
     });
   </script>
-<!-- QAAF SHORT 1-SECOND NATURAL MALE VOICE AUDIO BRIDGE v52.0 -->
-<script id="qaafAuthenticQariAudioBridge">
-(function() {
-  var isSubGame = window.location.pathname.replace(/\\/g, '/').indexOf('/games/') !== -1;
-  var AUDIO_BASE = isSubGame ? '../../audio/' : '../audio/';
-  var GAMES_AUDIO_BASE = AUDIO_BASE + 'games/';
-  var currentGameVoiceAudio = null;
-  var AUTO_GAME_KEY = "racing";
 
-  /* Hide any developer Download ZIP / Copy Command box inside the game file */
-  function hideDevExportBoxAndAutoOpenGame() {
-    document.querySelectorAll('button, div').forEach(function(el) {
-      var t = (el.innerText || '');
-      if ((t.indexOf('Download ZIP') !== -1 || t.indexOf('Copy Command') !== -1) && el.tagName === 'BUTTON') {
-        var box = el.parentElement;
-        if (box && box.parentElement && (box.parentElement.innerText || '').indexOf('Download ZIP') !== -1 && box.parentElement.children.length <= 4) {
-          box.parentElement.style.display = 'none';
-        } else if (box) {
-          box.style.display = 'none';
-        }
-      }
-    });
-    if (AUTO_GAME_KEY) {
-      if (typeof window.openGame === 'function') {
-        try { window.openGame(AUTO_GAME_KEY); } catch(e) {}
-      } else if (typeof window.startGame === 'function') {
-        try { window.startGame(AUTO_GAME_KEY); } catch(e) {}
-      } else if (typeof window.switchGame === 'function') {
-        try { window.switchGame(AUTO_GAME_KEY); } catch(e) {}
-      }
-    }
-  }
-  setTimeout(hideDevExportBoxAndAutoOpenGame, 80);
-  setTimeout(hideDevExportBoxAndAutoOpenGame, 350);
-
-  var OrigAudio = window.Audio;
-  window.Audio = function(src) {
-    if (typeof src === 'string') {
-      if (src.indexOf('mashaallah_verse.mp3') !== -1 || src.indexOf('mashaallah_clean.mp3') !== -1) {
-        src = GAMES_AUDIO_BASE + 'short_mashaallah.mp3';
-      } else if (src.indexOf('alhamdulillah_full.mp3') !== -1) {
-        src = GAMES_AUDIO_BASE + 'short_alhamdulillah.mp3';
-      } else if (isSubGame && src.indexOf('./audio/') === 0) {
-        src = '../../audio/' + src.substring(8);
-      } else if (isSubGame && src.indexOf('../audio/') === 0 && src.indexOf('../../audio/') !== 0) {
-        src = '../' + src;
-      }
-    }
-    return new OrigAudio(src);
-  };
-  window.Audio.prototype = OrigAudio.prototype;
-
-  var SHORT_PRAISE_FILES = [
-    'short_mashaallah.mp3',
-    'short_subhanallah.mp3',
-    'short_barakallah.mp3'
-  ];
-  var praiseIdx = 0;
-
-  function playShortMp3(fileName) {
-    if (typeof soundEnabled !== 'undefined' && !soundEnabled) return;
-    try {
-      if (currentGameVoiceAudio) {
-        currentGameVoiceAudio.pause();
-        currentGameVoiceAudio.currentTime = 0;
-      }
-      var aud = new OrigAudio(GAMES_AUDIO_BASE + fileName);
-      currentGameVoiceAudio = aud;
-      aud.play().catch(function() {
-        var aud2 = new OrigAudio('/audio/games/' + fileName);
-        currentGameVoiceAudio = aud2;
-        aud2.play().catch(function() {});
-      });
-    } catch (e) {}
-  }
-
-  window.speakMashaAllah = function() {
-    var f = SHORT_PRAISE_FILES[praiseIdx % SHORT_PRAISE_FILES.length];
-    praiseIdx++;
-    playShortMp3(f);
-  };
-
-  window.speakRaceIslamicPhrase = function(phraseObjOrText, lang) {
-    var f = SHORT_PRAISE_FILES[praiseIdx % SHORT_PRAISE_FILES.length];
-    praiseIdx++;
-    playShortMp3(f);
-  };
-})();
-</script>
 <style id="qaafStep2DirectStyle">
   #devExportBox, #devBanner, #zipExportBanner, #exportPackageBox, .dev-export-box,
   #hubView, #hubListView, #mainHubHeader, #gamesMenuView, #hubContainer, #gameSelectionMenu {
@@ -5210,6 +5122,108 @@
   window.addEventListener("load", applyDirectGameAndClean);
   setTimeout(applyDirectGameAndClean, 80);
   setTimeout(applyDirectGameAndClean, 300);
+})();
+</script>
+<script id="qaafAuthenticQariAudioBridge">
+(function() {
+  var AUDIO_BASE = "../../audio/";
+  var GAMES_AUDIO_BASE = "../../audio/games/";
+  var currentVoiceAudio = null;
+  var SHORT_PRAISE_FILES = ["short_mashaallah.mp3", "short_subhanallah.mp3", "short_barakallah.mp3"];
+  var praiseIdx = 0;
+
+  try {
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak = function() {};
+    }
+  } catch (e) {}
+
+  function computeQaafHash(str) {
+    var s = String(str || "").trim();
+    var h = 0;
+    for (var i = 0; i < s.length; i++) {
+      h = ((h << 5) - h) + s.charCodeAt(i);
+      h |= 0;
+    }
+    return Math.abs(h).toString(36);
+  }
+
+  function normalizeAudioUrl(src) {
+    if (typeof src !== "string") return src;
+    if (src.indexOf("mashaallah_verse.mp3") !== -1 || src.indexOf("mashaallah_clean.mp3") !== -1) return GAMES_AUDIO_BASE + "short_mashaallah.mp3";
+    if (src.indexOf("alhamdulillah_full.mp3") !== -1) return GAMES_AUDIO_BASE + "short_alhamdulillah.mp3";
+    if (src.indexOf("./audio/games/") === 0) return GAMES_AUDIO_BASE + src.substring(14);
+    if (src.indexOf("../audio/games/") === 0 && src.indexOf("../../audio/games/") !== 0) return GAMES_AUDIO_BASE + src.substring(15);
+    if (src.indexOf("audio/games/") === 0) return GAMES_AUDIO_BASE + src.substring(12);
+    if (src.indexOf("./audio/") === 0) return AUDIO_BASE + src.substring(8);
+    if (src.indexOf("../audio/") === 0 && src.indexOf("../../audio/") !== 0) return AUDIO_BASE + src.substring(9);
+    return src;
+  }
+
+  var OrigAudio = window.Audio;
+  window.Audio = function(src) { return new OrigAudio(normalizeAudioUrl(src)); };
+  window.Audio.prototype = OrigAudio.prototype;
+
+  try {
+    var srcDesc = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "src");
+    if (srcDesc && srcDesc.set) {
+      Object.defineProperty(HTMLMediaElement.prototype, "src", {
+        get: srcDesc.get,
+        set: function(val) { srcDesc.set.call(this, normalizeAudioUrl(val)); },
+        configurable: true
+      });
+    }
+  } catch (e) {}
+
+  function playMp3File(fileName) {
+    if (typeof window.soundEnabled !== "undefined" && !window.soundEnabled) return;
+    try {
+      if (currentVoiceAudio) { currentVoiceAudio.pause(); currentVoiceAudio.currentTime = 0; }
+      var aud = new OrigAudio(GAMES_AUDIO_BASE + fileName);
+      currentVoiceAudio = aud;
+      aud.play().catch(function() {});
+    } catch (e) {}
+  }
+
+  function matchShortIslamicFile(txt) {
+    var s = String(txt || "").trim().toLowerCase();
+    if (!s) return null;
+    if (s.indexOf("masha") !== -1 || s.indexOf("\u0645\u0627 \u0634\u0627\u0621") !== -1 || s.indexOf("\u0645\u0627\u0634\u0627\u0621") !== -1) return "short_mashaallah.mp3";
+    if (s.indexOf("subhan") !== -1 || s.indexOf("\u0633\u0628\u062d\u0627\u0646") !== -1) return "short_subhanallah.mp3";
+    if (s.indexOf("barak") !== -1 || s.indexOf("\u0628\u0627\u0631\u0643") !== -1 || s.indexOf("\u0628\u0627\u0631\u06a9") !== -1) return "short_barakallah.mp3";
+    if (s.indexOf("alhamdul") !== -1 || s.indexOf("\u0627\u0644\u062d\u0645\u062f") !== -1) return "short_alhamdulillah.mp3";
+    if (s.indexOf("akbar") !== -1 || s.indexOf("\u0623\u0643\u0628\u0631") !== -1 || s.indexOf("\u0627\u06a9\u0628\u0631") !== -1) return "short_allahuakbar.mp3";
+    if (s.indexOf("jazak") !== -1 || s.indexOf("\u062c\u0632\u0627\u0643") !== -1 || s.indexOf("\u062c\u0632\u0627\u06a9") !== -1) return "short_jazakallah.mp3";
+    if (s.indexOf("bismillah") !== -1 || s.indexOf("\u0628\u0633\u0645 \u0627\u0644\u0644\u0647") !== -1 || s.indexOf("\u0628\u0633\u0645 \u0627\u0644\u0644\u06c1") !== -1) return "short_bismillah.mp3";
+    if (s.indexOf("prayer is my power") !== -1) return "prayer_power_en.mp3";
+    if (s.indexOf("\u0646\u0645\u0627\u0632 \u0645\u06cc\u0631\u06cc \u0642\u0648\u062a") !== -1) return "prayer_power_ur.mp3";
+    if (s.indexOf("\u0627\u0644\u0635\u0644\u0627\u0629 \u0642\u0648\u062a\u064a") !== -1 || s.indexOf("\u0627\u0644\u0635\u0644\u0627\u0629\u064f \u0642\u064f\u0648\u0651\u064e\u062a\u0650\u064a") !== -1) return "prayer_power_ar.mp3";
+    return null;
+  }
+
+  window.speakMashaAllah = function() {
+    var f = SHORT_PRAISE_FILES[praiseIdx % SHORT_PRAISE_FILES.length];
+    praiseIdx++;
+    playMp3File(f);
+  };
+
+  window.speakRaceIslamicPhrase = function(phraseObjOrText) {
+    var txt = (phraseObjOrText && typeof phraseObjOrText === "object") ? (phraseObjOrText.ar || phraseObjOrText.ur || phraseObjOrText.en || "") : String(phraseObjOrText || "");
+    var matched = matchShortIslamicFile(txt);
+    if (matched) playMp3File(matched);
+    else window.speakMashaAllah();
+  };
+
+  window.speakText = window.playVoice = window.speakArabic = function(text, lang) {
+    var clean = String(text || "").trim();
+    if (!clean) return;
+    var shortFile = matchShortIslamicFile(clean);
+    if (shortFile) { playMp3File(shortFile); return; }
+    var l = String(lang || window.currentLang || "ar").toLowerCase();
+    var prefix = l.indexOf("ur") === 0 ? "ur" : (l.indexOf("en") === 0 ? "en" : "ar");
+    playMp3File(prefix + "_" + computeQaafHash(clean) + ".mp3");
+  };
 })();
 </script>
 </body>
