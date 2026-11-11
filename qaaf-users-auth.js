@@ -2549,12 +2549,12 @@
          - On Mobile (< 768px): Center Search Bar is hidden; larger White 'ق' Magnifier button (#qaafHeaderSearchToggleBtn) is visible on the right!
          - When Mobile Search Mode is active (header.qaaf-mobile-search-mode): normal header items hide and full-width mobile search bar appears inside Header! */
       "@media (min-width: 768px) {",
-      "  #qaafHeaderCenterSearch { display: flex !important; flex: 1 1 auto !important; max-width: 480px !important; margin: 0 16px !important; }",
+      "  #qaafHeaderCenterSearch { display: flex !important; flex: 1 1 540px !important; max-width: 560px !important; margin: 0 auto !important; padding: 0 16px !important; }",
       "  #qaafHeaderSearchToggleBtn, #qaafMobileSearchBackBtn { display: none !important; }",
       "}",
       "@media (max-width: 767px) {",
       "  header:not(.qaaf-mobile-search-mode) #qaafHeaderCenterSearch { display: none !important; }",
-      "  header.qaaf-mobile-search-mode > div > *:not(#qaafHeaderCenterSearch) { display: none !important; }",
+      "  header.qaaf-mobile-search-mode .justify-between > *:not(#qaafHeaderCenterSearch), header.qaaf-mobile-search-mode > div > *:not(#qaafHeaderCenterSearch):not(.justify-between) { display: none !important; }",
       "  header.qaaf-mobile-search-mode #qaafHeaderCenterSearch { display: flex !important; width: 100% !important; align-items: center !important; gap: 8px !important; }",
       "  header.qaaf-mobile-search-mode #qaafMobileSearchBackBtn { display: flex !important; }",
       "}",
@@ -2658,18 +2658,25 @@
           '</button>' +
         '</div>';
 
-      /* Insert right between the Left Logo group and the Right Controls group! */
-      var rightGroup = headerRow.lastElementChild;
-      if (rightGroup && rightGroup !== headerRow.firstElementChild) {
-        headerRow.insertBefore(centerSearch, rightGroup);
+      /* Find the main justify-between row of <header> so [☰ + Logo + QAAF|Tube] stays together on the left,
+         and #qaafHeaderCenterSearch sits in the middle AFTER QAAF|Tube! */
+      var mainFlexRow = headerEl.querySelector(".justify-between") || headerRow;
+      var brandClickEl = headerEl.querySelector("[onclick*='resetToAllVideos']");
+      var leftGroupBox = brandClickEl ? brandClickEl.parentElement : mainFlexRow.firstElementChild;
+      while (leftGroupBox && leftGroupBox.parentElement && leftGroupBox.parentElement !== mainFlexRow) {
+        leftGroupBox = leftGroupBox.parentElement;
+      }
+      if (leftGroupBox && leftGroupBox.parentElement === mainFlexRow && leftGroupBox.nextSibling) {
+        mainFlexRow.insertBefore(centerSearch, leftGroupBox.nextSibling);
       } else {
-        headerRow.appendChild(centerSearch);
+        mainFlexRow.insertBefore(centerSearch, mainFlexRow.lastElementChild);
       }
     }
 
     /* D. Place the Larger White 'ق' Search Magnifier Button on the RIGHT side of Header (for Mobile) */
     if (!document.getElementById("qaafHeaderSearchToggleBtn")) {
-      var rightControls = headerRow.lastElementChild;
+      var mainFlexRow2 = headerEl.querySelector(".justify-between") || headerRow;
+      var rightControls = mainFlexRow2.lastElementChild;
       if (rightControls) {
         var sBtn = document.createElement("button");
         sBtn.id = "qaafHeaderSearchToggleBtn";
