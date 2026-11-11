@@ -5049,89 +5049,86 @@
       switchGame(initialScreen);
     });
   </script>
-<!-- QAAF AUTHENTIC QARI & PURE MALE VOICE AUDIO BRIDGE v50.0 -->
+<!-- QAAF SHORT 1-SECOND NATURAL MALE VOICE AUDIO BRIDGE v51.0 -->
 <script id="qaafAuthenticQariAudioBridge">
 (function() {
   var isSubGame = window.location.pathname.replace(/\\/g, '/').indexOf('/games/') !== -1;
-  var QARI_BASE = isSubGame ? '../../audio/' : '../audio/';
-  var GAMES_AUDIO_BASE = QARI_BASE + 'games/';
-  var currentQariAudio = null;
+  var AUDIO_BASE = isSubGame ? '../../audio/' : '../audio/';
+  var GAMES_AUDIO_BASE = AUDIO_BASE + 'games/';
+  var currentGameVoiceAudio = null;
 
-  var AUTHENTIC_QARI_FILES = {
-    bismillah: 'bismillah.mp3',
-    bismillah_full: 'bismillah_full.mp3',
-    subhanallah: 'subhanallah.mp3',
-    alhamdulillah: 'alhamdulillah_full.mp3',
-    allahuakbar: 'allahuakbar.mp3',
-    barakallah: 'barakallah.mp3',
-    jazakallah: 'jazakallah.mp3',
-    mashaallah_verse: 'mashaallah_verse.mp3',
-    kalimatan: 'kalimatan_khafifatan.mp3',
-    dua_riding: 'dua_riding.mp3',
-    dua_wudu: 'dua_wudu_after.mp3',
-    tasbeeh_short: 'subhanallah_alhamdulillah_allahuakbar.mp3',
-    tasbeeh_full: 'tasbeeh_full.mp3'
+  /* Intercept window.Audio so any request for long verse files or wrong relative paths is automatically fixed! */
+  var OrigAudio = window.Audio;
+  window.Audio = function(src) {
+    if (typeof src === 'string') {
+      if (src.indexOf('mashaallah_verse.mp3') !== -1 || src.indexOf('mashaallah_clean.mp3') !== -1) {
+        src = GAMES_AUDIO_BASE + 'short_mashaallah.mp3';
+      } else if (src.indexOf('alhamdulillah_full.mp3') !== -1) {
+        src = GAMES_AUDIO_BASE + 'short_alhamdulillah.mp3';
+      } else if (isSubGame && src.indexOf('./audio/') === 0) {
+        src = '../../audio/' + src.substring(8);
+      } else if (isSubGame && src.indexOf('../audio/') === 0 && src.indexOf('../../audio/') !== 0) {
+        src = '../' + src;
+      }
+    }
+    return new OrigAudio(src);
   };
+  window.Audio.prototype = OrigAudio.prototype;
 
-  var MASHAALLAH_PRAISE_CYCLE = [
-    'barakallah.mp3',
-    'subhanallah.mp3',
-    'alhamdulillah_full.mp3',
-    'jazakallah.mp3',
-    'mashaallah_verse.mp3'
+  var SHORT_PRAISE_FILES = [
+    'short_mashaallah.mp3',
+    'short_subhanallah.mp3',
+    'short_barakallah.mp3'
   ];
   var praiseIdx = 0;
 
-  function playRawMp3WithFallback(primaryUrl, fallbackUrl) {
+  function playShortMp3(fileName) {
     if (typeof soundEnabled !== 'undefined' && !soundEnabled) return;
     try {
-      if (currentQariAudio) {
-        currentQariAudio.pause();
-        currentQariAudio.currentTime = 0;
+      if (currentGameVoiceAudio) {
+        currentGameVoiceAudio.pause();
+        currentGameVoiceAudio.currentTime = 0;
       }
-      var aud = new Audio(primaryUrl);
-      currentQariAudio = aud;
+      var aud = new OrigAudio(GAMES_AUDIO_BASE + fileName);
+      currentGameVoiceAudio = aud;
       aud.play().catch(function() {
-        if (fallbackUrl && fallbackUrl !== primaryUrl) {
-          var aud2 = new Audio(fallbackUrl);
-          currentQariAudio = aud2;
-          aud2.play().catch(function() {});
-        }
+        var aud2 = new OrigAudio('/audio/games/' + fileName);
+        currentGameVoiceAudio = aud2;
+        aud2.play().catch(function() {});
       });
     } catch (e) {}
   }
 
-  function matchAuthenticQariFile(text) {
+  function matchShortSpokenFile(text) {
     if (!text) return null;
     var s = String(text).trim().toLowerCase();
 
-    if (s.indexOf('نماز میری قوت') !== -1) return { dir: GAMES_AUDIO_BASE, file: 'prayer_power_ur.mp3' };
-    if (s.indexOf('prayer is my power') !== -1) return { dir: GAMES_AUDIO_BASE, file: 'prayer_power_en.mp3' };
-    if (s.indexOf('الصَّلَاةُ قُوَّتِي') !== -1 || s.indexOf('الصلاة قوتي') !== -1) return { dir: GAMES_AUDIO_BASE, file: 'prayer_power_ar.mp3' };
+    if (s.indexOf('نماز میری قوت') !== -1) return 'prayer_power_ur.mp3';
+    if (s.indexOf('prayer is my power') !== -1) return 'prayer_power_en.mp3';
+    if (s.indexOf('الصَّلَاةُ قُوَّتِي') !== -1 || s.indexOf('الصلاة قوتي') !== -1) return 'prayer_power_ar.mp3';
 
-    if (s.indexOf('سُبْحَانَ الَّذِي سَخَّرَ') !== -1 || s.indexOf('سخر لنا هذا') !== -1) return { dir: QARI_BASE, file: AUTHENTIC_QARI_FILES.dua_riding };
-    if (s.indexOf('أَشْهَدُ أَنْ لَا إِلَهَ') !== -1 || s.indexOf('اشهد ان لا اله') !== -1) return { dir: QARI_BASE, file: AUTHENTIC_QARI_FILES.dua_wudu };
-    if (s.indexOf('وَبِحَمْدِهِ') !== -1 || s.indexOf('العظيم') !== -1 || s.indexOf('كَلِمَتَانِ') !== -1) return { dir: QARI_BASE, file: AUTHENTIC_QARI_FILES.kalimatan };
-    if (s.indexOf('بِسْمِ') !== -1 || s.indexOf('بسم الله') !== -1 || s.indexOf('bismillah') !== -1) return { dir: QARI_BASE, file: AUTHENTIC_QARI_FILES.bismillah };
-    if (s.indexOf('سُبْحَانَ') !== -1 || s.indexOf('سبحان') !== -1 || s.indexOf('subhan') !== -1) return { dir: QARI_BASE, file: AUTHENTIC_QARI_FILES.subhanallah };
-    if (s.indexOf('الْحَمْدُ') !== -1 || s.indexOf('الحمد') !== -1 || s.indexOf('alhamdulillah') !== -1) return { dir: QARI_BASE, file: AUTHENTIC_QARI_FILES.alhamdulillah };
-    if (s.indexOf('أَكْبَر') !== -1 || s.indexOf('اكبر') !== -1 || s.indexOf('akbar') !== -1) return { dir: QARI_BASE, file: AUTHENTIC_QARI_FILES.allahuakbar };
-    if (s.indexOf('بَارَكَ') !== -1 || s.indexOf('بارك') !== -1 || s.indexOf('barak') !== -1) return { dir: QARI_BASE, file: AUTHENTIC_QARI_FILES.barakallah };
-    if (s.indexOf('جَزَاكَ') !== -1 || s.indexOf('جزاك') !== -1 || s.indexOf('jazak') !== -1) return { dir: QARI_BASE, file: AUTHENTIC_QARI_FILES.jazakallah };
+    if (s.indexOf('بِسْمِ') !== -1 || s.indexOf('بسم الله') !== -1 || s.indexOf('bismillah') !== -1) return 'short_bismillah.mp3';
+    if (s.indexOf('سُبْحَانَ') !== -1 || s.indexOf('سبحان') !== -1 || s.indexOf('subhan') !== -1) return 'short_subhanallah.mp3';
+    if (s.indexOf('الْحَمْدُ') !== -1 || s.indexOf('الحمد') !== -1 || s.indexOf('alhamdulillah') !== -1) return 'short_alhamdulillah.mp3';
+    if (s.indexOf('أَكْبَر') !== -1 || s.indexOf('اكبر') !== -1 || s.indexOf('akbar') !== -1) return 'short_allahuakbar.mp3';
+    if (s.indexOf('بَارَكَ') !== -1 || s.indexOf('بارك') !== -1 || s.indexOf('barak') !== -1) return 'short_barakallah.mp3';
+    if (s.indexOf('جَزَاكَ') !== -1 || s.indexOf('جزاك') !== -1 || s.indexOf('jazak') !== -1) return 'short_jazakallah.mp3';
     if (s.indexOf('مَا شَاءَ') !== -1 || s.indexOf('ماشاء') !== -1 || s.indexOf('ما شاء') !== -1 || s.indexOf('masha') !== -1 || s.indexOf('شاباش') !== -1 || s.indexOf('well done') !== -1) {
-      var f = MASHAALLAH_PRAISE_CYCLE[praiseIdx % MASHAALLAH_PRAISE_CYCLE.length];
+      var f = SHORT_PRAISE_FILES[praiseIdx % SHORT_PRAISE_FILES.length];
       praiseIdx++;
-      return { dir: QARI_BASE, file: f };
+      return f;
     }
     return null;
   }
 
+  /* 1. speakMashaAllah: Plays ONLY 1-second natural "Masha'Allah", "Subhan'Allah", or "Barak'Allah" */
   window.speakMashaAllah = function() {
-    var f = MASHAALLAH_PRAISE_CYCLE[praiseIdx % MASHAALLAH_PRAISE_CYCLE.length];
+    var f = SHORT_PRAISE_FILES[praiseIdx % SHORT_PRAISE_FILES.length];
     praiseIdx++;
-    playRawMp3WithFallback(QARI_BASE + f, '/audio/' + f);
+    playShortMp3(f);
   };
 
+  /* 2. speakRaceIslamicPhrase: Plays 1-second short dhikr or Prayer is My Power */
   window.speakRaceIslamicPhrase = function(phraseObjOrText, lang) {
     var txt = '';
     if (typeof phraseObjOrText === 'string') {
@@ -5140,9 +5137,9 @@
       var curL = (typeof currentLang !== 'undefined' ? currentLang : (lang || 'en'));
       txt = phraseObjOrText[curL] || phraseObjOrText.ar || phraseObjOrText.ur || phraseObjOrText.en || '';
     }
-    var matched = matchAuthenticQariFile(txt);
-    if (matched) {
-      playRawMp3WithFallback(matched.dir + matched.file, '/audio/' + (matched.dir.indexOf('games') !== -1 ? 'games/' : '') + matched.file);
+    var shortFile = matchShortSpokenFile(txt);
+    if (shortFile) {
+      playShortMp3(shortFile);
       return;
     }
     if (typeof _old_unused_speakRaceIslamicPhrase === 'function') {
@@ -5150,13 +5147,35 @@
     }
   };
 
+  /* 3. Masjid & Wudu step cards: Play 1-second short dhikr (Bismillah, SubhanAllah, Alhamdulillah, Allahu Akbar, BarakAllah) */
+  var MASJID_SHORT_CYCLE = [
+    'short_bismillah.mp3',
+    'short_subhanallah.mp3',
+    'short_alhamdulillah.mp3',
+    'short_allahuakbar.mp3',
+    'short_barakallah.mp3',
+    'short_mashaallah.mp3'
+  ];
+  var masjidIdx = 0;
+  var origSelectMasjid = window.selectMasjidStepCard;
+  if (typeof origSelectMasjid === 'function') {
+    window.selectMasjidStepCard = function() {
+      var res = origSelectMasjid.apply(this, arguments);
+      var mf = MASJID_SHORT_CYCLE[masjidIdx % MASJID_SHORT_CYCLE.length];
+      masjidIdx++;
+      setTimeout(function() { playShortMp3(mf); }, 50);
+      return res;
+    };
+  }
+
+  /* 4. Intercept speakText / playPreGeneratedAudio for short praise words */
   ['speakText', 'playPreGeneratedAudio', 'playMaleVoiceAudio'].forEach(function(fnName) {
     var origFn = window[fnName];
     if (typeof origFn === 'function') {
       window[fnName] = function(text, langHint) {
-        var matched = matchAuthenticQariFile(text);
-        if (matched) {
-          playRawMp3WithFallback(matched.dir + matched.file, '/audio/' + (matched.dir.indexOf('games') !== -1 ? 'games/' : '') + matched.file);
+        var shortFile = matchShortSpokenFile(text);
+        if (shortFile) {
+          playShortMp3(shortFile);
           return;
         }
         return origFn.apply(this, arguments);
