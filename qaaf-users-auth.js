@@ -2541,7 +2541,8 @@
       "body.qaaf-games-mode-active #tabGamesBtn, body.qaaf-games-mode-active #kidsContentSwitcher button:last-child { background-color: #164e3a !important; color: #ffffff !important; box-shadow: 0 2px 10px rgba(16,185,129,0.35) !important; }",
 
       /* Completely hide the old main-screen Search Bar box, Video Request button, and bottom Sponsor bar */
-      "#sponsorTickerBar, #parentRequestBtn, #qaafOldMainSearchContainer, .qaaf-hide-main-req-row { display: none !important; }",
+      "#parentRequestBtn, #qaafOldMainSearchContainer, .qaaf-hide-main-req-row { display: none !important; }",
+      "body.qaaf-shorts-only-view #videosSection { display: none !important; }",
       "main button[onclick*='openParentRequestModal'], main button[onclick*='openRequestModal'] { display: none !important; }",
 
       /* YOUTUBE-STYLE RESPONSIVE HEADER SEARCH BAR:
@@ -2627,8 +2628,12 @@
     });
 
     /* B. Remove any misplaced search button inside the left Logo box */
-    var misplaced = headerEl.querySelector("[onclick*='resetToAllVideos'] #qaafHeaderSearchToggleBtn");
-    if (misplaced) misplaced.remove();
+    headerEl.querySelectorAll("#qaafHeaderSearchToggleBtn").forEach(function(b) {
+      var lBox = document.getElementById("headerLangBtn");
+      if (lBox && b.parentElement !== lBox.parentElement) {
+        b.remove();
+      }
+    });
 
     /* C. Create the YouTube-Style Header Search Bar (#qaafHeaderCenterSearch) inside <header> */
     if (!document.getElementById("qaafHeaderCenterSearch")) {
@@ -2675,8 +2680,8 @@
 
     /* D. Place the Larger White 'ق' Search Magnifier Button on the RIGHT side of Header (for Mobile) */
     if (!document.getElementById("qaafHeaderSearchToggleBtn")) {
-      var mainFlexRow2 = headerEl.querySelector(".justify-between") || headerRow;
-      var rightControls = mainFlexRow2.lastElementChild;
+      var langBtnEl = document.getElementById("headerLangBtn");
+      var rightControls = langBtnEl ? langBtnEl.parentElement : null;
       if (rightControls) {
         var sBtn = document.createElement("button");
         sBtn.id = "qaafHeaderSearchToggleBtn";
@@ -2694,7 +2699,7 @@
           ev.stopPropagation();
           window.openQaafMobileHeaderSearch();
         };
-        rightControls.insertBefore(sBtn, rightControls.firstChild);
+        rightControls.insertBefore(sBtn, langBtnEl);
       }
     }
   }
@@ -2838,10 +2843,13 @@
         }
       });
 
-      var topActions = thumbBox.querySelector(".top-2.right-2, .absolute.top-2.right-2");
-      if (topActions) {
-        topActions.style.setProperty("display", "none", "important");
-      }
+      var topActions = null;
+      thumbBox.querySelectorAll("div").forEach(function(d) {
+        if (d.querySelectorAll("button").length >= 2) {
+          topActions = d;
+          d.style.setProperty("display", "none", "important");
+        }
+      });
 
       var infoBox = card.lastElementChild;
       if (infoBox && infoBox !== thumbBox) {
@@ -2934,6 +2942,7 @@
     });
 
     if (tab === "home") {
+      document.body.classList.remove("qaaf-shorts-only-view");
       if (bHome) bHome.className = "flex flex-col items-center justify-center gap-1 text-white transition cursor-pointer py-1 px-3";
       if (typeof window.closeInstalledGameModal === "function") window.closeInstalledGameModal();
       if (typeof window.switchKidsTab === "function") window.switchKidsTab("videos");
@@ -2943,19 +2952,30 @@
       if (bShorts) bShorts.className = "flex flex-col items-center justify-center gap-1 text-white transition cursor-pointer py-1 px-3";
       if (typeof window.closeInstalledGameModal === "function") window.closeInstalledGameModal();
       if (typeof window.switchKidsTab === "function") window.switchKidsTab("videos");
+      document.body.classList.add("qaaf-shorts-only-view");
       var sSec = document.getElementById("shortsSection");
       if (sSec) {
         sSec.classList.remove("hidden");
-        sSec.scrollIntoView({ behavior: "smooth", block: "start" });
+        sSec.style.setProperty("display", "block", "important");
       }
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } else if (tab === "games") {
+      document.body.classList.remove("qaaf-shorts-only-view");
       if (bGames) bGames.className = "flex flex-col items-center justify-center gap-1 text-white transition cursor-pointer py-1 px-3";
       if (typeof window.switchKidsTab === "function") window.switchKidsTab("games");
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else if (tab === "profile") {
       if (window.isKidsMode) return;
-      if (typeof window.toggleUserProfileDrawer === "function") {
+      var drawerBtn = document.querySelector("header button[onclick*='Drawer'], header button[onclick*='drawer']");
+      var profBtn = document.getElementById("headerProfileBtn");
+      if (typeof window.toggleProfileDrawer === "function") {
+        window.toggleProfileDrawer(true);
+      } else if (typeof window.toggleUserProfileDrawer === "function") {
         window.toggleUserProfileDrawer(true);
+      } else if (drawerBtn) {
+        drawerBtn.click();
+      } else if (profBtn) {
+        profBtn.click();
       }
     }
   };

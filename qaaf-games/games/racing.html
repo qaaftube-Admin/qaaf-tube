@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ur" dir="rtl">
 <head>
   <meta charset="UTF-8" />
@@ -1024,7 +1024,7 @@
     }
 
     let mashaAllahCycleIdx = 0;
-    function speakMashaAllah() {
+    function _old_unused_speakMashaAllah() {
       if (appState.audioMuted) return;
       playHalalTactileClick('star');
       const rootPraiseFiles = ['barakallah.mp3', 'jazakallah.mp3', 'subhanallah.mp3', 'alhamdulillah_full.mp3'];
@@ -2745,7 +2745,7 @@
      * Play Islamic Phrase from `audio/games/` with Guaranteed Audible Fallback
      * Also ducks bike engine audio briefly so the voice is heard loud and clear!
      */
-    function speakRaceIslamicPhrase(primaryObj, fallbackObj, rootMp3Fallback = 'subhanallah.mp3') {
+    function _old_unused_speakRaceIslamicPhrase(primaryObj, fallbackObj, rootMp3Fallback = 'subhanallah.mp3') {
       if (appState.audioMuted) return;
       playHalalTactileClick('star');
       const lang = appState.uiLang;
@@ -5049,5 +5049,121 @@
       switchGame(initialScreen);
     });
   </script>
+<!-- QAAF AUTHENTIC QARI & PURE MALE VOICE AUDIO BRIDGE v50.0 -->
+<script id="qaafAuthenticQariAudioBridge">
+(function() {
+  var isSubGame = window.location.pathname.replace(/\\/g, '/').indexOf('/games/') !== -1;
+  var QARI_BASE = isSubGame ? '../../audio/' : '../audio/';
+  var GAMES_AUDIO_BASE = QARI_BASE + 'games/';
+  var currentQariAudio = null;
+
+  var AUTHENTIC_QARI_FILES = {
+    bismillah: 'bismillah.mp3',
+    bismillah_full: 'bismillah_full.mp3',
+    subhanallah: 'subhanallah.mp3',
+    alhamdulillah: 'alhamdulillah_full.mp3',
+    allahuakbar: 'allahuakbar.mp3',
+    barakallah: 'barakallah.mp3',
+    jazakallah: 'jazakallah.mp3',
+    mashaallah_verse: 'mashaallah_verse.mp3',
+    kalimatan: 'kalimatan_khafifatan.mp3',
+    dua_riding: 'dua_riding.mp3',
+    dua_wudu: 'dua_wudu_after.mp3',
+    tasbeeh_short: 'subhanallah_alhamdulillah_allahuakbar.mp3',
+    tasbeeh_full: 'tasbeeh_full.mp3'
+  };
+
+  var MASHAALLAH_PRAISE_CYCLE = [
+    'barakallah.mp3',
+    'subhanallah.mp3',
+    'alhamdulillah_full.mp3',
+    'jazakallah.mp3',
+    'mashaallah_verse.mp3'
+  ];
+  var praiseIdx = 0;
+
+  function playRawMp3WithFallback(primaryUrl, fallbackUrl) {
+    if (typeof soundEnabled !== 'undefined' && !soundEnabled) return;
+    try {
+      if (currentQariAudio) {
+        currentQariAudio.pause();
+        currentQariAudio.currentTime = 0;
+      }
+      var aud = new Audio(primaryUrl);
+      currentQariAudio = aud;
+      aud.play().catch(function() {
+        if (fallbackUrl && fallbackUrl !== primaryUrl) {
+          var aud2 = new Audio(fallbackUrl);
+          currentQariAudio = aud2;
+          aud2.play().catch(function() {});
+        }
+      });
+    } catch (e) {}
+  }
+
+  function matchAuthenticQariFile(text) {
+    if (!text) return null;
+    var s = String(text).trim().toLowerCase();
+
+    if (s.indexOf('نماز میری قوت') !== -1) return { dir: GAMES_AUDIO_BASE, file: 'prayer_power_ur.mp3' };
+    if (s.indexOf('prayer is my power') !== -1) return { dir: GAMES_AUDIO_BASE, file: 'prayer_power_en.mp3' };
+    if (s.indexOf('الصَّلَاةُ قُوَّتِي') !== -1 || s.indexOf('الصلاة قوتي') !== -1) return { dir: GAMES_AUDIO_BASE, file: 'prayer_power_ar.mp3' };
+
+    if (s.indexOf('سُبْحَانَ الَّذِي سَخَّرَ') !== -1 || s.indexOf('سخر لنا هذا') !== -1) return { dir: QARI_BASE, file: AUTHENTIC_QARI_FILES.dua_riding };
+    if (s.indexOf('أَشْهَدُ أَنْ لَا إِلَهَ') !== -1 || s.indexOf('اشهد ان لا اله') !== -1) return { dir: QARI_BASE, file: AUTHENTIC_QARI_FILES.dua_wudu };
+    if (s.indexOf('وَبِحَمْدِهِ') !== -1 || s.indexOf('العظيم') !== -1 || s.indexOf('كَلِمَتَانِ') !== -1) return { dir: QARI_BASE, file: AUTHENTIC_QARI_FILES.kalimatan };
+    if (s.indexOf('بِسْمِ') !== -1 || s.indexOf('بسم الله') !== -1 || s.indexOf('bismillah') !== -1) return { dir: QARI_BASE, file: AUTHENTIC_QARI_FILES.bismillah };
+    if (s.indexOf('سُبْحَانَ') !== -1 || s.indexOf('سبحان') !== -1 || s.indexOf('subhan') !== -1) return { dir: QARI_BASE, file: AUTHENTIC_QARI_FILES.subhanallah };
+    if (s.indexOf('الْحَمْدُ') !== -1 || s.indexOf('الحمد') !== -1 || s.indexOf('alhamdulillah') !== -1) return { dir: QARI_BASE, file: AUTHENTIC_QARI_FILES.alhamdulillah };
+    if (s.indexOf('أَكْبَر') !== -1 || s.indexOf('اكبر') !== -1 || s.indexOf('akbar') !== -1) return { dir: QARI_BASE, file: AUTHENTIC_QARI_FILES.allahuakbar };
+    if (s.indexOf('بَارَكَ') !== -1 || s.indexOf('بارك') !== -1 || s.indexOf('barak') !== -1) return { dir: QARI_BASE, file: AUTHENTIC_QARI_FILES.barakallah };
+    if (s.indexOf('جَزَاكَ') !== -1 || s.indexOf('جزاك') !== -1 || s.indexOf('jazak') !== -1) return { dir: QARI_BASE, file: AUTHENTIC_QARI_FILES.jazakallah };
+    if (s.indexOf('مَا شَاءَ') !== -1 || s.indexOf('ماشاء') !== -1 || s.indexOf('ما شاء') !== -1 || s.indexOf('masha') !== -1 || s.indexOf('شاباش') !== -1 || s.indexOf('well done') !== -1) {
+      var f = MASHAALLAH_PRAISE_CYCLE[praiseIdx % MASHAALLAH_PRAISE_CYCLE.length];
+      praiseIdx++;
+      return { dir: QARI_BASE, file: f };
+    }
+    return null;
+  }
+
+  window.speakMashaAllah = function() {
+    var f = MASHAALLAH_PRAISE_CYCLE[praiseIdx % MASHAALLAH_PRAISE_CYCLE.length];
+    praiseIdx++;
+    playRawMp3WithFallback(QARI_BASE + f, '/audio/' + f);
+  };
+
+  window.speakRaceIslamicPhrase = function(phraseObjOrText, lang) {
+    var txt = '';
+    if (typeof phraseObjOrText === 'string') {
+      txt = phraseObjOrText;
+    } else if (phraseObjOrText && typeof phraseObjOrText === 'object') {
+      var curL = (typeof currentLang !== 'undefined' ? currentLang : (lang || 'en'));
+      txt = phraseObjOrText[curL] || phraseObjOrText.ar || phraseObjOrText.ur || phraseObjOrText.en || '';
+    }
+    var matched = matchAuthenticQariFile(txt);
+    if (matched) {
+      playRawMp3WithFallback(matched.dir + matched.file, '/audio/' + (matched.dir.indexOf('games') !== -1 ? 'games/' : '') + matched.file);
+      return;
+    }
+    if (typeof _old_unused_speakRaceIslamicPhrase === 'function') {
+      return _old_unused_speakRaceIslamicPhrase.apply(this, arguments);
+    }
+  };
+
+  ['speakText', 'playPreGeneratedAudio', 'playMaleVoiceAudio'].forEach(function(fnName) {
+    var origFn = window[fnName];
+    if (typeof origFn === 'function') {
+      window[fnName] = function(text, langHint) {
+        var matched = matchAuthenticQariFile(text);
+        if (matched) {
+          playRawMp3WithFallback(matched.dir + matched.file, '/audio/' + (matched.dir.indexOf('games') !== -1 ? 'games/' : '') + matched.file);
+          return;
+        }
+        return origFn.apply(this, arguments);
+      };
+    }
+  });
+})();
+</script>
 </body>
 </html>
