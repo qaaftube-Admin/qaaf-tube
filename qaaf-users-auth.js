@@ -3261,3 +3261,106 @@
   setTimeout(runAllUXEnhancements, 100);
   setInterval(runAllUXEnhancements, 750);
 })();
+
+// === SECTION 7: SCREENSHOT 2 & 3 FIXES ===
+(function() {
+  /* 1. CSS to hide +, heart, flag buttons on video thumbnails until 3-dots is clicked */
+  if (!document.getElementById("qaafV52CleanThumbCss")) {
+    var st = document.createElement("style");
+    st.id = "qaafV52CleanThumbCss";
+    st.textContent = [
+      "#videoGrid .aspect-video button { display: none !important; }",
+      "#videoGrid .aspect-video.qaaf-show-thumb-btns button { display: inline-flex !important; }",
+      "body.qaaf-shorts-only-view #videosSection { display: none !important; }"
+    ].join("\n");
+    document.head.appendChild(st);
+  }
+
+  /* 2. Place Mobile Search Lens right before UR/EN button (#headerLangBtn) */
+  function fixMobileSearchLensAndThumbButtons() {
+    var langBtn = document.getElementById("headerLangBtn");
+    if (langBtn && langBtn.parentElement) {
+      var sBtn = document.getElementById("qaafHeaderSearchToggleBtn");
+      if (!sBtn) {
+        sBtn = document.createElement("button");
+        sBtn.id = "qaafHeaderSearchToggleBtn";
+        sBtn.type = "button";
+        sBtn.className = "w-9 h-9 rounded-full hover:bg-white/10 text-white flex items-center justify-center transition cursor-pointer shrink-0";
+        sBtn.innerHTML =
+          '<svg viewBox="0 0 30 30" class="w-6 h-6" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+            '<circle cx="13" cy="13" r="9.2" stroke="#FFFFFF" stroke-width="2.4"/>' +
+            '<line x1="19.8" y1="19.8" x2="27.2" y2="27.2" stroke="#FFFFFF" stroke-width="2.8" stroke-linecap="round"/>' +
+            '<text x="13" y="16.8" text-anchor="middle" fill="#FFFFFF" font-size="11.8" font-weight="900" font-family="sans-serif">\u0642</text>' +
+          '</svg>';
+        sBtn.onclick = function(ev) {
+          ev.stopPropagation();
+          if (typeof window.openQaafMobileHeaderSearch === "function") window.openQaafMobileHeaderSearch();
+        };
+      }
+      if (sBtn.nextElementSibling !== langBtn) {
+        langBtn.parentElement.insertBefore(sBtn, langBtn);
+      }
+    }
+
+    /* Wire 3-dots button on video cards to toggle the thumbnail action buttons */
+    document.querySelectorAll("#videoGrid > div").forEach(function(card) {
+      var thumb = card.querySelector(".aspect-video");
+      var dots = card.querySelector(".qaaf-yt-meta-row button");
+      if (thumb && dots && !dots.getAttribute("data-v52-dots")) {
+        dots.setAttribute("data-v52-dots", "1");
+        dots.onclick = function(ev) {
+          ev.stopPropagation();
+          thumb.classList.toggle("qaaf-show-thumb-btns");
+        };
+      }
+    });
+  }
+
+  /* 3. Override qaafBottomNavAction so Shorts & You (Profile) work 100% */
+  window.qaafBottomNavAction = function(tab) {
+    var bHome = document.getElementById("bnavHomeBtn");
+    var bShorts = document.getElementById("bnavShortsBtn");
+    var bGames = document.getElementById("bnavGamesBtn");
+    [bHome, bShorts, bGames].forEach(function(b) {
+      if (b) b.className = "flex flex-col items-center justify-center gap-1 text-slate-400 hover:text-white transition cursor-pointer py-1 px-3";
+    });
+
+    if (tab === "home") {
+      document.body.classList.remove("qaaf-shorts-only-view");
+      if (bHome) bHome.className = "flex flex-col items-center justify-center gap-1 text-white transition cursor-pointer py-1 px-3";
+      if (typeof window.closeInstalledGameModal === "function") window.closeInstalledGameModal();
+      if (typeof window.switchKidsTab === "function") window.switchKidsTab("videos");
+      if (typeof window.selectCategory === "function") window.selectCategory("all");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else if (tab === "shorts") {
+      if (bShorts) bShorts.className = "flex flex-col items-center justify-center gap-1 text-white transition cursor-pointer py-1 px-3";
+      if (typeof window.closeInstalledGameModal === "function") window.closeInstalledGameModal();
+      if (typeof window.switchKidsTab === "function") window.switchKidsTab("videos");
+      document.body.classList.add("qaaf-shorts-only-view");
+      var sSec = document.getElementById("shortsSection");
+      if (sSec) {
+        sSec.classList.remove("hidden");
+        sSec.style.setProperty("display", "block", "important");
+      }
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else if (tab === "games") {
+      document.body.classList.remove("qaaf-shorts-only-view");
+      if (bGames) bGames.className = "flex flex-col items-center justify-center gap-1 text-white transition cursor-pointer py-1 px-3";
+      if (typeof window.switchKidsTab === "function") window.switchKidsTab("games");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else if (tab === "profile") {
+      if (window.isKidsMode) return;
+      var drawer = document.getElementById("userProfileDrawer");
+      var backdrop = document.getElementById("userProfileDrawerBackdrop");
+      if (typeof window.toggleUserProfileDrawer === "function") {
+        window.toggleUserProfileDrawer(true);
+      } else if (drawer) {
+        drawer.classList.remove("-translate-x-full", "hidden");
+        if (backdrop) backdrop.classList.remove("hidden");
+      }
+    }
+  };
+
+  setInterval(fixMobileSearchLensAndThumbButtons, 600);
+  setTimeout(fixMobileSearchLensAndThumbButtons, 100);
+})();

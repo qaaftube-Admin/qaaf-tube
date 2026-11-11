@@ -5049,15 +5049,41 @@
       switchGame(initialScreen);
     });
   </script>
-<!-- QAAF SHORT 1-SECOND NATURAL MALE VOICE AUDIO BRIDGE v51.0 -->
+<!-- QAAF SHORT 1-SECOND NATURAL MALE VOICE AUDIO BRIDGE v52.0 -->
 <script id="qaafAuthenticQariAudioBridge">
 (function() {
   var isSubGame = window.location.pathname.replace(/\\/g, '/').indexOf('/games/') !== -1;
   var AUDIO_BASE = isSubGame ? '../../audio/' : '../audio/';
   var GAMES_AUDIO_BASE = AUDIO_BASE + 'games/';
   var currentGameVoiceAudio = null;
+  var AUTO_GAME_KEY = "masjid";
 
-  /* Intercept window.Audio so any request for long verse files or wrong relative paths is automatically fixed! */
+  /* Hide any developer Download ZIP / Copy Command box inside the game file */
+  function hideDevExportBoxAndAutoOpenGame() {
+    document.querySelectorAll('button, div').forEach(function(el) {
+      var t = (el.innerText || '');
+      if ((t.indexOf('Download ZIP') !== -1 || t.indexOf('Copy Command') !== -1) && el.tagName === 'BUTTON') {
+        var box = el.parentElement;
+        if (box && box.parentElement && (box.parentElement.innerText || '').indexOf('Download ZIP') !== -1 && box.parentElement.children.length <= 4) {
+          box.parentElement.style.display = 'none';
+        } else if (box) {
+          box.style.display = 'none';
+        }
+      }
+    });
+    if (AUTO_GAME_KEY) {
+      if (typeof window.openGame === 'function') {
+        try { window.openGame(AUTO_GAME_KEY); } catch(e) {}
+      } else if (typeof window.startGame === 'function') {
+        try { window.startGame(AUTO_GAME_KEY); } catch(e) {}
+      } else if (typeof window.switchGame === 'function') {
+        try { window.switchGame(AUTO_GAME_KEY); } catch(e) {}
+      }
+    }
+  }
+  setTimeout(hideDevExportBoxAndAutoOpenGame, 80);
+  setTimeout(hideDevExportBoxAndAutoOpenGame, 350);
+
   var OrigAudio = window.Audio;
   window.Audio = function(src) {
     if (typeof src === 'string') {
@@ -5099,89 +5125,17 @@
     } catch (e) {}
   }
 
-  function matchShortSpokenFile(text) {
-    if (!text) return null;
-    var s = String(text).trim().toLowerCase();
-
-    if (s.indexOf('نماز میری قوت') !== -1) return 'prayer_power_ur.mp3';
-    if (s.indexOf('prayer is my power') !== -1) return 'prayer_power_en.mp3';
-    if (s.indexOf('الصَّلَاةُ قُوَّتِي') !== -1 || s.indexOf('الصلاة قوتي') !== -1) return 'prayer_power_ar.mp3';
-
-    if (s.indexOf('بِسْمِ') !== -1 || s.indexOf('بسم الله') !== -1 || s.indexOf('bismillah') !== -1) return 'short_bismillah.mp3';
-    if (s.indexOf('سُبْحَانَ') !== -1 || s.indexOf('سبحان') !== -1 || s.indexOf('subhan') !== -1) return 'short_subhanallah.mp3';
-    if (s.indexOf('الْحَمْدُ') !== -1 || s.indexOf('الحمد') !== -1 || s.indexOf('alhamdulillah') !== -1) return 'short_alhamdulillah.mp3';
-    if (s.indexOf('أَكْبَر') !== -1 || s.indexOf('اكبر') !== -1 || s.indexOf('akbar') !== -1) return 'short_allahuakbar.mp3';
-    if (s.indexOf('بَارَكَ') !== -1 || s.indexOf('بارك') !== -1 || s.indexOf('barak') !== -1) return 'short_barakallah.mp3';
-    if (s.indexOf('جَزَاكَ') !== -1 || s.indexOf('جزاك') !== -1 || s.indexOf('jazak') !== -1) return 'short_jazakallah.mp3';
-    if (s.indexOf('مَا شَاءَ') !== -1 || s.indexOf('ماشاء') !== -1 || s.indexOf('ما شاء') !== -1 || s.indexOf('masha') !== -1 || s.indexOf('شاباش') !== -1 || s.indexOf('well done') !== -1) {
-      var f = SHORT_PRAISE_FILES[praiseIdx % SHORT_PRAISE_FILES.length];
-      praiseIdx++;
-      return f;
-    }
-    return null;
-  }
-
-  /* 1. speakMashaAllah: Plays ONLY 1-second natural "Masha'Allah", "Subhan'Allah", or "Barak'Allah" */
   window.speakMashaAllah = function() {
     var f = SHORT_PRAISE_FILES[praiseIdx % SHORT_PRAISE_FILES.length];
     praiseIdx++;
     playShortMp3(f);
   };
 
-  /* 2. speakRaceIslamicPhrase: Plays 1-second short dhikr or Prayer is My Power */
   window.speakRaceIslamicPhrase = function(phraseObjOrText, lang) {
-    var txt = '';
-    if (typeof phraseObjOrText === 'string') {
-      txt = phraseObjOrText;
-    } else if (phraseObjOrText && typeof phraseObjOrText === 'object') {
-      var curL = (typeof currentLang !== 'undefined' ? currentLang : (lang || 'en'));
-      txt = phraseObjOrText[curL] || phraseObjOrText.ar || phraseObjOrText.ur || phraseObjOrText.en || '';
-    }
-    var shortFile = matchShortSpokenFile(txt);
-    if (shortFile) {
-      playShortMp3(shortFile);
-      return;
-    }
-    if (typeof _old_unused_speakRaceIslamicPhrase === 'function') {
-      return _old_unused_speakRaceIslamicPhrase.apply(this, arguments);
-    }
+    var f = SHORT_PRAISE_FILES[praiseIdx % SHORT_PRAISE_FILES.length];
+    praiseIdx++;
+    playShortMp3(f);
   };
-
-  /* 3. Masjid & Wudu step cards: Play 1-second short dhikr (Bismillah, SubhanAllah, Alhamdulillah, Allahu Akbar, BarakAllah) */
-  var MASJID_SHORT_CYCLE = [
-    'short_bismillah.mp3',
-    'short_subhanallah.mp3',
-    'short_alhamdulillah.mp3',
-    'short_allahuakbar.mp3',
-    'short_barakallah.mp3',
-    'short_mashaallah.mp3'
-  ];
-  var masjidIdx = 0;
-  var origSelectMasjid = window.selectMasjidStepCard;
-  if (typeof origSelectMasjid === 'function') {
-    window.selectMasjidStepCard = function() {
-      var res = origSelectMasjid.apply(this, arguments);
-      var mf = MASJID_SHORT_CYCLE[masjidIdx % MASJID_SHORT_CYCLE.length];
-      masjidIdx++;
-      setTimeout(function() { playShortMp3(mf); }, 50);
-      return res;
-    };
-  }
-
-  /* 4. Intercept speakText / playPreGeneratedAudio for short praise words */
-  ['speakText', 'playPreGeneratedAudio', 'playMaleVoiceAudio'].forEach(function(fnName) {
-    var origFn = window[fnName];
-    if (typeof origFn === 'function') {
-      window[fnName] = function(text, langHint) {
-        var shortFile = matchShortSpokenFile(text);
-        if (shortFile) {
-          playShortMp3(shortFile);
-          return;
-        }
-        return origFn.apply(this, arguments);
-      };
-    }
-  });
 })();
 </script>
 </body>
