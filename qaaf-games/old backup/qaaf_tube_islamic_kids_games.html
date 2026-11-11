@@ -1,0 +1,3078 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>قاف گیمز - QAAF Games</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Fredoka, Amiri, Noto Naskh Arabic -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Fredoka:wght@400;600;700&family=Noto+Naskh+Arabic:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/earlyaccess/urdufont.css');
+  </style>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <!-- Three.js 3D WebGL Engine for Bike Racing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            qaafDark: '#070d17',
+            qaafCard: '#0f1b2d',
+            qaafCardLight: '#162640',
+            qaafGold: '#f59e0b',
+            qaafGoldBright: '#fbbf24',
+            qaafEmerald: '#10b981',
+            qaafEmeraldDark: '#059669',
+            qaafSky: '#38bdf8'
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    :root {
+      --bg-deep: #070d17;
+      --bg-card: #0f1b2d;
+      --gold: #fbbf24;
+      --emerald: #10b981;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      background-color: #070d17;
+      background-image:
+        radial-gradient(circle at 15% 15%, rgba(16, 185, 129, 0.12) 0%, transparent 40%),
+        radial-gradient(circle at 85% 20%, rgba(245, 158, 11, 0.12) 0%, transparent 40%),
+        radial-gradient(circle at 50% 85%, rgba(56, 189, 248, 0.10) 0%, transparent 45%);
+      color: #f8fafc;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Jameel Noori Nastaleeq for Urdu */
+    .font-urdu {
+      font-family: 'Jameel Noori Nastaleeq', 'Urdu Typesetting', 'Noto Nastaliq Urdu', serif;
+      line-height: 2.0;
+      font-weight: normal;
+    }
+    .font-arabic {
+      font-family: 'Amiri', 'Noto Naskh Arabic', serif;
+      line-height: 1.85;
+    }
+    .font-english {
+      font-family: 'Fredoka', sans-serif;
+      line-height: 1.45;
+    }
+
+    button.font-urdu, .btn-urdu-bold {
+      font-family: 'Jameel Noori Nastaleeq', 'Urdu Typesetting', serif;
+      font-weight: bold;
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    .grid-letter-ar, .grid-letter-ur {
+      font-family: 'Noto Naskh Arabic', 'Amiri', serif;
+      font-weight: 700;
+    }
+    .grid-letter-en {
+      font-family: 'Fredoka', sans-serif;
+      font-weight: 700;
+    }
+
+    .card-3d {
+      background: linear-gradient(180deg, #132238 0%, #0c1626 100%);
+      border: 1.5px solid rgba(251, 191, 36, 0.22);
+      border-bottom: 4px solid #060b13;
+      box-shadow: 0 6px 16px -4px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      border-radius: 1rem;
+    }
+
+    .card-3d-emerald {
+      background: linear-gradient(180deg, #064e3b 0%, #042f2e 100%);
+      border: 1.5px solid #10b981;
+      border-bottom: 4px solid #022c22;
+      box-shadow: 0 6px 16px -4px rgba(16, 185, 129, 0.22);
+      border-radius: 1rem;
+    }
+
+    .hub-game-bar {
+      background: linear-gradient(90deg, #13233a 0%, #0d1829 100%);
+      border: 1.5px solid rgba(251, 191, 36, 0.28);
+      border-bottom: 3.5px solid #050a12;
+      border-radius: 0.9rem;
+      transition: all 0.15s ease;
+    }
+    .hub-game-bar:hover {
+      border-color: #fbbf24;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(245, 158, 11, 0.18);
+    }
+    .hub-game-bar:active {
+      transform: translateY(1px);
+    }
+
+    .btn-3d-gold {
+      background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 100%);
+      color: #070d17;
+      border: 1.5px solid #fde68a;
+      border-bottom: 3px solid #b45309;
+      border-radius: 0.75rem;
+      font-weight: bold;
+      transition: all 0.12s ease;
+      box-shadow: 0 4px 10px rgba(245, 158, 11, 0.28);
+    }
+    .btn-3d-gold:active {
+      transform: translateY(2px);
+      border-bottom-width: 1.5px;
+    }
+
+    .btn-3d-emerald {
+      background: linear-gradient(180deg, #34d399 0%, #10b981 100%);
+      color: #042f2e;
+      border: 1.5px solid #a7f3d0;
+      border-bottom: 3px solid #047857;
+      border-radius: 0.75rem;
+      font-weight: bold;
+      transition: all 0.12s ease;
+      box-shadow: 0 4px 10px rgba(16, 185, 129, 0.28);
+    }
+    .btn-3d-emerald:active {
+      transform: translateY(2px);
+      border-bottom-width: 1.5px;
+    }
+
+    .btn-3d-sky {
+      background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+      color: #ffffff;
+      border: 1.5px solid #bae6fd;
+      border-bottom: 3px solid #0369a1;
+      border-radius: 0.75rem;
+      font-weight: bold;
+      transition: all 0.12s ease;
+    }
+
+    .btn-3d-dark {
+      background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+      color: #e2e8f0;
+      border: 1.5px solid #334155;
+      border-bottom: 3px solid #020617;
+      border-radius: 0.75rem;
+      font-weight: bold;
+      transition: all 0.12s ease;
+    }
+    .btn-3d-dark:hover {
+      border-color: #fbbf24;
+      color: #fbbf24;
+    }
+
+    .ws-grid-container {
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .ws-cell {
+      aspect-ratio: 1 / 1;
+      background: linear-gradient(180deg, #1a2d4c 0%, #0f1b2e 100%);
+      border: 1.5px solid rgba(148, 163, 184, 0.28);
+      border-bottom: 3.5px solid #060b14;
+      border-radius: 0.6rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.12s ease, background 0.15s ease, border-color 0.15s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    @keyframes hintPulseGlow {
+      0%, 100% {
+        box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.7), inset 0 0 12px rgba(251, 191, 36, 0.5);
+        border-color: #fbbf24;
+        transform: scale(1);
+      }
+      50% {
+        box-shadow: 0 0 16px 4px rgba(251, 191, 36, 0.85), inset 0 0 18px rgba(251, 191, 36, 0.75);
+        border-color: #fef08a;
+        transform: scale(1.06);
+      }
+    }
+
+    .ws-cell-hint {
+      animation: hintPulseGlow 1.6s infinite ease-in-out;
+      background: linear-gradient(180deg, #422006 0%, #271304 100%) !important;
+      color: #fde68a !important;
+      z-index: 5;
+    }
+
+    .ws-cell-extra-hint {
+      background: linear-gradient(180deg, #065f46 0%, #064e3b 100%) !important;
+      border-color: #34d399 !important;
+      color: #ecfdf5 !important;
+      transform: scale(1.05);
+      z-index: 4;
+    }
+
+    .ws-cell-selecting {
+      background: linear-gradient(180deg, #fbbf24 0%, #d97706 100%) !important;
+      color: #070d17 !important;
+      border-color: #fef08a !important;
+      transform: scale(1.08);
+      z-index: 10;
+    }
+
+    .ws-cell-found-0 { background: linear-gradient(180deg, #10b981 0%, #059669 100%); color: #022c22; border-color: #a7f3d0; }
+    .ws-cell-found-1 { background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%); color: #082f49; border-color: #bae6fd; }
+    .ws-cell-found-2 { background: linear-gradient(180deg, #a855f7 0%, #7e22ce 100%); color: #ffffff; border-color: #e9d5ff; }
+    .ws-cell-found-3 { background: linear-gradient(180deg, #f43f5e 0%, #e11d48 100%); color: #ffffff; border-color: #fecdd3; }
+    .ws-cell-found-4 { background: linear-gradient(180deg, #eab308 0%, #ca8a04 100%); color: #1c1917; border-color: #fef08a; }
+
+    @keyframes popSpotlight {
+      0% { transform: scale(0.86); opacity: 0.4; }
+      60% { transform: scale(1.03); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .animate-pop-spotlight {
+      animation: popSpotlight 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    @keyframes starBurst {
+      0% { transform: translate(0, 0) scale(0.4) rotate(0deg); opacity: 1; }
+      100% { transform: translate(var(--tx), var(--ty)) scale(1.3) rotate(360deg); opacity: 0; }
+    }
+    .star-particle {
+      position: fixed;
+      pointer-events: none;
+      z-index: 9999;
+      animation: starBurst 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .masjid-part {
+      transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+      opacity: 0.16;
+      filter: grayscale(85%);
+    }
+    .masjid-part.lit {
+      opacity: 1;
+      filter: grayscale(0%) drop-shadow(0 0 12px rgba(251, 191, 36, 0.55));
+    }
+  </style>
+</head>
+<body class="font-urdu selection:bg-amber-400 selection:text-slate-950">
+
+  <div id="starBurstContainer" class="fixed inset-0 pointer-events-none z-50 overflow-hidden"></div>
+
+  <!-- ================= CLEAN SINGLE-LINE TOP BAR ================= -->
+  <header class="sticky top-0 z-40 bg-[#070d17]/95 backdrop-blur-md border-b border-slate-800/90 shadow-md">
+    <div class="max-w-5xl mx-auto px-3 py-1.5 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2 min-w-0">
+        <span id="activeGameHeaderIcon" class="text-base sm:text-lg">🎮</span>
+        <span id="activeGameHeaderTitle" class="text-sm sm:text-base font-bold text-amber-300 truncate">قاف گیمز</span>
+      </div>
+
+      <div class="flex items-center gap-1.5 shrink-0">
+        <div class="bg-amber-500/15 border border-amber-400/50 rounded-lg px-2.5 py-0.5 flex items-center gap-1">
+          <span class="text-xs">⭐</span>
+          <span id="headerStarCount" class="text-xs font-extrabold text-amber-300 font-english">0</span>
+        </div>
+
+        <button onclick="toggleAudioMute()" id="audioMuteBtn" class="btn-3d-emerald px-2.5 py-1 text-xs flex items-center justify-center" title="آواز">
+          <i id="audioMuteIcon" class="fa-solid fa-volume-high"></i>
+        </button>
+
+        <button onclick="handleHeaderExitButton()" id="headerExitBtn" class="bg-rose-600 hover:bg-rose-500 active:translate-y-0.5 text-white border border-rose-300/60 border-b-2 border-b-rose-900 rounded-lg px-2.5 py-1 text-xs font-bold flex items-center gap-1 shadow-sm" title="باہر نکلیں">
+          <i class="fa-solid fa-right-from-bracket text-[10px]"></i>
+          <span id="uiExitBtnLabel">باہر نکلیں</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTENT CONTAINER ================= -->
+  <main class="max-w-5xl mx-auto px-2.5 sm:px-4 py-2.5 pb-6">
+
+    <!-- =====================================================================
+         MAIN HUB SCREEN (QAAF GAMES LIST + LANGUAGE SWITCHER ONLY HERE)
+         ===================================================================== -->
+    <section id="gameSection-hub" class="max-w-xl mx-auto space-y-3 py-1">
+      <div class="card-3d p-3 flex items-center justify-between gap-2 flex-wrap">
+        <span id="hubLangTitle" class="text-xs sm:text-sm font-bold text-amber-300 flex items-center gap-1.5">
+          <i class="fa-solid fa-globe text-emerald-400"></i>
+          <span>زبان منتخب کریں:</span>
+        </span>
+        <div class="bg-slate-950/90 p-1 rounded-xl border border-slate-700/80 flex items-center gap-1">
+          <button onclick="setPreferredContentLanguage('ur')" id="globalLangBtn-ur" class="px-3 py-1 rounded-lg text-xs font-bold transition-all bg-amber-400 text-slate-950 font-urdu">
+            اردو
+          </button>
+          <button onclick="setPreferredContentLanguage('ar')" id="globalLangBtn-ar" class="px-3 py-1 rounded-lg text-xs font-bold transition-all text-slate-300 hover:text-white font-arabic">
+            العربية
+          </button>
+          <button onclick="setPreferredContentLanguage('en')" id="globalLangBtn-en" class="px-3 py-1 rounded-lg text-xs font-bold transition-all text-slate-300 hover:text-white font-english">
+            English
+          </button>
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <button onclick="openGameFromHub('wordsearch')" class="hub-game-bar w-full px-3.5 py-2.5 flex items-center justify-between gap-3 text-right">
+          <div class="flex items-center gap-3 min-w-0">
+            <span class="w-7 h-7 rounded-lg bg-amber-400/20 border border-amber-400/60 text-amber-300 font-english font-bold text-xs flex items-center justify-center shrink-0">1</span>
+            <span class="text-xl shrink-0">🔍</span>
+            <span id="hubGameTitle-wordsearch" class="text-sm sm:text-base font-bold text-white truncate">ورڈ سرچ پزل</span>
+          </div>
+          <i class="fa-solid fa-play text-xs text-amber-400 shrink-0"></i>
+        </button>
+
+        <button onclick="openGameFromHub('quiz')" class="hub-game-bar w-full px-3.5 py-2.5 flex items-center justify-between gap-3 text-right">
+          <div class="flex items-center gap-3 min-w-0">
+            <span class="w-7 h-7 rounded-lg bg-emerald-400/20 border border-emerald-400/60 text-emerald-300 font-english font-bold text-xs flex items-center justify-center shrink-0">2</span>
+            <span class="text-xl shrink-0">📖</span>
+            <span id="hubGameTitle-quiz" class="text-sm sm:text-base font-bold text-white truncate">قرآن و سنت کوئز</span>
+          </div>
+          <i class="fa-solid fa-play text-xs text-emerald-400 shrink-0"></i>
+        </button>
+
+        <button onclick="openGameFromHub('alphabet')" class="hub-game-bar w-full px-3.5 py-2.5 flex items-center justify-between gap-3 text-right">
+          <div class="flex items-center gap-3 min-w-0">
+            <span class="w-7 h-7 rounded-lg bg-sky-400/20 border border-sky-400/60 text-sky-300 font-english font-bold text-xs flex items-center justify-center shrink-0">3</span>
+            <span class="text-xl shrink-0">🔤</span>
+            <span id="hubGameTitle-alphabet" class="text-sm sm:text-base font-bold text-white truncate">عربی حروف پزل</span>
+          </div>
+          <i class="fa-solid fa-play text-xs text-sky-400 shrink-0"></i>
+        </button>
+
+        <button onclick="openGameFromHub('masjid')" class="hub-game-bar w-full px-3.5 py-2.5 flex items-center justify-between gap-3 text-right">
+          <div class="flex items-center gap-3 min-w-0">
+            <span class="w-7 h-7 rounded-lg bg-purple-400/20 border border-purple-400/60 text-purple-300 font-english font-bold text-xs flex items-center justify-center shrink-0">4</span>
+            <span class="text-xl shrink-0">🕌</span>
+            <span id="hubGameTitle-masjid" class="text-sm sm:text-base font-bold text-white truncate">مسجد اور وضو بلڈر</span>
+          </div>
+          <i class="fa-solid fa-play text-xs text-purple-400 shrink-0"></i>
+        </button>
+
+        <button onclick="openGameFromHub('racing')" class="hub-game-bar w-full px-3.5 py-2.5 flex items-center justify-between gap-3 text-right">
+          <div class="flex items-center gap-3 min-w-0">
+            <span class="w-7 h-7 rounded-lg bg-rose-400/20 border border-rose-400/60 text-rose-300 font-english font-bold text-xs flex items-center justify-center shrink-0">5</span>
+            <span class="text-xl shrink-0">🏍️</span>
+            <span id="hubGameTitle-racing" class="text-sm sm:text-base font-bold text-white truncate">بائیک ریسنگ</span>
+          </div>
+          <i class="fa-solid fa-play text-xs text-rose-400 shrink-0"></i>
+        </button>
+      </div>
+    </section>
+
+    <!-- =====================================================================
+         GAME 1: WORD SEARCH PUZZLE
+         ===================================================================== -->
+    <section id="gameSection-wordsearch" class="hidden space-y-2.5">
+      <div class="card-3d p-2.5">
+        <div class="flex items-center justify-between gap-2 mb-1.5">
+          <span id="wsCurrentCategoryLabel" class="text-xs sm:text-sm font-bold text-amber-300 truncate"></span>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <span class="bg-emerald-500/20 border border-emerald-400/50 px-2.5 py-0.5 rounded-full text-[11px] font-bold text-emerald-300 font-english">
+              <span id="wsFoundCountBadge">0 / 10</span> ⭐
+            </span>
+            <button onclick="rebuildWordSearchStage()" class="btn-3d-dark px-2 py-0.5 text-[11px]" title="نیا ڈبہ بنائیں">
+              <i class="fa-solid fa-arrows-rotate text-emerald-400"></i>
+            </button>
+          </div>
+        </div>
+        <div id="wsStagesRow" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5"></div>
+      </div>
+
+      <div class="card-3d p-2">
+        <div id="wsTopIconsBar" class="grid grid-cols-5 sm:grid-cols-10 gap-1.5"></div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-2.5 items-start">
+        <div class="lg:col-span-4">
+          <div id="wsSpotlightCard" class="card-3d-emerald p-3 relative overflow-hidden animate-pop-spotlight">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <div onclick="speakActiveWordSearchItem()" class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-b from-amber-300/30 to-emerald-900/70 border-2 border-amber-400 shadow-lg flex items-center justify-center text-3xl sm:text-4xl cursor-pointer shrink-0">
+                  <span id="wsSpotlightEmoji">🍎</span>
+                </div>
+                <div class="min-w-0">
+                  <div class="flex items-center gap-1.5">
+                    <span id="wsTargetIndexBadge" class="font-english font-bold bg-amber-400 text-slate-950 px-2 py-0.2 rounded-full text-[10px]">#1</span>
+                    <span id="wsSpotlightWord" class="text-lg sm:text-xl font-bold text-amber-300 truncate">سیب</span>
+                  </div>
+                  <div id="wsSpotlightTranslations" class="text-[10px] text-emerald-200/90 flex items-center gap-1.5 flex-wrap mt-0.5"></div>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-1 shrink-0">
+                <button onclick="speakActiveWordSearchItem()" class="btn-3d-gold px-2.5 py-2 text-xs" title="آواز سنیں"><i class="fa-solid fa-volume-high"></i></button>
+                <button onclick="triggerWordSearchExtraHint()" class="btn-3d-sky px-2.5 py-2 text-xs" title="اشارہ"><i class="fa-solid fa-lightbulb"></i></button>
+                <button onclick="cycleNextWordSearchTarget()" class="btn-3d-dark px-2.5 py-2 text-xs" title="اگلا لفظ"><i class="fa-solid fa-forward-step"></i></button>
+              </div>
+            </div>
+
+            <div class="mt-2 pt-2 border-t border-emerald-500/30 flex items-center justify-between gap-2 flex-wrap">
+              <div id="wsLetterBreakdown" class="flex items-center gap-1 flex-wrap"></div>
+              <span id="wsLiveSelectionText" class="text-xs sm:text-sm font-bold text-amber-300 px-2.5 py-0.5 bg-slate-950/80 rounded-lg border border-amber-500/30">---</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-8">
+          <div class="card-3d p-2.5 sm:p-4 border border-amber-400/30">
+            <div id="wsGridWrapper" dir="ltr" class="ws-grid-container grid grid-cols-10 gap-1 sm:gap-1.5 max-w-[460px] mx-auto"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =====================================================================
+         GAME 2: QURAN & SUNNAH QUIZ
+         ===================================================================== -->
+    <section id="gameSection-quiz" class="hidden space-y-2.5">
+      <div class="card-3d p-2.5">
+        <div class="flex items-center justify-between gap-2 mb-1.5">
+          <h4 id="quizCategoryPill" class="text-xs sm:text-sm font-bold text-amber-300 truncate">اسٹیج ۱: ایمانیات اور بنیادی عقائد</h4>
+          <span id="quizStageProgressBadge" class="bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 px-2.5 py-0.5 rounded-full text-[11px] font-bold shrink-0">سوال 1 از 4</span>
+        </div>
+        <div id="quizStagesRow" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5"></div>
+      </div>
+
+      <div class="max-w-2xl mx-auto card-3d p-3.5 sm:p-5">
+        <div class="flex items-center justify-between gap-2 mb-2">
+          <div id="quizEmojiIcon" class="text-3xl sm:text-4xl">🕋</div>
+          <button onclick="speakCurrentQuizQuestion()" class="btn-3d-gold px-3 py-1.5 text-xs flex items-center gap-1.5">
+            <i class="fa-solid fa-volume-high"></i>
+            <span id="quizListenBtnText">سوال سنیں</span>
+          </button>
+        </div>
+
+        <h3 id="quizQuestionText" class="text-sm sm:text-lg font-bold text-white leading-relaxed text-center my-3"></h3>
+        <div id="quizOptionsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-3"></div>
+        <div id="quizFeedbackBox" class="hidden mt-3 p-2.5 rounded-xl border text-center text-xs sm:text-sm font-bold"></div>
+      </div>
+    </section>
+
+    <!-- =====================================================================
+         GAME 3: ARABIC ALPHABET PUZZLE
+         ===================================================================== -->
+    <section id="gameSection-alphabet" class="hidden space-y-2.5">
+      <div class="card-3d p-2.5">
+        <div class="flex items-center justify-between gap-2 mb-1.5">
+          <span id="alphaMainHeading" class="text-xs sm:text-sm font-bold text-amber-300 truncate">عربی حروف پزل</span>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <span class="bg-amber-500/20 border border-amber-400/50 text-amber-300 px-2.5 py-0.5 rounded-full text-[11px] font-bold">
+              <span id="alphaMatchedCounter">0 / 3</span> ⭐
+            </span>
+            <button onclick="renderAlphabetStage()" class="btn-3d-dark px-2 py-0.5 text-[11px]" title="دوبارہ ملائیں"><i class="fa-solid fa-rotate"></i></button>
+          </div>
+        </div>
+        <div id="alphaStagesRow" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5"></div>
+      </div>
+
+      <div class="card-3d p-2.5 sm:p-3.5">
+        <div id="alphaShowcaseGrid" class="grid grid-cols-3 gap-2"></div>
+      </div>
+
+      <div class="card-3d p-2.5 sm:p-4">
+        <div class="grid grid-cols-2 gap-2.5 sm:gap-4">
+          <div class="space-y-1.5">
+            <div id="alphaColLettersLabel" class="text-[11px] font-bold text-slate-400 text-center">عربی حروف</div>
+            <div id="alphaMatchLettersCol" class="space-y-2"></div>
+          </div>
+          <div class="space-y-1.5">
+            <div id="alphaColWordsLabel" class="text-[11px] font-bold text-slate-400 text-center">تصویر اور مثال</div>
+            <div id="alphaMatchWordsCol" class="space-y-2"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =====================================================================
+         GAME 4: MASJID & WUDU BUILDER
+         ===================================================================== -->
+    <section id="gameSection-masjid" class="hidden space-y-2.5">
+      <div class="card-3d p-2.5">
+        <div class="flex items-center justify-between gap-2 mb-1.5">
+          <span id="masjidStageTopicBadge" class="text-xs sm:text-sm font-bold text-amber-300 truncate"></span>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <span class="bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 px-2.5 py-0.5 rounded-full text-[11px] font-bold font-english">
+              <span id="masjidStepCounter">0 / 6</span> 🕌
+            </span>
+            <button onclick="renderMasjidStage()" class="btn-3d-dark px-2 py-0.5 text-[11px]" title="دوبارہ شروع کریں"><i class="fa-solid fa-rotate-right"></i></button>
+          </div>
+        </div>
+        <div id="masjidStagesRow" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5"></div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-2.5 items-start">
+        <div class="lg:col-span-5 card-3d p-2.5 sm:p-4 text-center">
+          <div class="bg-gradient-to-b from-[#060c18] via-[#0c182e] to-[#0a2324] rounded-xl border border-amber-500/30 p-2 shadow-inner relative overflow-hidden">
+            <svg viewBox="0 0 500 340" class="w-full h-auto max-h-[165px] sm:max-h-[240px] mx-auto">
+              <defs>
+                <linearGradient id="goldDomeGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#fde047" />
+                  <stop offset="50%" stop-color="#f59e0b" />
+                  <stop offset="100%" stop-color="#b45309" />
+                </linearGradient>
+                <linearGradient id="archLightGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#fef08a" />
+                  <stop offset="100%" stop-color="#f59e0b" />
+                </linearGradient>
+              </defs>
+
+              <g id="masjidSvgPart-6" class="masjid-part">
+                <circle cx="65" cy="45" r="3" fill="#fde047" />
+                <circle cx="130" cy="30" r="2.5" fill="#fde047" />
+                <circle cx="250" cy="22" r="3.5" fill="#fde047" />
+                <circle cx="370" cy="32" r="2.5" fill="#fde047" />
+                <circle cx="435" cy="48" r="3" fill="#fde047" />
+                <line x1="150" y1="0" x2="150" y2="55" stroke="#fbbf24" stroke-width="2" />
+                <polygon points="142,55 158,55 162,72 138,72" fill="#fde047" stroke="#b45309" stroke-width="2" />
+                <line x1="350" y1="0" x2="350" y2="55" stroke="#fbbf24" stroke-width="2" />
+                <polygon points="342,55 358,55 362,72 338,72" fill="#fde047" stroke="#b45309" stroke-width="2" />
+              </g>
+
+              <g id="masjidSvgPart-3" class="masjid-part">
+                <rect x="55" y="110" width="38" height="185" rx="4" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2" />
+                <rect x="49" y="145" width="50" height="10" rx="3" fill="#f59e0b" />
+                <rect x="49" y="205" width="50" height="10" rx="3" fill="#10b981" />
+                <path d="M55 110 Q74 70 93 110 Z" fill="url(#goldDomeGrad)" />
+                <circle cx="74" cy="75" r="5" fill="#fde047" />
+                <rect x="68" y="165" width="12" height="24" rx="6" fill="url(#archLightGrad)" />
+
+                <rect x="407" y="110" width="38" height="185" rx="4" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2" />
+                <rect x="401" y="145" width="50" height="10" rx="3" fill="#f59e0b" />
+                <rect x="401" y="205" width="50" height="10" rx="3" fill="#10b981" />
+                <path d="M407 110 Q426 70 445 110 Z" fill="url(#goldDomeGrad)" />
+                <circle cx="426" cy="75" r="5" fill="#fde047" />
+                <rect x="420" y="165" width="12" height="24" rx="6" fill="url(#archLightGrad)" />
+              </g>
+
+              <g id="masjidSvgPart-4" class="masjid-part">
+                <path d="M125 185 Q155 135 185 185 Z" fill="#10b981" stroke="#34d399" stroke-width="2" />
+                <path d="M315 185 Q345 135 375 185 Z" fill="#10b981" stroke="#34d399" stroke-width="2" />
+                <path d="M175 185 Q250 75 325 185 Z" fill="url(#goldDomeGrad)" stroke="#fef08a" stroke-width="3" />
+              </g>
+
+              <g id="masjidSvgPart-5" class="masjid-part">
+                <line x1="250" y1="75" x2="250" y2="112" stroke="#fde047" stroke-width="4" />
+                <circle cx="250" cy="92" r="5" fill="#fde047" />
+                <path d="M258 55 A14 14 0 1 0 258 80 A10 10 0 1 1 258 55 Z" fill="#fde047" />
+              </g>
+
+              <g id="masjidSvgPart-2" class="masjid-part">
+                <rect x="115" y="185" width="270" height="110" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="3" />
+                <rect x="115" y="185" width="270" height="12" fill="#10b981" />
+                <path d="M215 295 L215 235 Q250 200 285 235 L285 295 Z" fill="#064e3b" stroke="#f59e0b" stroke-width="3" />
+                <path d="M227 295 L227 245 Q250 220 273 245 L273 295 Z" fill="url(#archLightGrad)" />
+                <path d="M140 265 L140 230 Q155 215 170 230 L170 265 Z" fill="url(#archLightGrad)" stroke="#059669" stroke-width="2" />
+                <path d="M330 265 L330 230 Q345 215 360 230 L360 265 Z" fill="url(#archLightGrad)" stroke="#059669" stroke-width="2" />
+              </g>
+
+              <g id="masjidSvgPart-1" class="masjid-part">
+                <rect x="35" y="295" width="430" height="16" rx="5" fill="#10b981" stroke="#6ee7b7" stroke-width="2" />
+                <rect x="20" y="311" width="460" height="18" rx="6" fill="#f59e0b" stroke="#fde68a" stroke-width="2" />
+              </g>
+            </svg>
+          </div>
+        </div>
+
+        <div class="lg:col-span-7 space-y-2">
+          <div class="card-3d-emerald p-2.5 sm:p-3 flex flex-wrap items-center justify-between gap-2">
+            <h3 id="masjidExplicitTopicHeading" class="text-xs sm:text-sm font-bold text-white leading-relaxed flex-1">وضو کے مراحل کو درست ترتیب سے منتخب کریں</h3>
+            <span id="masjidCurrentStepInstruction" class="text-xs font-bold text-amber-300 bg-slate-950/70 border border-amber-400/40 px-2.5 py-0.5 rounded-lg shrink-0">مرحلہ نمبر 1</span>
+          </div>
+          <div id="masjidStepsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =====================================================================
+         GAME 5: BIKE RACING (DETAILED 3D SUPER BIKE + COLLIDERS + 360 SKY)
+         ===================================================================== -->
+    <section id="gameSection-racing" class="hidden space-y-2">
+      <div class="card-3d p-2 flex flex-col gap-1.5">
+        <div class="flex items-center justify-between gap-2">
+          <span id="raceCurrentTrackTitle" class="text-xs font-bold text-amber-300 truncate">اسٹیج ۱: گرین سرکل ٹریک</span>
+          <div id="raceBikeSelectorRow" class="flex items-center gap-1 shrink-0"></div>
+        </div>
+        <div id="raceStagesRow" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5"></div>
+      </div>
+
+      <div class="relative rounded-2xl overflow-hidden border border-amber-500/40 bg-[#050b16] shadow-2xl">
+        <canvas id="bikeRaceCanvas" class="w-full h-[calc(100vh-140px)] min-h-[390px] max-h-[650px] block touch-none"></canvas>
+
+        <!-- Compact HUD -->
+        <div dir="ltr" class="absolute top-2.5 inset-x-2.5 flex items-center justify-between gap-1.5 pointer-events-none z-10">
+          <div class="flex items-center gap-1.5 bg-slate-950/55 backdrop-blur-[2px] border border-white/20 rounded-xl px-2.5 py-1 text-[11px] sm:text-xs font-english font-bold text-white">
+            <span class="text-amber-300">POS</span>
+            <span id="raceHudPosition">1/4</span>
+            <span class="text-slate-500">|</span>
+            <span id="raceHudSpeed" class="text-emerald-300">0</span>
+            <span class="text-[10px] text-slate-300">km/h</span>
+            <span class="text-slate-500">|</span>
+            <span class="text-amber-300">📿</span>
+            <span id="raceHudBubbles" class="text-amber-200">0</span>
+            <span class="text-slate-500">|</span>
+            <span id="raceHudProgress" class="text-sky-300">0%</span>
+          </div>
+
+          <button onclick="toggleBikeTiltSensor()" id="raceTiltToggleBtn" class="pointer-events-auto bg-slate-950/45 backdrop-blur-[2px] border border-white/25 hover:border-amber-400 text-white rounded-xl px-2.5 py-1 text-[11px] flex items-center gap-1">
+            <i class="fa-solid fa-mobile-screen-button text-amber-300"></i>
+            <span id="raceTiltBtnText">Tilt: Off</span>
+          </button>
+        </div>
+
+        <div id="racePraiseBanner" class="hidden absolute top-12 inset-x-0 mx-auto max-w-xs bg-emerald-600/90 backdrop-blur-sm border-2 border-amber-300 text-white px-4 py-1.5 rounded-2xl text-center font-bold text-sm sm:text-base shadow-xl z-10 animate-bounce pointer-events-none">
+          ✨ سُبْحَانَ اللّٰهِ! +5 ⭐
+        </div>
+
+        <div id="raceCrashBanner" class="hidden absolute top-24 inset-x-0 mx-auto max-w-xs bg-rose-600/85 backdrop-blur-sm border border-amber-300 text-white px-3 py-1 rounded-xl text-center font-bold text-xs shadow-lg z-10 animate-bounce pointer-events-none">
+          💥 احتیاط! بائیک ٹکرا کر گر گئی!
+        </div>
+
+        <!-- Transparent Overlay Controls -->
+        <div dir="ltr" class="absolute bottom-3 inset-x-3 flex items-end justify-between pointer-events-none z-10 select-none">
+          <div class="flex flex-col items-center gap-1.5">
+            <div id="raceJoystickPrompt" class="bg-slate-950/75 border border-amber-400/80 text-amber-300 px-2.5 py-1 rounded-xl text-[10px] sm:text-xs font-bold flex items-center gap-1 animate-bounce shadow-lg">
+              <i class="fa-solid fa-arrow-up text-emerald-400"></i>
+              <span id="raceJoystickPromptText">چلانے کے لیے اوپر دھکیلیں</span>
+            </div>
+
+            <div id="raceJoystickZone" class="pointer-events-auto relative w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-slate-950/35 backdrop-blur-[2px] border-2 border-amber-400/50 shadow-xl flex items-center justify-center touch-none select-none">
+              <span class="absolute top-1.5 text-xs font-bold text-emerald-300 animate-pulse pointer-events-none">▲</span>
+              <span class="absolute bottom-1.5 text-[10px] text-white/60 pointer-events-none">▼</span>
+              <span class="absolute left-2 text-[10px] text-white/60 pointer-events-none">◀</span>
+              <span class="absolute right-2 text-[10px] text-white/60 pointer-events-none">▶</span>
+
+              <div id="raceJoystickKnob" class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-b from-amber-300 to-amber-500 border-2 border-white shadow-lg flex flex-col items-center justify-center text-slate-950 font-extrabold pointer-events-none transition-transform duration-75">
+                <i class="fa-solid fa-caret-up text-xs leading-none"></i>
+                <i class="fa-solid fa-motorcycle text-sm leading-none my-0.5"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="pointer-events-auto flex items-end gap-1.5 sm:gap-2">
+            <button onpointerdown="setRaceTouchControl('brake', true)" onpointerup="setRaceTouchControl('brake', false)" onpointerleave="setRaceTouchControl('brake', false)" class="w-13 h-13 sm:w-15 sm:h-15 p-2.5 rounded-full bg-rose-500/25 active:bg-rose-500/55 backdrop-blur-[2px] border-2 border-white/35 text-white flex flex-col items-center justify-center shadow-lg touch-none select-none">
+              <i class="fa-solid fa-hand text-sm sm:text-base text-rose-200"></i>
+              <span id="raceBtnBrakeText" class="text-[10px] font-bold">بریک</span>
+            </button>
+
+            <button onpointerdown="triggerManualBikeJump()" class="w-13 h-13 sm:w-15 sm:h-15 p-2.5 rounded-full bg-sky-500/25 active:bg-sky-500/55 backdrop-blur-[2px] border-2 border-white/35 text-white flex flex-col items-center justify-center shadow-lg mb-2 touch-none select-none">
+              <i class="fa-solid fa-angles-up text-sm sm:text-base text-sky-200"></i>
+              <span id="raceBtnJumpText" class="text-[10px] font-bold">جمپ</span>
+            </button>
+
+            <button onpointerdown="activateBikeTurboBoost()" id="raceTurboBtn" class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-amber-500/30 active:bg-amber-400/70 backdrop-blur-[2px] border-2 border-amber-300/80 text-white flex flex-col items-center justify-center shadow-lg mb-4 touch-none select-none relative overflow-hidden">
+              <i class="fa-solid fa-bolt text-base sm:text-lg text-amber-300"></i>
+              <span id="raceBtnTurboText" class="text-[10px] font-bold text-amber-200">ٹربو</span>
+              <span id="raceTurboCountBadge" class="text-[9px] font-english font-extrabold bg-slate-950/80 text-amber-300 px-1.5 rounded-full">0%</span>
+            </button>
+
+            <button onpointerdown="setRaceTouchControl('gas', true)" onpointerup="setRaceTouchControl('gas', false)" onpointerleave="setRaceTouchControl('gas', false)" class="w-16 h-16 sm:w-18 sm:h-18 rounded-full bg-emerald-500/30 active:bg-emerald-500/60 backdrop-blur-[2px] border-2 border-emerald-300/60 text-white flex flex-col items-center justify-center shadow-lg touch-none select-none">
+              <i class="fa-solid fa-gauge-high text-base sm:text-lg text-emerald-200"></i>
+              <span id="raceBtnGasText" class="text-[11px] font-bold">ریس</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="raceOverlayScreen" class="absolute inset-0 bg-slate-950/65 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center z-20">
+          <div id="raceOverlayBadge" class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-emerald-500 border-2 border-amber-200 shadow-xl flex items-center justify-center text-3xl mb-2 animate-bounce">🏍️</div>
+          <h3 id="raceOverlayTitle" class="text-base sm:text-xl font-bold text-amber-300 mb-1">بسم اللّٰہ پڑھ کر ریس شروع کریں!</h3>
+          <p id="raceOverlaySubtitle" class="text-[11px] sm:text-xs text-slate-200 max-w-xs mb-3">بائیں جوائسٹک کو اوپر دھکیل کر بائیک چلائیں اور دائیں جانب ریس، جمپ اور ٹربو استعمال کریں!</p>
+          <button onclick="startBikeRaceCountdown()" id="raceStartBtn" class="btn-3d-gold px-5 py-2.5 text-xs sm:text-sm flex items-center gap-2 shadow-xl">
+            <i class="fa-solid fa-play"></i>
+            <span id="raceStartBtnText">ریس شروع کریں</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= CELEBRATION MODAL ================= -->
+  <div id="celebrationModal" class="fixed inset-0 z-50 hidden bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="card-3d max-w-md w-full p-6 sm:p-8 text-center border-2 border-amber-400 animate-pop-spotlight">
+      <div class="text-6xl sm:text-7xl mb-3 animate-bounce">🏆</div>
+      <h3 id="celebModalTitle" class="text-2xl sm:text-3xl font-bold text-amber-400 mb-2">الحمد للّٰہ! ماشاء اللّٰہ!</h3>
+      <p id="celebModalDesc" class="text-sm sm:text-base text-slate-200 mb-4">آپ نے یہ اسٹیج کامیابی سے مکمل کر لیا ہے!</p>
+      <div class="inline-flex items-center gap-2 bg-amber-500/20 border-2 border-amber-400 rounded-2xl px-5 py-2 mb-6">
+        <span class="text-2xl">⭐</span>
+        <span id="celebStarsEarnedText" class="text-xl font-extrabold text-amber-300 font-english">+10 ستارے</span>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <button onclick="closeCelebrationModal(false)" class="btn-3d-dark py-3 px-4 text-sm sm:text-base flex items-center justify-center gap-2">
+          <i class="fa-solid fa-rotate-right"></i>
+          <span id="celebBtnReplay">دوبارہ کھیلیں</span>
+        </button>
+        <button onclick="closeCelebrationModal(true)" class="btn-3d-emerald py-3 px-4 text-sm sm:text-base flex items-center justify-center gap-2">
+          <span id="celebBtnNextStage">اگلا اسٹیج</span>
+          <i class="fa-solid fa-arrow-left"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= PARENTAL / SUPPORTER PRO UNLOCK MODAL ================= -->
+  <div id="parentalModal" class="fixed inset-0 z-50 hidden bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="card-3d max-w-md w-full p-6 sm:p-7 border-2 border-amber-400/60">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">👑</span>
+          <h3 id="parentalModalTitle" class="text-lg sm:text-xl font-bold text-amber-400">قاف ٹیوب کو سپورٹ کریں اور تمام اسٹیجز ان لاک کریں</h3>
+        </div>
+        <button onclick="closeParentalModal()" class="text-slate-400 hover:text-white text-xl px-2"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <p id="parentalModalDesc" class="text-xs sm:text-sm text-slate-300 mb-4 leading-relaxed">اسٹیج ایک سے پانچ تک تمام بچوں کے لیے بالکل مفت ہیں۔ اسٹیج چھ سے دس تک مستقل طور پر ان لاک کرنے کے لیے قاف ٹیوب کو سپورٹ کریں اور والدین کا پن کوڈ درج کریں:</p>
+
+      <div class="bg-slate-900 border border-slate-700 rounded-xl p-3 mb-4 flex items-center justify-between">
+        <span id="parentalStatusLabel" class="text-xs sm:text-sm text-slate-300">موجودہ اسٹیٹس:</span>
+        <span id="parentalStatusValue" class="text-xs sm:text-sm font-bold px-3 py-1 rounded-full bg-amber-500/20 text-amber-300">مفت ورژن (اسٹیج ۱ تا ۵)</span>
+      </div>
+
+      <div id="parentalAlreadyUnlockedBox" class="hidden bg-emerald-950/80 border-2 border-emerald-400 rounded-2xl p-4 mb-4 text-center space-y-2">
+        <div class="text-3xl">🎉</div>
+        <p id="parentalUnlockedMsg" class="text-sm font-bold text-emerald-300">ماشاء اللّٰہ! آپ نے تمام دس اسٹیجز مستقل طور پر ان لاک کر لیے ہیں!</p>
+      </div>
+
+      <div id="parentalUnlockFormArea" class="space-y-3">
+        <label id="parentalPinLabel" class="block text-xs sm:text-sm text-amber-300 font-bold">چھ ہندسوں کا والدین پن کوڈ درج کریں (ٹیسٹنگ پن: 123456):</label>
+        <input id="parentalPinInput" type="password" maxlength="6" placeholder="123456" dir="ltr" class="w-full bg-slate-950 border-2 border-slate-700 focus:border-amber-400 rounded-xl px-4 py-2.5 text-center text-lg font-english tracking-widest text-white outline-none" />
+        <p id="parentalPinFeedback" class="text-xs text-center min-h-[1.25rem] text-rose-400"></p>
+
+        <button onclick="verifyPinAndUnlockPro()" class="w-full btn-3d-gold py-3 px-4 text-sm sm:text-base flex items-center justify-center gap-2">
+          <i class="fa-solid fa-unlock-keyhole"></i>
+          <span id="parentalBtnTogglePro">پلیز سپورٹ اینڈ ان لاک کریں</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= APPLICATION JAVASCRIPT ================= -->
+  <script>
+    const STORAGE_STARS_KEY = 'qaaf_game_stars';
+    const STORAGE_PRO_KEY = 'qaaf_supporter_pro';
+    const STORAGE_PREF_LANG_KEY = 'qaaf_preferred_lang';
+    const FREE_STAGES_LIMIT = 5;
+    const DEFAULT_PARENTAL_PIN = '123456';
+
+    let appState = {
+      uiLang: 'ur',
+      activeGame: 'hub',
+      audioMuted: false,
+      stars: 0,
+      isSupporterPro: false,
+      wsLang: 'ur',
+      wsStage: 1,
+      wsGridSize: 10,
+      wsGrid: [],
+      wsPlacedWords: [],
+      wsActiveItemIdx: 0,
+      wsIsDragging: false,
+      wsStartCell: null,
+      wsCurrentPath: [],
+      wsTapSelectedStart: null,
+      wsExtraHintCells: [],
+      quizStage: 1,
+      quizQuestionIdx: 0,
+      quizAnswered: false,
+      alphaStage: 1,
+      alphaSelectedLetterIdx: null,
+      alphaMatchedIds: [],
+      masjidStage: 1,
+      masjidCompletedSteps: 0,
+      raceStage: 1,
+      raceSelectedBikeIdx: 0,
+      raceRunning: false,
+      raceCountingDown: false,
+      raceTiltEnabled: false
+    };
+
+    let audioCtx = null;
+    function getAudioCtx() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) audioCtx = new AudioContextClass();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(() => {});
+      }
+      return audioCtx;
+    }
+
+    let audioUnlocked = false;
+    function unlockAudioOnFirstGesture() {
+      if (audioUnlocked) return;
+      audioUnlocked = true;
+      try {
+        const ctx = getAudioCtx();
+        if (ctx && ctx.state === 'suspended') ctx.resume();
+      } catch (e) {}
+    }
+    window.addEventListener('pointerdown', unlockAudioOnFirstGesture, { once: true });
+    window.addEventListener('keydown', unlockAudioOnFirstGesture, { once: true });
+
+    function playHalalTactileClick(type = 'tap') {
+      if (appState.audioMuted) return;
+      try {
+        const ctx = getAudioCtx();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        if (type === 'star') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(580, now);
+          osc.frequency.exponentialRampToValueAtTime(1240, now + 0.08);
+          gain.gain.setValueAtTime(0.65, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.085);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.09);
+        } else if (type === 'pop') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(360, now);
+          osc.frequency.exponentialRampToValueAtTime(860, now + 0.07);
+          gain.gain.setValueAtTime(0.6, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.075);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.08);
+        } else if (type === 'crash') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(160, now);
+          osc.frequency.exponentialRampToValueAtTime(45, now + 0.18);
+          gain.gain.setValueAtTime(0.55, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.19);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.2);
+        } else {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(280, now);
+          osc.frequency.exponentialRampToValueAtTime(110, now + 0.03);
+          gain.gain.setValueAtTime(0.55, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.04);
+        }
+      } catch (e) {}
+    }
+
+    const MALE_AUDIO_BASE_PATH = 'audio/games/';
+    let activeMaleVoiceAudio = null;
+
+    function getAudioFileKey(text, langPrefix) {
+      const clean = String(text || '').trim();
+      let h = 2166136261 >>> 0;
+      for (const ch of clean) {
+        h ^= ch.codePointAt(0);
+        h = Math.imul(h, 16777619) >>> 0;
+      }
+      return `${langPrefix}_${h.toString(16).padStart(8, '0')}.mp3`;
+    }
+
+    function stopCurrentMaleVoiceAudio() {
+      if (activeMaleVoiceAudio) {
+        try {
+          activeMaleVoiceAudio.pause();
+          activeMaleVoiceAudio.currentTime = 0;
+        } catch (e) {}
+        activeMaleVoiceAudio = null;
+      }
+    }
+
+    function speakText(text, langCode = 'ur-PK') {
+      if (appState.audioMuted) return;
+      playHalalTactileClick('pop');
+      const cleanText = String(text || '').trim();
+      if (!cleanText) return;
+      const rawPrefix = String(langCode || 'ur').split('-')[0].toLowerCase();
+      const langPrefix = ['ur', 'ar', 'en'].includes(rawPrefix) ? rawPrefix : 'ur';
+      const fileName = getAudioFileKey(cleanText, langPrefix);
+      const fileUrl = `${MALE_AUDIO_BASE_PATH}${fileName}`;
+      try {
+        stopCurrentMaleVoiceAudio();
+        const audio = new Audio(fileUrl);
+        audio.volume = 1.0;
+        activeMaleVoiceAudio = audio;
+        audio.play().catch(() => {});
+      } catch (e) {}
+    }
+
+    function speakMashaAllah() {
+      playHalalTactileClick('star');
+      if (appState.uiLang === 'ar') speakText('مَا شَاءَ اللّٰهُ! أَحْسَنْتَ', 'ar-SA');
+      else if (appState.uiLang === 'ur') speakText('مَا شَاءَ اللّٰهُ! بہت خوب', 'ur-PK');
+      else speakText('MashaAllah! Wonderful!', 'en-US');
+    }
+
+    function toggleAudioMute() {
+      appState.audioMuted = !appState.audioMuted;
+      if (!appState.audioMuted) playHalalTactileClick('tap');
+      else stopCurrentMaleVoiceAudio();
+      const icon = document.getElementById('audioMuteIcon');
+      const btn = document.getElementById('audioMuteBtn');
+      if (icon) icon.className = appState.audioMuted ? 'fa-solid fa-volume-xmark' : 'fa-solid fa-volume-high';
+      if (btn) btn.className = appState.audioMuted ? 'btn-3d-dark px-2.5 py-1 text-xs flex items-center justify-center' : 'btn-3d-emerald px-2.5 py-1 text-xs flex items-center justify-center';
+    }
+
+    function loadStoredData() {
+      try {
+        const savedStars = parseInt(localStorage.getItem(STORAGE_STARS_KEY) || '0', 10);
+        appState.stars = isNaN(savedStars) ? 0 : savedStars;
+        appState.isSupporterPro = localStorage.getItem(STORAGE_PRO_KEY) === 'true';
+        const savedLang = localStorage.getItem(STORAGE_PREF_LANG_KEY);
+        if (savedLang && ['ur', 'ar', 'en'].includes(savedLang)) {
+          appState.uiLang = savedLang;
+          appState.wsLang = savedLang;
+        }
+      } catch (e) {}
+      updateStarDisplay();
+    }
+
+    function updateStarDisplay() {
+      const el = document.getElementById('headerStarCount');
+      if (el) el.textContent = appState.stars;
+    }
+
+    function addStars(amount) {
+      appState.stars += amount;
+      try {
+        localStorage.setItem(STORAGE_STARS_KEY, String(appState.stars));
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'QAAF_STARS_UPDATED', stars: appState.stars, added: amount }, '*');
+        }
+      } catch (e) {}
+      updateStarDisplay();
+      spawnCelebrationStars();
+    }
+
+    window.addEventListener('message', (event) => {
+      const data = event.data;
+      if (!data || typeof data !== 'object') return;
+      if (data.type === 'QAAF_UNLOCK_PRO') {
+        appState.isSupporterPro = true;
+        try { localStorage.setItem(STORAGE_PRO_KEY, 'true'); } catch (e) {}
+        updateProBadgeUI();
+        renderAllStageBars();
+      } else if (data.type === 'QAAF_SET_LANG' && ['ur', 'ar', 'en'].includes(data.lang)) {
+        setPreferredContentLanguage(data.lang);
+      } else if (data.type === 'QAAF_SWITCH_GAME' && data.game) {
+        switchGame(data.game);
+      }
+    });
+
+    const UI_TEXT = {
+      ur: {
+        dir: 'rtl',
+        fontClass: 'font-urdu',
+        hubTitle: 'قاف گیمز',
+        hubLangTitle: 'زبان منتخب کریں:',
+        starsLabel: 'ستارے',
+        exitBtnLabel: 'باہر نکلیں',
+        tabWordSearch: 'ورڈ سرچ پزل',
+        tabQuiz: 'قرآن و سنت کوئز',
+        tabAlphabet: 'عربی حروف پزل',
+        tabMasjid: 'مسجد اور وضو بلڈر',
+        tabRacing: 'بائیک ریسنگ',
+        quizListenBtnText: 'سوال سنیں',
+        alphaMainHeading: 'عربی حروف تہجی پزل (الف سے یاء تک)',
+        alphaColLettersLabel: 'عربی حروف',
+        alphaColWordsLabel: 'تصویر اور مثال',
+        raceOverlayTitle: 'بسم اللّٰہ پڑھ کر ریس شروع کریں!',
+        raceOverlaySubtitle: 'بائیں انگوٹھے سے جوائسٹک اوپر دھکیل کر آگے اور دائیں بائیں چلائیں، اور ببلز پکڑ کر ٹربو حاصل کریں!',
+        raceStartBtnText: 'ریس شروع کریں',
+        raceBtnBrakeText: 'بریک',
+        raceBtnGasText: 'ریس',
+        raceBtnTurboText: 'ٹربو',
+        raceJoystickPromptText: 'چلانے کے لیے اوپر دھکیلیں',
+        celebModalTitle: 'الحمد للّٰہ! ماشاء اللّٰہ!',
+        celebModalDesc: 'آپ نے یہ اسٹیج کامیابی سے مکمل کر لیا ہے!',
+        celebBtnReplay: 'دوبارہ کھیلیں',
+        celebBtnNextStage: 'اگلا اسٹیج',
+        parentalModalTitle: 'قاف ٹیوب کو سپورٹ کریں اور تمام اسٹیجز ان لاک کریں',
+        parentalModalDesc: 'اسٹیج ایک سے پانچ تک تمام بچوں کے لیے بالکل مفت ہیں۔ اسٹیج چھ سے دس تک مستقل طور پر ان لاک کرنے کے لیے قاف ٹیوب کو سپورٹ کریں اور والدین کا پن کوڈ درج کریں:',
+        parentalStatusLabel: 'موجودہ اسٹیٹس:',
+        statusFree: 'مفت ورژن (اسٹیج ۱ تا ۵)',
+        statusPro: 'سپورٹر پرو (تمام ۱۰ اسٹیجز کھلے ہیں)',
+        parentalUnlockedMsg: 'ماشاء اللّٰہ! آپ نے تمام دس اسٹیجز مستقل طور پر ان لاک کر لیے ہیں!',
+        parentalPinLabel: 'چھ ہندسوں کا والدین پن کوڈ درج کریں (ٹیسٹنگ پن: 123456):',
+        parentalBtnTogglePro: 'پلیز سپورٹ اینڈ ان لاک کریں',
+        stageWord: 'اسٹیج'
+      },
+      ar: {
+        dir: 'rtl',
+        fontClass: 'font-arabic',
+        hubTitle: 'ألعاب قاف',
+        hubLangTitle: 'اختر اللغة:',
+        starsLabel: 'نجوم',
+        exitBtnLabel: 'خروج',
+        tabWordSearch: 'لغز البحث عن الكلمات',
+        tabQuiz: 'مسابقة القرآن والسنة',
+        tabAlphabet: 'لغز الحروف العربية',
+        tabMasjid: 'بناء المسجد والوضوء',
+        tabRacing: 'سباق الدراجات',
+        quizListenBtnText: 'استمع للسؤال',
+        alphaMainHeading: 'لغز الحروف الهجائية العربية (من الألف إلى الياء)',
+        alphaColLettersLabel: 'الحروف العربية',
+        alphaColWordsLabel: 'الصورة والمثال',
+        raceOverlayTitle: 'سمِّ اللّٰه وابدأ السباق!',
+        raceOverlaySubtitle: 'ادفع عصا التحكم للأمام ولليسار واليمين واجمع الفقاعات للحصول على التيربو!',
+        raceStartBtnText: 'ابدأ السباق',
+        raceBtnBrakeText: 'فرامل',
+        raceBtnGasText: 'انطلاق',
+        raceBtnTurboText: 'تيربو',
+        raceJoystickPromptText: 'ادفع للأعلى للتحرك',
+        celebModalTitle: 'الحمد للّٰه! ما شاء اللّٰه!',
+        celebModalDesc: 'لقد أكملت هذه المرحلة بنجاح باهر!',
+        celebBtnReplay: 'العب مرة أخرى',
+        celebBtnNextStage: 'المرحلة التالية',
+        parentalModalTitle: 'ادعم قاف تيوب وافتح جميع المراحل',
+        parentalModalDesc: 'المراحل من ١ إلى ٥ مجانية للجميع. لفتح المراحل من ٦ إلى ١٠ بشكل دائم، يرجى إدخال رمز الوالدين:',
+        parentalStatusLabel: 'الحالة الحالية:',
+        statusFree: 'النسخة المجانية (مراحل ١-٥)',
+        statusPro: 'الداعم برو (جميع المراحل مفتوحة)',
+        parentalUnlockedMsg: 'ما شاء اللّٰه! جميع المراحل العشر مفتوحة بشكل دائم!',
+        parentalPinLabel: 'أدخل رمز الوالدين المكون من ٦ أرقام (للتجربة: 123456):',
+        parentalBtnTogglePro: 'يرجى الدعم وفتح المراحل',
+        stageWord: 'مرحلة'
+      },
+      en: {
+        dir: 'ltr',
+        fontClass: 'font-english',
+        hubTitle: 'QAAF Games',
+        hubLangTitle: 'Select Language:',
+        starsLabel: 'Stars',
+        exitBtnLabel: 'Exit',
+        tabWordSearch: 'Word Search Puzzle',
+        tabQuiz: 'Quran & Sunnah Quiz',
+        tabAlphabet: 'Arabic Alphabet',
+        tabMasjid: 'Masjid & Wudu Builder',
+        tabRacing: 'Bike Racing',
+        quizListenBtnText: 'Listen',
+        alphaMainHeading: 'Arabic Alphabet Puzzle (Alif to Yaa)',
+        alphaColLettersLabel: 'Arabic Letters',
+        alphaColWordsLabel: 'Picture & Word',
+        raceOverlayTitle: 'Say Bismillah & Start the Race!',
+        raceOverlaySubtitle: 'Push the left thumb joystick up to drive & steer, and collect bubbles for Turbo!',
+        raceStartBtnText: 'Start Race',
+        raceBtnBrakeText: 'Brake',
+        raceBtnGasText: 'Gas',
+        raceBtnTurboText: 'Turbo',
+        raceJoystickPromptText: 'Push Up to Drive',
+        celebModalTitle: 'Alhamdulillah! MashaAllah!',
+        celebModalDesc: 'You have completed this stage successfully!',
+        celebBtnReplay: 'Play Again',
+        celebBtnNextStage: 'Next Stage',
+        parentalModalTitle: 'Support QAAF Tube & Unlock All Stages',
+        parentalModalDesc: 'Stages 1 to 5 are FREE for all kids. To unlock Stages 6 to 10 permanently, please enter the Parental PIN:',
+        parentalStatusLabel: 'Current Status:',
+        statusFree: 'Free Version (Stages 1-5)',
+        statusPro: 'Supporter Pro (All 10 Stages Open)',
+        parentalUnlockedMsg: 'MashaAllah! All 10 stages are permanently unlocked!',
+        parentalPinLabel: 'Enter 6-Digit Parental PIN (Test PIN: 123456):',
+        parentalBtnTogglePro: 'Please Support & Unlock',
+        stageWord: 'Stage'
+      }
+    };
+
+    function handleHeaderExitButton() {
+      playHalalTactileClick('tap');
+      if (appState.activeGame === 'racing') {
+        stopActiveBikeRace(true);
+      }
+      if (appState.activeGame !== 'hub') {
+        switchGame('hub');
+        return;
+      }
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'QAAF_EXIT_GAMES' }, '*');
+        }
+      } catch (e) {}
+      if (window.history.length > 1) window.history.back();
+      else window.location.href = 'index.html';
+    }
+
+    function openGameFromHub(gameId) {
+      switchGame(gameId);
+    }
+
+    function updateActiveGameHeaderBadge() {
+      const t = UI_TEXT[appState.uiLang] || UI_TEXT.ur;
+      const meta = {
+        hub:        { icon: '🎮', title: t.hubTitle },
+        wordsearch: { icon: '🔍', title: t.tabWordSearch },
+        quiz:       { icon: '📖', title: t.tabQuiz },
+        alphabet:   { icon: '🔤', title: t.tabAlphabet },
+        masjid:     { icon: '🕌', title: t.tabMasjid },
+        racing:     { icon: '🏍️', title: t.tabRacing }
+      };
+      const cur = meta[appState.activeGame] || meta.hub;
+      const iconEl = document.getElementById('activeGameHeaderIcon');
+      const titleEl = document.getElementById('activeGameHeaderTitle');
+      if (iconEl) iconEl.textContent = cur.icon;
+      if (titleEl) titleEl.textContent = cur.title;
+    }
+
+    function switchGame(gameId) {
+      if (!['hub', 'wordsearch', 'quiz', 'alphabet', 'masjid', 'racing'].includes(gameId)) gameId = 'hub';
+      playHalalTactileClick('tap');
+      if (appState.activeGame === 'racing' && gameId !== 'racing') {
+        stopActiveBikeRace(true);
+      }
+      appState.activeGame = gameId;
+
+      ['hub', 'wordsearch', 'quiz', 'alphabet', 'masjid', 'racing'].forEach(g => {
+        const sec = document.getElementById(`gameSection-${g}`);
+        if (sec) sec.classList.toggle('hidden', g !== gameId);
+      });
+
+      updateActiveGameHeaderBadge();
+      if (gameId === 'racing') {
+        setTimeout(() => {
+          initBikeRaceThreeEngine();
+          resizeBikeRaceCanvas();
+          renderBikeRaceStaticPreview();
+        }, 60);
+      }
+    }
+
+    const WORD_SEARCH_STAGES = [
+      {
+        stage: 1,
+        title: { ur: 'اسٹیج ۱: پھلوں کے نام', ar: 'المرحلة ١: الفواكه الطيبة', en: 'Stage 1: Delicious Fruits' },
+        items: [
+          { emoji: '🍎', ur: 'سیب', urLetters: ['س','ی','ب'], ar: 'تفاحة', arLetters: ['ت','ف','ا','ح','ة'], en: 'APPLE', enLetters: ['A','P','P','L','E'] },
+          { emoji: '🍌', ur: 'کیلا', urLetters: ['ک','ی','ل','ا'], ar: 'موز', arLetters: ['م','و','ز'], en: 'BANANA', enLetters: ['B','A','N','A','N','A'] },
+          { emoji: '🍇', ur: 'انگور', urLetters: ['ا','ن','گ','و','ر'], ar: 'عنب', arLetters: ['ع','ن','ب'], en: 'GRAPES', enLetters: ['G','R','A','P','E','S'] },
+          { emoji: '🍊', ur: 'مالٹا', urLetters: ['م','ا','ل','ٹ','ا'], ar: 'برتقال', arLetters: ['ب','ر','ت','ق','ا','ل'], en: 'ORANGE', enLetters: ['O','R','A','N','G','E'] },
+          { emoji: '🥭', ur: 'آم', urLetters: ['آ','م'], ar: 'مانجو', arLetters: ['م','ا','ن','ج','و'], en: 'MANGO', enLetters: ['M','A','N','G','O'] },
+          { emoji: '🌴', ur: 'کھجور', urLetters: ['ک','ھ','ج','و','ر'], ar: 'تمر', arLetters: ['ت','م','ر'], en: 'DATES', enLetters: ['D','A','T','E','S'] },
+          { emoji: '🍐', ur: 'انجیر', urLetters: ['ا','ن','ج','ی','ر'], ar: 'تين', arLetters: ['ت','ي','ن'], en: 'FIG', enLetters: ['F','I','G'] },
+          { emoji: '🔴', ur: 'انار', urLetters: ['ا','ن','ا','ر'], ar: 'رمان', arLetters: ['ر','م','ا','ن'], en: 'POMEGRANATE', enLetters: ['P','O','M','E','G','R','A','N','A','T'] },
+          { emoji: '🍉', ur: 'تربوز', urLetters: ['ت','ر','ب','و','ز'], ar: 'بطيخ', arLetters: ['ب','ط','ي','خ'], en: 'MELON', enLetters: ['M','E','L','O','N'] },
+          { emoji: '🍐', ur: 'ناشپاتی', urLetters: ['ن','ا','ش','پ','ا','ت','ی'], ar: 'كمثرى', arLetters: ['ك','م','ث','ر','ى'], en: 'PEAR', enLetters: ['P','E','A','R'] }
+        ]
+      },
+      {
+        stage: 2,
+        title: { ur: 'اسٹیج ۲: سبزیوں کے نام', ar: 'المرحلة ٢: الخضروات المفيدة', en: 'Stage 2: Healthy Vegetables' },
+        items: [
+          { emoji: '🥕', ur: 'گاجر', urLetters: ['گ','ا','ج','ر'], ar: 'جزر', arLetters: ['ج','ز','ر'], en: 'CARROT', enLetters: ['C','A','R','R','O','T'] },
+          { emoji: '🥔', ur: 'آلو', urLetters: ['آ','ل','و'], ar: 'بطاطس', arLetters: ['ب','ط','ا','ط','س'], en: 'POTATO', enLetters: ['P','O','T','A','T','O'] },
+          { emoji: '🍅', ur: 'ٹماٹر', urLetters: ['ٹ','م','ا','ٹ','ر'], ar: 'طماطم', arLetters: ['ط','م','ا','ط','م'], en: 'TOMATO', enLetters: ['T','O','M','A','T','O'] },
+          { emoji: '🧅', ur: 'پیاز', urLetters: ['پ','ی','ا','ز'], ar: 'بصل', arLetters: ['ب','ص','ل'], en: 'ONION', enLetters: ['O','N','I','O','N'] },
+          { emoji: '🧄', ur: 'لہسن', urLetters: ['ل','ہ','س','ن'], ar: 'ثوم', arLetters: ['ث','و','م'], en: 'GARLIC', enLetters: ['G','A','R','L','I','C'] },
+          { emoji: '🌽', ur: 'مکئی', urLetters: ['م','ک','ئ','ی'], ar: 'ذرة', arLetters: ['ذ','ر','ة'], en: 'CORN', enLetters: ['C','O','R','N'] },
+          { emoji: '🫛', ur: 'مٹر', urLetters: ['م','ٹ','ر'], ar: 'بازلاء', arLetters: ['ب','ا','ز','ل','ا','ء'], en: 'PEAS', enLetters: ['P','E','A','S'] },
+          { emoji: '🥒', ur: 'کھیرا', urLetters: ['ک','ھ','ی','ر','ا'], ar: 'خيار', arLetters: ['خ','ي','ا','ر'], en: 'CUCUMBER', enLetters: ['C','U','C','U','M','B','E','R'] },
+          { emoji: '🥬', ur: 'پالک', urLetters: ['پ','ا','ل','ک'], ar: 'سبانخ', arLetters: ['س','ب','ا','ن','خ'], en: 'SPINACH', enLetters: ['S','P','I','N','A','C','H'] },
+          { emoji: '🍋', ur: 'لیموں', urLetters: ['ل','ی','م','و','ں'], ar: 'ليمون', arLetters: ['ل','ي','م','و','ن'], en: 'LEMON', enLetters: ['L','E','M','O','N'] }
+        ]
+      },
+      {
+        stage: 3,
+        title: { ur: 'اسٹیج ۳: ارکانِ اسلام اور عبادات', ar: 'المرحلة ٣: أركان الإسلام والعبادات', en: 'Stage 3: Pillars of Islam & Worship' },
+        items: [
+          { emoji: '☝️', ur: 'ایمان', urLetters: ['ا','ی','م','ا','ن'], ar: 'إيمان', arLetters: ['إ','ي','م','ا','ن'], en: 'FAITH', enLetters: ['F','A','I','T','H'] },
+          { emoji: '🕌', ur: 'نماز', urLetters: ['ن','م','ا','ز'], ar: 'صلاة', arLetters: ['ص','ل','ا','ة'], en: 'SALAH', enLetters: ['S','A','L','A','H'] },
+          { emoji: '🪙', ur: 'زکوۃ', urLetters: ['ز','ک','و','ۃ'], ar: 'زكاة', arLetters: ['ز','ك','ا','ة'], en: 'ZAKAH', enLetters: ['Z','A','K','A','H'] },
+          { emoji: '🌙', ur: 'روزہ', urLetters: ['ر','و','ز','ہ'], ar: 'صوم', arLetters: ['ص','و','م'], en: 'FASTING', enLetters: ['F','A','S','T','I','N','G'] },
+          { emoji: '🕋', ur: 'حج', urLetters: ['ح','ج'], ar: 'حج', arLetters: ['ح','ج'], en: 'HAJJ', enLetters: ['H','A','J','J'] },
+          { emoji: '💧', ur: 'وضو', urLetters: ['و','ض','و'], ar: 'وضوء', arLetters: ['و','ض','و','ء'], en: 'WUDU', enLetters: ['W','U','D','U'] },
+          { emoji: '🙇', ur: 'رکوع', urLetters: ['ر','ک','و','ع'], ar: 'ركوع', arLetters: ['ر','ك','و','ع'], en: 'RUKU', enLetters: ['R','U','K','U'] },
+          { emoji: '🧎', ur: 'سجدہ', urLetters: ['س','ج','د','ہ'], ar: 'سجود', arLetters: ['س','ج','و','د'], en: 'SUJOOD', enLetters: ['S','U','J','O','O','D'] },
+          { emoji: '🌿', ur: 'آدم علیہ السلام', speakUr: 'حضرت آدم علیہ السلام', urLetters: ['آ','د','م'], ar: 'آدم عليه السلام', speakAr: 'آدم عليه السلام', arLetters: ['آ','د','م'], en: 'ADAM (A.S)', speakEn: 'Prophet Adam Alaihis Salaam', enLetters: ['A','D','A','M'] },
+          { emoji: '⛵', ur: 'نوح علیہ السلام', speakUr: 'حضرت نوح علیہ السلام', urLetters: ['ن','و','ح'], ar: 'نوح عليه السلام', speakAr: 'نوح عليه السلام', arLetters: ['ن','و','ح'], en: 'NUH (A.S)', speakEn: 'Prophet Nuh Alaihis Salaam', enLetters: ['N','U','H'] }
+        ]
+      },
+      {
+        stage: 4,
+        title: { ur: 'اسٹیج ۴: قرآن میں مذکور جانور', ar: 'المرحلة ٤: الحيوانات في القرآن', en: 'Stage 4: Quranic Animals' },
+        items: [
+          { emoji: '🐪', ur: 'اونٹ', urLetters: ['ا','و','ن','ٹ'], ar: 'جمل', arLetters: ['ج','م','ل'], en: 'CAMEL', enLetters: ['C','A','M','E','L'] },
+          { emoji: '🐝', ur: 'مکھی', urLetters: ['م','ک','ھ','ی'], ar: 'نحل', arLetters: ['ن','ح','ل'], en: 'BEE', enLetters: ['B','E','E'] },
+          { emoji: '🐜', ur: 'چیونٹی', urLetters: ['چ','ی','و','ن','ٹ','ی'], ar: 'نمل', arLetters: ['ن','م','ل'], en: 'ANT', enLetters: ['A','N','T'] },
+          { emoji: '🐋', ur: 'مچھلی', urLetters: ['م','چ','ھ','ل','ی'], ar: 'حوت', arLetters: ['ح','و','ت'], en: 'WHALE', enLetters: ['W','H','A','L','E'] },
+          { emoji: '🐘', ur: 'ہاتھی', urLetters: ['ہ','ا','ت','ھ','ی'], ar: 'فيل', arLetters: ['ف','ي','ل'], en: 'ELEPHANT', enLetters: ['E','L','E','P','H','A','N','T'] },
+          { emoji: '🐎', ur: 'گھوڑا', urLetters: ['گ','ھ','و','ڑ','ا'], ar: 'خيل', arLetters: ['خ','ي','ل'], en: 'HORSE', enLetters: ['H','O','R','S','E'] },
+          { emoji: '🐄', ur: 'گائے', urLetters: ['گ','ا','ئ','ے'], ar: 'بقرة', arLetters: ['ب','ق','ر','ة'], en: 'COW', enLetters: ['C','O','W'] },
+          { emoji: '🐑', ur: 'بھیڑ', urLetters: ['ب','ھ','ی','ڑ'], ar: 'غنم', arLetters: ['غ','ن','م'], en: 'SHEEP', enLetters: ['S','H','E','E','P'] },
+          { emoji: '🕷️', ur: 'مکڑی', urLetters: ['م','ک','ڑ','ی'], ar: 'عنكبوت', arLetters: ['ع','ن','ك','ب','و','ت'], en: 'SPIDER', enLetters: ['S','P','I','D','E','R'] },
+          { emoji: '🐦', ur: 'پرندہ', urLetters: ['پ','ر','ن','د','ہ'], ar: 'طير', arLetters: ['ط','ي','ر'], en: 'BIRD', enLetters: ['B','I','R','D'] }
+        ]
+      },
+      {
+        stage: 5,
+        title: { ur: 'اسٹیج ۵: کائنات اور اللّٰہ کی نعمتیں', ar: 'المرحلة ٥: الكون ونعم الله', en: 'Stage 5: Nature & Blessings' },
+        items: [
+          { emoji: '☀️', ur: 'سورج', urLetters: ['س','و','ر','ج'], ar: 'شمس', arLetters: ['ش','م','س'], en: 'SUN', enLetters: ['S','U','N'] },
+          { emoji: '🌙', ur: 'چاند', urLetters: ['چ','ا','ن','د'], ar: 'قمر', arLetters: ['ق','م','ر'], en: 'MOON', enLetters: ['M','O','O','N'] },
+          { emoji: '⭐', ur: 'ستارہ', urLetters: ['س','ت','ا','ر','ہ'], ar: 'نجم', arLetters: ['ن','ج','م'], en: 'STAR', enLetters: ['S','T','A','R'] },
+          { emoji: '🌧️', ur: 'بارش', urLetters: ['ب','ا','ر','ش'], ar: 'مطر', arLetters: ['م','ط','ر'], en: 'RAIN', enLetters: ['R','A','I','N'] },
+          { emoji: '⛰️', ur: 'پہاڑ', urLetters: ['پ','ہ','ا','ڑ'], ar: 'جبل', arLetters: ['ج','ب','ل'], en: 'MOUNTAIN', enLetters: ['M','O','U','N','T','A','I','N'] },
+          { emoji: '🌊', ur: 'سمندر', urLetters: ['س','م','ن','د','ر'], ar: 'بحر', arLetters: ['ب','ح','ر'], en: 'OCEAN', enLetters: ['O','C','E','A','N'] },
+          { emoji: '🌳', ur: 'درخت', urLetters: ['د','ر','خ','ت'], ar: 'شجر', arLetters: ['ش','ج','ر'], en: 'TREE', enLetters: ['T','R','E','E'] },
+          { emoji: '🌸', ur: 'پھول', urLetters: ['پ','ھ','و','ل'], ar: 'زهر', arLetters: ['ز','ه','ر'], en: 'FLOWER', enLetters: ['F','L','O','W','E','R'] },
+          { emoji: '☁️', ur: 'بادل', urLetters: ['ب','ا','د','ل'], ar: 'سحاب', arLetters: ['س','ح','ا','ب'], en: 'CLOUD', enLetters: ['C','L','O','U','D'] },
+          { emoji: '🌍', ur: 'زمین', urLetters: ['ز','م','ی','ن'], ar: 'أرض', arLetters: ['أ','ر','ض'], en: 'EARTH', enLetters: ['E','A','R','T','H'] }
+        ]
+      },
+      {
+        stage: 6,
+        title: { ur: 'اسٹیج ۶: انبیاء کرام علیہم السلام', ar: 'المرحلة ٦: الأنبياء والرسل عليهم السلام', en: 'Stage 6: Noble Prophets of Allah' },
+        items: [
+          { emoji: '🌿', ur: 'آدم علیہ السلام', speakUr: 'حضرت آدم علیہ السلام', urLetters: ['آ','د','م'], ar: 'آدم عليه السلام', speakAr: 'آدم عليه السلام', arLetters: ['آ','د','م'], en: 'ADAM (A.S)', speakEn: 'Prophet Adam Alaihis Salaam', enLetters: ['A','D','A','M'] },
+          { emoji: '⛵', ur: 'نوح علیہ السلام', speakUr: 'حضرت نوح علیہ السلام', urLetters: ['ن','و','ح'], ar: 'نوح عليه السلام', speakAr: 'نوح عليه السلام', arLetters: ['ن','و','ح'], en: 'NUH (A.S)', speakEn: 'Prophet Nuh Alaihis Salaam', enLetters: ['N','U','H'] },
+          { emoji: '🕋', ur: 'ابراہیم علیہ السلام', speakUr: 'حضرت ابراہیم علیہ السلام', urLetters: ['ا','ب','ر','ا','ہ','ی','م'], ar: 'إبراهيم عليه السلام', speakAr: 'إبراهيم عليه السلام', arLetters: ['إ','ب','ر','ا','ه','ي','م'], en: 'IBRAHIM (A.S)', speakEn: 'Prophet Ibrahim Alaihis Salaam', enLetters: ['I','B','R','A','H','I','M'] },
+          { emoji: '🪄', ur: 'موسیٰ علیہ السلام', speakUr: 'حضرت موسیٰ علیہ السلام', urLetters: ['م','و','س','ی'], ar: 'موسى عليه السلام', speakAr: 'موسى عليه السلام', arLetters: ['م','و','س','ى'], en: 'MUSA (A.S)', speakEn: 'Prophet Musa Alaihis Salaam', enLetters: ['M','U','S','A'] },
+          { emoji: '🕊️', ur: 'عیسیٰ علیہ السلام', speakUr: 'حضرت عیسیٰ علیہ السلام', urLetters: ['ع','ی','س','ی'], ar: 'عيسى عليه السلام', speakAr: 'عيسى عليه السلام', arLetters: ['ع','ي','س','ى'], en: 'ISA (A.S)', speakEn: 'Prophet Isa Alaihis Salaam', enLetters: ['I','S','A'] },
+          { emoji: '💚', ur: 'محمد صلی اللّٰہ علیہ وسلم', speakUr: 'حضرت محمد صلی اللّٰہ علیہ وسلم', urLetters: ['م','ح','م','د'], ar: 'محمد ﷺ', speakAr: 'محمد صلى الله عليه وسلم', arLetters: ['م','ح','م','د'], en: 'MUHAMMAD ﷺ', speakEn: 'Prophet Muhammad Sallallahu Alaihi Wasallam', enLetters: ['M','U','H','A','M','M','A','D'] },
+          { emoji: '🌟', ur: 'یوسف علیہ السلام', speakUr: 'حضرت یوسف علیہ السلام', urLetters: ['ی','و','س','ف'], ar: 'يوسف عليه السلام', speakAr: 'يوسف عليه السلام', arLetters: ['ي','و','س','ف'], en: 'YUSUF (A.S)', speakEn: 'Prophet Yusuf Alaihis Salaam', enLetters: ['Y','U','S','U','F'] },
+          { emoji: '🐋', ur: 'یونس علیہ السلام', speakUr: 'حضرت یونس علیہ السلام', urLetters: ['ی','و','ن','س'], ar: 'يونس عليه السلام', speakAr: 'يونس عليه السلام', arLetters: ['ي','و','ن','س'], en: 'YUNUS (A.S)', speakEn: 'Prophet Yunus Alaihis Salaam', enLetters: ['Y','U','N','U','S'] },
+          { emoji: '📖', ur: 'داؤد علیہ السلام', speakUr: 'حضرت داؤد علیہ السلام', urLetters: ['د','ا','ؤ','د'], ar: 'داود عليه السلام', speakAr: 'داود عليه السلام', arLetters: ['د','ا','و','د'], en: 'DAWUD (A.S)', speakEn: 'Prophet Dawud Alaihis Salaam', enLetters: ['D','A','W','U','D'] },
+          { emoji: '👑', ur: 'سلیمان علیہ السلام', speakUr: 'حضرت سلیمان علیہ السلام', urLetters: ['س','ل','ی','م','ا','ن'], ar: 'سليمان عليه السلام', speakAr: 'سليمان عليه السلام', arLetters: ['س','ل','ي','م','ا','ن'], en: 'SULAIMAN (A.S)', speakEn: 'Prophet Sulaiman Alaihis Salaam', enLetters: ['S','U','L','A','I','M','A','N'] }
+        ]
+      },
+      {
+        stage: 7,
+        title: { ur: 'اسٹیج ۷: اسلامی مہینے اور مبارک ایام', ar: 'المرحلة ٧: الأشهر الهجرية والأيام المباركة', en: 'Stage 7: Islamic Months & Blessed Days' },
+        items: [
+          { emoji: '🌙', ur: 'محرم', urLetters: ['م','ح','ر','م'], ar: 'محرم', arLetters: ['م','ح','ر','م'], en: 'MUHARRAM', enLetters: ['M','U','H','A','R','R','A','M'] },
+          { emoji: '🗓️', ur: 'صفر', urLetters: ['ص','ف','ر'], ar: 'صفر', arLetters: ['ص','ف','ر'], en: 'SAFAR', enLetters: ['S','A','F','A','R'] },
+          { emoji: '✨', ur: 'رجب', urLetters: ['ر','ج','ب'], ar: 'رجب', arLetters: ['ر','ج','ب'], en: 'RAJAB', enLetters: ['R','A','J','A','B'] },
+          { emoji: '🌕', ur: 'شعبان', urLetters: ['ش','ع','ب','ا','ن'], ar: 'شعبان', arLetters: ['ش','ع','ب','ا','ن'], en: 'SHABAN', enLetters: ['S','H','A','B','A','N'] },
+          { emoji: '🏮', ur: 'رمضان', urLetters: ['ر','م','ض','ا','ن'], ar: 'رمضان', arLetters: ['ر','م','ض','ا','ن'], en: 'RAMADAN', enLetters: ['R','A','M','A','D','A','N'] },
+          { emoji: '🎉', ur: 'شوال', urLetters: ['ش','و','ا','ل'], ar: 'شوال', arLetters: ['ش','و','ا','ل'], en: 'SHAWWAL', enLetters: ['S','H','A','W','W','A','L'] },
+          { emoji: '🕋', ur: 'ذوالحجہ', urLetters: ['ذ','و','ا','ل','ح','ج','ہ'], ar: 'ذوالحجة', arLetters: ['ذ','و','ا','ل','ح','ج','ة'], en: 'DHULHIJJAH', enLetters: ['D','H','U','L','H','I','J','J','A','H'] },
+          { emoji: '🕌', ur: 'جمعہ', urLetters: ['ج','م','ع','ہ'], ar: 'جمعة', arLetters: ['ج','م','ع','ة'], en: 'JUMUAH', enLetters: ['J','U','M','U','A','H'] },
+          { emoji: '🎁', ur: 'عید', urLetters: ['ع','ی','د'], ar: 'عيد', arLetters: ['ع','ي','د'], en: 'EID', enLetters: ['E','I','D'] },
+          { emoji: '⛰️', ur: 'عرفہ', urLetters: ['ع','ر','ف','ہ'], ar: 'عرفة', arLetters: ['ع','ر','ف','ة'], en: 'ARAFAH', enLetters: ['A','R','A','F','A','H'] }
+        ]
+      },
+      {
+        stage: 8,
+        title: { ur: 'اسٹیج ۸: اسلامی اخلاق اور آداب', ar: 'المرحلة ٨: الأخلاق والآداب الإسلامية', en: 'Stage 8: Islamic Manners & Virtues' },
+        items: [
+          { emoji: '💎', ur: 'صدق', urLetters: ['ص','د','ق'], ar: 'صدق', arLetters: ['ص','د','ق'], en: 'TRUTH', enLetters: ['T','R','U','T','H'] },
+          { emoji: '🌿', ur: 'صبر', urLetters: ['ص','ب','ر'], ar: 'صبر', arLetters: ['ص','ب','ر'], en: 'PATIENCE', enLetters: ['P','A','T','I','E','N','C','E'] },
+          { emoji: '🤲', ur: 'شکر', urLetters: ['ش','ک','ر'], ar: 'شكر', arLetters: ['ش','ك','ر'], en: 'GRATITUDE', enLetters: ['G','R','A','T','I','T','U','D','E'] },
+          { emoji: '⚖️', ur: 'عدل', urLetters: ['ع','د','ل'], ar: 'عدل', arLetters: ['ع','د','ل'], en: 'JUSTICE', enLetters: ['J','U','S','T','I','C','E'] },
+          { emoji: '💝', ur: 'رحم', urLetters: ['ر','ح','م'], ar: 'رحمة', arLetters: ['ر','ح','م','ة'], en: 'MERCY', enLetters: ['M','E','R','C','Y'] },
+          { emoji: '🌸', ur: 'حیا', urLetters: ['ح','ی','ا'], ar: 'حياء', arLetters: ['ح','ي','ا','ء'], en: 'MODESTY', enLetters: ['M','O','D','E','S','T','Y'] },
+          { emoji: '🤝', ur: 'عفو', urLetters: ['ع','ف','و'], ar: 'عفو', arLetters: ['ع','ف','و'], en: 'PARDON', enLetters: ['P','A','R','D','O','N'] },
+          { emoji: '🌟', ur: 'ادب', urLetters: ['ا','د','ب'], ar: 'أدب', arLetters: ['أ','د','ب'], en: 'MANNERS', enLetters: ['M','A','N','N','E','R','S'] },
+          { emoji: '🕊️', ur: 'سلام', urLetters: ['س','ل','ا','م'], ar: 'سلام', arLetters: ['س','ل','ا','م'], en: 'PEACE', enLetters: ['P','E','A','C','E'] },
+          { emoji: '📿', ur: 'دعا', urLetters: ['د','ع','ا'], ar: 'دعاء', arLetters: ['د','ع','ا','ء'], en: 'DUA', enLetters: ['D','U','A'] }
+        ]
+      },
+      {
+        stage: 9,
+        title: { ur: 'اسٹیج ۹: مسجد اور حرمین شریفین', ar: 'المرحلة ٩: المسجد والحرمين الشريفين', en: 'Stage 9: Masjid & Holy Sanctuaries' },
+        items: [
+          { emoji: '🕋', ur: 'کعبہ', urLetters: ['ک','ع','ب','ہ'], ar: 'كعبة', arLetters: ['ك','ع','ب','ة'], en: 'KAABA', enLetters: ['K','A','A','B','A'] },
+          { emoji: '🕌', ur: 'مسجد', urLetters: ['م','س','ج','د'], ar: 'مسجد', arLetters: ['م','س','ج','د'], en: 'MASJID', enLetters: ['M','A','S','J','I','D'] },
+          { emoji: '🪜', ur: 'منبر', urLetters: ['م','ن','ب','ر'], ar: 'منبر', arLetters: ['م','ن','ب','ر'], en: 'MINBAR', enLetters: ['M','I','N','B','A','R'] },
+          { emoji: '拱', ur: 'محراب', urLetters: ['م','ح','ر','ا','ب'], ar: 'محراب', arLetters: ['م','ح','ر','ا','ب'], en: 'MIHRAB', enLetters: ['M','I','H','R','A','B'] },
+          { emoji: '🗼', ur: 'مینار', urLetters: ['م','ی','ن','ا','ر'], ar: 'منارة', arLetters: ['م','ن','ا','ر','ة'], en: 'MINARET', enLetters: ['M','I','N','A','R','E','T'] },
+          { emoji: '🟢', ur: 'گنبد', urLetters: ['گ','ن','ب','د'], ar: 'قبة', arLetters: ['ق','ب','ة'], en: 'DOME', enLetters: ['D','O','M','E'] },
+          { emoji: '💧', ur: 'زمزم', urLetters: ['ز','م','ز','م'], ar: 'زمزم', arLetters: ['ز','م','ز','م'], en: 'ZAMZAM', enLetters: ['Z','A','M','Z','A','M'] },
+          { emoji: '⛰️', ur: 'صفا', urLetters: ['ص','ف','ا'], ar: 'صفا', arLetters: ['ص','ف','ا'], en: 'SAFA', enLetters: ['S','A','F','A'] },
+          { emoji: '🏔️', ur: 'مروہ', urLetters: ['م','ر','و','ہ'], ar: 'مروة', arLetters: ['م','ر','و','ة'], en: 'MARWAH', enLetters: ['M','A','R','W','A','H'] },
+          { emoji: '⛺', ur: 'عرفات', urLetters: ['ع','ر','ف','ا','ت'], ar: 'عرفات', arLetters: ['ع','ر','ف','ا','ت'], en: 'ARAFAT', enLetters: ['A','R','A','F','A','T'] }
+        ]
+      },
+      {
+        stage: 10,
+        title: { ur: 'اسٹیج ۱۰: جنت کے خزانے اور انعامات', ar: 'المرحلة ١٠: كنوز الجنة ونعيمها', en: 'Stage 10: Treasures of Jannah' },
+        items: [
+          { emoji: '🏡', ur: 'جنت', urLetters: ['ج','ن','ت'], ar: 'جنة', arLetters: ['ج','ن','ة'], en: 'JANNAH', enLetters: ['J','A','N','N','A','H'] },
+          { emoji: '👑', ur: 'فردوس', urLetters: ['ف','ر','د','و','س'], ar: 'فردوس', arLetters: ['ف','ر','د','و','س'], en: 'FIRDAWS', enLetters: ['F','I','R','D','A','W','S'] },
+          { emoji: '🏞️', ur: 'کوثر', urLetters: ['ک','و','ث','ر'], ar: 'كوثر', arLetters: ['ك','و','ث','ر'], en: 'KAWTHAR', enLetters: ['K','A','W','T','H','A','R'] },
+          { emoji: '⛲', ur: 'تسنیم', urLetters: ['ت','س','ن','ی','م'], ar: 'تسنيم', arLetters: ['ت','س','ن','ي','م'], en: 'TASNEEM', enLetters: ['T','A','S','N','E','E','M'] },
+          { emoji: '✨', ur: 'نور', urLetters: ['ن','و','ر'], ar: 'نور', arLetters: ['ن','و','ر'], en: 'LIGHT', enLetters: ['L','I','G','H','T'] },
+          { emoji: '💝', ur: 'رحمت', urLetters: ['ر','ح','م','ت'], ar: 'رحمة', arLetters: ['ر','ح','م','ة'], en: 'MERCY', enLetters: ['M','E','R','C','Y'] },
+          { emoji: '🌾', ur: 'برکت', urLetters: ['ب','ر','ک','ت'], ar: 'بركة', arLetters: ['ب','ر','ك','ة'], en: 'BLESSING', enLetters: ['B','L','E','S','S','I','N','G'] },
+          { emoji: '🛡️', ur: 'تقوی', urLetters: ['ت','ق','و','ی'], ar: 'تقوى', arLetters: ['ت','ق','و','ى'], en: 'PIETY', enLetters: ['P','I','E','T','Y'] },
+          { emoji: '🤲', ur: 'توبہ', urLetters: ['ت','و','ب','ہ'], ar: 'توبة', arLetters: ['ت','و','ب','ة'], en: 'REPENT', enLetters: ['R','E','P','E','N','T'] },
+          { emoji: '🌟', ur: 'رضوان', urLetters: ['ر','ض','و','ا','ن'], ar: 'رضوان', arLetters: ['ر','ض','و','ا','ن'], en: 'RIDWAN', enLetters: ['R','I','D','W','A','N'] }
+        ]
+      }
+    ];
+
+    const QUIZ_STAGES_DATA = [
+      {
+        stage: 1,
+        title: { ur: 'اسٹیج ۱: ایمانیات اور بنیادی عقائد', ar: 'المرحلة ١: الإيمان والعقيدة', en: 'Stage 1: Faith & Core Beliefs' },
+        questions: [
+          { emoji: '☝️', q: { ur: 'اسلام کی بنیاد کتنے ارکان پر ہے؟', ar: 'كم عدد أركان الإسلام؟', en: 'How many pillars is Islam built upon?' }, options: { ur: ['پانچ ارکان', 'تین ارکان', 'چار ارکان', 'سات ارکان'], ar: ['خمسة أركان', 'ثلاثة أركان', 'أربعة أركان', 'سبعة أركان'], en: ['Five Pillars', 'Three Pillars', 'Four Pillars', 'Seven Pillars'] }, correct: 0 },
+          { emoji: '🕋', q: { ur: 'مسلمان کس طرف منہ کر کے نماز پڑھتے ہیں؟', ar: 'ما هي قبلة المسلمين في الصلاة؟', en: 'Which direction do Muslims face during prayer?' }, options: { ur: ['خانہ کعبہ کی طرف', 'مشرق کی طرف', 'مغرب کی طرف', 'شمال کی طرف'], ar: ['الكعبة المشرفة', 'الشرق', 'الغرب', 'الشمال'], en: ['The Holy Kaaba', 'East', 'West', 'North'] }, correct: 0 },
+          { emoji: '💚', q: { ur: 'اللّٰہ کے آخری نبی اور رسول کون ہیں؟', ar: 'من هو خاتم الأنبياء والمرسلين؟', en: 'Who is the final Prophet and Messenger of Allah?' }, options: { ur: ['حضرت محمد صلی اللّٰہ علیہ وسلم', 'حضرت عیسیٰ علیہ السلام', 'حضرت موسیٰ علیہ السلام', 'حضرت ابراہیم علیہ السلام'], ar: ['محمد صلى الله عليه وسلم', 'عيسى عليه السلام', 'موسى عليه السلام', 'إبراهيم عليه السلام'], en: ['Prophet Muhammad ﷺ', 'Prophet Isa (A.S)', 'Prophet Musa (A.S)', 'Prophet Ibrahim (A.S)'] }, correct: 0 },
+          { emoji: '📖', q: { ur: 'اللّٰہ تعالیٰ کی آخری آسمانی کتاب کون سی ہے؟', ar: 'ما هو آخر الكتب السماوية؟', en: 'Which is the final revealed book of Allah?' }, options: { ur: ['قرآنِ مجید', 'تورات', 'زبور', 'انجیل'], ar: ['القرآن الكريم', 'التوراة', 'الزبور', 'الإنجيل'], en: ['The Holy Quran', 'Torah', 'Zabur', 'Injeel'] }, correct: 0 }
+        ]
+      },
+      {
+        stage: 2,
+        title: { ur: 'اسٹیج ۲: قرآن مجید کی معلومات', ar: 'المرحلة ٢: معلومات عن القرآن الكريم', en: 'Stage 2: Knowledge of the Holy Quran' },
+        questions: [
+          { emoji: '📜', q: { ur: 'قرآن مجید کی سب سے پہلی سورۃ کون سی ہے؟', ar: 'ما هي أول سورة في القرآن الكريم؟', en: 'Which is the very first Surah of the Holy Quran?' }, options: { ur: ['سورۃ الفاتحہ', 'سورۃ البقرہ', 'سورۃ الاخلاص', 'سورۃ الناس'], ar: ['سورة الفاتحة', 'سورة البقرة', 'سورة الإخلاص', 'سورة الناس'], en: ['Surah Al-Fatihah', 'Surah Al-Baqarah', 'Surah Al-Ikhlas', 'Surah An-Nas'] }, correct: 0 },
+          { emoji: '🔢', q: { ur: 'قرآن مجید میں کل کتنی سورتیں ہیں؟', ar: 'كم عدد سور القرآن الكريم؟', en: 'How many Surahs are there in the Holy Quran?' }, options: { ur: ['114 سورتیں', '100 سورتیں', '99 سورتیں', '120 سورتیں'], ar: ['١١٤ سورة', '١٠٠ سورة', '٩٩ سورة', '١٢٠ سورة'], en: ['114 Surahs', '100 Surahs', '99 Surahs', '120 Surahs'] }, correct: 0 },
+          { emoji: '🌟', q: { ur: 'قرآن مجید کی سب سے بڑی سورۃ کون سی ہے؟', ar: 'ما هي أطول سورة في القرآن الكريم؟', en: 'Which is the longest Surah in the Holy Quran?' }, options: { ur: ['سورۃ البقرہ', 'سورۃ آل عمران', 'سورۃ یٰسین', 'سورۃ الکہف'], ar: ['سورة البقرة', 'سورة آل عمران', 'سورة يس', 'سورة الكهف'], en: ['Surah Al-Baqarah', 'Surah Ali Imran', 'Surah Yaseen', 'Surah Al-Kahf'] }, correct: 0 },
+          { emoji: '🏞️', q: { ur: 'قرآن مجید کی سب سے چھوٹی سورۃ کون سی ہے؟', ar: 'ما هي أقصر سورة في القرآن الكريم؟', en: 'Which is the shortest Surah in the Holy Quran?' }, options: { ur: ['سورۃ الکوثر', 'سورۃ العصر', 'سورۃ الفلق', 'سورۃ النصر'], ar: ['سورة الكوثر', 'سورة العصر', 'سورة الفلق', 'سورة النصر'], en: ['Surah Al-Kawthar', 'Surah Al-Asr', 'Surah Al-Falaq', 'Surah An-Nasr'] }, correct: 0 }
+        ]
+      },
+      {
+        stage: 3,
+        title: { ur: 'اسٹیج ۳: نماز اور طہارت کے احکام', ar: 'المرحلة ٣: الصلاة والطهارة', en: 'Stage 3: Prayer & Purification' },
+        questions: [
+          { emoji: '🕌', q: { ur: 'مسلمان دن اور رات میں کتنی فرض نمازیں پڑھتے ہیں؟', ar: 'كم عدد الصلوات المفروضة في اليوم والليلة؟', en: 'How many obligatory prayers do Muslims pray daily?' }, options: { ur: ['پانچ نمازیں', 'تین نمازیں', 'چار نمازیں', 'چھ نمازیں'], ar: ['خمس صلوات', 'ثلاث صلوات', 'أربع صلوات', 'ست صلوات'], en: ['Five Prayers', 'Three Prayers', 'Four Prayers', 'Six Prayers'] }, correct: 0 },
+          { emoji: '🌅', q: { ur: 'صبح سورج نکلنے سے پہلے کون سی نماز پڑھی جاتی ہے؟', ar: 'ما هي الصلاة التي نصليها قبل شروق الشمس؟', en: 'Which prayer is offered before sunrise?' }, options: { ur: ['نمازِ فجر', 'نمازِ ظہر', 'نمازِ عصر', 'نمازِ مغرب'], ar: ['صلاة الفجر', 'صلاة الظهر', 'صلاة العصر', 'صلاة المغرب'], en: ['Fajr Prayer', 'Dhuhr Prayer', 'Asr Prayer', 'Maghrib Prayer'] }, correct: 0 },
+          { emoji: '💧', q: { ur: 'نماز پڑھنے سے پہلے پاکی حاصل کرنے کے لیے کیا کرنا ضروری ہے؟', ar: 'ماذا نفعل للطهارة قبل الصلاة؟', en: 'What must we perform for purification before Salah?' }, options: { ur: ['وضو کرنا', 'سونا', 'دوڑنا', 'کھانا کھانا'], ar: ['الوضوء', 'النوم', 'الجري', 'الأكل'], en: ['Wudu (Ablution)', 'Sleeping', 'Running', 'Eating'] }, correct: 0 },
+          { emoji: '🔑', q: { ur: 'حدیث شریف میں کس عبادت کو جنت کی کنجی کہا گیا ہے؟', ar: 'ما هو مفتاح الجنة؟', en: 'Which act of worship is called the Key to Paradise?' }, options: { ur: ['نماز', 'سفر', 'کاروبار', 'کھیل'], ar: ['الصلاة', 'السفر', 'التجارة', 'اللعب'], en: ['Salah (Prayer)', 'Travel', 'Trade', 'Play'] }, correct: 0 }
+        ]
+      },
+      {
+        stage: 4,
+        title: { ur: 'اسٹیج ۴: قصص الانبیاء علیہم السلام', ar: 'المرحلة ٤: قصص الأنبياء عليهم السلام', en: 'Stage 4: Stories of the Prophets' },
+        questions: [
+          { emoji: '🌿', q: { ur: 'سب سے پہلے انسان اور اللّٰہ کے پہلے نبی کون تھے؟', ar: 'من هو أول البشر وأول الأنبياء؟', en: 'Who was the first human and first Prophet of Allah?' }, options: { ur: ['حضرت آدم علیہ السلام', 'حضرت نوح علیہ السلام', 'حضرت ادریس علیہ السلام', 'حضرت ہود علیہ السلام'], ar: ['آدم عليه السلام', 'نوح عليه السلام', 'إدريس عليه السلام', 'هود عليه السلام'], en: ['Prophet Adam (A.S)', 'Prophet Nuh (A.S)', 'Prophet Idris (A.S)', 'Prophet Hud (A.S)'] }, correct: 0 },
+          { emoji: '⛵', q: { ur: 'طوفان سے بچنے کے لیے اللّٰہ کے حکم سے بڑی کشتی کس نبی نے بنائی؟', ar: 'من هو النبي الذي بنى السفينة بأمر الله؟', en: 'Which Prophet built the Great Ark by Allah’s command?' }, options: { ur: ['حضرت نوح علیہ السلام', 'حضرت صالح علیہ السلام', 'حضرت لوط علیہ السلام', 'حضرت شعیب علیہ السلام'], ar: ['نوح عليه السلام', 'صالح عليه السلام', 'لوط عليه السلام', 'شعيب عليه السلام'], en: ['Prophet Nuh (A.S)', 'Prophet Salih (A.S)', 'Prophet Lut (A.S)', 'Prophet Shuayb (A.S)'] }, correct: 0 },
+          { emoji: '🐋', q: { ur: 'کس نبی کو مچھلی نے اللّٰہ کے حکم سے نگل لیا تھا اور وہ تسبیح پڑھتے رہے؟', ar: 'من هو النبي الذي ابتلعه الحوت؟', en: 'Which Prophet was swallowed by a great whale?' }, options: { ur: ['حضرت یونس علیہ السلام', 'حضرت ایوب علیہ السلام', 'حضرت یعقوب علیہ السلام', 'حضرت زکریا علیہ السلام'], ar: ['يونس عليه السلام', 'أيوب عليه السلام', 'يعقوب عليه السلام', 'زكريا عليه السلام'], en: ['Prophet Yunus (A.S)', 'Prophet Ayyub (A.S)', 'Prophet Yaqub (A.S)', 'Prophet Zakariya (A.S)'] }, correct: 0 },
+          { emoji: '🕋', q: { ur: 'حضرت ابراہیم علیہ السلام کے ساتھ مل کر خانہ کعبہ کی تعمیر کس نے کی؟', ar: 'من بنى الكعبة مع إبراهيم عليه السلام؟', en: 'Who helped Prophet Ibrahim (A.S) build the Holy Kaaba?' }, options: { ur: ['حضرت اسماعیل علیہ السلام', 'حضرت اسحاق علیہ السلام', 'حضرت یوسف علیہ السلام', 'حضرت ہارون علیہ السلام'], ar: ['إسماعيل عليه السلام', 'إسحاق عليه السلام', 'يوسف عليه السلام', 'هارون عليه السلام'], en: ['Prophet Ismail (A.S)', 'Prophet Ishaq (A.S)', 'Prophet Yusuf (A.S)', 'Prophet Harun (A.S)'] }, correct: 0 }
+        ]
+      },
+      {
+        stage: 5,
+        title: { ur: 'اسٹیج ۵: سیرت النبی صلی اللّٰہ علیہ وسلم', ar: 'المرحلة ٥: السيرة النبوية العطرة', en: 'Stage 5: Seerah of Prophet Muhammad ﷺ' },
+        questions: [
+          { emoji: '🕋', q: { ur: 'ہمارے پیارے نبی حضرت محمد صلی اللّٰہ علیہ وسلم کس شہر میں پیدا ہوئے؟', ar: 'في أي مدينة ولد النبي محمد ﷺ؟', en: 'In which city was Prophet Muhammad ﷺ born?' }, options: { ur: ['مکہ مکرمہ میں', 'مدینہ منورہ میں', 'طائف میں', 'بیت المقدس میں'], ar: ['مكة المكرمة', 'المدينة المنورة', 'الطائف', 'القدس'], en: ['Makkah Al-Mukarramah', 'Madinah Al-Munawwarah', 'Taif', 'Jerusalem'] }, correct: 0 },
+          { emoji: '⛰️', q: { ur: 'نبی کریم صلی اللّٰہ علیہ وسلم پر پہلی وحی کس غار میں نازل ہوئی؟', ar: 'في أي غار نزل الوحي لأول مرة؟', en: 'In which cave was the first revelation sent down?' }, options: { ur: ['غارِ حرا میں', 'غارِ ثور میں', 'کوہِ طور پر', 'جبلِ رحمت پر'], ar: ['غار حراء', 'غار ثور', 'جبل الطور', 'جبل الرحمة'], en: ['Cave of Hira', 'Cave of Thawr', 'Mount Sinai', 'Mount Arafat'] }, correct: 0 },
+          { emoji: '🤝', q: { ur: 'سچائی اور امانت داری کی وجہ سے مکہ کے لوگ حضور ﷺ کو کس لقب سے پکارتے تھے؟', ar: 'بماذا لقب أهل مكة النبي ﷺ لصدقه وأمانته؟', en: 'What title was Prophet Muhammad ﷺ known by for his honesty?' }, options: { ur: ['الصادق الامین', 'الفاروق', 'ذوالنورین', 'اسد اللّٰہ'], ar: ['الصادق الأمين', 'الفاروق', 'ذو النورين', 'أسد الله'], en: ['As-Sadiq Al-Ameen', 'Al-Farooq', 'Dhun-Noorayn', 'Asadullah'] }, correct: 0 },
+          { emoji: '🕌', q: { ur: 'نبی کریم صلی اللّٰہ علیہ وسلم نے مکہ سے کس شہر کی طرف ہجرت فرمائی؟', ar: 'إلى أي مدينة هاجر النبي محمد ﷺ؟', en: 'To which city did Prophet Muhammad ﷺ migrate?' }, options: { ur: ['مدینہ منورہ', 'دمشق', 'بغداد', 'قاہرہ'], ar: ['المدينة المنورة', 'دمشق', 'بغداد', 'القاهرة'], en: ['Madinah Al-Munawwarah', 'Damascus', 'Baghdad', 'Cairo'] }, correct: 0 }
+        ]
+      },
+      {
+        stage: 6,
+        title: { ur: 'اسٹیج ۶: روزمرہ کی مسنون دعائیں اور آداب', ar: 'المرحلة ٦: الأذكار والآداب اليومية', en: 'Stage 6: Daily Sunnah Duas & Etiquette' },
+        questions: [
+          { emoji: '🍽️', q: { ur: 'کھانا کھانے اور کوئی بھی اچھا کام شروع کرنے سے پہلے کیا پڑھنا چاہیے؟', ar: 'ماذا نقول قبل الأكل أو بدء أي عمل صالح؟', en: 'What should we say before eating or starting a good deed?' }, options: { ur: ['بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيمِ', 'أَسْتَغْفِرُ اللّٰهَ', 'إِنَّا لِلّٰهِ', 'سُبْحَانَ رَبِّيَ الْأَعْلَى'], ar: ['بسم الله الرحمن الرحيم', 'أستغفر الله', 'إنا لله', 'سبحان ربي الأعلى'], en: ['Bismillahir Rahmanir Raheem', 'Astaghfirullah', 'Inna Lillahi', 'Subhana Rabbiyal A’la'] }, correct: 0 },
+          { emoji: '🤲', q: { ur: 'کھانا کھانے کے بعد اور ہر نعمت ملنے پر اللّٰہ کا شکر کیسے ادا کرتے ہیں؟', ar: 'ماذا نقول بعد الانتهاء من الطعام؟', en: 'What do we say after finishing our meal to thank Allah?' }, options: { ur: ['اَلْحَمْدُ لِلّٰهِ', 'سَمِعَ اللّٰهُ', 'حَيَّ عَلَى الصَّلَاةِ', 'قَدْ قَامَتِ الصَّلَاةُ'], ar: ['الحمد لله', 'سمع الله', 'حي على الصلاة', 'قد قامت الصلاة'], en: ['Alhamdulillah', 'Sami Allahu', 'Hayya Alas-Salah', 'Qad Qamatis-Salah'] }, correct: 0 },
+          { emoji: '🤚', q: { ur: 'نبی کریم صلی اللّٰہ علیہ وسلم کی سنت کے مطابق کس ہاتھ سے کھانا پینا چاہیے؟', ar: 'بأي يد نأكل ونشرب حسب السنة النبوية؟', en: 'With which hand should we eat and drink according to Sunnah?' }, options: { ur: ['دائیں ہاتھ سے', 'بائیں ہاتھ سے', 'دونوں ہاتھوں سے', 'کھڑے ہو کر'], ar: ['باليد اليمنى', 'باليد اليسرى', 'بكلتا اليدين', 'واقفاً'], en: ['With the Right Hand', 'With the Left Hand', 'With Both Hands', 'While Standing'] }, correct: 0 },
+          { emoji: '🤧', q: { ur: 'چھینک آنے پر اَلْحَمْدُ لِلّٰهِ کہنے والے کو جواب میں کیا دعا دیتے ہیں؟', ar: 'ماذا نقول لمن عطس وقال الحمد لله؟', en: 'What do we reply to someone who sneezes and says Alhamdulillah?' }, options: { ur: ['يَرْحَمُكَ اللّٰهُ', 'مَعَ السَّلَامَةِ', 'صَبَاحُ الْخَيْرِ', 'مَرْحَبًا'], ar: ['يرحمك الله', 'مع السلامة', 'صباح الخير', 'مرحباً'], en: ['YarhamukAllah', 'Ma’as-Salamah', 'Sabahul Khair', 'Marhaban'] }, correct: 0 }
+        ]
+      },
+      {
+        stage: 7,
+        title: { ur: 'اسٹیج ۷: رمضان المبارک اور عیدین', ar: 'المرحلة ٧: شهر رمضان والأعياد', en: 'Stage 7: Ramadan & Blessed Eids' },
+        questions: [
+          { emoji: '🌙', q: { ur: 'مسلمان کس اسلامی مہینے میں پورے مہینے کے فرض روزے رکھتے ہیں؟', ar: 'في أي شهر يصوم المسلمون؟', en: 'In which Islamic month do Muslims fast for the entire month?' }, options: { ur: ['رمضان المبارک میں', 'محرم الحرام میں', 'رجب المرجب میں', 'ربیع الاول میں'], ar: ['شهر رمضان المبارك', 'شهر محرم', 'شهر رجب', 'شهر ربيع الأول'], en: ['Month of Ramadan', 'Muharram', 'Rajab', 'Rabi al-Awwal'] }, correct: 0 },
+          { emoji: '✨', q: { ur: 'رمضان کی کون سی رات ہزار مہینوں سے بہتر ہے؟', ar: 'ما هي الليلة التي هي خير من ألف شهر؟', en: 'Which night in Ramadan is better than a thousand months?' }, options: { ur: ['لیلۃ القدر (شبِ قدر)', 'پہلی رات', 'پندرہویں رات', 'آخری دوپہر'], ar: ['ليلة القدر', 'الليلة الأولى', 'ليلة النصف', 'الظهيرة'], en: ['Laylatul Qadr', 'First Night', 'Fifteenth Night', 'Noon'] }, correct: 0 },
+          { emoji: '🌅', q: { ur: 'روزہ رکھنے کے لیے فجر سے پہلے کھائے جانے والے کھانے کو کیا کہتے ہیں؟', ar: 'ما اسم الوجبة التي نأكلها قبل الفجر للصيام؟', en: 'What is the pre-dawn meal before fasting called?' }, options: { ur: ['سحری', 'افطاری', 'عشائیہ', 'دوپہر کا کھانا'], ar: ['السحور', 'الإفطار', 'العشاء', 'الغداء'], en: ['Suhoor (Sehri)', 'Iftar', 'Dinner', 'Lunch'] }, correct: 0 },
+          { emoji: '🎉', q: { ur: 'رمضان المبارک کے روزے مکمل ہونے پر یکم شوال کو کون سی عید منائی جاتی ہے؟', ar: 'ما هو العيد الذي يأتي بعد شهر رمضان؟', en: 'Which Eid is celebrated right after the month of Ramadan?' }, options: { ur: ['عید الفطر', 'عید الاضحیٰ', 'یومِ عاشوراء', 'یومِ عرفہ'], ar: ['عيد الفطر المبارك', 'عيد الأضحى', 'يوم عاشوراء', 'يوم عرفة'], en: ['Eid ul-Fitr', 'Eid ul-Adha', 'Day of Ashura', 'Day of Arafah'] }, correct: 0 }
+        ]
+      },
+      {
+        stage: 8,
+        title: { ur: 'اسٹیج ۸: فرشتے اور آسمانی کتابیں', ar: 'المرحلة ٨: الملائكة والكتب السماوية', en: 'Stage 8: Angels & Divine Books' },
+        questions: [
+          { emoji: '🪽', q: { ur: 'اللّٰہ تعالیٰ نے فرشتوں کو کس چیز سے پیدا فرمایا ہے؟', ar: 'مِمَّ خلق الله الملائكة؟', en: 'What did Allah create the Angels from?' }, options: { ur: ['نور (روشنی) سے', 'مٹی سے', 'آگ سے', 'پانی سے'], ar: ['من نور', 'من طين', 'من نار', 'من ماء'], en: ['From Light (Noor)', 'From Clay', 'From Fire', 'From Water'] }, correct: 0 },
+          { emoji: '📜', q: { ur: 'انبیاء کرام علیہم السلام کے پاس اللّٰہ کی وحی کون سے فرشتے لاتے تھے؟', ar: 'من هو الملك الموكل بالوحي؟', en: 'Which Angel brought revelations from Allah to the Prophets?' }, options: { ur: ['حضرت جبرائیل علیہ السلام', 'حضرت میکائیل علیہ السلام', 'حضرت اسرافیل علیہ السلام', 'حضرت مالک علیہ السلام'], ar: ['جبريل عليه السلام', 'ميكائيل عليه السلام', 'إسرافيل عليه السلام', 'مالك عليه السلام'], en: ['Angel Jibreel (A.S)', 'Angel Mikail (A.S)', 'Angel Israfil (A.S)', 'Angel Malik (A.S)'] }, correct: 0 },
+          { emoji: '🪄', q: { ur: 'حضرت موسیٰ علیہ السلام پر کون سی آسمانی کتاب نازل ہوئی تھی؟', ar: 'ما هو الكتاب الذي أنزله الله على موسى عليه السلام؟', en: 'Which divine book was revealed to Prophet Musa (A.S)?' }, options: { ur: ['تورات', 'زبور', 'انجیل', 'قرآن مجید'], ar: ['التوراة', 'الزبور', 'الإنجيل', 'القرآن الكريم'], en: ['The Torah (Tawrat)', 'Zabur', 'Injeel', 'Holy Quran'] }, correct: 0 },
+          { emoji: '🕊️', q: { ur: 'حضرت عیسیٰ علیہ السلام پر کون سی آسمانی کتاب نازل ہوئی تھی؟', ar: 'ما هو الكتاب الذي أنزله الله على عيسى عليه السلام؟', en: 'Which divine book was revealed to Prophet Isa (A.S)?' }, options: { ur: ['انجیل', 'زبور', 'تورات', 'صحیفے'], ar: ['الإنجيل', 'الزبور', 'التوراة', 'الصحف'], en: ['The Injeel (Gospel)', 'Zabur', 'Torah', 'Scrolls'] }, correct: 0 }
+        ]
+      },
+      {
+        stage: 9,
+        title: { ur: 'اسٹیج ۹: صحابہ کرام اور خلفائے راشدین', ar: 'المرحلة ٩: الصحابة والخلفاء الراشدون', en: 'Stage 9: Noble Companions & Caliphs' },
+        questions: [
+          { emoji: '🌟', q: { ur: 'اسلام کے سب سے پہلے خلیفہ اور حضور ﷺ کے سب سے قریبی ساتھی کون تھے؟', ar: 'من هو أول الخلفاء الراشدين؟', en: 'Who was the first Caliph of Islam and closest companion of the Prophet ﷺ?' }, options: { ur: ['حضرت ابوبکر صدیق رضی اللّٰہ عنہ', 'حضرت عمر فاروق رضی اللّٰہ عنہ', 'حضرت عثمان غنی رضی اللّٰہ عنہ', 'حضرت علی المرتضیٰ رضی اللّٰہ عنہ'], ar: ['أبو بكر الصديق رضي الله عنه', 'عمر بن الخطاب رضي الله عنه', 'عثمان بن عفان رضي الله عنه', 'علي بن أبي طالب رضي الله عنه'], en: ['Abu Bakr As-Siddiq (R.A)', 'Umar ibn Al-Khattab (R.A)', 'Uthman ibn Affan (R.A)', 'Ali ibn Abi Talib (R.A)'] }, correct: 0 },
+          { emoji: '⚖️', q: { ur: 'اپنے عدل و انصاف کی وجہ سے الفاروق کا لقب کس خلیفہ کو ملا؟', ar: 'من هو الخليفة الملقب بالفاروق؟', en: 'Which Caliph was given the title Al-Farooq for his justice?' }, options: { ur: ['حضرت عمر بن خطاب رضی اللّٰہ عنہ', 'حضرت ابوبکر صدیق رضی اللّٰہ عنہ', 'حضرت معاذ رضی اللّٰہ عنہ', 'حضرت سلمان رضی اللّٰہ عنہ'], ar: ['عمر بن الخطاب رضي الله عنه', 'أبو بكر الصديق رضي الله عنه', 'معاذ بن جبل رضي الله عنه', 'سلمان الفارسي رضي الله عنه'], en: ['Umar ibn Al-Khattab (R.A)', 'Abu Bakr As-Siddiq (R.A)', 'Muadh ibn Jabal (R.A)', 'Salman Al-Farsi (R.A)'] }, correct: 0 },
+          { emoji: '📢', q: { ur: 'اسلام کے سب سے پہلے مؤذن کون تھے جنہوں نے پہلی اذان دی؟', ar: 'من هو أول مؤذن في الإسلام؟', en: 'Who was the very first Mu’adhin (caller to prayer) in Islam?' }, options: { ur: ['حضرت بلال بن رباح رضی اللّٰہ عنہ', 'حضرت انس رضی اللّٰہ عنہ', 'حضرت زید رضی اللّٰہ عنہ', 'حضرت ابوذر رضی اللّٰہ عنہ'], ar: ['بلال بن رباح رضي الله عنه', 'أنس بن مالك رضي الله عنه', 'زيد بن حارثة رضي الله عنه', 'أبو ذر الغفاري رضي الله عنه'], en: ['Bilal ibn Rabah (R.A)', 'Anas ibn Malik (R.A)', 'Zayd ibn Harithah (R.A)', 'Abu Dharr (R.A)'] }, correct: 0 },
+          { emoji: '🦁', q: { ur: 'اسلام کے چوتھے خلیفہ اور نبی کریم ﷺ کے چچا زاد بھائی کون تھے؟', ar: 'من هو رابع الخلفاء الراشدين وابن عم النبي ﷺ؟', en: 'Who was the fourth Caliph and cousin of Prophet Muhammad ﷺ?' }, options: { ur: ['حضرت علی بن ابی طالب رضی اللّٰہ عنہ', 'حضرت حمزہ رضی اللّٰہ عنہ', 'حضرت عباس رضی اللّٰہ عنہ', 'حضرت جعفر رضی اللّٰہ عنہ'], ar: ['علي بن أبي طالب رضي الله عنه', 'حمزة بن عبد المطلب رضي الله عنه', 'العباس رضي الله عنه', 'جعفر بن أبي طالب رضي الله عنه'], en: ['Ali ibn Abi Talib (R.A)', 'Hamzah (R.A)', 'Al-Abbas (R.A)', 'Ja’far (R.A)'] }, correct: 0 }
+        ]
+      },
+      {
+        stage: 10,
+        title: { ur: 'اسٹیج ۱۰: حج، عمرہ اور مقاماتِ مقدسہ', ar: 'المرحلة ١٠: الحج والعمرة والأماكن المقدسة', en: 'Stage 10: Hajj, Umrah & Holy Sites' },
+        questions: [
+          { emoji: '🕋', q: { ur: 'خانہ کعبہ کے گرد سات چکر لگانے کو کیا کہتے ہیں؟', ar: 'ماذا نسمي الدوران حول الكعبة سبع مرات؟', en: 'What is walking seven times around the Holy Kaaba called?' }, options: { ur: ['طواف', 'سعی', 'وقوف', 'رمی'], ar: ['الطواف', 'السعي', 'الوقوف', 'الرمي'], en: ['Tawaf', 'Sa’i', 'Wuqoof', 'Rami'] }, correct: 0 },
+          { emoji: '⛰️', q: { ur: 'عمرہ اور حج میں کن دو پہاڑیوں کے درمیان سات چکر لگائے جاتے ہیں؟', ar: 'بين أي جبلين يسعى الحاج والمعتمر؟', en: 'Between which two hills do pilgrims walk seven times during Sa’i?' }, options: { ur: ['صفا اور مروہ', 'احد اور ثور', 'حرا اور عرفات', 'طور اور جودی'], ar: ['الصفا والمروة', 'أحد وثور', 'حراء وعرفات', 'الطور والجودي'], en: ['Safa and Marwah', 'Uhud and Thawr', 'Hira and Arafat', 'Sinai and Judi'] }, correct: 0 },
+          { emoji: '💧', q: { ur: 'مکہ مکرمہ میں مسجد الحرام کے اندر موجود مبارک کنویں کے پانی کا نام کیا ہے؟', ar: 'ما اسم الماء المبارك في المسجد الحرام؟', en: 'What is the name of the blessed water well inside Masjid Al-Haram?' }, options: { ur: ['آبِ زمزم', 'نہرِ فرات', 'دریائے نیل', 'چشمہِ سلسبیل'], ar: ['ماء زمزم', 'نهر الفرات', 'نهر النيل', 'عين سلسبيل'], en: ['Zamzam Water', 'Euphrates', 'Nile', 'Salsabeel'] }, correct: 0 },
+          { emoji: '⛺', q: { ur: 'حج کا سب سے بڑا رکن ۹ ذوالحجہ کو کس میدان میں ادا کیا جاتا ہے؟', ar: 'ما هو الركن الأعظم للحج في اليوم التاسع من ذي الحجة؟', en: 'Where do pilgrims gather on the 9th of Dhul-Hijjah for the main pillar of Hajj?' }, options: { ur: ['میدانِ عرفات میں', 'طائف میں', 'جدہ میں', 'بدر میں'], ar: ['الوقوف بعرفة', 'الطائف', 'جدة', 'بدر'], en: ['Plain of Arafat', 'Taif', 'Jeddah', 'Badr'] }, correct: 0 }
+        ]
+      }
+    ];
+
+    const ALPHABET_STAGES_DATA = [
+      { stage: 1, letters: [{ char: 'أ', nameAr: 'أَلِفْ', wordAr: 'أَسَدٌ', wordUr: 'شیر', wordEn: 'Lion', emoji: '🦁' }, { char: 'ب', nameAr: 'بَاءْ', wordAr: 'بَيْتٌ', wordUr: 'گھر', wordEn: 'House', emoji: '🏠' }, { char: 'ت', nameAr: 'تَاءْ', wordAr: 'تَمْرٌ', wordUr: 'کھجور', wordEn: 'Dates', emoji: '🌴' }] },
+      { stage: 2, letters: [{ char: 'ث', nameAr: 'ثَاءْ', wordAr: 'ثَوْبٌ', wordUr: 'لباس', wordEn: 'Garment', emoji: '👕' }, { char: 'ج', nameAr: 'جِيمْ', wordAr: 'جَمَلٌ', wordUr: 'اونٹ', wordEn: 'Camel', emoji: '🐪' }, { char: 'ح', nameAr: 'حَاءْ', wordAr: 'حَمَامَةٌ', wordUr: 'کبوتر', wordEn: 'Dove', emoji: '🕊️' }] },
+      { stage: 3, letters: [{ char: 'خ', nameAr: 'خَاءْ', wordAr: 'خُبْزٌ', wordUr: 'روٹی', wordEn: 'Bread', emoji: '🍞' }, { char: 'د', nameAr: 'دَالْ', wordAr: 'دَرَّاجَةٌ', wordUr: 'سائیکل', wordEn: 'Bicycle', emoji: '🚲' }, { char: 'ذ', nameAr: 'ذَالْ', wordAr: 'ذُرَةٌ', wordUr: 'مکئی', wordEn: 'Corn', emoji: '🌽' }] },
+      { stage: 4, letters: [{ char: 'ر', nameAr: 'رَاءْ', wordAr: 'رُمَّانٌ', wordUr: 'انار', wordEn: 'Pomegranate', emoji: '🔴' }, { char: 'ز', nameAr: 'زَايْ', wordAr: 'زَهْرَةٌ', wordUr: 'پھول', wordEn: 'Flower', emoji: '🌸' }, { char: 'س', nameAr: 'سِينْ', wordAr: 'سَمَكَةٌ', wordUr: 'مچھلی', wordEn: 'Fish', emoji: '🐟' }] },
+      { stage: 5, letters: [{ char: 'ش', nameAr: 'شِينْ', wordAr: 'شَمْسٌ', wordUr: 'سورج', wordEn: 'Sun', emoji: '☀️' }, { char: 'ص', nameAr: 'صَادْ', wordAr: 'صَقْرٌ', wordUr: 'شاہین', wordEn: 'Falcon', emoji: '🦅' }, { char: 'ض', nameAr: 'ضَادْ', wordAr: 'ضِفْدَعٌ', wordUr: 'مینڈک', wordEn: 'Frog', emoji: '🐸' }] },
+      { stage: 6, letters: [{ char: 'ط', nameAr: 'طَاءْ', wordAr: 'طَائِرَةٌ', wordUr: 'ہوائی جہاز', wordEn: 'Airplane', emoji: '✈️' }, { char: 'ظ', nameAr: 'ظَاءْ', wordAr: 'ظَرْفٌ', wordUr: 'لفافہ', wordEn: 'Envelope', emoji: '✉️' }, { char: 'ع', nameAr: 'عَيْنْ', wordAr: 'عِنَبٌ', wordUr: 'انگور', wordEn: 'Grapes', emoji: '🍇' }] },
+      { stage: 7, letters: [{ char: 'غ', nameAr: 'غَيْنْ', wordAr: 'غَيْمٌ', wordUr: 'بادل', wordEn: 'Cloud', emoji: '☁️' }, { char: 'ف', nameAr: 'فَاءْ', wordAr: 'فِيلٌ', wordUr: 'ہاتھی', wordEn: 'Elephant', emoji: '🐘' }, { char: 'ق', nameAr: 'قَافْ', wordAr: 'قَمَرٌ', wordUr: 'چاند', wordEn: 'Moon', emoji: '🌙' }] },
+      { stage: 8, letters: [{ char: 'ك', nameAr: 'كَافْ', wordAr: 'كِتَابٌ', wordUr: 'کتاب', wordEn: 'Book', emoji: '📖' }, { char: 'ل', nameAr: 'لَامْ', wordAr: 'لَيْمُونٌ', wordUr: 'لیموں', wordEn: 'Lemon', emoji: '🍋' }, { char: 'م', nameAr: 'مِيمْ', wordAr: 'مَسْجِدٌ', wordUr: 'مسجد', wordEn: 'Masjid', emoji: '🕌' }] },
+      { stage: 9, letters: [{ char: 'ن', nameAr: 'نُونْ', wordAr: 'نَحْلَةٌ', wordUr: 'شہد کی مکھی', wordEn: 'Bee', emoji: '🐝' }, { char: 'هـ', nameAr: 'هَاءْ', wordAr: 'هِلَالٌ', wordUr: 'ہلال', wordEn: 'Crescent', emoji: '🌙' }, { char: 'و', nameAr: 'وَاوْ', wordAr: 'وَرْدَةٌ', wordUr: 'گلاب', wordEn: 'Rose', emoji: '🌹' }] },
+      { stage: 10, letters: [{ char: 'ي', nameAr: 'يَاءْ', wordAr: 'يَدٌ', wordUr: 'ہاتھ', wordEn: 'Hand', emoji: '🤚' }, { char: 'ء', nameAr: 'هَمْزَةْ', wordAr: 'مَاءٌ', wordUr: 'پانی', wordEn: 'Water', emoji: '💧' }, { char: 'ة', nameAr: 'تَاءْ مَرْبُوطَة', wordAr: 'كَعْبَةٌ', wordUr: 'کعبہ', wordEn: 'Kaaba', emoji: '🕋' }] }
+    ];
+
+    const MASJID_STAGES_DATA = [
+      {
+        stage: 1,
+        topic: { ur: 'اسٹیج ۱: وضو کرنے کا مسنون طریقہ', ar: 'المرحلة ١: خطوات الوضوء الصحيح', en: 'Stage 1: Steps of Performing Wudu' },
+        instructionHeading: { ur: 'وضو کرنے کے مراحل کو درست ترتیب سے منتخب کریں:', ar: 'رتب خطوات الوضوء بالترتيب الصحيح:', en: 'Select the steps of Wudu in the correct order:' },
+        steps: [
+          { order: 1, emoji: '🤲', ur: 'نیت کرنا اور بسم اللّٰہ پڑھ کر دونوں ہاتھ کلائیوں تک دھونا', ar: 'النية والتسمية وغسل الكفين ثلاثاً', en: 'Make intention, say Bismillah & wash hands up to wrists' },
+          { order: 2, emoji: '💧', ur: 'تین بار کلی کرنا اور ناک میں پانی ڈال کر صاف کرنا', ar: 'المضمضة والاستنشاق ثلاث مرات', en: 'Rinse mouth and nose three times' },
+          { order: 3, emoji: '😊', ur: 'پورا چہرہ پیشانی سے ٹھوڑی تک تین بار دھونا', ar: 'غسل الوجه كاملاً ثلاث مرات', en: 'Wash the entire face three times' },
+          { order: 4, emoji: '💪', ur: 'پہلے دایاں اور پھر بایاں بازو کہنیوں سمیت تین بار دھونا', ar: 'غسل اليدين إلى المرفقين ثلاث مرات', en: 'Wash right then left arm including elbows three times' },
+          { order: 5, emoji: '💆', ur: 'گیلے ہاتھوں سے سر اور کانوں کا مسح کرنا', ar: 'مسح الرأس والأذنين مرة واحدة', en: 'Wipe head (Masah) and ears with wet hands' },
+          { order: 6, emoji: '🦶', ur: 'پہلے دایاں اور پھر بایاں پاؤں ٹخنوں سمیت تین بار دھونا', ar: 'غسل الرجلين إلى الكعبين ثلاث مرات', en: 'Wash right then left foot up to ankles three times' }
+        ]
+      },
+      {
+        stage: 2,
+        topic: { ur: 'اسٹیج ۲: اذان کے مکمل کلمات مع تعداد', ar: 'المرحلة ٢: كلمات الأذان الكاملة بالترتيب', en: 'Stage 2: Complete Words of Adhan with Counts' },
+        instructionHeading: { ur: 'اذان کے کلمات کو ان کی درست ترتیب اور تعداد کے ساتھ منتخب کریں:', ar: 'رتب كلمات الأذان بالترتيب والعدد الصحيح:', en: 'Select the words of Adhan in the exact order and count:' },
+        steps: [
+          { order: 1, emoji: '📢', ur: 'اللّٰهُ أَكْبَرُ ، اللّٰهُ أَكْبَرُ ، اللّٰهُ أَكْبَرُ ، اللّٰهُ أَكْبَرُ (چار مرتبہ)', ar: 'اللّٰهُ أَكْبَرُ ، اللّٰهُ أَكْبَرُ ، اللّٰهُ أَكْبَرُ ، اللّٰهُ أَكْبَرُ (٤ مرات)', en: 'Allahu Akbar, Allahu Akbar, Allahu Akbar, Allahu Akbar (4 Times)' },
+          { order: 2, emoji: '☝️', ur: 'أَشْهَدُ أَنْ لَا إِلٰهَ إِلَّا اللّٰهُ (دو مرتبہ)', ar: 'أَشْهَدُ أَنْ لَا إِلٰهَ إِلَّا اللّٰهُ (مرتين)', en: 'Ash-hadu an la ilaha illallah (2 Times)' },
+          { order: 3, emoji: '💚', ur: 'أَشْهَدُ أَنَّ مُحَمَّدًا رَسُولُ اللّٰهِ (دو مرتبہ)', ar: 'أَشْهَدُ أَنَّ مُحَمَّدًا رَسُولُ اللّٰهِ (مرتين)', en: 'Ash-hadu anna Muhammadar Rasulullah (2 Times)' },
+          { order: 4, emoji: '🕌', ur: 'حَيَّ عَلَى الصَّلَاةِ (دو مرتبہ)', ar: 'حَيَّ عَلَى الصَّلَاةِ (مرتين)', en: 'Hayya alas-Salah (2 Times)' },
+          { order: 5, emoji: '🌟', ur: 'حَيَّ عَلَى الْفَلَاحِ (دو مرتبہ)', ar: 'حَيَّ عَلَى الْفَلَاحِ (مرتين)', en: 'Hayya alal-Falah (2 Times)' },
+          { order: 6, emoji: '🕋', ur: 'اللّٰهُ أَكْبَرُ ، اللّٰهُ أَكْبَرُ (دو مرتبہ) — لَا إِلٰهَ إِلَّا اللّٰهُ (ایک مرتبہ)', ar: 'اللّٰهُ أَكْبَرُ ، اللّٰهُ أَكْبَرُ (مرتين) — لَا إِلٰهَ إِلَّا اللّٰهُ (مرة واحدة)', en: 'Allahu Akbar, Allahu Akbar (2 Times) — La ilaha illallah (1 Time)' }
+        ]
+      },
+      {
+        stage: 3,
+        topic: { ur: 'اسٹیج ۳: نماز ادا کرنے کا طریقہ', ar: 'المرحلة ٣: خطوات أداء الصلاة', en: 'Stage 3: Steps of Performing Salah' },
+        instructionHeading: { ur: 'نماز ادا کرنے کے ارکان کو درست ترتیب سے منتخب کریں:', ar: 'رتب أركان وخطوات الصلاة بالترتيب الصحيح:', en: 'Select the steps of performing Salah in the correct order:' },
+        steps: [
+          { order: 1, emoji: '🧭', ur: 'قبلہ رخ کھڑے ہو کر تکبیر تحریمہ (اللّٰہ اکبر) کہنا', ar: 'استقبال القبلة وتكبيرة الإحرام (الله أكبر)', en: 'Face Qiblah and say Takbeerat-ul-Ihram (Allahu Akbar)' },
+          { order: 2, emoji: '📖', ur: 'قیام میں ثناء، سورۃ الفاتحہ اور قراءت پڑھنا', ar: 'القيام وقراءة سورة الفاتحة وما تيسر من القرآن', en: 'Stand in Qiyam and recite Surah Al-Fatihah & Quran' },
+          { order: 3, emoji: '🙇', ur: 'رکوع میں جھکنا اور سُبْحَانَ رَبِّيَ الْعَظِيمِ پڑھنا', ar: 'الركوع وقول سبحان ربي العظيم', en: 'Bow in Ruku and say Subhana Rabbiyal Azeem' },
+          { order: 4, emoji: '🧍', ur: 'رکوع سے سیدھا کھڑا ہونا (قومہ) اور سمع اللّٰہ لمن حمدہ کہنا', ar: 'الرفع من الركوع والاعتدال قائماً', en: 'Stand straight from Ruku (Qawmah)' },
+          { order: 5, emoji: '🧎', ur: 'دو سجدے کرنا اور سُبْحَانَ رَبِّيَ الْأَعْلَى پڑھنا', ar: 'السجود مرتين وقول سبحان ربي الأعلى', en: 'Perform two Sujood saying Subhana Rabbiyal A’la' },
+          { order: 6, emoji: '🤲', ur: 'آخری قعدہ میں تشہد، درود شریف اور دعا پڑھ کر سلام پھیرنا', ar: 'الجلوس للتشهد والصلاة الإبراهيمية ثم التسليم', en: 'Sit for Tashahhud, Durood & end with Salam' }
+        ]
+      },
+      {
+        stage: 4,
+        topic: { ur: 'اسٹیج ۴: اقامت کے کلمات کی ترتیب', ar: 'المرحلة ٤: كلمات إقامة الصلاة', en: 'Stage 4: Words of Iqamah for Salah' },
+        instructionHeading: { ur: 'جماعت کھڑی ہونے پر اقامت کے کلمات ترتیب سے منتخب کریں:', ar: 'رتب كلمات إقامة الصلاة بالترتيب الصحيح:', en: 'Select the words of Iqamah in the correct sequence:' },
+        steps: [
+          { order: 1, emoji: '🕌', ur: 'اللّٰهُ أَكْبَرُ ، اللّٰهُ أَكْبَرُ', ar: 'اللّٰهُ أَكْبَرُ ، اللّٰهُ أَكْبَرُ', en: 'Allahu Akbar, Allahu Akbar' },
+          { order: 2, emoji: '☝️', ur: 'أَشْهَدُ أَنْ لَا إِلٰهَ إِلَّا اللّٰهُ — أَشْهَدُ أَنَّ مُحَمَّدًا رَسُولُ اللّٰهِ', ar: 'أَشْهَدُ أَنْ لَا إِلٰهَ إِلَّا اللّٰهُ — أَشْهَدُ أَنَّ مُحَمَّدًا رَسُولُ اللّٰهِ', en: 'Ash-hadu an la ilaha illallah — Ash-hadu anna Muhammadar Rasulullah' },
+          { order: 3, emoji: '📢', ur: 'حَيَّ عَلَى الصَّلَاةِ — حَيَّ عَلَى الْفَلَاحِ', ar: 'حَيَّ عَلَى الصَّلَاةِ — حَيَّ عَلَى الْفَلَاحِ', en: 'Hayya alas-Salah — Hayya alal-Falah' },
+          { order: 4, emoji: '👥', ur: 'قَدْ قَامَتِ الصَّلَاةُ ، قَدْ قَامَتِ الصَّلَاةُ (دو مرتبہ)', ar: 'قَدْ قَامَتِ الصَّلَاةُ ، قَدْ قَامَتِ الصَّلَاةُ (مرتين)', en: 'Qad Qamatis-Salah, Qad Qamatis-Salah (2 Times)' },
+          { order: 5, emoji: '🌟', ur: 'اللّٰهُ أَكْبَرُ ، اللّٰهُ أَكْبَرُ (دو مرتبہ)', ar: 'اللّٰهُ أَكْبَرُ ، اللّٰهُ أَكْبَرُ (مرتين)', en: 'Allahu Akbar, Allahu Akbar (2 Times)' },
+          { order: 6, emoji: '🕋', ur: 'لَا إِلٰهَ إِلَّا اللّٰهُ (ایک مرتبہ)', ar: 'لَا إِلٰهَ إِلَّا اللّٰهُ (مرة واحدة)', en: 'La ilaha illallah (1 Time)' }
+        ]
+      },
+      {
+        stage: 5,
+        topic: { ur: 'اسٹیج ۵: کھانا کھانے کے مسنون آداب', ar: 'المرحلة ٥: آداب الطعام في الإسلام', en: 'Stage 5: Sunnah Etiquette of Eating' },
+        instructionHeading: { ur: 'کھانا کھانے کے اسلامی آداب کو درست ترتیب سے منتخب کریں:', ar: 'رتب آداب الطعام الإسلامية بالترتيب الصحيح:', en: 'Select the Sunnah manners of eating in the proper order:' },
+        steps: [
+          { order: 1, emoji: '🧼', ur: 'کھانے سے پہلے دونوں ہاتھ اچھی طرح دھونا', ar: 'غسل اليدين جيداً قبل الأكل', en: 'Wash both hands cleanly before eating' },
+          { order: 2, emoji: '🪑', ur: 'سنت کے مطابق بیٹھ کر کھانا شروع کرنا', ar: 'الجلوس باعتدال وتواضع للطعام', en: 'Sit down modestly to eat' },
+          { order: 3, emoji: '📿', ur: 'بِسْمِ اللّٰهِ وَعَلَى بَرَكَةِ اللّٰهِ پڑھنا', ar: 'قول بسم الله وعلى بركة الله', en: 'Say Bismillahi wa ala barakatillah' },
+          { order: 4, emoji: '🤚', ur: 'دائیں ہاتھ سے اور اپنے سامنے سے کھانا', ar: 'الأكل باليد اليمنى ومما يلي الآكل', en: 'Eat with the right hand from what is nearest' },
+          { order: 5, emoji: '🍽️', ur: 'برتن کو اچھی طرح صاف کرنا اور کھانا ضائع نہ کرنا', ar: 'تنظيف الإناء وعدم إسراف الطعام', en: 'Clean the plate without wasting food' },
+          { order: 6, emoji: '🤲', ur: 'کھانے کے بعد اَلْحَمْدُ لِلّٰهِ پڑھ کر اللّٰہ کا شکر ادا کرنا', ar: 'قول الحمد لله الذي أطعمنا وسقانا بعد الانتهاء', en: 'Say Alhamdulillah after finishing the meal' }
+        ]
+      },
+      {
+        stage: 6,
+        topic: { ur: 'اسٹیج ۶: مسجد میں جانے کے آداب', ar: 'المرحلة ٦: آداب الذهاب إلى المسجد', en: 'Stage 6: Etiquette of Visiting the Masjid' },
+        instructionHeading: { ur: 'مسجد میں حاضری کے مسنون آداب کو ترتیب سے منتخب کریں:', ar: 'رتب آداب الذهاب إلى المسجد بالترتيب:', en: 'Select the manners of going to the Masjid in order:' },
+        steps: [
+          { order: 1, emoji: '💧', ur: 'گھر سے اچھی طرح وضو کر کے پاک صاف لباس پہننا', ar: 'الوضوء في البيت ولبس الثياب النظيفة', en: 'Perform Wudu at home and wear clean clothes' },
+          { order: 2, emoji: '🚶', ur: 'سکون اور وقار کے ساتھ مسجد کی طرف چلنا', ar: 'المشي إلى المسجد بسكينة ووقار', en: 'Walk calmly and respectfully to the Masjid' },
+          { order: 3, emoji: '🦶', ur: 'پہلے دایاں قدم رکھ کر اللّٰهُمَّ افْتَحْ لِي أَبْوَابَ رَحْمَتِكَ پڑھنا', ar: 'الدخول بالرجل اليمنى ودعاء دخول المسجد', en: 'Enter with right foot and recite Masjid entry Dua' },
+          { order: 4, emoji: '🧎', ur: 'بیٹھنے سے پہلے دو رکعت تحیۃ المسجد پڑھنا', ar: 'صلاة ركعتين تحية المسجد قبل الجلوس', en: 'Pray two Rak’ahs of Tahiyyat-ul-Masjid' },
+          { order: 5, emoji: '🤫', ur: 'مسجد میں خاموشی سے ذکر اور تلاوت میں مشغول رہنا', ar: 'الجلوس بهدوء والانشغال بالذكر وتلاوة القرآن', en: 'Sit quietly engaged in Dhikr and Quran' },
+          { order: 6, emoji: '🚪', ur: 'نکلتے وقت بایاں قدم پہلے رکھنا اور اللّٰهُمَّ إِنِّي أَسْأَلُكَ مِنْ فَضْلِكَ پڑھنا', ar: 'الخروج بالرجل اليسرى ودعاء الخروج من المسجد', en: 'Exit with left foot and recite Masjid exit Dua' }
+        ]
+      },
+      {
+        stage: 7,
+        topic: { ur: 'اسٹیج ۷: رات کو سونے کی مسنون سنتیں', ar: 'المرحلة ٧: سنن وآداب النوم', en: 'Stage 7: Sunnah Manners Before Sleeping' },
+        instructionHeading: { ur: 'رات کو سونے سے پہلے کی سنتوں کو درست ترتیب سے منتخب کریں:', ar: 'رتب سنن النوم النبوية بالترتيب الصحيح:', en: 'Select the Sunnah practices before sleeping in order:' },
+        steps: [
+          { order: 1, emoji: '🕌', ur: 'عشاء کی نماز وقت پر ادا کرنا اور وضو کرنا', ar: 'أداء صلاة العشاء والوضوء قبل النوم', en: 'Pray Isha on time and perform Wudu before bed' },
+          { order: 2, emoji: '🛏️', ur: 'بستر کو تین بار جھاڑ کر صاف کرنا', ar: 'نفض الفراش ثلاث مرات وتنظيفه', en: 'Dust the bed three times before lying down' },
+          { order: 3, emoji: '📖', ur: 'آیت الکرسی اور تینوں قل پڑھ کر ہاتھوں پر دم کرنا', ar: 'قراءة آية الكرسي والمعوذات والنفث في الكفين', en: 'Recite Ayatul Kursi and the three Quls' },
+          { order: 4, emoji: '📿', ur: 'تسبیحِ فاطمی (۳۳ بار سبحان اللّٰہ، ۳۳ بار الحمد للّٰہ، ۳۴ بار اللّٰہ اکبر) پڑھنا', ar: 'التسبيح ثلاثاً وثلاثين والتحميد والتكبير أربعاً وثلاثين', en: 'Recite Tasbih Fatimi (33 SubhanAllah, 33 Alhamdulillah, 34 Allahu Akbar)' },
+          { order: 5, emoji: '🛌', ur: 'دائیں کروٹ پر قبلہ رخ ہو کر لیٹنا', ar: 'النوم على الشق الأيمن مستقبلاً القبلة', en: 'Lie down on the right side facing Qiblah' },
+          { order: 6, emoji: '🌙', ur: 'اللّٰهُمَّ بِاسْمِكَ أَمُوتُ وَأَحْيَا پڑھ کر سونا', ar: 'قول اللهم باسمك أموت وأحيا', en: 'Say Allahumma bismika amootu wa ahya' }
+        ]
+      },
+      {
+        stage: 8,
+        topic: { ur: 'اسٹیج ۸: صبح جاگنے کی سنتیں اور آداب', ar: 'المرحلة ٨: سنن الاستيقاظ والصباح', en: 'Stage 8: Morning Sunnah Routine' },
+        instructionHeading: { ur: 'صبح نیند سے بیدار ہونے کی سنتوں کو ترتیب سے منتخب کریں:', ar: 'رتب سنن الاستيقاظ من النوم بالترتيب:', en: 'Select the morning Sunnah steps after waking up:' },
+        steps: [
+          { order: 1, emoji: '🌅', ur: 'آنکھ کھلتے ہی چہرے پر ہاتھ پھیرنا اور اللّٰہ کو یاد کرنا', ar: 'مسح أثر النوم عن الوجه وذكر الله تعالى', en: 'Wipe the face upon waking and remember Allah' },
+          { order: 2, emoji: '🤲', ur: 'جاگنے کی دعا اَلْحَمْدُ لِلّٰهِ الَّذِي أَحْيَانَا پڑھنا', ar: 'قول الحمد لله الذي أحيانا بعد ما أماتنا وإليه النشور', en: 'Recite the waking Dua: Alhamdulillahil-ladhi ahyana' },
+          { order: 3, emoji: '🪥', ur: 'مسواک کرنا اور دانت اچھی طرح صاف کرنا', ar: 'استعمال السواك وتنظيف الأسنان', en: 'Use Miswak / brush teeth cleanly' },
+          { order: 4, emoji: '💧', ur: 'مکمل وضو کرنا اور فجر کی سنتیں اور فرض پڑھنا', ar: 'الوضوء وأداء صلاة الفجر في وقتها', en: 'Perform Wudu and offer Fajr prayer' },
+          { order: 5, emoji: '📖', ur: 'قرآن مجید کی تلاوت اور صبح کے اذکار پڑھنا', ar: 'تلاوة القرآن الكريم وأذكار الصباح', en: 'Recite the Holy Quran and morning Adhkar' },
+          { order: 6, emoji: '😊', ur: 'گھر والوں کو مسکرا کر السَّلَامُ عَلَيْكُمْ کہنا', ar: 'إلقاء السلام على الأهل بابتسامة', en: 'Greet parents and family with Assalamu Alaikum & a smile' }
+        ]
+      },
+      {
+        stage: 9,
+        topic: { ur: 'اسٹیج ۹: جمعۃ المبارک کے مسنون اعمال', ar: 'المرحلة ٩: سنن وآداب يوم الجمعة', en: 'Stage 9: Blessed Sunnahs of Friday (Jumu’ah)' },
+        instructionHeading: { ur: 'جمعۃ المبارک کے مسنون اعمال کو ترتیب سے منتخب کریں:', ar: 'رتب سنن يوم الجمعة المبارك بالترتيب:', en: 'Select the blessed Sunnah acts of Jumu’ah in order:' },
+        steps: [
+          { order: 1, emoji: '🚿', ur: 'جمعہ کے دن غسل کرنا، ناخن تراشنا اور مسواک کرنا', ar: 'الاغتسال وتقليم الأظافر والتسوك يوم الجمعة', en: 'Perform Ghusl, trim nails and use Miswak' },
+          { order: 2, emoji: '👕', ur: 'سب سے اچھا اور صاف ستھرا لباس پہننا اور خوشبو لگانا', ar: 'لبس أحسن الثياب والتطيب بالعطر الحلال', en: 'Wear clean best clothes and apply Halal fragrance' },
+          { order: 3, emoji: '📖', ur: 'سورۃ الکہف کی تلاوت کرنا', ar: 'قراءة سورة الكهف', en: 'Recite Surah Al-Kahf' },
+          { order: 4, emoji: '💚', ur: 'نبی کریم صلی اللّٰہ علیہ وسلم پر کثرت سے درود شریف بھیجنا', ar: 'الإكثار من الصلاة والسلام على النبي ﷺ', en: 'Send abundant Salawat (Durood) upon Prophet Muhammad ﷺ' },
+          { order: 5, emoji: '🕌', ur: 'جلدی مسجد جانا اور خاموشی سے خطبہ سننا', ar: 'التبكير إلى المسجد والإنصات للخطبة', en: 'Go early to the Masjid and listen quietly to the Khutbah' },
+          { order: 6, emoji: '🤲', ur: 'نمازِ جمعہ ادا کرنا اور قبولیت کی گھڑی میں دعا مانگنا', ar: 'أداء صلاة الجمعة والدعاء في ساعة الاستجابة', en: 'Pray Jumu’ah Salah and make sincere Dua' }
+        ]
+      },
+      {
+        stage: 10,
+        topic: { ur: 'اسٹیج ۱۰: عمرہ اور حج کے مناسک کی ترتیب', ar: 'المرحلة ١٠: مناسك العمرة والحج', en: 'Stage 10: Rites of Umrah & Hajj' },
+        instructionHeading: { ur: 'عمرہ اور حج کے بنیادی مناسک کو درست ترتیب سے منتخب کریں:', ar: 'رتب مناسك العمرة والحج بالترتيب الصحيح:', en: 'Select the rites of Umrah and Hajj in the proper order:' },
+        steps: [
+          { order: 1, emoji: '🧣', ur: 'میقات سے احرام باندھنا اور لَبَّيْكَ اللّٰهُمَّ لَبَّيْكَ پڑھنا', ar: 'الإحرام من الميقات والتلبية (لبيك اللهم لبيك)', en: 'Enter state of Ihram at Miqat and recite Talbiyah' },
+          { order: 2, emoji: '🕋', ur: 'مسجد الحرام میں داخل ہو کر خانہ کعبہ کے گرد سات چکر طواف کرنا', ar: 'الطواف حول الكعبة المشرفة سبعة أشواط', en: 'Perform seven circuits of Tawaf around the Holy Kaaba' },
+          { order: 3, emoji: '🧎', ur: 'مقامِ ابراہیم کے پیچھے دو رکعت نمازِ طواف پڑھنا اور زمزم پینا', ar: 'صلاة ركعتين خلف مقام إبراهيم وشرب ماء زمزم', en: 'Pray two Rak’ahs behind Maqam Ibrahim & drink Zamzam' },
+          { order: 4, emoji: '⛰️', ur: 'صفا اور مروہ کی پہاڑیوں کے درمیان سات چکر سعی کرنا', ar: 'السعي بين الصفا والمروة سبعة أشواط', en: 'Perform seven circuits of Sa’i between Safa and Marwah' },
+          { order: 5, emoji: '⛺', ur: 'حج میں منیٰ اور میدانِ عرفات میں وقوف اور دعا کرنا', ar: 'الوقوف بعرفة والدعاء في يوم الحج الأكبر', en: 'Stand in prayer at the Plain of Arafat during Hajj' },
+          { order: 6, emoji: '✂️', ur: 'حلق یا قصر کروا کر احرام کھولنا اور اللّٰہ کا شکر ادا کرنا', ar: 'الحلق أو التقصير والتحلل من الإحرام بحمد الله', en: 'Trim or shave hair (Halq/Taqseer) to complete the rites' }
+        ]
+      }
+    ];
+
+    function updateProBadgeUI() {
+      const t = UI_TEXT[appState.uiLang];
+      const statusVal = document.getElementById('parentalStatusValue');
+      const unlockFormArea = document.getElementById('parentalUnlockFormArea');
+      const alreadyUnlockedBox = document.getElementById('parentalAlreadyUnlockedBox');
+
+      if (statusVal) {
+        statusVal.textContent = appState.isSupporterPro ? t.statusPro : t.statusFree;
+      }
+      if (unlockFormArea && alreadyUnlockedBox) {
+        unlockFormArea.classList.toggle('hidden', appState.isSupporterPro);
+        alreadyUnlockedBox.classList.toggle('hidden', !appState.isSupporterPro);
+      }
+    }
+
+    function checkStageUnlocked(stageNum) {
+      if (stageNum <= FREE_STAGES_LIMIT || appState.isSupporterPro) return true;
+      openParentalModal();
+      return false;
+    }
+
+    function setPreferredContentLanguage(lang) {
+      if (!['ur', 'ar', 'en'].includes(lang)) lang = 'ur';
+      appState.uiLang = lang;
+      appState.wsLang = lang;
+      try { localStorage.setItem(STORAGE_PREF_LANG_KEY, lang); } catch (e) {}
+      setGlobalLanguage(lang);
+      rebuildWordSearchStage();
+    }
+
+    function setGlobalLanguage(lang) {
+      playHalalTactileClick('tap');
+      appState.uiLang = lang;
+      const t = UI_TEXT[lang];
+
+      document.documentElement.lang = lang;
+      document.documentElement.dir = t.dir;
+      document.body.className = `${t.fontClass} selection:bg-amber-400 selection:text-slate-950`;
+
+      ['ur', 'ar', 'en'].forEach(code => {
+        const btn = document.getElementById(`globalLangBtn-${code}`);
+        if (!btn) return;
+        const fnt = code === 'ar' ? 'font-arabic' : (code === 'en' ? 'font-english' : 'font-urdu');
+        btn.className = code === lang
+          ? `px-3 py-1 rounded-lg text-xs font-bold transition-all bg-amber-400 text-slate-950 shadow ${fnt}`
+          : `px-3 py-1 rounded-lg text-xs font-bold transition-all text-slate-300 hover:text-white ${fnt}`;
+      });
+
+      const setTxt = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+      };
+
+      setTxt('hubLangTitle', t.hubLangTitle);
+      setTxt('hubGameTitle-wordsearch', t.tabWordSearch);
+      setTxt('hubGameTitle-quiz', t.tabQuiz);
+      setTxt('hubGameTitle-alphabet', t.tabAlphabet);
+      setTxt('hubGameTitle-masjid', t.tabMasjid);
+      setTxt('hubGameTitle-racing', t.tabRacing);
+      setTxt('uiExitBtnLabel', t.exitBtnLabel);
+
+      setTxt('quizListenBtnText', t.quizListenBtnText);
+      setTxt('alphaMainHeading', t.alphaMainHeading);
+      setTxt('alphaColLettersLabel', t.alphaColLettersLabel);
+      setTxt('alphaColWordsLabel', t.alphaColWordsLabel);
+
+      setTxt('raceTiltBtnText', appState.raceTiltEnabled ? 'Tilt: On' : 'Tilt: Off');
+      setTxt('raceOverlayTitle', t.raceOverlayTitle);
+      setTxt('raceOverlaySubtitle', t.raceOverlaySubtitle);
+      setTxt('raceStartBtnText', t.raceStartBtnText);
+      setTxt('raceBtnBrakeText', t.raceBtnBrakeText);
+      setTxt('raceBtnGasText', t.raceBtnGasText);
+      setTxt('raceBtnTurboText', t.raceBtnTurboText);
+      setTxt('raceJoystickPromptText', t.raceJoystickPromptText);
+      setTxt('raceBtnJumpText', lang === 'en' ? 'Jump' : (lang === 'ar' ? 'قفز' : 'جمپ'));
+
+      setTxt('celebModalTitle', t.celebModalTitle);
+      setTxt('celebModalDesc', t.celebModalDesc);
+      setTxt('celebBtnReplay', t.celebBtnReplay);
+      setTxt('celebBtnNextStage', t.celebBtnNextStage);
+
+      setTxt('parentalModalTitle', t.parentalModalTitle);
+      setTxt('parentalModalDesc', t.parentalModalDesc);
+      setTxt('parentalStatusLabel', t.parentalStatusLabel);
+      setTxt('parentalUnlockedMsg', t.parentalUnlockedMsg);
+      setTxt('parentalPinLabel', t.parentalPinLabel);
+      setTxt('parentalBtnTogglePro', t.parentalBtnTogglePro);
+
+      updateProBadgeUI();
+      updateActiveGameHeaderBadge();
+      renderAllStageBars();
+      updateWordSearchUI();
+      renderQuizQuestion();
+      renderAlphabetStage();
+      renderMasjidStage();
+      renderBikeRacingUI();
+    }
+
+    function renderAllStageBars() {
+      const t = UI_TEXT[appState.uiLang];
+      const configs = [
+        { rowId: 'wsStagesRow', current: appState.wsStage, handler: 'selectWordSearchStage' },
+        { rowId: 'quizStagesRow', current: appState.quizStage, handler: 'selectQuizStage' },
+        { rowId: 'alphaStagesRow', current: appState.alphaStage, handler: 'selectAlphabetStage' },
+        { rowId: 'masjidStagesRow', current: appState.masjidStage, handler: 'selectMasjidStage' },
+        { rowId: 'raceStagesRow', current: appState.raceStage, handler: 'selectBikeRaceStage' }
+      ];
+
+      configs.forEach(cfg => {
+        const container = document.getElementById(cfg.rowId);
+        if (!container) return;
+        let html = '';
+        for (let s = 1; s <= 10; s++) {
+          const isFree = s <= FREE_STAGES_LIMIT;
+          const isUnlocked = isFree || appState.isSupporterPro;
+          const isActive = cfg.current === s;
+          const bottomIndicatorBar = isFree ? 'border-b-2 border-b-emerald-400' : 'border-b-2 border-b-sky-400';
+          let btnClass = isActive ? `btn-3d-gold ${bottomIndicatorBar}` : `btn-3d-dark ${bottomIndicatorBar} ${isUnlocked ? '' : 'opacity-75'}`;
+
+          html += `
+            <button onclick="${cfg.handler}(${s})" class="${btnClass} py-1 px-2.5 flex items-center gap-1 text-xs whitespace-nowrap shrink-0">
+              <span class="font-bold">${t.stageWord} ${s}</span>
+              ${!isUnlocked ? '<i class="fa-solid fa-lock text-[9px] text-sky-400"></i>' : ''}
+            </button>
+          `;
+        }
+        container.innerHTML = html;
+      });
+    }
+
+    // ================= WORD SEARCH ENGINE =================
+    const FILLER_LETTERS = {
+      en: ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','R','S','T','U','W','Y','Z'],
+      ar: ['أ','ب','ت','ث','ج','ح','خ','د','ذ','ر','ز','س','ش','ص','ض','ط','ظ','ع','غ','ف','ق','ك','ل','م','ن','ه','و','ي'],
+      ur: ['ا','ب','پ','ت','ٹ','ث','ج','چ','ح','خ','د','ڈ','ذ','ر','ز','س','ش','ص','ض','ط','ظ','ع','غ','ف','ق','ک','گ','ل','م','ن','و','ہ','ی']
+    };
+    const FOUND_COLORS = ['ws-cell-found-0', 'ws-cell-found-1', 'ws-cell-found-2', 'ws-cell-found-3', 'ws-cell-found-4'];
+
+    function selectWordSearchStage(stageNum) {
+      playHalalTactileClick('tap');
+      if (!checkStageUnlocked(stageNum)) return;
+      appState.wsStage = stageNum;
+      renderAllStageBars();
+      rebuildWordSearchStage();
+    }
+
+    function getCurrentWordSearchStageData() {
+      return WORD_SEARCH_STAGES.find(s => s.stage === appState.wsStage) || WORD_SEARCH_STAGES[0];
+    }
+
+    function getWordTilesForItem(item, lang) {
+      if (lang === 'ur') return item.urLetters;
+      if (lang === 'ar') return item.arLetters;
+      return item.enLetters;
+    }
+
+    function getWordDisplayForItem(item, lang) {
+      if (lang === 'ur') return item.ur;
+      if (lang === 'ar') return item.ar;
+      return item.en;
+    }
+
+    function rebuildWordSearchStage() {
+      const stageData = getCurrentWordSearchStageData();
+      const size = 10;
+      appState.wsGridSize = size;
+      appState.wsActiveItemIdx = 0;
+      appState.wsTapSelectedStart = null;
+      appState.wsExtraHintCells = [];
+
+      const itemsWithTiles = stageData.items.map((item, idx) => ({
+        index: idx,
+        item,
+        tiles: [...getWordTilesForItem(item, appState.wsLang)]
+      }));
+
+      const sortedForPlacement = [...itemsWithTiles].sort((a, b) => b.tiles.length - a.tiles.length);
+      const isRTL = appState.wsLang === 'ur' || appState.wsLang === 'ar';
+      const directions = isRTL
+        ? [{ dr: 0, dc: -1 }, { dr: 1, dc: 0 }, { dr: 1, dc: -1 }, { dr: 0, dc: 1 }]
+        : [{ dr: 0, dc: 1 }, { dr: 1, dc: 0 }, { dr: 1, dc: 1 }, { dr: 0, dc: -1 }];
+
+      let bestGrid = null;
+      let bestPlaced = [];
+
+      for (let attempt = 0; attempt < 40; attempt++) {
+        const grid = Array.from({ length: size }, () => Array(size).fill(null));
+        const placed = [];
+        let allFit = true;
+
+        for (const entry of sortedForPlacement) {
+          const L = entry.tiles.length;
+          let wordPlaced = false;
+          const candidates = [];
+          for (const dir of directions) {
+            for (let r = 0; r < size; r++) {
+              for (let c = 0; c < size; c++) {
+                const endR = r + dir.dr * (L - 1);
+                const endC = c + dir.dc * (L - 1);
+                if (endR >= 0 && endR < size && endC >= 0 && endC < size) {
+                  candidates.push({ r, c, dr: dir.dr, dc: dir.dc });
+                }
+              }
+            }
+          }
+
+          for (let i = candidates.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+          }
+
+          for (const cand of candidates) {
+            let canPlace = true;
+            const cells = [];
+            for (let k = 0; k < L; k++) {
+              const nr = cand.r + cand.dr * k;
+              const nc = cand.c + cand.dc * k;
+              if (grid[nr][nc] !== null) {
+                canPlace = false;
+                break;
+              }
+              cells.push({ r: nr, c: nc });
+            }
+            if (canPlace) {
+              for (let k = 0; k < L; k++) grid[cells[k].r][cells[k].c] = entry.tiles[k];
+              placed.push({ index: entry.index, tiles: entry.tiles, cells, found: false, colorClass: FOUND_COLORS[entry.index % FOUND_COLORS.length] });
+              wordPlaced = true;
+              break;
+            }
+          }
+
+          if (!wordPlaced) {
+            allFit = false;
+            break;
+          }
+        }
+
+        if (allFit && placed.length === itemsWithTiles.length) {
+          bestGrid = grid;
+          bestPlaced = placed;
+          break;
+        }
+        if (placed.length > bestPlaced.length) {
+          bestGrid = grid;
+          bestPlaced = placed;
+        }
+      }
+
+      const fillers = FILLER_LETTERS[appState.wsLang];
+      for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size; c++) {
+          if (!bestGrid[r][c]) bestGrid[r][c] = fillers[Math.floor(Math.random() * fillers.length)];
+        }
+      }
+
+      bestPlaced.sort((a, b) => a.index - b.index);
+      appState.wsGrid = bestGrid;
+      appState.wsPlacedWords = bestPlaced;
+      appState.wsActiveItemIdx = 0;
+      updateWordSearchUI();
+    }
+
+    function updateWordSearchUI() {
+      const stageData = getCurrentWordSearchStageData();
+      const lang = appState.wsLang;
+      const catEl = document.getElementById('wsCurrentCategoryLabel');
+      if (catEl) catEl.textContent = stageData.title[appState.uiLang] || stageData.title.ur;
+
+      const foundCount = appState.wsPlacedWords.filter(w => w.found).length;
+      const foundBadge = document.getElementById('wsFoundCountBadge');
+      if (foundBadge) foundBadge.textContent = `${foundCount} / ${stageData.items.length}`;
+
+      const iconsBar = document.getElementById('wsTopIconsBar');
+      if (iconsBar) {
+        iconsBar.innerHTML = stageData.items.map((item, idx) => {
+          const placedObj = appState.wsPlacedWords.find(w => w.index === idx);
+          const isFound = placedObj && placedObj.found;
+          const isActive = appState.wsActiveItemIdx === idx;
+          const wordLabel = getWordDisplayForItem(item, lang);
+          let cardStyle = 'bg-slate-900/90 border border-slate-700 hover:border-amber-400';
+          if (isFound) cardStyle = 'bg-emerald-900/80 border border-emerald-400';
+          else if (isActive) cardStyle = 'bg-amber-500/25 border border-amber-400 ring-1 ring-amber-300/60';
+
+          return `
+            <button onclick="selectWordSearchTargetItem(${idx})" class="${cardStyle} rounded-xl p-1 flex flex-col items-center justify-center relative transition-all">
+              ${isFound ? `<span class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-400 text-slate-950 text-[9px] font-bold flex items-center justify-center">✓</span>` : ''}
+              <span class="text-lg sm:text-xl leading-none mb-0.5">${item.emoji}</span>
+              <span class="text-[11px] font-bold truncate w-full text-center ${isFound ? 'text-emerald-200 line-through' : (isActive ? 'text-amber-300' : 'text-slate-300')}">${wordLabel}</span>
+            </button>
+          `;
+        }).join('');
+      }
+
+      const activeItem = stageData.items[appState.wsActiveItemIdx] || stageData.items[0];
+      const activeTiles = getWordTilesForItem(activeItem, lang);
+      const activeWordStr = getWordDisplayForItem(activeItem, lang);
+
+      const spotEmoji = document.getElementById('wsSpotlightEmoji');
+      const spotWord = document.getElementById('wsSpotlightWord');
+      const spotIdx = document.getElementById('wsTargetIndexBadge');
+      const spotTrans = document.getElementById('wsSpotlightTranslations');
+      const spotBreakdown = document.getElementById('wsLetterBreakdown');
+
+      if (spotEmoji) spotEmoji.textContent = activeItem.emoji;
+      if (spotWord) {
+        spotWord.textContent = activeWordStr;
+        spotWord.className = `text-base sm:text-xl font-bold text-amber-300 truncate ${lang === 'ar' ? 'font-arabic' : (lang === 'en' ? 'font-english' : 'font-urdu')}`;
+      }
+      if (spotIdx) spotIdx.textContent = `#${appState.wsActiveItemIdx + 1}`;
+      if (spotTrans) {
+        spotTrans.innerHTML = `
+          <span class="bg-slate-900/80 px-1.5 py-0.2 rounded border border-slate-700 font-urdu">${activeItem.ur}</span>
+          <span class="bg-slate-900/80 px-1.5 py-0.2 rounded border border-slate-700 font-arabic">${activeItem.ar}</span>
+          <span class="bg-slate-900/80 px-1.5 py-0.2 rounded border border-slate-700 font-english">${activeItem.en}</span>
+        `;
+      }
+      if (spotBreakdown) {
+        spotBreakdown.dir = (lang === 'ur' || lang === 'ar') ? 'rtl' : 'ltr';
+        spotBreakdown.innerHTML = activeTiles.map((tile, i) => `
+          <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg ${i === 0 ? 'bg-amber-400 text-slate-950' : 'bg-slate-800 text-amber-200 border border-slate-600'} font-bold flex items-center justify-center text-xs sm:text-sm grid-letter-${lang}">${tile}</span>
+        `).join('');
+      }
+
+      renderWordSearchGridCells();
+    }
+
+    function selectWordSearchTargetItem(idx) {
+      playHalalTactileClick('pop');
+      appState.wsActiveItemIdx = idx;
+      appState.wsExtraHintCells = [];
+      updateWordSearchUI();
+      speakActiveWordSearchItem();
+    }
+
+    function cycleNextWordSearchTarget() {
+      playHalalTactileClick('tap');
+      const total = appState.wsPlacedWords.length;
+      for (let offset = 1; offset <= total; offset++) {
+        const candidateIdx = (appState.wsActiveItemIdx + offset) % total;
+        const placed = appState.wsPlacedWords.find(w => w.index === candidateIdx);
+        if (placed && !placed.found) {
+          selectWordSearchTargetItem(candidateIdx);
+          return;
+        }
+      }
+    }
+
+    function speakActiveWordSearchItem() {
+      const stageData = getCurrentWordSearchStageData();
+      const activeItem = stageData.items[appState.wsActiveItemIdx];
+      if (!activeItem) return;
+      if (appState.wsLang === 'ur') speakText(activeItem.speakUr || activeItem.ur, 'ur-PK');
+      else if (appState.wsLang === 'ar') speakText(activeItem.speakAr || activeItem.ar, 'ar-SA');
+      else speakText(activeItem.speakEn || activeItem.en, 'en-US');
+    }
+
+    function triggerWordSearchExtraHint() {
+      playHalalTactileClick('pop');
+      const activePlaced = appState.wsPlacedWords.find(w => w.index === appState.wsActiveItemIdx);
+      if (!activePlaced || activePlaced.found) return;
+      appState.wsExtraHintCells = activePlaced.cells.slice(0, Math.min(3, activePlaced.cells.length));
+      renderWordSearchGridCells();
+      speakActiveWordSearchItem();
+      setTimeout(() => {
+        appState.wsExtraHintCells = [];
+        renderWordSearchGridCells();
+      }, 3500);
+    }
+
+    function renderWordSearchGridCells() {
+      const wrapper = document.getElementById('wsGridWrapper');
+      if (!wrapper || !appState.wsGrid || appState.wsGrid.length === 0) return;
+      const size = appState.wsGridSize;
+      const lang = appState.wsLang;
+      const activePlaced = appState.wsPlacedWords.find(w => w.index === appState.wsActiveItemIdx);
+      const firstHintCell = (activePlaced && !activePlaced.found && activePlaced.cells.length > 0) ? activePlaced.cells[0] : null;
+
+      let html = '';
+      for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size; c++) {
+          const letter = appState.wsGrid[r][c];
+          let foundColorClass = '';
+          for (const pw of appState.wsPlacedWords) {
+            if (pw.found && pw.cells.some(cell => cell.r === r && cell.c === c)) {
+              foundColorClass = pw.colorClass;
+              break;
+            }
+          }
+
+          const isSelecting = appState.wsCurrentPath.some(cell => cell.r === r && cell.c === c) ||
+            (appState.wsTapSelectedStart && appState.wsTapSelectedStart.r === r && appState.wsTapSelectedStart.c === c);
+          const isFirstHint = firstHintCell && firstHintCell.r === r && firstHintCell.c === c;
+          const isExtraHint = appState.wsExtraHintCells.some(cell => cell.r === r && cell.c === c);
+
+          let cellClasses = `ws-cell grid-letter-${lang} text-sm sm:text-lg md:text-xl `;
+          if (isSelecting) cellClasses += 'ws-cell-selecting ';
+          else if (isFirstHint) cellClasses += 'ws-cell-hint ';
+          else if (isExtraHint) cellClasses += 'ws-cell-extra-hint ';
+          else if (foundColorClass) cellClasses += `${foundColorClass} `;
+          else cellClasses += 'text-slate-100 ';
+
+          html += `
+            <div class="${cellClasses}" data-r="${r}" data-c="${c}" onmousedown="onWsCellMouseDown(${r}, ${c}, event)" onmouseenter="onWsCellMouseEnter(${r}, ${c})" onclick="onWsCellTap(${r}, ${c})">
+              ${isFirstHint ? '<span class="absolute top-0.5 right-0.5 text-[10px] leading-none">✨</span>' : ''}
+              <span>${letter}</span>
+            </div>
+          `;
+        }
+      }
+      wrapper.innerHTML = html;
+
+      const previewEl = document.getElementById('wsLiveSelectionText');
+      if (previewEl) {
+        if (appState.wsCurrentPath.length > 0) previewEl.textContent = appState.wsCurrentPath.map(pt => appState.wsGrid[pt.r][pt.c]).join('');
+        else if (appState.wsTapSelectedStart) previewEl.textContent = appState.wsGrid[appState.wsTapSelectedStart.r][appState.wsTapSelectedStart.c] + ' ...';
+        else previewEl.textContent = '---';
+      }
+    }
+
+    function computeStraightGridPath(start, end) {
+      if (!start || !end) return [];
+      const dr = end.r - start.r;
+      const dc = end.c - start.c;
+      const absR = Math.abs(dr);
+      const absC = Math.abs(dc);
+      if (dr !== 0 && dc !== 0 && absR !== absC) return [start];
+      const steps = Math.max(absR, absC);
+      const stepR = steps === 0 ? 0 : dr / steps;
+      const stepC = steps === 0 ? 0 : dc / steps;
+      const path = [];
+      for (let i = 0; i <= steps; i++) path.push({ r: start.r + stepR * i, c: start.c + stepC * i });
+      return path;
+    }
+
+    function onWsCellMouseDown(r, c, evt) {
+      if (evt) evt.preventDefault();
+      playHalalTactileClick('tap');
+      appState.wsIsDragging = true;
+      appState.wsStartCell = { r, c };
+      appState.wsCurrentPath = [{ r, c }];
+      renderWordSearchGridCells();
+    }
+
+    function onWsCellMouseEnter(r, c) {
+      if (!appState.wsIsDragging || !appState.wsStartCell) return;
+      const newPath = computeStraightGridPath(appState.wsStartCell, { r, c });
+      if (newPath.length !== appState.wsCurrentPath.length) {
+        playHalalTactileClick('tap');
+        appState.wsCurrentPath = newPath;
+        renderWordSearchGridCells();
+      }
+    }
+
+    function onWsCellTap(r, c) {
+      if (!appState.wsTapSelectedStart) {
+        appState.wsTapSelectedStart = { r, c };
+        renderWordSearchGridCells();
+      } else {
+        const path = computeStraightGridPath(appState.wsTapSelectedStart, { r, c });
+        appState.wsTapSelectedStart = null;
+        if (path.length > 1) {
+          appState.wsCurrentPath = path;
+          evaluateSelectedWordPath();
+        } else {
+          renderWordSearchGridCells();
+        }
+      }
+    }
+
+    function finishWsDrag() {
+      if (!appState.wsIsDragging) return;
+      appState.wsIsDragging = false;
+      if (appState.wsCurrentPath.length > 1) {
+        appState.wsTapSelectedStart = null;
+        evaluateSelectedWordPath();
+      } else {
+        appState.wsCurrentPath = [];
+        renderWordSearchGridCells();
+      }
+    }
+
+    function setupWordSearchTouchListeners() {
+      const wrapper = document.getElementById('wsGridWrapper');
+      if (!wrapper) return;
+      wrapper.addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 1) return;
+        const touch = e.touches[0];
+        const target = document.elementFromPoint(touch.clientX, touch.clientY)?.closest('.ws-cell');
+        if (!target) return;
+        e.preventDefault();
+        onWsCellMouseDown(parseInt(target.getAttribute('data-r'), 10), parseInt(target.getAttribute('data-c'), 10), null);
+      }, { passive: false });
+
+      wrapper.addEventListener('touchmove', (e) => {
+        if (!appState.wsIsDragging || e.touches.length !== 1) return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        const target = document.elementFromPoint(touch.clientX, touch.clientY)?.closest('.ws-cell');
+        if (!target) return;
+        onWsCellMouseEnter(parseInt(target.getAttribute('data-r'), 10), parseInt(target.getAttribute('data-c'), 10));
+      }, { passive: false });
+
+      wrapper.addEventListener('touchend', () => finishWsDrag());
+      window.addEventListener('mouseup', () => { if (appState.wsIsDragging) finishWsDrag(); });
+    }
+
+    function evaluateSelectedWordPath() {
+      const path = appState.wsCurrentPath;
+      const forwardStr = path.map(pt => appState.wsGrid[pt.r][pt.c]).join('');
+      const reverseStr = [...path].reverse().map(pt => appState.wsGrid[pt.r][pt.c]).join('');
+      let matchedWordObj = null;
+
+      for (const pw of appState.wsPlacedWords) {
+        if (pw.found) continue;
+        const targetStr = pw.tiles.join('');
+        if (pw.tiles.length === path.length && (forwardStr === targetStr || reverseStr === targetStr)) {
+          matchedWordObj = pw;
+          break;
+        }
+      }
+
+      appState.wsCurrentPath = [];
+      if (matchedWordObj) {
+        matchedWordObj.found = true;
+        playHalalTactileClick('pop');
+        addStars(2);
+        speakMashaAllah();
+
+        if (appState.wsPlacedWords.every(w => w.found)) {
+          updateWordSearchUI();
+          setTimeout(() => { addStars(10); openCelebrationModal(10); }, 600);
+        } else {
+          const nextUnfound = appState.wsPlacedWords.find(w => !w.found);
+          if (nextUnfound) appState.wsActiveItemIdx = nextUnfound.index;
+          updateWordSearchUI();
+          setTimeout(() => speakActiveWordSearchItem(), 1100);
+        }
+      } else {
+        renderWordSearchGridCells();
+      }
+    }
+
+    // ================= QUIZ ENGINE =================
+    function selectQuizStage(stageNum) {
+      playHalalTactileClick('tap');
+      if (!checkStageUnlocked(stageNum)) return;
+      appState.quizStage = stageNum;
+      appState.quizQuestionIdx = 0;
+      appState.quizAnswered = false;
+      renderAllStageBars();
+      renderQuizQuestion();
+    }
+
+    function getCurrentQuizStageData() {
+      return QUIZ_STAGES_DATA.find(s => s.stage === appState.quizStage) || QUIZ_STAGES_DATA[0];
+    }
+
+    function renderQuizQuestion() {
+      const stageObj = getCurrentQuizStageData();
+      const qList = stageObj.questions;
+      const qObj = qList[appState.quizQuestionIdx] || qList[0];
+      const lang = appState.uiLang;
+
+      const progBadge = document.getElementById('quizStageProgressBadge');
+      const catPill = document.getElementById('quizCategoryPill');
+      const emojiEl = document.getElementById('quizEmojiIcon');
+      const qTextEl = document.getElementById('quizQuestionText');
+      const optsGrid = document.getElementById('quizOptionsGrid');
+      const fbBox = document.getElementById('quizFeedbackBox');
+
+      if (progBadge) {
+        progBadge.textContent = lang === 'en' ? `Question ${appState.quizQuestionIdx + 1} of ${qList.length}` : (lang === 'ar' ? `السؤال ${appState.quizQuestionIdx + 1} من ${qList.length}` : `سوال ${appState.quizQuestionIdx + 1} از ${qList.length}`);
+      }
+      if (catPill) catPill.textContent = stageObj.title[lang] || stageObj.title.ur;
+      if (emojiEl) emojiEl.textContent = qObj.emoji;
+      if (qTextEl) qTextEl.textContent = qObj.q[lang] || qObj.q.ur;
+      if (fbBox) fbBox.classList.add('hidden');
+
+      const rawOptions = qObj.options[lang] || qObj.options.ur;
+      const indexedOptions = rawOptions.map((text, idx) => ({ text, isCorrect: idx === qObj.correct }));
+      const shift = (appState.quizStage + appState.quizQuestionIdx) % indexedOptions.length;
+      const rotated = [...indexedOptions.slice(shift), ...indexedOptions.slice(0, shift)];
+
+      if (optsGrid) {
+        optsGrid.innerHTML = rotated.map((opt, i) => `
+          <button onclick="answerQuizOption(${opt.isCorrect}, this)" class="btn-3d-dark p-2.5 sm:p-3 text-xs sm:text-sm flex items-center justify-between gap-2.5 text-right">
+            <span class="w-6 h-6 rounded-full bg-amber-400/20 border border-amber-400 text-amber-300 font-english font-bold text-xs flex items-center justify-center shrink-0">${i + 1}</span>
+            <span class="flex-1">${opt.text}</span>
+          </button>
+        `).join('');
+      }
+    }
+
+    function speakCurrentQuizQuestion() {
+      const stageObj = getCurrentQuizStageData();
+      const qObj = stageObj.questions[appState.quizQuestionIdx];
+      if (!qObj) return;
+      const lang = appState.uiLang;
+      speakText(qObj.q[lang] || qObj.q.ur, lang === 'ar' ? 'ar-SA' : (lang === 'en' ? 'en-US' : 'ur-PK'));
+    }
+
+    function answerQuizOption(isCorrect, btnEl) {
+      if (appState.quizAnswered) return;
+      playHalalTactileClick('pop');
+      const fbBox = document.getElementById('quizFeedbackBox');
+      const lang = appState.uiLang;
+
+      if (isCorrect) {
+        appState.quizAnswered = true;
+        btnEl.className = 'btn-3d-emerald p-2.5 sm:p-3 text-xs sm:text-sm flex items-center justify-between gap-2.5';
+        addStars(3);
+        speakMashaAllah();
+
+        if (fbBox) {
+          fbBox.className = 'mt-3 p-2.5 rounded-xl border border-emerald-400 bg-emerald-500/20 text-emerald-200 text-center text-xs sm:text-sm font-bold block';
+          fbBox.textContent = lang === 'en' ? '⭐ MashaAllah! Correct Answer!' : (lang === 'ar' ? '⭐ ما شاء الله! إجابة صحيحة!' : '⭐ ماشاء اللّٰہ! بالکل درست جواب!');
+        }
+
+        setTimeout(() => {
+          const stageObj = getCurrentQuizStageData();
+          if (appState.quizQuestionIdx + 1 < stageObj.questions.length) {
+            appState.quizQuestionIdx++;
+            appState.quizAnswered = false;
+            renderQuizQuestion();
+          } else {
+            appState.quizAnswered = false;
+            addStars(10);
+            openCelebrationModal(10);
+          }
+        }, 1300);
+      } else {
+        btnEl.className = 'bg-rose-900/70 border border-rose-500 rounded-xl p-2.5 sm:p-3 text-xs sm:text-sm flex items-center justify-between gap-2.5 text-rose-200 font-bold';
+        if (fbBox) {
+          fbBox.className = 'mt-3 p-2.5 rounded-xl border border-rose-400 bg-rose-500/20 text-rose-200 text-center text-xs sm:text-sm font-bold block';
+          fbBox.textContent = lang === 'en' ? 'Try again! You can do it!' : 'دوبارہ کوشش کریں، آپ کر سکتے ہیں!';
+        }
+      }
+    }
+
+    // ================= ARABIC ALPHABET ENGINE =================
+    function selectAlphabetStage(stageNum) {
+      playHalalTactileClick('tap');
+      if (!checkStageUnlocked(stageNum)) return;
+      appState.alphaStage = stageNum;
+      renderAllStageBars();
+      renderAlphabetStage();
+    }
+
+    function getCurrentAlphabetStageData() {
+      return ALPHABET_STAGES_DATA.find(s => s.stage === appState.alphaStage) || ALPHABET_STAGES_DATA[0];
+    }
+
+    function speakArabicLetter(char, nameAr, wordAr) {
+      playHalalTactileClick('pop');
+      speakText(`${nameAr} ، ${wordAr}`, 'ar-SA');
+    }
+
+    function renderAlphabetStage() {
+      const stageObj = getCurrentAlphabetStageData();
+      const letters = stageObj.letters;
+      appState.alphaSelectedLetterIdx = null;
+      appState.alphaMatchedIds = [];
+
+      const counterEl = document.getElementById('alphaMatchedCounter');
+      if (counterEl) counterEl.textContent = `0 / ${letters.length}`;
+
+      const showcaseEl = document.getElementById('alphaShowcaseGrid');
+      if (showcaseEl) {
+        showcaseEl.innerHTML = letters.map(item => {
+          const meaning = appState.uiLang === 'en' ? item.wordEn : item.wordUr;
+          return `
+            <button onclick="speakArabicLetter('${item.char}', '${item.nameAr}', '${item.wordAr}')" class="card-3d p-2 sm:p-3 hover:border-amber-400 transition-all flex flex-col items-center text-center group">
+              <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-amber-400/20 border border-amber-400 flex items-center justify-center text-2xl sm:text-3xl font-arabic font-bold text-amber-300 group-hover:scale-105 transition-transform mb-1">${item.char}</div>
+              <div class="text-xs sm:text-sm font-arabic font-bold text-emerald-300">${item.nameAr}</div>
+              <div class="text-[11px] text-slate-300 flex items-center gap-1 flex-wrap justify-center">
+                <span>${item.emoji}</span>
+                <span class="font-arabic font-bold text-white">${item.wordAr}</span>
+                <span class="text-[10px] text-slate-400">(${meaning})</span>
+              </div>
+            </button>
+          `;
+        }).join('');
+      }
+
+      updateAlphabetMatchingUI();
+    }
+
+    function updateAlphabetMatchingUI() {
+      const stageObj = getCurrentAlphabetStageData();
+      const letters = stageObj.letters;
+      const counterEl = document.getElementById('alphaMatchedCounter');
+      if (counterEl) counterEl.textContent = `${appState.alphaMatchedIds.length} / ${letters.length}`;
+
+      const leftCol = document.getElementById('alphaMatchLettersCol');
+      const rightCol = document.getElementById('alphaMatchWordsCol');
+
+      if (leftCol) {
+        leftCol.innerHTML = letters.map((item, idx) => {
+          const isMatched = appState.alphaMatchedIds.includes(idx);
+          const isSelected = appState.alphaSelectedLetterIdx === idx;
+          let cls = 'btn-3d-dark';
+          if (isMatched) cls = 'btn-3d-emerald opacity-80';
+          else if (isSelected) cls = 'btn-3d-gold';
+
+          return `
+            <button onclick="selectAlphabetPuzzleLetter(${idx})" class="${cls} w-full py-2 px-3 flex items-center justify-between text-base font-arabic">
+              <span class="text-xl sm:text-2xl font-bold">${item.char}</span>
+              <span class="text-xs sm:text-sm">${item.nameAr}</span>
+              <span class="text-xs">${isMatched ? '✓' : '🔊'}</span>
+            </button>
+          `;
+        }).join('');
+      }
+
+      if (rightCol) {
+        const wordOrder = letters.map((item, idx) => ({ item, idx })).reverse();
+        rightCol.innerHTML = wordOrder.map(({ item, idx }) => {
+          const isMatched = appState.alphaMatchedIds.includes(idx);
+          const meaning = appState.uiLang === 'en' ? item.wordEn : item.wordUr;
+          const cls = isMatched ? 'btn-3d-emerald opacity-80' : 'btn-3d-dark';
+
+          return `
+            <button onclick="selectAlphabetPuzzleWord(${idx})" class="${cls} w-full py-2 px-3 flex items-center justify-between">
+              <span class="text-xl sm:text-2xl">${item.emoji}</span>
+              <div class="text-center leading-tight">
+                <span class="text-sm sm:text-base font-arabic font-bold block">${item.wordAr}</span>
+                <span class="text-[10px] opacity-80">${meaning}</span>
+              </div>
+              <span class="text-xs">${isMatched ? '⭐' : '🔗'}</span>
+            </button>
+          `;
+        }).join('');
+      }
+    }
+
+    function selectAlphabetPuzzleLetter(idx) {
+      if (appState.alphaMatchedIds.includes(idx)) return;
+      const stageObj = getCurrentAlphabetStageData();
+      const item = stageObj.letters[idx];
+      speakArabicLetter(item.char, item.nameAr, item.wordAr);
+      appState.alphaSelectedLetterIdx = idx;
+      updateAlphabetMatchingUI();
+    }
+
+    function selectAlphabetPuzzleWord(idx) {
+      if (appState.alphaMatchedIds.includes(idx)) return;
+      if (appState.alphaSelectedLetterIdx === null) {
+        playHalalTactileClick('tap');
+        return;
+      }
+      if (appState.alphaSelectedLetterIdx === idx) {
+        appState.alphaMatchedIds.push(idx);
+        appState.alphaSelectedLetterIdx = null;
+        addStars(3);
+        speakMashaAllah();
+        updateAlphabetMatchingUI();
+
+        const stageObj = getCurrentAlphabetStageData();
+        if (appState.alphaMatchedIds.length === stageObj.letters.length) {
+          setTimeout(() => { addStars(10); openCelebrationModal(10); }, 600);
+        }
+      } else {
+        playHalalTactileClick('tap');
+        appState.alphaSelectedLetterIdx = null;
+        updateAlphabetMatchingUI();
+      }
+    }
+
+    // ================= MASJID & WUDU BUILDER ENGINE =================
+    function selectMasjidStage(stageNum) {
+      playHalalTactileClick('tap');
+      if (!checkStageUnlocked(stageNum)) return;
+      appState.masjidStage = stageNum;
+      renderAllStageBars();
+      renderMasjidStage();
+    }
+
+    function getCurrentMasjidStageData() {
+      return MASJID_STAGES_DATA.find(s => s.stage === appState.masjidStage) || MASJID_STAGES_DATA[0];
+    }
+
+    function renderMasjidStage() {
+      appState.masjidCompletedSteps = 0;
+      updateMasjidBuilderUI();
+    }
+
+    function updateMasjidBuilderUI() {
+      const stageObj = getCurrentMasjidStageData();
+      const lang = appState.uiLang;
+      const completed = appState.masjidCompletedSteps;
+
+      const counterEl = document.getElementById('masjidStepCounter');
+      if (counterEl) counterEl.textContent = `${completed} / 6`;
+
+      const topicBadge = document.getElementById('masjidStageTopicBadge');
+      if (topicBadge) topicBadge.textContent = stageObj.topic[lang] || stageObj.topic.ur;
+
+      const explicitHeading = document.getElementById('masjidExplicitTopicHeading');
+      if (explicitHeading && stageObj.instructionHeading) {
+        explicitHeading.textContent = stageObj.instructionHeading[lang] || stageObj.instructionHeading.ur;
+      }
+
+      for (let p = 1; p <= 6; p++) {
+        const svgPart = document.getElementById(`masjidSvgPart-${p}`);
+        if (svgPart) svgPart.classList.toggle('lit', p <= completed);
+      }
+
+      const promptEl = document.getElementById('masjidCurrentStepInstruction');
+      if (promptEl) {
+        if (completed < 6) {
+          const nextNum = completed + 1;
+          promptEl.textContent = lang === 'en' ? `Select Step #${nextNum}` : (lang === 'ar' ? `اختر الخطوة رقم ${nextNum}` : `مرحلہ نمبر ${nextNum} منتخب کریں`);
+        } else {
+          promptEl.textContent = lang === 'en' ? 'MashaAllah! Masjid Complete!' : 'ماشاء اللّٰہ! مسجد مکمل روشن ہو گئی!';
+        }
+      }
+
+      const stepsGrid = document.getElementById('masjidStepsGrid');
+      if (stepsGrid) {
+        const orderIndices = [2, 0, 4, 1, 5, 3];
+        const displaySteps = orderIndices.map(i => stageObj.steps[i]);
+
+        stepsGrid.innerHTML = displaySteps.map(step => {
+          const isDone = step.order <= completed;
+          const label = step[lang] || step.ur;
+          const cls = isDone ? 'btn-3d-emerald' : 'btn-3d-dark';
+
+          return `
+            <button onclick="selectMasjidStepCard(${step.order})" class="${cls} p-2 sm:p-2.5 flex items-center gap-2 text-right">
+              <div class="w-8 h-8 rounded-xl bg-slate-950/50 border border-amber-400/40 flex items-center justify-center text-lg shrink-0">${isDone ? '⭐' : step.emoji}</div>
+              <div class="flex-1 min-w-0"><span class="text-xs sm:text-sm font-bold leading-snug block">${label}</span></div>
+            </button>
+          `;
+        }).join('');
+      }
+    }
+
+    function selectMasjidStepCard(stepOrder) {
+      const expectedOrder = appState.masjidCompletedSteps + 1;
+      const stageObj = getCurrentMasjidStageData();
+      const stepObj = stageObj.steps.find(s => s.order === stepOrder);
+
+      if (stepOrder === expectedOrder) {
+        appState.masjidCompletedSteps++;
+        playHalalTactileClick('star');
+        addStars(2);
+
+        const lang = appState.uiLang;
+        if (stepObj) speakText(stepObj[lang] || stepObj.ur, lang === 'ar' ? 'ar-SA' : (lang === 'en' ? 'en-US' : 'ur-PK'));
+
+        updateMasjidBuilderUI();
+        if (appState.masjidCompletedSteps === 6) {
+          setTimeout(() => { speakMashaAllah(); addStars(10); openCelebrationModal(10); }, 800);
+        }
+      }
+    }
+
+    // ================= DETAILED 3D SUPER BIKE RACING ENGINE + COLLIDERS + 360 SKY =================
+    const BIKE_COLORS = [
+      { id: 'emerald', body: 0x10b981, bodyHex: '#10b981', helmet: 0x059669, accent: 0xa7f3d0 },
+      { id: 'gold',    body: 0xf59e0b, bodyHex: '#f59e0b', helmet: 0xd97706, accent: 0xfef08a },
+      { id: 'sky',     body: 0x0ea5e9, bodyHex: '#0ea5e9', helmet: 0x0284c7, accent: 0xbae6fd },
+      { id: 'crimson', body: 0xf43f5e, bodyHex: '#f43f5e', helmet: 0xe11d48, accent: 0xfecdd3 }
+    ];
+
+    const BIKE_RACE_STAGES = [
+      { stage: 1, title: { ur: 'اسٹیج ۱: مدینہ گرین سرکل ٹریک', ar: 'المرحلة ١: حلبة المدينة الخضراء', en: 'Stage 1: Emerald Garden Circuit' }, skyTop: '#061428', skyHorizon: '#10b981', ground: 0x063729, curveAmp: 0.25, length: 900, panoImg: 'images/pano_stage1.jpg' },
+      { stage: 2, title: { ur: 'اسٹیج ۲: سنہری صحرائی نخلستان', ar: 'المرحلة ٢: واحة الصحراء الذهبية', en: 'Stage 2: Golden Oasis Track' }, skyTop: '#1c1206', skyHorizon: '#f59e0b', ground: 0x422a0b, curveAmp: 0.4, length: 1050, panoImg: 'images/pano_stage2.jpg' },
+      { stage: 3, title: { ur: 'اسٹیج ۳: اچھلنے والے جمپنگ ریمپ', ar: 'المرحلة ٣: منصات القفز العالية', en: 'Stage 3: Super Jump Ramps' }, skyTop: '#081b33', skyHorizon: '#38bdf8', ground: 0x0f2942, curveAmp: 0.45, length: 1150, panoImg: 'images/pano_stage3.jpg' },
+      { stage: 4, title: { ur: 'اسٹیج ۴: پہاڑی وادی کا راستہ', ar: 'المرحلة ٤: طريق الوادي الجبلي', en: 'Stage 4: Mountain Valley Pass' }, skyTop: '#130f26', skyHorizon: '#a855f7', ground: 0x1f1938, curveAmp: 0.55, length: 1250, panoImg: 'images/pano_stage4.jpg' },
+      { stage: 5, title: { ur: 'اسٹیج ۵: ساحلی ہوا اور کھجور کے باغات', ar: 'المرحلة ٥: نسيم البحر وبساتين النخيل', en: 'Stage 5: Coastal Palm Breeze' }, skyTop: '#052230', skyHorizon: '#06b6d4', ground: 0x073b4c, curveAmp: 0.6, length: 1350, panoImg: 'images/pano_stage5.jpg' },
+      { stage: 6, title: { ur: 'اسٹیج ۶: چمکتی قندیلوں کا شہر', ar: 'المرحلة ٦: مدينة القناديل المضيئة', en: 'Stage 6: Glowing Lantern City' }, skyTop: '#180d2e', skyHorizon: '#f43f5e', ground: 0x24133d, curveAmp: 0.65, length: 1450, panoImg: 'images/pano_stage6.jpg' },
+      { stage: 7, title: { ur: 'اسٹیج ۷: آبشار اور زمردی پل', ar: 'المرحلة ٧: الشلال والجسر الزمردي', en: 'Stage 7: Emerald Bridge Circuit' }, skyTop: '#051f1b', skyHorizon: '#34d399', ground: 0x083830, curveAmp: 0.7, length: 1550, panoImg: 'images/pano_stage7.jpg' },
+      { stage: 8, title: { ur: 'اسٹیج ۸: تیز رفتار طوفانی موڑ', ar: 'المرحلة ٨: المنعطفات السريعة', en: 'Stage 8: Rapid Twist Circuit' }, skyTop: '#210d1b', skyHorizon: '#fb7185', ground: 0x361428, curveAmp: 0.75, length: 1650, panoImg: 'images/pano_stage8.jpg' },
+      { stage: 9, title: { ur: 'اسٹیج ۹: ستاروں بھری رات کا سفر', ar: 'المرحلة ٩: سباق الليل المرصع بالنجوم', en: 'Stage 9: Starry Night Highway' }, skyTop: '#040917', skyHorizon: '#60a5fa', ground: 0x0c1730, curveAmp: 0.8, length: 1750, panoImg: 'images/pano_stage9.jpg' },
+      { stage: 10, title: { ur: 'اسٹیج ۱۰: گرینڈ چیمپئن شپ فائنل', ar: 'المرحلة ١٠: بطولة قاف الكبرى', en: 'Stage 10: Grand Championship Final' }, skyTop: '#1c1505', skyHorizon: '#fbbf24', ground: 0x332407, curveAmp: 0.85, length: 1900, panoImg: 'images/pano_stage10.jpg' }
+    ];
+
+    let threeRace = {
+      initialized: false,
+      scene: null,
+      camera: null,
+      renderer: null,
+      skyDome: null,
+      playerMesh: null,
+      rivals: [],
+      bubbles: [],
+      ramps: [],
+      spectators: [],
+      animFrameId: null
+    };
+
+    let raceSim = {
+      z: 0,
+      x: 0,
+      y: 0,
+      vy: 0,
+      speed: 0,
+      maxSpeed: 0.95,
+      turboCharge: 0,
+      turboTimer: 0,
+      bubblesCollected: 0,
+      crashTimer: 0,
+      joyX: 0,
+      joyY: 0,
+      joyActive: false,
+      touchGas: false,
+      touchBrake: false,
+      keyUp: false,
+      keyDown: false,
+      keyLeft: false,
+      keyRight: false,
+      tiltX: 0
+    };
+
+    // Detailed 3D Super Bike Model (matching user's screenshot with dual exhaust flames, rear number plate, leaning rider & full helmet)
+    function createNoFaceBikeGroup(colorCfg) {
+      const group = new THREE.Group();
+      const bodyMat = new THREE.MeshLambertMaterial({ color: colorCfg.body });
+      const accentMat = new THREE.MeshBasicMaterial({ color: colorCfg.accent });
+      const darkMat = new THREE.MeshLambertMaterial({ color: 0x111827 });
+      const pipeMat = new THREE.MeshLambertMaterial({ color: 0x475569 });
+      const helmetMat = new THREE.MeshLambertMaterial({ color: colorCfg.helmet });
+      const flameMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
+      const tailLightMat = new THREE.MeshBasicMaterial({ color: 0xff1133 });
+
+      // Thick Racing Tires
+      const wheelGeo = new THREE.CylinderGeometry(0.46, 0.46, 0.38, 16);
+      wheelGeo.rotateZ(Math.PI / 2);
+      const frontWheel = new THREE.Mesh(wheelGeo, darkMat);
+      frontWheel.position.set(0, 0.46, -0.92);
+      group.add(frontWheel);
+
+      const backWheel = new THREE.Mesh(wheelGeo, darkMat);
+      backWheel.position.set(0, 0.46, 0.92);
+      group.add(backWheel);
+
+      // Sculpted Sport Bike Chassis & Tail
+      const mainChassis = new THREE.Mesh(new THREE.BoxGeometry(0.84, 0.62, 2.15), bodyMat);
+      mainChassis.position.set(0, 0.72, 0);
+      group.add(mainChassis);
+
+      const rearTail = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.35, 0.75), bodyMat);
+      rearTail.position.set(0, 0.95, 0.68);
+      group.add(rearTail);
+
+      // Glowing Red Tail Light
+      const tailLight = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.14, 0.1), tailLightMat);
+      tailLight.position.set(0, 0.94, 1.07);
+      group.add(tailLight);
+
+      // Dual Exhaust Pipes + Twin Golden Exhaust Flames
+      for (const side of [-1, 1]) {
+        const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, 0.95, 10), pipeMat);
+        pipe.rotation.x = Math.PI / 2;
+        pipe.position.set(side * 0.44, 0.56, 0.72);
+        group.add(pipe);
+
+        const flame = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.42, 8), flameMat);
+        flame.rotation.x = Math.PI / 2;
+        flame.position.set(side * 0.44, 0.56, 1.35);
+        group.add(flame);
+      }
+
+      // Leaning Rider Torso + Racing Back Plate + Arms + Full Helmet (No Face)
+      const torso = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.88, 0.55), bodyMat);
+      torso.position.set(0, 1.35, 0.12);
+      torso.rotation.x = -0.34;
+      group.add(torso);
+
+      const backNumberPlate = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.48, 0.08), accentMat);
+      backNumberPlate.position.set(0, 1.38, 0.39);
+      backNumberPlate.rotation.x = -0.34;
+      group.add(backNumberPlate);
+
+      for (const side of [-1, 1]) {
+        const arm = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.65, 0.18), helmetMat);
+        arm.position.set(side * 0.44, 1.28, -0.25);
+        arm.rotation.x = -0.78;
+        group.add(arm);
+      }
+
+      const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.39, 14, 14), helmetMat);
+      helmet.position.set(0, 1.88, -0.08);
+      group.add(helmet);
+
+      const helmetStripe = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.18, 0.42), accentMat);
+      helmetStripe.position.set(0, 2.15, -0.05);
+      group.add(helmetStripe);
+
+      group.userData = { frontWheel, backWheel };
+      return group;
+    }
+
+    // Create 360 Panoramic SkyDome with Procedural Fallback + Custom Equirectangular Image Loader
+    function create360PanoramicSkyTexture(stageCfg) {
+      const c = document.createElement('canvas');
+      c.width = 1024;
+      c.height = 512;
+      const ctx = c.getContext('2d');
+
+      const grad = ctx.createLinearGradient(0, 0, 0, c.height);
+      grad.addColorStop(0, stageCfg.skyTop || '#061428');
+      grad.addColorStop(0.55, stageCfg.skyHorizon || '#10b981');
+      grad.addColorStop(1, '#050b14');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, c.width, c.height);
+
+      // Stars in upper sky
+      ctx.fillStyle = 'rgba(254, 240, 138, 0.75)';
+      for (let i = 0; i < 90; i++) {
+        const sx = (i * 97) % c.width;
+        const sy = (i * 53) % (c.height * 0.45);
+        ctx.beginPath();
+        ctx.arc(sx, sy, (i % 3) * 0.7 + 0.8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Distant 360 Mountain Silhouettes on Horizon
+      ctx.fillStyle = '#07101e';
+      ctx.beginPath();
+      ctx.moveTo(0, c.height * 0.65);
+      for (let x = 0; x <= c.width; x += 32) {
+        const peak = Math.sin(x * 0.025) * 35 + Math.cos(x * 0.06) * 22;
+        ctx.lineTo(x, c.height * 0.56 - Math.abs(peak));
+      }
+      ctx.lineTo(c.width, c.height);
+      ctx.lineTo(0, c.height);
+      ctx.closePath();
+      ctx.fill();
+
+      const tex = new THREE.CanvasTexture(c);
+      // If user places custom 360 panoramic image in images/pano_stageX.jpg, load it automatically
+      if (stageCfg.panoImg) {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          ctx.drawImage(img, 0, 0, c.width, c.height);
+          tex.needsUpdate = true;
+          renderBikeRaceStaticPreview();
+        };
+        img.src = stageCfg.panoImg;
+      }
+      return tex;
+    }
+
+    function initBikeRaceThreeEngine() {
+      if (threeRace.initialized || typeof THREE === 'undefined') return;
+      const canvas = document.getElementById('bikeRaceCanvas');
+      if (!canvas) return;
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(60, canvas.clientWidth / Math.max(1, canvas.clientHeight), 0.1, 420);
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+      renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+      const ambLight = new THREE.AmbientLight(0xffffff, 0.82);
+      scene.add(ambLight);
+      const dirLight = new THREE.DirectionalLight(0xfef08a, 0.88);
+      dirLight.position.set(18, 42, 24);
+      scene.add(dirLight);
+
+      threeRace.scene = scene;
+      threeRace.camera = camera;
+      threeRace.renderer = renderer;
+      threeRace.initialized = true;
+
+      buildBikeRaceTrack();
+      window.addEventListener('resize', resizeBikeRaceCanvas);
+    }
+
+    function resizeBikeRaceCanvas() {
+      if (!threeRace.initialized) return;
+      const canvas = document.getElementById('bikeRaceCanvas');
+      if (!canvas || canvas.clientWidth === 0) return;
+      threeRace.camera.aspect = canvas.clientWidth / Math.max(1, canvas.clientHeight);
+      threeRace.camera.updateProjectionMatrix();
+      threeRace.renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+      renderBikeRaceStaticPreview();
+    }
+
+    function getTrackCurveX(z) {
+      const stageCfg = BIKE_RACE_STAGES.find(s => s.stage === appState.raceStage) || BIKE_RACE_STAGES[0];
+      return Math.sin(z * 0.022) * (stageCfg.curveAmp * 8);
+    }
+
+    function buildBikeRaceTrack() {
+      if (!threeRace.initialized) return;
+      const scene = threeRace.scene;
+      while (scene.children.length > 2) {
+        scene.remove(scene.children[scene.children.length - 1]);
+      }
+
+      const stageCfg = BIKE_RACE_STAGES.find(s => s.stage === appState.raceStage) || BIKE_RACE_STAGES[0];
+      scene.fog = new THREE.Fog(stageCfg.skyTop, 65, 230);
+
+      // 360 Panoramic Sky Sphere
+      const skyTex = create360PanoramicSkyTexture(stageCfg);
+      const skyGeo = new THREE.SphereGeometry(280, 28, 20);
+      const skyMat = new THREE.MeshBasicMaterial({ map: skyTex, side: THREE.BackSide, fog: false });
+      threeRace.skyDome = new THREE.Mesh(skyGeo, skyMat);
+      scene.add(threeRace.skyDome);
+
+      const ground = new THREE.Mesh(
+        new THREE.PlaneGeometry(500, stageCfg.length + 400),
+        new THREE.MeshLambertMaterial({ color: stageCfg.ground })
+      );
+      ground.rotation.x = -Math.PI / 2;
+      ground.position.set(0, -0.05, -stageCfg.length / 2);
+      scene.add(ground);
+
+      const roadMat = new THREE.MeshLambertMaterial({ color: 0x1e293b });
+      const curbGoldMat = new THREE.MeshBasicMaterial({ color: 0xfbbf24 });
+      const laneStripeMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
+      const mountainMat = new THREE.MeshLambertMaterial({ color: 0x0f172a });
+      const trunkMat = new THREE.MeshLambertMaterial({ color: 0x78350f });
+      const leafMat = new THREE.MeshLambertMaterial({ color: 0x10b981 });
+      const canopyMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+      const bowlColors = [0xec4899, 0x38bdf8, 0xa855f7, 0x10b981, 0xf59e0b];
+
+      threeRace.spectators = [];
+
+      for (let z = 10; z > -stageCfg.length - 60; z -= 8) {
+        const cx = getTrackCurveX(-z);
+        const seg = new THREE.Mesh(new THREE.BoxGeometry(13.2, 0.1, 8.3), roadMat);
+        seg.position.set(cx, 0, z);
+        scene.add(seg);
+
+        const leftCurb = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.25, 8.3), curbGoldMat);
+        leftCurb.position.set(cx - 6.7, 0.12, z);
+        scene.add(leftCurb);
+
+        const rightCurb = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.25, 8.3), curbGoldMat);
+        rightCurb.position.set(cx + 6.7, 0.12, z);
+        scene.add(rightCurb);
+
+        if (Math.abs(z) % 16 === 0) {
+          for (const lSide of [-2.2, 2.2]) {
+            const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.12, 3.6), laneStripeMat);
+            stripe.position.set(cx + lSide, 0.06, z);
+            scene.add(stripe);
+          }
+        }
+
+        // Covered Stadiums with Yellow Roofs + Colorful Bowl/Capsule Spectators (No Faces)
+        if (Math.abs(z) % 48 === 0) {
+          for (const side of [-1, 1]) {
+            const standBase = new THREE.Mesh(new THREE.BoxGeometry(4.2, 1.1, 7.5), mountainMat);
+            standBase.position.set(cx + side * 11.2, 0.55, z);
+            scene.add(standBase);
+
+            const roof = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.22, 7.8), canopyMat);
+            roof.position.set(cx + side * 11.2, 2.85, z);
+            roof.rotation.z = side * 0.14;
+            scene.add(roof);
+
+            for (let row = 0; row < 2; row++) {
+              for (let col = 0; col < 4; col++) {
+                const sp = new THREE.Mesh(
+                  new THREE.CylinderGeometry(0.24, 0.26, 0.65, 8),
+                  new THREE.MeshLambertMaterial({ color: bowlColors[(Math.abs(z) + row + col) % bowlColors.length] })
+                );
+                const baseY = 1.35 + row * 0.35;
+                sp.position.set(cx + side * (9.8 + row * 1.1), baseY, z - 2.2 + col * 1.4);
+                scene.add(sp);
+                threeRace.spectators.push({ mesh: sp, baseY, phase: col + row });
+              }
+            }
+          }
+        }
+
+        // Palm Trees & Distant Low-Poly Mountains (matching user's screenshot)
+        if (Math.abs(z) % 32 === 16) {
+          for (const side of [-1, 1]) {
+            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.26, 3.2, 7), trunkMat);
+            trunk.position.set(cx + side * 9.5, 1.6, z);
+            scene.add(trunk);
+
+            const crown = new THREE.Mesh(new THREE.SphereGeometry(1.15, 8, 8), leafMat);
+            crown.scale.set(1.3, 0.55, 1.3);
+            crown.position.set(cx + side * 9.5, 3.3, z);
+            scene.add(crown);
+          }
+        }
+
+        if (Math.abs(z) % 64 === 0) {
+          for (const side of [-1, 1]) {
+            const mtn = new THREE.Mesh(new THREE.ConeGeometry(12, 22, 4), mountainMat);
+            mtn.position.set(cx + side * 34, 10, z);
+            scene.add(mtn);
+          }
+        }
+      }
+
+      // Collectible Islamic Glowing Bubbles + Golden Jump Ramps
+      threeRace.bubbles = [];
+      threeRace.ramps = [];
+      const bubbleMat = new THREE.MeshBasicMaterial({ color: 0xfde047 });
+      const rampMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+
+      for (let dist = 55; dist < stageCfg.length - 60; dist += 55) {
+        const cx = getTrackCurveX(dist);
+        const laneOffset = ((dist / 55) % 3 - 1) * 3.2;
+        const bubble = new THREE.Mesh(new THREE.SphereGeometry(0.65, 12, 12), bubbleMat);
+        bubble.position.set(cx + laneOffset, 1.1, -dist);
+        scene.add(bubble);
+        threeRace.bubbles.push({ mesh: bubble, z: dist, x: cx + laneOffset, collected: false });
+
+        if (dist % 110 === 0) {
+          const ramp = new THREE.Mesh(new THREE.BoxGeometry(6.8, 0.48, 4.2), rampMat);
+          ramp.position.set(cx, 0.24, -(dist + 22));
+          ramp.rotation.x = 0.16;
+          scene.add(ramp);
+          threeRace.ramps.push({ z: dist + 22, x: cx });
+        }
+      }
+
+      const playerColor = BIKE_COLORS[appState.raceSelectedBikeIdx] || BIKE_COLORS[0];
+      threeRace.playerMesh = createNoFaceBikeGroup(playerColor);
+      scene.add(threeRace.playerMesh);
+
+      threeRace.rivals = [];
+      for (let i = 0; i < 3; i++) {
+        const rc = BIKE_COLORS[(appState.raceSelectedBikeIdx + i + 1) % BIKE_COLORS.length];
+        const rMesh = createNoFaceBikeGroup(rc);
+        scene.add(rMesh);
+        threeRace.rivals.push({
+          mesh: rMesh,
+          z: 8 + i * 7,
+          laneOffset: (i - 1) * 3.2,
+          speed: 0.45 + i * 0.04,
+          crashTimer: 0
+        });
+      }
+
+      resetBikeRacePositions();
+      renderBikeRaceStaticPreview();
+    }
+
+    function resetBikeRacePositions() {
+      raceSim.z = 0;
+      raceSim.x = 0;
+      raceSim.y = 0;
+      raceSim.vy = 0;
+      raceSim.speed = 0;
+      raceSim.turboCharge = 0;
+      raceSim.turboTimer = 0;
+      raceSim.bubblesCollected = 0;
+      raceSim.crashTimer = 0;
+      updateBikeCameraAndMeshes();
+      updateBikeHudUI();
+    }
+
+    function updateBikeCameraAndMeshes() {
+      if (!threeRace.initialized || !threeRace.playerMesh) return;
+      const roadCenterX = getTrackCurveX(raceSim.z);
+      const worldX = roadCenterX + raceSim.x;
+
+      threeRace.playerMesh.position.set(worldX, raceSim.y, -raceSim.z);
+      if (raceSim.crashTimer > 0) {
+        threeRace.playerMesh.rotation.z = 1.35;
+        threeRace.playerMesh.rotation.y = Math.sin(raceSim.crashTimer * 0.4) * 0.5;
+      } else {
+        threeRace.playerMesh.rotation.z = -raceSim.joyX * 0.35;
+        threeRace.playerMesh.rotation.y = 0;
+      }
+
+      threeRace.rivals.forEach(rv => {
+        const rcx = getTrackCurveX(rv.z);
+        rv.mesh.position.set(rcx + rv.laneOffset, 0, -rv.z);
+        rv.mesh.rotation.z = rv.crashTimer > 0 ? 1.25 : 0;
+      });
+
+      if (threeRace.skyDome) {
+        threeRace.skyDome.position.set(worldX, 0, -raceSim.z);
+      }
+
+      threeRace.camera.position.set(worldX * 0.75, 3.7 + raceSim.y * 0.5, -raceSim.z + 7.6);
+      threeRace.camera.lookAt(worldX, 1.15 + raceSim.y * 0.3, -raceSim.z - 14);
+    }
+
+    function renderBikeRaceStaticPreview() {
+      if (!threeRace.initialized) return;
+      updateBikeCameraAndMeshes();
+      threeRace.renderer.render(threeRace.scene, threeRace.camera);
+    }
+
+    function selectBikeRaceStage(stageNum) {
+      playHalalTactileClick('tap');
+      if (!checkStageUnlocked(stageNum)) return;
+      stopActiveBikeRace(true);
+      appState.raceStage = stageNum;
+      renderAllStageBars();
+      renderBikeRacingUI();
+      buildBikeRaceTrack();
+    }
+
+    function selectBikeColor(idx) {
+      playHalalTactileClick('tap');
+      appState.raceSelectedBikeIdx = idx;
+      renderBikeRacingUI();
+      buildBikeRaceTrack();
+    }
+
+    function renderBikeRacingUI() {
+      const lang = appState.uiLang;
+      const stageCfg = BIKE_RACE_STAGES.find(s => s.stage === appState.raceStage) || BIKE_RACE_STAGES[0];
+      const titleEl = document.getElementById('raceCurrentTrackTitle');
+      if (titleEl) titleEl.textContent = stageCfg.title[lang] || stageCfg.title.ur;
+
+      const bikeRow = document.getElementById('raceBikeSelectorRow');
+      if (bikeRow) {
+        bikeRow.innerHTML = BIKE_COLORS.map((b, i) => `
+          <button onclick="selectBikeColor(${i})" class="w-6 h-6 rounded-full flex items-center justify-center transition-transform ${appState.raceSelectedBikeIdx === i ? 'ring-2 ring-amber-300 scale-110' : 'opacity-70 hover:opacity-100'}" style="background:${b.bodyHex}">
+            ${appState.raceSelectedBikeIdx === i ? '<i class="fa-solid fa-check text-[10px] text-slate-950"></i>' : ''}
+          </button>
+        `).join('');
+      }
+    }
+
+    function startBikeRaceCountdown() {
+      if (appState.raceCountingDown || appState.raceRunning) return;
+      initBikeRaceThreeEngine();
+      buildBikeRaceTrack();
+      playHalalTactileClick('star');
+
+      const overlay = document.getElementById('raceOverlayScreen');
+      if (overlay) overlay.classList.add('hidden');
+
+      if (appState.uiLang === 'ar') speakText('بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيمِ', 'ar-SA');
+      else if (appState.uiLang === 'ur') speakText('بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيمِ', 'ur-PK');
+      else speakText('Bismillahir Rahmanir Raheem', 'en-US');
+
+      appState.raceRunning = true;
+      runBikeRaceLoop();
+    }
+
+    function stopActiveBikeRace(showOverlay = true) {
+      appState.raceRunning = false;
+      if (threeRace.animFrameId) {
+        cancelAnimationFrame(threeRace.animFrameId);
+        threeRace.animFrameId = null;
+      }
+      if (showOverlay) {
+        const overlay = document.getElementById('raceOverlayScreen');
+        if (overlay) overlay.classList.remove('hidden');
+      }
+    }
+
+    function setRaceTouchControl(type, isDown) {
+      if (type === 'gas') raceSim.touchGas = isDown;
+      if (type === 'brake') raceSim.touchBrake = isDown;
+    }
+
+    function triggerManualBikeJump() {
+      if (!appState.raceRunning) return;
+      if (raceSim.y <= 0.05) {
+        raceSim.vy = 0.28;
+        playHalalTactileClick('pop');
+      }
+    }
+
+    function activateBikeTurboBoost() {
+      if (!appState.raceRunning || raceSim.turboCharge < 25) return;
+      raceSim.turboCharge = 0;
+      raceSim.turboTimer = 95;
+      playHalalTactileClick('star');
+      if (appState.uiLang === 'ar') speakText('بسم اللّٰه! قوة التيربو!', 'ar-SA');
+      else if (appState.uiLang === 'ur') speakText('بسم اللّٰہ! ٹربو پاور!', 'ur-PK');
+      else speakText('Bismillah! Turbo Power!', 'en-US');
+    }
+
+    function toggleBikeTiltSensor() {
+      appState.raceTiltEnabled = !appState.raceTiltEnabled;
+      const txt = document.getElementById('raceTiltBtnText');
+      if (txt) txt.textContent = appState.raceTiltEnabled ? 'Tilt: On' : 'Tilt: Off';
+    }
+
+    window.addEventListener('deviceorientation', (e) => {
+      if (!appState.raceTiltEnabled || !e.gamma) return;
+      raceSim.tiltX = Math.max(-1, Math.min(1, e.gamma / 25));
+    });
+
+    function setupBikeRaceControls() {
+      const zone = document.getElementById('raceJoystickZone');
+      const knob = document.getElementById('raceJoystickKnob');
+      if (zone && knob) {
+        const updateJoystick = (clientX, clientY) => {
+          const rect = zone.getBoundingClientRect();
+          const cx = rect.left + rect.width / 2;
+          const cy = rect.top + rect.height / 2;
+          const maxR = rect.width * 0.36;
+          let dx = clientX - cx;
+          let dy = clientY - cy;
+          const dist = Math.hypot(dx, dy);
+          if (dist > maxR) {
+            dx = (dx / dist) * maxR;
+            dy = (dy / dist) * maxR;
+          }
+          knob.style.transform = `translate(${dx}px, ${dy}px)`;
+          raceSim.joyX = dx / maxR;
+          raceSim.joyY = -dy / maxR;
+        };
+
+        const resetJoystick = () => {
+          raceSim.joyActive = false;
+          raceSim.joyX = 0;
+          raceSim.joyY = 0;
+          knob.style.transform = 'translate(0px, 0px)';
+        };
+
+        zone.addEventListener('pointerdown', (e) => {
+          raceSim.joyActive = true;
+          zone.setPointerCapture(e.pointerId);
+          updateJoystick(e.clientX, e.clientY);
+        });
+        zone.addEventListener('pointermove', (e) => {
+          if (!raceSim.joyActive) return;
+          updateJoystick(e.clientX, e.clientY);
+        });
+        zone.addEventListener('pointerup', resetJoystick);
+        zone.addEventListener('pointercancel', resetJoystick);
+      }
+
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowUp' || e.key === 'w') raceSim.keyUp = true;
+        if (e.key === 'ArrowDown' || e.key === 's') raceSim.keyDown = true;
+        if (e.key === 'ArrowLeft' || e.key === 'a') raceSim.keyLeft = true;
+        if (e.key === 'ArrowRight' || e.key === 'd') raceSim.keyRight = true;
+        if (e.key === ' ') triggerManualBikeJump();
+      });
+      window.addEventListener('keyup', (e) => {
+        if (e.key === 'ArrowUp' || e.key === 'w') raceSim.keyUp = false;
+        if (e.key === 'ArrowDown' || e.key === 's') raceSim.keyDown = false;
+        if (e.key === 'ArrowLeft' || e.key === 'a') raceSim.keyLeft = false;
+        if (e.key === 'ArrowRight' || e.key === 'd') raceSim.keyRight = false;
+      });
+    }
+
+    function showPraiseBanner(text) {
+      const b = document.getElementById('racePraiseBanner');
+      if (!b) return;
+      b.textContent = text;
+      b.classList.remove('hidden');
+      setTimeout(() => b.classList.add('hidden'), 1400);
+    }
+
+    function triggerCrashFall() {
+      raceSim.crashTimer = 42;
+      raceSim.speed = 0.08;
+      playHalalTactileClick('crash');
+      const cb = document.getElementById('raceCrashBanner');
+      if (cb) {
+        cb.classList.remove('hidden');
+        setTimeout(() => cb.classList.add('hidden'), 1200);
+      }
+    }
+
+    function updateBikeHudUI() {
+      const stageCfg = BIKE_RACE_STAGES.find(s => s.stage === appState.raceStage) || BIKE_RACE_STAGES[0];
+      const spdEl = document.getElementById('raceHudSpeed');
+      const bubEl = document.getElementById('raceHudBubbles');
+      const progEl = document.getElementById('raceHudProgress');
+      const posEl = document.getElementById('raceHudPosition');
+      const turboBadge = document.getElementById('raceTurboCountBadge');
+      const promptEl = document.getElementById('raceJoystickPrompt');
+
+      if (spdEl) spdEl.textContent = Math.round(raceSim.speed * 140);
+      if (bubEl) bubEl.textContent = raceSim.bubblesCollected;
+      const pct = Math.min(100, Math.round((raceSim.z / stageCfg.length) * 100));
+      if (progEl) progEl.textContent = `${pct}%`;
+      if (turboBadge) turboBadge.textContent = `${Math.min(100, Math.round(raceSim.turboCharge))}%`;
+      if (promptEl) promptEl.classList.toggle('hidden', raceSim.speed > 0.06);
+
+      let rank = 1;
+      threeRace.rivals.forEach(rv => { if (rv.z > raceSim.z) rank++; });
+      if (posEl) posEl.textContent = `${rank}/4`;
+    }
+
+    function runBikeRaceLoop() {
+      if (!appState.raceRunning) return;
+      const stageCfg = BIKE_RACE_STAGES.find(s => s.stage === appState.raceStage) || BIKE_RACE_STAGES[0];
+
+      if (raceSim.crashTimer > 0) {
+        raceSim.crashTimer--;
+      }
+
+      const throttleInput = raceSim.crashTimer > 0 ? 0 : Math.max(
+        raceSim.joyY > 0.12 ? raceSim.joyY : 0,
+        raceSim.touchGas ? 1 : 0,
+        raceSim.keyUp ? 1 : 0
+      );
+      const brakeInput = raceSim.touchBrake || raceSim.keyDown || raceSim.joyY < -0.25;
+
+      const topSpd = raceSim.turboTimer > 0 ? 1.35 : raceSim.maxSpeed;
+      if (raceSim.turboTimer > 0) raceSim.turboTimer--;
+
+      if (throttleInput > 0 && !brakeInput) {
+        raceSim.speed = Math.min(topSpd * throttleInput, race

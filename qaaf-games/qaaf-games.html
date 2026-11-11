@@ -144,7 +144,7 @@
       }
     ];
 
-    let currentLang = 'ur';
+    let currentLang = 'en';
 
     const HUB_TEXT = {
       ur: { dir: 'rtl', font: 'font-urdu', title: 'قاف گیمز', langPrompt: 'زبان منتخب کریں:', exit: 'باہر نکلیں' },
@@ -244,7 +244,7 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       refreshStars();
-      let savedLang = 'ur';
+      let savedLang = 'en';
       try {
         const l = localStorage.getItem(STORAGE_PREF_LANG_KEY);
         if (['ur', 'ar', 'en'].includes(l)) savedLang = l;

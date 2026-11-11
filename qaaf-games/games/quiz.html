@@ -309,16 +309,21 @@
 
   <!-- ================= CLEAN SINGLE-LINE TOP BAR ================= -->
   <header class="sticky top-0 z-40 bg-[#070d17]/95 backdrop-blur-md border-b border-slate-800/90 shadow-md">
-    <div class="max-w-5xl mx-auto px-3 py-1.5 flex items-center justify-between gap-2">
+    <div class="max-w-5xl mx-auto px-2 py-1 flex items-center justify-between gap-1.5">
       <!-- Current Screen / Game Title Only (No Right-Side Dropdown Clutter) -->
       <div class="flex items-center gap-2 min-w-0">
         <span id="activeGameHeaderIcon" class="text-base sm:text-lg">🎮</span>
         <span id="activeGameHeaderTitle" class="text-sm sm:text-base font-bold text-amber-300 truncate">قاف گیمز</span>
       </div>
 
-      <!-- Right Controls: Only Stars, Volume & Exit -->
-      <div class="flex items-center gap-1.5 shrink-0">
-        <div class="bg-amber-500/15 border border-amber-400/50 rounded-lg px-2.5 py-0.5 flex items-center gap-1">
+      <!-- Right Controls: Compact Language Switcher, Stars, Volume & Exit -->
+      <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
+        <div dir="ltr" class="bg-slate-900/95 p-0.5 rounded-lg border border-slate-700/80 flex items-center gap-0.5">
+          <button onclick="setPreferredContentLanguage('en')" id="hdrLangBtn-en" class="px-1.5 py-0.5 rounded text-[10px] font-bold transition-all bg-amber-400 text-slate-950 font-english">EN</button>
+          <button onclick="setPreferredContentLanguage('ur')" id="hdrLangBtn-ur" class="px-1.5 py-0.5 rounded text-[10px] font-bold transition-all text-slate-300 hover:text-white font-urdu">اردو</button>
+          <button onclick="setPreferredContentLanguage('ar')" id="hdrLangBtn-ar" class="px-1.5 py-0.5 rounded text-[10px] font-bold transition-all text-slate-300 hover:text-white font-arabic">عربي</button>
+        </div>
+        <div class="bg-amber-500/15 border border-amber-400/50 rounded-lg px-2 py-0.5 flex items-center gap-1">
           <span class="text-xs">⭐</span>
           <span id="headerStarCount" class="text-xs font-extrabold text-amber-300 font-english">0</span>
         </div>
@@ -336,12 +341,33 @@
   </header>
 
   <!-- ================= MAIN CONTENT CONTAINER ================= -->
-  <main class="max-w-5xl mx-auto px-2.5 sm:px-4 py-2.5 pb-6">
+  <main class="max-w-5xl mx-auto px-1.5 sm:px-4 py-1 pb-3">
 
     <!-- =====================================================================
          MAIN HUB SCREEN (QAAF GAMES LIST + LANGUAGE SWITCHER ONLY HERE)
          ===================================================================== -->
     <section id="gameSection-hub" class="max-w-xl mx-auto space-y-3 py-1">
+      <!-- Direct Download ZIP & 1-Click VS Code Installer Card -->
+      <div class="card-3d p-3 border-2 border-emerald-400/60 bg-emerald-950/30 space-y-2">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <span class="text-xs sm:text-sm font-bold text-emerald-300 flex items-center gap-1.5">
+            <i class="fa-solid fa-box-open text-amber-400"></i>
+            <span>مین ایپ اپ گریڈ پیکج (پانچوں الگ فائلیں + ہب):</span>
+          </span>
+          <span id="exportStatusBadge" class="text-[11px] font-bold text-amber-300">تیار ہے</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <button onclick="downloadModularZipFromBrowser()" class="btn-3d-gold py-2 px-3 text-xs sm:text-sm flex items-center justify-center gap-2">
+            <i class="fa-solid fa-download"></i>
+            <span>📥 زپ پیکج ڈاؤن لوڈ کریں (Download ZIP)</span>
+          </button>
+          <button onclick="copyPowerShellInstallerToClipboard()" class="btn-3d-emerald py-2 px-3 text-xs sm:text-sm flex items-center justify-center gap-2">
+            <i class="fa-solid fa-terminal"></i>
+            <span>📋 وی ایس کوڈ کمانڈ کاپی کریں (Copy Command)</span>
+          </button>
+        </div>
+      </div>
+
       <!-- Language Selector Card (Only on Hub Screen) -->
       <div class="card-3d p-3 flex items-center justify-between gap-2 flex-wrap">
         <span id="hubLangTitle" class="text-xs sm:text-sm font-bold text-amber-300 flex items-center gap-1.5">
@@ -411,62 +437,58 @@
     </section>
 
     <!-- =====================================================================
-         GAME 1: WORD SEARCH PUZZLE
+         GAME 1: WORD SEARCH PUZZLE (ULTRA-TIGHT MOBILE BARS & FULL 10x10 GRID FIT)
          ===================================================================== -->
-    <section id="gameSection-wordsearch" class="hidden space-y-2.5">
-      <div class="card-3d p-2.5">
-        <div class="flex items-center justify-between gap-2 mb-1.5">
-          <span id="wsCurrentCategoryLabel" class="text-xs sm:text-sm font-bold text-amber-300 truncate"></span>
-          <div class="flex items-center gap-1.5 shrink-0">
-            <span class="bg-emerald-500/20 border border-emerald-400/50 px-2.5 py-0.5 rounded-full text-[11px] font-bold text-emerald-300 font-english">
+    <section id="gameSection-wordsearch" class="hidden space-y-1">
+      <div class="card-3d px-2 py-1 rounded-xl" style="border-bottom-width:2px;">
+        <div class="flex items-center justify-between gap-1.5 mb-0.5">
+          <span id="wsCurrentCategoryLabel" class="text-[11px] sm:text-xs font-bold text-amber-300 truncate leading-tight"></span>
+          <div class="flex items-center gap-1 shrink-0">
+            <span class="bg-emerald-500/20 border border-emerald-400/50 px-1.5 py-0.2 rounded-full text-[10px] font-bold text-emerald-300 font-english">
               <span id="wsFoundCountBadge">0 / 10</span> ⭐
             </span>
-            <button onclick="rebuildWordSearchStage()" class="btn-3d-dark px-2 py-0.5 text-[11px]" title="نیا ڈبہ بنائیں">
+            <button onclick="rebuildWordSearchStage()" class="btn-3d-dark px-1.5 py-0.2 text-[10px]" title="Shuffle">
               <i class="fa-solid fa-arrows-rotate text-emerald-400"></i>
             </button>
           </div>
         </div>
-        <div id="wsStagesRow" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5"></div>
+        <div id="wsStagesRow" class="flex items-center gap-1 overflow-x-auto no-scrollbar"></div>
       </div>
 
-      <div class="card-3d p-2">
-        <div id="wsTopIconsBar" class="grid grid-cols-5 sm:grid-cols-10 gap-1.5"></div>
+      <div class="card-3d px-1 py-0.5 rounded-xl" style="border-bottom-width:2px;">
+        <div id="wsTopIconsBar" class="grid grid-cols-5 sm:grid-cols-10 gap-0.5"></div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-2.5 items-start">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-1 items-start">
         <div class="lg:col-span-4">
-          <div id="wsSpotlightCard" class="card-3d-emerald p-3 relative overflow-hidden animate-pop-spotlight">
-            <div class="flex items-center justify-between gap-2">
-              <div class="flex items-center gap-2.5 min-w-0">
-                <div onclick="speakActiveWordSearchItem()" class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-b from-amber-300/30 to-emerald-900/70 border-2 border-amber-400 shadow-lg flex items-center justify-center text-3xl sm:text-4xl cursor-pointer shrink-0">
+          <div id="wsSpotlightCard" class="card-3d-emerald px-2 py-1 rounded-xl relative overflow-hidden animate-pop-spotlight" style="border-bottom-width:2px;">
+            <div class="flex items-center justify-between gap-1.5">
+              <div class="flex items-center gap-1.5 min-w-0">
+                <div onclick="speakActiveWordSearchItem()" class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-b from-amber-300/30 to-emerald-900/70 border border-amber-400 shadow flex items-center justify-center text-xl sm:text-2xl cursor-pointer shrink-0">
                   <span id="wsSpotlightEmoji">🍎</span>
                 </div>
-                <div class="min-w-0">
-                  <div class="flex items-center gap-1.5">
-                    <span id="wsTargetIndexBadge" class="font-english font-bold bg-amber-400 text-slate-950 px-2 py-0.2 rounded-full text-[10px]">#1</span>
-                    <span id="wsSpotlightWord" class="text-lg sm:text-xl font-bold text-amber-300 truncate">سیب</span>
+                <div class="min-w-0 leading-tight">
+                  <div class="flex items-center gap-1">
+                    <span id="wsTargetIndexBadge" class="font-english font-bold bg-amber-400 text-slate-950 px-1 py-0 rounded text-[9px]">#1</span>
+                    <span id="wsSpotlightWord" class="text-xs sm:text-base font-bold text-amber-300 truncate">APPLE</span>
+                    <span id="wsLiveSelectionText" class="text-[10px] font-bold text-amber-200 px-1 py-0 bg-slate-950/70 rounded border border-amber-500/30">---</span>
                   </div>
-                  <div id="wsSpotlightTranslations" class="text-[10px] text-emerald-200/90 flex items-center gap-1.5 flex-wrap mt-0.5"></div>
+                  <div id="wsSpotlightTranslations" class="text-[9px] text-emerald-200/90 flex items-center gap-1 flex-wrap mt-0.5"></div>
                 </div>
               </div>
 
               <div class="flex items-center gap-1 shrink-0">
-                <button onclick="speakActiveWordSearchItem()" class="btn-3d-gold px-2.5 py-2 text-xs" title="آواز سنیں"><i class="fa-solid fa-volume-high"></i></button>
-                <button onclick="triggerWordSearchExtraHint()" class="btn-3d-sky px-2.5 py-2 text-xs" title="اشارہ"><i class="fa-solid fa-lightbulb"></i></button>
-                <button onclick="cycleNextWordSearchTarget()" class="btn-3d-dark px-2.5 py-2 text-xs" title="اگلا لفظ"><i class="fa-solid fa-forward-step"></i></button>
+                <button onclick="speakActiveWordSearchItem()" class="btn-3d-gold px-2 py-1 text-[11px]" title="Listen"><i class="fa-solid fa-volume-high"></i></button>
+                <button onclick="triggerWordSearchExtraHint()" class="btn-3d-sky px-2 py-1 text-[11px]" title="Hint"><i class="fa-solid fa-lightbulb"></i></button>
+                <button onclick="cycleNextWordSearchTarget()" class="btn-3d-dark px-2 py-1 text-[11px]" title="Next"><i class="fa-solid fa-forward-step"></i></button>
               </div>
-            </div>
-
-            <div class="mt-2 pt-2 border-t border-emerald-500/30 flex items-center justify-between gap-2 flex-wrap">
-              <div id="wsLetterBreakdown" class="flex items-center gap-1 flex-wrap"></div>
-              <span id="wsLiveSelectionText" class="text-xs sm:text-sm font-bold text-amber-300 px-2.5 py-0.5 bg-slate-950/80 rounded-lg border border-amber-500/30">---</span>
             </div>
           </div>
         </div>
 
         <div class="lg:col-span-8">
-          <div class="card-3d p-2.5 sm:p-4 border border-amber-400/30">
-            <div id="wsGridWrapper" dir="ltr" class="ws-grid-container grid grid-cols-10 gap-1 sm:gap-1.5 max-w-[460px] mx-auto"></div>
+          <div class="card-3d p-1 sm:p-2.5 rounded-xl border border-amber-400/30" style="border-bottom-width:2px;">
+            <div id="wsGridWrapper" dir="ltr" class="ws-grid-container grid grid-cols-10 gap-0.5 sm:gap-1 max-w-[312px] sm:max-w-[420px] mx-auto"></div>
           </div>
         </div>
       </div>
@@ -812,12 +834,12 @@
     const DEFAULT_PARENTAL_PIN = '123456';
 
     let appState = {
-      uiLang: 'ur',
+      uiLang: 'en',
       activeGame: 'hub', // Starts at 'hub' unless URL has ?game=...
       audioMuted: false,
       stars: 0,
       isSupporterPro: false,
-      wsLang: 'ur',
+      wsLang: 'en',
       wsStage: 1,
       wsGridSize: 10,
       wsGrid: [],
@@ -909,7 +931,10 @@
       } catch (e) {}
     }
 
-    const MALE_AUDIO_BASE_PATH = window.location.pathname.includes('/games/') ? '../audio/games/' : 'audio/games/';
+    // Pure Original MP3 Audio Engine (Zero Browser Robotic SpeechSynthesis!)
+    // Supports both K:\Qaaf Tube\audio\games\ (hashed TTS MP3s) and K:\Qaaf Tube\audio\ (existing reciter MP3s: subhanallah.mp3, barakallah.mp3, etc.)
+    const AUDIO_GAMES_DIRS = ['../../audio/games/', '../audio/games/', 'audio/games/', '/audio/games/'];
+    const AUDIO_ROOT_DIRS = ['../../audio/', '../audio/', 'audio/', '/audio/'];
     let activeMaleVoiceAudio = null;
 
     function getAudioFileKey(text, langPrefix) {
@@ -932,31 +957,86 @@
       }
     }
 
-    // Strict Rule 5: Pure Male Audio Only from audio/games/ folder (ur-PK-AsadNeural, ar-SA-HamedNeural, en-US-GuyNeural)
-    // Browser robotic/female speechSynthesis is strictly disabled.
+    // Play a list of relative URLs sequentially until the first existing MP3 plays
+    function playUrlListSequentially(urlList) {
+      if (appState.audioMuted || !urlList || urlList.length === 0) return;
+      stopCurrentMaleVoiceAudio();
+      let idx = 0;
+      const tryNext = () => {
+        if (idx >= urlList.length || appState.audioMuted) return;
+        const url = urlList[idx++];
+        try {
+          const audio = new Audio(url);
+          audio.volume = 1.0;
+          activeMaleVoiceAudio = audio;
+          let failed = false;
+          const onFail = () => {
+            if (failed) return;
+            failed = true;
+            tryNext();
+          };
+          audio.onerror = onFail;
+          const p = audio.play();
+          if (p !== undefined) p.catch(onFail);
+        } catch (e) {
+          tryNext();
+        }
+      };
+      tryNext();
+    }
+
+    // Play an existing reciter MP3 from K:\Qaaf Tube\audio\ (e.g. 'subhanallah.mp3', 'barakallah.mp3', 'allahuakbar.mp3')
+    function playRootReciterMp3(filename) {
+      if (appState.audioMuted || !filename) return;
+      const urls = AUDIO_ROOT_DIRS.map(d => `${d}${filename}`);
+      playUrlListSequentially(urls);
+    }
+
+    // Play hashed male MP3 from K:\Qaaf Tube\audio\games\ with optional fallback to a root reciter MP3 in K:\Qaaf Tube\audio\
+    function playMaleAudioCandidates(textCandidates, langCode = 'ur-PK', fallbackRootMp3 = null) {
+      if (appState.audioMuted) return;
+      const rawPrefix = String(langCode || 'ur').split('-')[0].toLowerCase();
+      const langPrefix = ['ur', 'ar', 'en'].includes(rawPrefix) ? rawPrefix : 'ur';
+
+      const cleanList = (Array.isArray(textCandidates) ? textCandidates : [textCandidates])
+        .map(t => String(t || '').trim())
+        .filter(Boolean);
+
+      const urls = [];
+      for (const txt of cleanList) {
+        const fname = getAudioFileKey(txt, langPrefix);
+        for (const d of AUDIO_GAMES_DIRS) {
+          urls.push(`${d}${fname}`);
+        }
+      }
+      if (fallbackRootMp3) {
+        for (const d of AUDIO_ROOT_DIRS) {
+          urls.push(`${d}${fallbackRootMp3}`);
+        }
+      }
+      playUrlListSequentially(urls);
+    }
+
     function speakText(text, langCode = 'ur-PK') {
       if (appState.audioMuted) return;
       playHalalTactileClick('pop');
-      const cleanText = String(text || '').trim();
-      if (!cleanText) return;
-      const rawPrefix = String(langCode || 'ur').split('-')[0].toLowerCase();
-      const langPrefix = ['ur', 'ar', 'en'].includes(rawPrefix) ? rawPrefix : 'ur';
-      const fileName = getAudioFileKey(cleanText, langPrefix);
-      const fileUrl = `${MALE_AUDIO_BASE_PATH}${fileName}`;
-      try {
-        stopCurrentMaleVoiceAudio();
-        const audio = new Audio(fileUrl);
-        audio.volume = 1.0;
-        activeMaleVoiceAudio = audio;
-        audio.play().catch(() => {});
-      } catch (e) {}
+      playMaleAudioCandidates([text], langCode);
     }
 
+    let mashaAllahCycleIdx = 0;
     function speakMashaAllah() {
+      if (appState.audioMuted) return;
       playHalalTactileClick('star');
-      if (appState.uiLang === 'ar') speakText('مَا شَاءَ اللّٰهُ! أَحْسَنْتَ', 'ar-SA');
-      else if (appState.uiLang === 'ur') speakText('مَا شَاءَ اللّٰهُ! بہت خوب', 'ur-PK');
-      else speakText('MashaAllah! Wonderful!', 'en-US');
+      const rootPraiseFiles = ['barakallah.mp3', 'jazakallah.mp3', 'subhanallah.mp3', 'alhamdulillah_full.mp3'];
+      const chosenRoot = rootPraiseFiles[mashaAllahCycleIdx % rootPraiseFiles.length];
+      mashaAllahCycleIdx++;
+      if (appState.uiLang === 'ar') {
+        playMaleAudioCandidates(['مَا شَاءَ اللّٰهُ! أَحْسَنْتَ', 'مَا شَاءَ اللّٰهُ'], 'ar-SA', chosenRoot);
+      } else if (appState.uiLang === 'ur') {
+        playMaleAudioCandidates(['مَا شَاءَ اللّٰهُ! بہت خوب', 'مَا شَاءَ اللّٰهُ'], 'ur-PK', chosenRoot);
+      } else {
+        playMaleAudioCandidates(['MashaAllah! Wonderful!', 'MashaAllah'], 'en-US', chosenRoot);
+      }
     }
 
     function toggleAudioMute() {
@@ -1134,13 +1214,25 @@
       if (appState.activeGame === 'racing') {
         stopActiveBikeRace(true);
       }
+      // 1. If opened inside the main QAAF Tube app modal iframe, close the modal immediately in 1 click!
       try {
         if (window.parent && window.parent !== window) {
+          window.parent.postMessage('QAAF_EXIT_GAME', '*');
+          window.parent.postMessage({ type: 'QAAF_EXIT_GAME', action: 'closeGame' }, '*');
           window.parent.postMessage({ type: 'QAAF_BACK_TO_HUB' }, '*');
-          return;
+          if (typeof window.parent.closeInstalledGameModal === 'function') {
+            window.parent.closeInstalledGameModal();
+            return;
+          }
         }
       } catch (e) {}
-      window.location.href = '../qaaf-games.html';
+      // 2. If running standalone multi-game hub, go back to hub screen
+      if (appState.activeGame !== 'hub' && !window.location.pathname.includes('/games/')) {
+        switchGame('hub');
+        return;
+      }
+      if (window.history.length > 1) window.history.back();
+      else window.location.href = '../index.html';
     }
 
     function openGameFromHub(gameId) {
@@ -1639,12 +1731,19 @@
       document.body.className = `${t.fontClass} selection:bg-amber-400 selection:text-slate-950`;
 
       ['ur', 'ar', 'en'].forEach(code => {
-        const btn = document.getElementById(`globalLangBtn-${code}`);
-        if (!btn) return;
         const fnt = code === 'ar' ? 'font-arabic' : (code === 'en' ? 'font-english' : 'font-urdu');
-        btn.className = code === lang
-          ? `px-3 py-1 rounded-lg text-xs font-bold transition-all bg-amber-400 text-slate-950 shadow ${fnt}`
-          : `px-3 py-1 rounded-lg text-xs font-bold transition-all text-slate-300 hover:text-white ${fnt}`;
+        const btn = document.getElementById(`globalLangBtn-${code}`);
+        if (btn) {
+          btn.className = code === lang
+            ? `px-3 py-1 rounded-lg text-xs font-bold transition-all bg-amber-400 text-slate-950 shadow ${fnt}`
+            : `px-3 py-1 rounded-lg text-xs font-bold transition-all text-slate-300 hover:text-white ${fnt}`;
+        }
+        const hBtn = document.getElementById(`hdrLangBtn-${code}`);
+        if (hBtn) {
+          hBtn.className = code === lang
+            ? `px-1.5 py-0.5 rounded text-[10px] font-bold transition-all bg-amber-400 text-slate-950 shadow ${fnt}`
+            : `px-1.5 py-0.5 rounded text-[10px] font-bold transition-all text-slate-300 hover:text-white ${fnt}`;
+        }
       });
 
       const setTxt = (id, val) => {
@@ -1719,7 +1818,7 @@
           let btnClass = isActive ? `btn-3d-gold ${bottomIndicatorBar}` : `btn-3d-dark ${bottomIndicatorBar} ${isUnlocked ? '' : 'opacity-75'}`;
 
           html += `
-            <button onclick="${cfg.handler}(${s})" class="${btnClass} py-1 px-2.5 flex items-center gap-1 text-xs whitespace-nowrap shrink-0">
+            <button onclick="${cfg.handler}(${s})" class="${btnClass} py-0.5 px-2 flex items-center gap-1 text-[10px] sm:text-xs whitespace-nowrap shrink-0">
               <span class="font-bold">${t.stageWord} ${s}</span>
               ${!isUnlocked ? '<i class="fa-solid fa-lock text-[9px] text-sky-400"></i>' : ''}
             </button>
@@ -1883,10 +1982,10 @@
           else if (isActive) cardStyle = 'bg-amber-500/25 border border-amber-400 ring-1 ring-amber-300/60';
 
           return `
-            <button onclick="selectWordSearchTargetItem(${idx})" class="${cardStyle} rounded-xl p-1 flex flex-col items-center justify-center relative transition-all">
+            <button onclick="selectWordSearchTargetItem(${idx})" class="${cardStyle} rounded-lg px-1 py-0.5 flex flex-col items-center justify-center relative transition-all">
               ${isFound ? `<span class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-400 text-slate-950 text-[9px] font-bold flex items-center justify-center">✓</span>` : ''}
-              <span class="text-lg sm:text-xl leading-none mb-0.5">${item.emoji}</span>
-              <span class="text-[11px] font-bold truncate w-full text-center ${isFound ? 'text-emerald-200 line-through' : (isActive ? 'text-amber-300' : 'text-slate-300')}">${wordLabel}</span>
+              <span class="text-base sm:text-lg leading-none">${item.emoji}</span>
+              <span class="text-[9px] sm:text-[10px] font-bold truncate w-full text-center leading-tight ${isFound ? 'text-emerald-200 line-through' : (isActive ? 'text-amber-300' : 'text-slate-300')}">${wordLabel}</span>
             </button>
           `;
         }).join('');
@@ -1900,7 +1999,6 @@
       const spotWord = document.getElementById('wsSpotlightWord');
       const spotIdx = document.getElementById('wsTargetIndexBadge');
       const spotTrans = document.getElementById('wsSpotlightTranslations');
-      const spotBreakdown = document.getElementById('wsLetterBreakdown');
 
       if (spotEmoji) spotEmoji.textContent = activeItem.emoji;
       if (spotWord) {
@@ -1915,12 +2013,7 @@
           <span class="bg-slate-900/80 px-1.5 py-0.2 rounded border border-slate-700 font-english">${activeItem.en}</span>
         `;
       }
-      if (spotBreakdown) {
-        spotBreakdown.dir = (lang === 'ur' || lang === 'ar') ? 'rtl' : 'ltr';
-        spotBreakdown.innerHTML = activeTiles.map((tile, i) => `
-          <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg ${i === 0 ? 'bg-amber-400 text-slate-950' : 'bg-slate-800 text-amber-200 border border-slate-600'} font-bold flex items-center justify-center text-xs sm:text-sm grid-letter-${lang}">${tile}</span>
-        `).join('');
-      }
+
 
       renderWordSearchGridCells();
     }
@@ -2010,6 +2103,22 @@
       }
       wrapper.innerHTML = html;
 
+      updateWsSelectionHighlightInPlace();
+    }
+
+    // Update selection classes IN-PLACE without replacing innerHTML so mobile touchstart/touchmove NEVER loses its target node!
+    function updateWsSelectionHighlightInPlace() {
+      const wrapper = document.getElementById('wsGridWrapper');
+      if (!wrapper) return;
+      const cells = wrapper.querySelectorAll('.ws-cell');
+      cells.forEach(cellEl => {
+        const r = parseInt(cellEl.getAttribute('data-r'), 10);
+        const c = parseInt(cellEl.getAttribute('data-c'), 10);
+        const isSelecting = appState.wsCurrentPath.some(pt => pt.r === r && pt.c === c) ||
+          (appState.wsTapSelectedStart && appState.wsTapSelectedStart.r === r && appState.wsTapSelectedStart.c === c);
+        cellEl.classList.toggle('ws-cell-selecting', Boolean(isSelecting));
+      });
+
       const previewEl = document.getElementById('wsLiveSelectionText');
       if (previewEl) {
         if (appState.wsCurrentPath.length > 0) previewEl.textContent = appState.wsCurrentPath.map(pt => appState.wsGrid[pt.r][pt.c]).join('');
@@ -2029,7 +2138,7 @@
       const stepR = steps === 0 ? 0 : dr / steps;
       const stepC = steps === 0 ? 0 : dc / steps;
       const path = [];
-      for (let i = 0; i <= steps; i++) path.push({ r: start.r + stepR * i, c: start.c + stepC * i });
+      for (let i = 0; i <= steps; i++) path.push({ r: Math.round(start.r + stepR * i), c: Math.round(start.c + stepC * i) });
       return path;
     }
 
@@ -2039,23 +2148,25 @@
       appState.wsIsDragging = true;
       appState.wsStartCell = { r, c };
       appState.wsCurrentPath = [{ r, c }];
-      renderWordSearchGridCells();
+      updateWsSelectionHighlightInPlace();
     }
 
     function onWsCellMouseEnter(r, c) {
       if (!appState.wsIsDragging || !appState.wsStartCell) return;
       const newPath = computeStraightGridPath(appState.wsStartCell, { r, c });
-      if (newPath.length !== appState.wsCurrentPath.length) {
+      const prevEnd = appState.wsCurrentPath[appState.wsCurrentPath.length - 1];
+      const newEnd = newPath[newPath.length - 1];
+      if (newPath.length !== appState.wsCurrentPath.length || !prevEnd || prevEnd.r !== newEnd.r || prevEnd.c !== newEnd.c) {
         playHalalTactileClick('tap');
         appState.wsCurrentPath = newPath;
-        renderWordSearchGridCells();
+        updateWsSelectionHighlightInPlace();
       }
     }
 
     function onWsCellTap(r, c) {
       if (!appState.wsTapSelectedStart) {
         appState.wsTapSelectedStart = { r, c };
-        renderWordSearchGridCells();
+        updateWsSelectionHighlightInPlace();
       } else {
         const path = computeStraightGridPath(appState.wsTapSelectedStart, { r, c });
         appState.wsTapSelectedStart = null;
@@ -2063,7 +2174,8 @@
           appState.wsCurrentPath = path;
           evaluateSelectedWordPath();
         } else {
-          renderWordSearchGridCells();
+          appState.wsTapSelectedStart = { r, c };
+          updateWsSelectionHighlightInPlace();
         }
       }
     }
@@ -2075,33 +2187,55 @@
         appState.wsTapSelectedStart = null;
         evaluateSelectedWordPath();
       } else {
+        // Keep single tapped cell as tap-start so kid can either drag OR tap start -> tap end!
+        if (appState.wsStartCell) {
+          onWsCellTap(appState.wsStartCell.r, appState.wsStartCell.c);
+        }
         appState.wsCurrentPath = [];
-        renderWordSearchGridCells();
+        updateWsSelectionHighlightInPlace();
       }
     }
 
     function setupWordSearchTouchListeners() {
       const wrapper = document.getElementById('wsGridWrapper');
       if (!wrapper) return;
+
+      const getCellCoordsAtPoint = (clientX, clientY) => {
+        const el = document.elementFromPoint(clientX, clientY);
+        const cell = el && el.closest ? el.closest('.ws-cell') : null;
+        if (!cell) return null;
+        return {
+          r: parseInt(cell.getAttribute('data-r'), 10),
+          c: parseInt(cell.getAttribute('data-c'), 10)
+        };
+      };
+
       wrapper.addEventListener('touchstart', (e) => {
         if (e.touches.length !== 1) return;
         const touch = e.touches[0];
-        const target = document.elementFromPoint(touch.clientX, touch.clientY)?.closest('.ws-cell');
-        if (!target) return;
+        const coords = getCellCoordsAtPoint(touch.clientX, touch.clientY);
+        if (!coords) return;
         e.preventDefault();
-        onWsCellMouseDown(parseInt(target.getAttribute('data-r'), 10), parseInt(target.getAttribute('data-c'), 10), null);
+        onWsCellMouseDown(coords.r, coords.c, null);
       }, { passive: false });
 
       wrapper.addEventListener('touchmove', (e) => {
         if (!appState.wsIsDragging || e.touches.length !== 1) return;
         e.preventDefault();
         const touch = e.touches[0];
-        const target = document.elementFromPoint(touch.clientX, touch.clientY)?.closest('.ws-cell');
-        if (!target) return;
-        onWsCellMouseEnter(parseInt(target.getAttribute('data-r'), 10), parseInt(target.getAttribute('data-c'), 10));
+        const coords = getCellCoordsAtPoint(touch.clientX, touch.clientY);
+        if (!coords) return;
+        onWsCellMouseEnter(coords.r, coords.c);
       }, { passive: false });
 
-      wrapper.addEventListener('touchend', () => finishWsDrag());
+      wrapper.addEventListener('touchend', (e) => {
+        if (appState.wsIsDragging) {
+          e.preventDefault();
+          finishWsDrag();
+        }
+      }, { passive: false });
+
+      wrapper.addEventListener('touchcancel', () => finishWsDrag());
       window.addEventListener('mouseup', () => { if (appState.wsIsDragging) finishWsDrag(); });
     }
 
@@ -2252,8 +2386,18 @@
     }
 
     function speakArabicLetter(char, nameAr, wordAr) {
+      if (appState.audioMuted) return;
       playHalalTactileClick('pop');
-      speakText(`${nameAr} ، ${wordAr}`, 'ar-SA');
+      const noTashkeelWord = String(wordAr || '').replace(/[\u064B-\u065F\u0670]/g, '');
+      const noTashkeelName = String(nameAr || '').replace(/[\u064B-\u065F\u0670]/g, '');
+      playMaleAudioCandidates([
+        `${nameAr} ، ${wordAr}`,
+        `${noTashkeelName} ، ${noTashkeelWord}`,
+        nameAr,
+        wordAr,
+        noTashkeelWord,
+        char
+      ], 'ar-SA');
     }
 
     function renderAlphabetStage() {
@@ -2438,21 +2582,35 @@
 
     function selectMasjidStepCard(stepOrder) {
       const expectedOrder = appState.masjidCompletedSteps + 1;
-      const stageObj = getCurrentMasjidStageData();
-      const stepObj = stageObj.steps.find(s => s.order === stepOrder);
 
       if (stepOrder === expectedOrder) {
         appState.masjidCompletedSteps++;
         playHalalTactileClick('star');
         addStars(2);
 
-        const lang = appState.uiLang;
-        if (stepObj) speakText(stepObj[lang] || stepObj.ur, lang === 'ar' ? 'ar-SA' : (lang === 'en' ? 'en-US' : 'ur-PK'));
+        // User instruction: Do not speak the long card text in Masjid/Wudu Builder;
+        // only play pure reciter Dhikr / MashaAllah / SubhanAllah / Alhamdulillah audio!
+        const stepDhikrFiles = [
+          'bismillah.mp3',
+          'subhanallah.mp3',
+          'alhamdulillah_full.mp3',
+          'allahuakbar.mp3',
+          'barakallah.mp3',
+          'jazakallah.mp3'
+        ];
+        playRootReciterMp3(stepDhikrFiles[(stepOrder - 1) % stepDhikrFiles.length]);
 
         updateMasjidBuilderUI();
         if (appState.masjidCompletedSteps === 6) {
-          setTimeout(() => { speakMashaAllah(); addStars(10); openCelebrationModal(10); }, 800);
+          setTimeout(() => {
+            if (appState.masjidStage === 1) playRootReciterMp3('dua_wudu_after.mp3');
+            else playRootReciterMp3('subhanallah_alhamdulillah_allahuakbar.mp3');
+            addStars(10);
+            openCelebrationModal(10);
+          }, 700);
         }
+      } else {
+        playHalalTactileClick('tap');
       }
     }
 
@@ -2587,42 +2745,17 @@
      * Play Islamic Phrase from `audio/games/` with Guaranteed Audible Fallback
      * Also ducks bike engine audio briefly so the voice is heard loud and clear!
      */
-    function speakRaceIslamicPhrase(primaryObj, fallbackObj) {
+    function speakRaceIslamicPhrase(primaryObj, fallbackObj, rootMp3Fallback = 'subhanallah.mp3') {
       if (appState.audioMuted) return;
       playHalalTactileClick('star');
       const lang = appState.uiLang;
-      const langPrefix = ['ur', 'ar', 'en'].includes(lang) ? lang : 'ur';
+      const langCode = lang === 'ar' ? 'ar-SA' : (lang === 'en' ? 'en-US' : 'ur-PK');
       const primaryText = String((primaryObj && (primaryObj[lang] || primaryObj.ur)) || '').trim();
       const fallbackText = String((fallbackObj && (fallbackObj[lang] || fallbackObj.ur)) || '').trim();
       if (!primaryText) return;
 
-      // Duck bike engine volume briefly so the male MP3 voice from audio/games/ is crystal clear
       raceSim.voiceDuckTimer = 75;
-
-      const primaryFile = `${MALE_AUDIO_BASE_PATH}${getAudioFileKey(primaryText, langPrefix)}`;
-      try {
-        stopCurrentMaleVoiceAudio();
-        const audio = new Audio(primaryFile);
-        audio.volume = 1.0;
-        activeMaleVoiceAudio = audio;
-        let handled = false;
-        const onFailPrimary = () => {
-          if (handled) return;
-          handled = true;
-          if (fallbackText && fallbackText !== primaryText) {
-            const fbFile = `${MALE_AUDIO_BASE_PATH}${getAudioFileKey(fallbackText, langPrefix)}`;
-            const fbAudio = new Audio(fbFile);
-            fbAudio.volume = 1.0;
-            activeMaleVoiceAudio = fbAudio;
-            fbAudio.play().catch(() => {});
-          }
-        };
-        audio.onerror = onFailPrimary;
-        const playPromise = audio.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(onFailPrimary);
-        }
-      } catch (e) {}
+      playMaleAudioCandidates([primaryText, fallbackText], langCode, rootMp3Fallback);
     }
 
     let threeRace = {
@@ -2970,20 +3103,28 @@
       return group;
     }
 
-    function createPalmTreeMesh(scaleFactor = 0.55) {
-      const group = new THREE.Group();
-      const trunkMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.85 });
-      const leafMat = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.5 });
+    let sharedPalmTrunkGeo = null;
+    let sharedPalmFrondGeo = null;
+    let sharedPalmTrunkMat = null;
+    let sharedPalmLeafMat = null;
 
-      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.30, 0.50, 6.2, 8), trunkMat);
+    function createPalmTreeMesh(scaleFactor = 0.75) {
+      if (!sharedPalmTrunkGeo) {
+        sharedPalmTrunkGeo = new THREE.CylinderGeometry(0.30, 0.52, 6.2, 7);
+        sharedPalmFrondGeo = new THREE.ConeGeometry(1.1, 3.5, 5);
+        sharedPalmTrunkMat = new THREE.MeshLambertMaterial({ color: 0x78350f });
+        sharedPalmLeafMat = new THREE.MeshLambertMaterial({ color: 0x10b981 });
+      }
+      const group = new THREE.Group();
+      const trunk = new THREE.Mesh(sharedPalmTrunkGeo, sharedPalmTrunkMat);
       trunk.position.y = 3.1;
       group.add(trunk);
 
-      for (let i = 0; i < 6; i++) {
-        const frond = new THREE.Mesh(new THREE.ConeGeometry(1.05, 3.4, 5), leafMat);
+      for (let i = 0; i < 5; i++) {
+        const frond = new THREE.Mesh(sharedPalmFrondGeo, sharedPalmLeafMat);
         frond.position.y = 6.1;
         frond.rotation.z = 1.12;
-        frond.rotation.y = (i * Math.PI) / 3;
+        frond.rotation.y = (i * Math.PI * 2) / 5;
         group.add(frond);
       }
       group.scale.set(scaleFactor, scaleFactor, scaleFactor);
@@ -3260,45 +3401,47 @@
       return group;
     }
 
-    function createCollectibleRewardMesh(shapeType = 'tasbih') {
+    function createCollectibleRewardMesh(shapeType = 'salah_mat') {
       const group = new THREE.Group();
-      const goldMat = new THREE.MeshStandardMaterial({ color: 0xfde047, emissive: 0xf59e0b, emissiveIntensity: 0.45, roughness: 0.2 });
-      const emeraldMat = new THREE.MeshStandardMaterial({ color: 0x10b981, emissive: 0x059669, emissiveIntensity: 0.4, roughness: 0.2 });
-      const lanternGlowMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
+      const goldMat = new THREE.MeshLambertMaterial({ color: 0xfde047, emissive: 0xd97706, emissiveIntensity: 0.35 });
+      const emeraldMat = new THREE.MeshLambertMaterial({ color: 0x10b981, emissive: 0x059669, emissiveIntensity: 0.35 });
+      const crimsonMat = new THREE.MeshLambertMaterial({ color: 0xe11d48, emissive: 0x9f1239, emissiveIntensity: 0.3 });
 
-      if (shapeType === 'crescent') {
-        const crescent = new THREE.Mesh(new THREE.TorusGeometry(0.65, 0.16, 10, 24, Math.PI * 1.35), goldMat);
-        crescent.rotation.z = Math.PI * 0.15;
-        group.add(crescent);
-        const star = new THREE.Mesh(new THREE.OctahedronGeometry(0.28, 0), emeraldMat);
-        star.position.set(0.25, 0.18, 0);
-        group.add(star);
-      } else if (shapeType === 'lantern') {
-        const topCap = new THREE.Mesh(new THREE.ConeGeometry(0.45, 0.35, 6), goldMat);
-        topCap.position.y = 0.52;
-        group.add(topCap);
-        const core = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.28, 0.65, 6), lanternGlowMat);
-        group.add(core);
-        const base = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.42, 0.18, 6), goldMat);
-        base.position.y = -0.40;
-        group.add(base);
+      if (shapeType === 'salah_mat') {
+        // 3D Prayer Mat (جائے نماز) with Golden Border & Mihrab Arch
+        const matBase = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.08, 1.45), emeraldMat);
+        matBase.rotation.x = 0.45;
+        group.add(matBase);
+
+        const goldBorder = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.06, 1.55), goldMat);
+        goldBorder.rotation.x = 0.45;
+        group.add(goldBorder);
+
+        const mihrabArch = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.10, 0.85), crimsonMat);
+        mihrabArch.position.set(0, 0.03, -0.05);
+        mihrabArch.rotation.x = 0.45;
+        group.add(mihrabArch);
       } else if (shapeType === 'book') {
-        const leftPage = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.12, 0.72), emeraldMat);
-        leftPage.position.set(-0.24, 0, 0);
+        // 3D Open Islamic Book (کتاب)
+        const leftPage = new THREE.Mesh(new THREE.BoxGeometry(0.60, 0.12, 0.80), emeraldMat);
+        leftPage.position.set(-0.26, 0, 0);
         leftPage.rotation.z = 0.25;
         group.add(leftPage);
-        const rightPage = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.12, 0.72), emeraldMat);
-        rightPage.position.set(0.24, 0, 0);
+        const rightPage = new THREE.Mesh(new THREE.BoxGeometry(0.60, 0.12, 0.80), emeraldMat);
+        rightPage.position.set(0.26, 0, 0);
         rightPage.rotation.z = -0.25;
         group.add(rightPage);
-        const crown = new THREE.Mesh(new THREE.OctahedronGeometry(0.26, 0), goldMat);
-        crown.position.y = 0.38;
-        group.add(crown);
+        const spine = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.14, 0.84), goldMat);
+        spine.position.set(0, -0.04, 0);
+        group.add(spine);
       } else {
-        const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.58, 14, 14), goldMat);
-        group.add(sphere);
-        const halo = new THREE.Mesh(new THREE.TorusGeometry(0.78, 0.08, 8, 20), emeraldMat);
-        group.add(halo);
+        // 3D Crescent & Star / Tasbih
+        const crescent = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.15, 8, 18, Math.PI * 1.35), goldMat);
+        crescent.rotation.z = Math.PI * 0.15;
+        group.add(crescent);
+        const star = new THREE.Mesh(new THREE.OctahedronGeometry(0.26, 0), emeraldMat);
+        star.position.set(0.24, 0.16, 0);
+        group.add(star);
       }
       return group;
     }
@@ -3360,8 +3503,8 @@
 
     function createProceduralFallbackSkyTexture(stageCfg) {
       const c = document.createElement('canvas');
-      c.width = 2048;
-      c.height = 1024;
+      c.width = 1024;
+      c.height = 512;
       const ctx = c.getContext('2d');
       const W = c.width;
       const H = c.height;
@@ -3583,7 +3726,7 @@
       const camera = new THREE.PerspectiveCamera(60, canvas.clientWidth / Math.max(1, canvas.clientHeight), 0.1, 850);
       const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
       renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.35));
 
       const ambLight = new THREE.AmbientLight(0xffffff, 0.85);
       scene.add(ambLight);
@@ -3667,7 +3810,7 @@
       }
 
       // Smooth Continuous Closed-Loop Road Surface, Kerbs, Lane Lines & Side Barriers
-      const roadSegs = isPro ? 620 : 440;
+      const roadSegs = isPro ? 240 : 180;
       const halfW = threeRace.roadWidth * 0.5;
 
       const roadMesh = createContinuousTrackRibbonMesh(curve, roadSegs, -halfW, halfW, 0.04, stageCfg.roadColor || 0x1e293b, 0.78);
@@ -3713,14 +3856,17 @@
       startBanner.lookAt(startTf.worldPos.clone().add(startTf.tangent));
       scene.add(startBanner);
 
-      for (let s = 24; s < totalLen - 20; s += 18) {
+      // Spaced-out Scenery (Every 42m instead of 18m -> 55% fewer meshes for ultra-fast mobile FPS!)
+      // Palm trees vary from 0.70x (smallest) up to 1.45x - 1.95x (2x to 3x larger!) at varied distances from the road!
+      const treeSizes = [0.70, 1.15, 1.55, 0.90, 1.85, 1.30];
+      for (let s = 32; s < totalLen - 28; s += 42) {
         const tf = getTrackTransformAt(s, 0);
-        const stepIdx = Math.round(s / 18);
+        const stepIdx = Math.round(s / 42);
 
-        if (stepIdx % 8 === 0 && tf.centerPt.y < 0.2) {
+        if (stepIdx % 5 === 0 && tf.centerPt.y < 0.2) {
           for (const side of [-1, 1]) {
             const gs = createGrandstandWithSpectators();
-            const pos = tf.centerPt.clone().addScaledVector(tf.right, side * (halfW + 4.8));
+            const pos = tf.centerPt.clone().addScaledVector(tf.right, side * (halfW + 5.2));
             pos.y = 0;
             gs.position.copy(pos);
             gs.lookAt(tf.centerPt.x, 0, tf.centerPt.z);
@@ -3728,20 +3874,18 @@
             scene.add(gs);
             threeRace.grandstands.push(gs);
           }
-        } else if (isPro && stepIdx % 11 === 0 && tf.centerPt.y < 0.2) {
-          // Pro Stages 6-10 Exclusive: Grand 3D Illuminated Islamic Masjid Dome & Twin Minarets Landmark!
+        } else if (isPro && stepIdx % 6 === 0 && tf.centerPt.y < 0.2) {
           const side = (stepIdx % 2 === 0) ? 1 : -1;
           const masjid = createGrandMasjidLandmarkMesh();
-          const pos = tf.centerPt.clone().addScaledVector(tf.right, side * (halfW + 10.5));
+          const pos = tf.centerPt.clone().addScaledVector(tf.right, side * (halfW + 11.5));
           pos.y = 0;
           masjid.position.copy(pos);
           masjid.lookAt(tf.centerPt.x, 0, tf.centerPt.z);
           scene.add(masjid);
-        } else if (isPro && stepIdx % 5 === 0 && tf.centerPt.y < 0.2) {
-          // Pro Stages 6-10 Exclusive: Sparkling Zamzam Water Fountains on Both Sides!
+        } else if (isPro && stepIdx % 4 === 0 && tf.centerPt.y < 0.2) {
           for (const side of [-1, 1]) {
             const ftn = createZamzamFountainMesh();
-            const pos = tf.centerPt.clone().addScaledVector(tf.right, side * (halfW + 3.6));
+            const pos = tf.centerPt.clone().addScaledVector(tf.right, side * (halfW + 4.0));
             pos.y = 0;
             ftn.position.copy(pos);
             scene.add(ftn);
@@ -3749,31 +3893,22 @@
           }
         } else if (tf.centerPt.y < 0.2) {
           for (const side of [-1, 1]) {
-            const palm1 = createPalmTreeMesh(0.54 + (stepIdx % 3) * 0.06);
-            const pos1 = tf.centerPt.clone().addScaledVector(tf.right, side * (halfW + 2.5 + (stepIdx % 2) * 1.1));
-            pos1.y = 0;
-            palm1.position.copy(pos1);
-            scene.add(palm1);
-
-            if (stepIdx % 2 === 0) {
-              const palm2 = createPalmTreeMesh(0.46);
-              const pos2 = tf.centerPt.clone()
-                .addScaledVector(tf.right, side * (halfW + 5.8))
-                .addScaledVector(tf.tangent, 5.0);
-              pos2.y = 0;
-              palm2.position.copy(pos2);
-              scene.add(palm2);
-            }
+            const sz = treeSizes[(stepIdx + (side > 0 ? 1 : 0)) % treeSizes.length];
+            const distFromEdge = halfW + 3.2 + (stepIdx % 3) * 2.8;
+            const palm = createPalmTreeMesh(sz);
+            const pos = tf.centerPt.clone().addScaledVector(tf.right, side * distFromEdge);
+            pos.y = 0;
+            palm.position.copy(pos);
+            scene.add(palm);
           }
         }
 
-        if (isPro && stepIdx % 9 === 0) {
-          // Pro Stages 6-10 Exclusive: Royal Islamic Arch with Hanging Glowing Fanous Lanterns!
+        if (isPro && stepIdx % 5 === 0) {
           const royalArch = createRoyalLanternArchMesh(threeRace.roadWidth);
           royalArch.position.copy(tf.worldPos);
           royalArch.lookAt(tf.worldPos.clone().add(tf.tangent));
           scene.add(royalArch);
-        } else if (stepIdx % 15 === 0) {
+        } else if (stepIdx % 7 === 0) {
           const cpBanner = createSleekStartBannerMesh(false, threeRace.roadWidth);
           cpBanner.position.copy(tf.worldPos);
           cpBanner.lookAt(tf.worldPos.clone().add(tf.tangent));
@@ -3781,7 +3916,8 @@
         }
       }
 
-      // Collectibles, Blue Shield Pickups, Speed Pads, Cones, Ramps & Pro Noor Boost Rings!
+      // Collectibles & Track Objects Reduced by ~60% (Every 105m instead of 44m!)
+      // Includes: Prayer Mat (جائے نماز: 'salah_mat'), Islamic Book (کتاب: 'book'), Zamzam Water Drop ('zamzam_drop'), Speed Pads & Forward Ramps
       threeRace.bubbles = [];
       threeRace.shields = [];
       threeRace.speedPads = [];
@@ -3789,69 +3925,61 @@
       threeRace.cones = [];
       threeRace.ramps = [];
 
-      const shapeTypes = ['tasbih', 'crescent', 'lantern', 'book'];
+      const shapeTypes = ['salah_mat', 'book', 'crescent'];
       const laneSpread = isPro ? 4.2 : 3.0;
 
-      for (let s = 42; s < totalLen - 40; s += 44) {
-        const idx = Math.round(s / 44);
+      for (let s = 75; s < totalLen - 65; s += 105) {
+        const idx = Math.round(s / 105);
         const laneOffset = ((idx % 3) - 1) * laneSpread;
         const tf = getTrackTransformAt(s, laneOffset);
 
-        const shapePoolCount = appState.raceStage === 1 ? 2 : 4;
-        const shapeType = shapeTypes[(idx + appState.raceStage) % shapePoolCount];
+        const shapeType = shapeTypes[idx % shapeTypes.length];
         const rewardMesh = createCollectibleRewardMesh(shapeType);
         rewardMesh.position.set(tf.worldPos.x, tf.worldPos.y + 1.15, tf.worldPos.z);
         scene.add(rewardMesh);
         threeRace.bubbles.push({ mesh: rewardMesh, s, laneOffset, shapeType, collected: false });
 
-        if (appState.raceStage >= 2 && idx % 4 === 1 && s + 18 < totalLen - 35) {
+        // Zamzam Water Drop Pickup (آبِ زمزم کا قطرہ)
+        if (idx % 2 === 1 && s + 38 < totalLen - 50) {
           const shieldLane = (idx % 2 === 0) ? laneSpread * 0.9 : -laneSpread * 0.9;
-          const stf = getTrackTransformAt(s + 18, shieldLane);
+          const stf = getTrackTransformAt(s + 38, shieldLane);
           const shieldMesh = createShieldPickupMesh();
           shieldMesh.position.set(stf.worldPos.x, stf.worldPos.y + 1.15, stf.worldPos.z);
           scene.add(shieldMesh);
-          threeRace.shields.push({ mesh: shieldMesh, s: s + 18, laneOffset: shieldLane, collected: false });
+          threeRace.shields.push({ mesh: shieldMesh, s: s + 38, laneOffset: shieldLane, collected: false });
         }
 
-        if (appState.raceStage >= 2 && idx % 3 === 0 && s + 22 < totalLen - 35) {
-          const padLane = ((idx + 1) % 3 - 1) * (laneSpread * 0.9);
-          const ptf = getTrackTransformAt(s + 22, padLane);
+        // Speed Boost Pad (Every 2nd interval)
+        if (appState.raceStage >= 2 && idx % 2 === 0 && s + 48 < totalLen - 50) {
+          const padLane = ((idx + 1) % 3 - 1) * (laneSpread * 0.85);
+          const ptf = getTrackTransformAt(s + 48, padLane);
           const padMesh = createSpeedPadMesh();
           padMesh.position.copy(ptf.worldPos);
           padMesh.lookAt(ptf.worldPos.clone().add(ptf.tangent));
           scene.add(padMesh);
-          threeRace.speedPads.push({ s: s + 22, laneOffset: padLane, triggeredCooldown: 0 });
+          threeRace.speedPads.push({ s: s + 48, laneOffset: padLane, triggeredCooldown: 0 });
         }
 
-        // Pro Stages 6-10 Exclusive: Giant Drive-Through Golden Noor Star & Crescent Boost Portal Rings!
-        if (isPro && idx % 5 === 3 && s + 30 < totalLen - 35) {
-          const ringLane = (idx % 2 === 0) ? 0 : (idx % 4 === 1 ? -3.2 : 3.2);
-          const ntf = getTrackTransformAt(s + 30, ringLane);
+        // Pro Stages 6-10 Exclusive: Giant Golden Noor Boost Portal Ring
+        if (isPro && idx % 3 === 1 && s + 65 < totalLen - 50) {
+          const ntf = getTrackTransformAt(s + 65, 0);
           const noorRing = createMegaNoorRingPortalMesh();
           noorRing.position.copy(ntf.worldPos);
           noorRing.lookAt(ntf.worldPos.clone().add(ntf.tangent));
           scene.add(noorRing);
-          threeRace.noorRings.push({ mesh: noorRing, s: s + 30, laneOffset: ringLane, triggeredCooldown: 0 });
+          threeRace.noorRings.push({ mesh: noorRing, s: s + 65, laneOffset: 0, triggeredCooldown: 0 });
         }
 
-        if (appState.raceStage >= 3 && idx % 4 === 2 && s + 26 < totalLen - 35) {
-          const rtf = getTrackTransformAt(s + 26, 0);
+        // Forward Wedge Jump Ramp (Stages 3+)
+        if (appState.raceStage >= 3 && idx % 3 === 0 && s + 55 < totalLen - 50) {
+          const rtf = getTrackTransformAt(s + 55, 0);
           const ramp = createForwardWedgeRampMesh();
           ramp.position.set(rtf.worldPos.x, rtf.worldPos.y, rtf.worldPos.z);
           const rampTarget = rtf.worldPos.clone().add(rtf.tangent);
           rampTarget.y = rtf.worldPos.y;
           ramp.lookAt(rampTarget);
           scene.add(ramp);
-          threeRace.ramps.push({ s: s + 26, laneOffset: 0, triggeredCooldown: 0 });
-        }
-
-        if (appState.raceStage >= 3 && idx % 3 === 2 && s + 14 < totalLen - 35) {
-          const coneLane = (idx % 2 === 0) ? -laneSpread * 1.1 : laneSpread * 1.1;
-          const ctf = getTrackTransformAt(s + 14, coneLane);
-          const coneMesh = createRacingConeMesh();
-          coneMesh.position.copy(ctf.worldPos);
-          scene.add(coneMesh);
-          threeRace.cones.push({ mesh: coneMesh, s: s + 14, laneOffset: coneLane, hit: false });
+          threeRace.ramps.push({ s: s + 55, laneOffset: 0, triggeredCooldown: 0 });
         }
       }
 
@@ -3957,26 +4085,30 @@
 
       const curve = threeRace.trackCurve;
       const totalLen = threeRace.trackLength || 1000;
-      const samples = 80;
-      const pts = [];
-      let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
 
-      for (let i = 0; i <= samples; i++) {
-        const p = curve.getPointAt((i % samples) / samples);
-        pts.push(p);
-        if (p.x < minX) minX = p.x;
-        if (p.x > maxX) maxX = p.x;
-        if (p.z < minZ) minZ = p.z;
-        if (p.z > maxZ) maxZ = p.z;
+      if (!threeRace.cachedMiniMap || threeRace.cachedMiniMapStage !== appState.raceStage) {
+        const samples = 60;
+        const pts = [];
+        let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+        for (let i = 0; i <= samples; i++) {
+          const p = curve.getPointAt((i % samples) / samples);
+          pts.push(p);
+          if (p.x < minX) minX = p.x;
+          if (p.x > maxX) maxX = p.x;
+          if (p.z < minZ) minZ = p.z;
+          if (p.z > maxZ) maxZ = p.z;
+        }
+        const pad = 12;
+        const spanX = Math.max(1, maxX - minX);
+        const spanZ = Math.max(1, maxZ - minZ);
+        const scale = Math.min((W - pad * 2) / spanX, (H - pad * 2) / spanZ);
+        const cx = (minX + maxX) * 0.5;
+        const cz = (minZ + maxZ) * 0.5;
+        threeRace.cachedMiniMap = { pts, scale, cx, cz };
+        threeRace.cachedMiniMapStage = appState.raceStage;
       }
 
-      const pad = 12;
-      const spanX = Math.max(1, maxX - minX);
-      const spanZ = Math.max(1, maxZ - minZ);
-      const scale = Math.min((W - pad * 2) / spanX, (H - pad * 2) / spanZ);
-      const cx = (minX + maxX) * 0.5;
-      const cz = (minZ + maxZ) * 0.5;
-
+      const { pts, scale, cx, cz } = threeRace.cachedMiniMap;
       const toMap = (wx, wz) => ({
         x: W * 0.5 + (wx - cx) * scale,
         y: H * 0.5 + (wz - cz) * scale
@@ -4457,7 +4589,8 @@
           showPraiseBanner(appState.uiLang === 'en' ? '🚀 Allahu Akbar! Super Jump!' : '🚀 اللّٰهُ أَكْبَرُ! شاندار جمپ!');
           speakRaceIslamicPhrase(
             { ur: 'اللّٰهُ أَكْبَرُ', ar: 'اللّٰهُ أَكْبَرُ', en: 'Allahu Akbar' },
-            { ur: 'سُبْحَانَ اللّٰهِ', ar: 'سُبْحَانَ اللّٰهِ', en: 'SubhanAllah' }
+            { ur: 'سُبْحَانَ اللّٰهِ', ar: 'سُبْحَانَ اللّٰهِ', en: 'SubhanAllah' },
+            'allahuakbar.mp3'
           );
         }
       });
@@ -4472,7 +4605,8 @@
           showPraiseBanner(appState.uiLang === 'en' ? '⚡ Bismillah! Speed Boost!' : '⚡ بِسْمِ اللّٰهِ! تیز رفتار بوسٹ!');
           speakRaceIslamicPhrase(
             { ur: 'تَوَكَّلْتُ عَلَى اللّٰهِ', ar: 'تَوَكَّلْتُ عَلَى اللّٰهِ', en: 'Tawakkaltu Alallah' },
-            { ur: 'بسم اللّٰہ! ٹربو پاور!', ar: 'بسم اللّٰه! قوة التيربو!', en: 'Bismillah! Turbo Power!' }
+            { ur: 'بسم اللّٰہ! ٹربو پاور!', ar: 'بسم اللّٰه! قوة التيربو!', en: 'Bismillah! Turbo Power!' },
+            'bismillah.mp3'
           );
         }
       });
@@ -4490,84 +4624,84 @@
           showPraiseBanner(appState.uiLang === 'en' ? '🌟 SubhanAllahi Wa Bihamdihi! Noor Ring! +15 ⭐' : '🌟 سُبْحَانَ اللّٰهِ وَبِحَمْدِهِ! نورانی رنگ! +15 ⭐');
           speakRaceIslamicPhrase(
             { ur: 'سُبْحَانَ اللّٰهِ وَبِحَمْدِهِ', ar: 'سُبْحَانَ اللّٰهِ وَبِحَمْدِهِ', en: 'SubhanAllahi Wa Bihamdihi' },
-            { ur: 'سُبْحَانَ اللّٰهِ', ar: 'سُبْحَانَ اللّٰهِ', en: 'SubhanAllah' }
+            { ur: 'سُبْحَانَ اللّٰهِ', ar: 'سُبْحَانَ اللّٰهِ', en: 'SubhanAllah' },
+            'kalimatan_khafifatan.mp3'
           );
         }
       });
 
-      // Check Blue Zamzam Protective Shield Pickups -> Says "فِي أَمَانِ اللّٰهِ"
+      // Check Blue Zamzam Water Drop Pickups -> Gives Shield & Says "اَلْحَمْدُ لِلّٰهِ" / "فِي أَمَانِ اللّٰهِ"
       threeRace.shields.forEach(sh => {
-        if (!sh.collected && Math.abs(lapS - sh.s) < 2.5 && Math.abs(raceSim.x - sh.laneOffset) < 1.9) {
+        if (!sh.collected && Math.abs(lapS - sh.s) < 2.6 && Math.abs(raceSim.x - sh.laneOffset) < 2.0) {
           sh.collected = true;
           sh.mesh.visible = false;
           raceSim.shieldTimer = 300;
-          addStars(5);
+          addStars(8);
           showPraiseBanner(
             appState.uiLang === 'en'
-              ? '🛡️ Fi Amanillah! (In Allah’s Protection) +5 ⭐'
-              : (appState.uiLang === 'ar' ? '🛡️ فِي أَمَانِ اللّٰهِ! (حماية) +5 ⭐' : '🛡️ فِي أَمَانِ اللّٰهِ! (حفاظتی شیلڈ) +5 ⭐')
+              ? '💧 Alhamdulillah! Zamzam Shield! +8 ⭐'
+              : (appState.uiLang === 'ar' ? '💧 الْحَمْدُ لِلّٰهِ! درع ماء زمزم! +8 ⭐' : '💧 اَلْحَمْدُ لِلّٰهِ! آبِ زمزم حفاظتی شیلڈ! +8 ⭐')
           );
           speakRaceIslamicPhrase(
             { ur: 'فِي أَمَانِ اللّٰهِ', ar: 'فِي أَمَانِ اللّٰهِ', en: 'Fi Amanillah' },
-            { ur: 'بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيمِ', ar: 'بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيمِ', en: 'Bismillahir Rahmanir Raheem' }
+            { ur: 'اَلْحَمْدُ لِلّٰهِ', ar: 'الْحَمْدُ لِلّٰهِ', en: 'Alhamdulillah' },
+            'alhamdulillah_full.mp3'
           );
         }
       });
 
-      // Check Racing Cones
-      threeRace.cones.forEach(cn => {
-        if (!cn.hit && Math.abs(lapS - cn.s) < 1.8 && Math.abs(raceSim.x - cn.laneOffset) < 1.1 && raceSim.y < 0.6) {
-          cn.hit = true;
-          cn.mesh.rotation.z = 1.4;
-          cn.mesh.position.y += 0.2;
-          playHalalTactileClick('tap');
-          if (raceSim.shieldTimer === 0) {
-            raceSim.speed = Math.max(0.25, raceSim.speed * 0.88);
-          }
-        }
-      });
-
-      // Check Collectible Islamic Rewards
-      const praises = [
-        {
-          banner: { ur: 'سُبْحَانَ اللّٰهِ', ar: 'سُبْحَانَ اللّٰهِ', en: 'SubhanAllah' },
-          primary: { ur: 'سُبْحَانَ اللّٰهِ', ar: 'سُبْحَانَ اللّٰهِ', en: 'SubhanAllah' },
-          fallback: { ur: 'سُبْحَانَ اللّٰهِ', ar: 'سُبْحَانَ اللّٰهِ', en: 'SubhanAllah' }
-        },
-        {
-          banner: { ur: 'مَا شَاءَ اللّٰهُ', ar: 'مَا شَاءَ اللّٰهُ', en: 'MashaAllah' },
-          primary: { ur: 'مَا شَاءَ اللّٰهُ', ar: 'مَا شَاءَ اللّٰهُ', en: 'MashaAllah' },
-          fallback: { ur: 'مَا شَاءَ اللّٰهُ', ar: 'مَا شَاءَ اللّٰهُ', en: 'MashaAllah' }
-        },
-        {
-          banner: { ur: 'اَلْحَمْدُ لِلّٰهِ', ar: 'الْحَمْدُ لِلّٰهِ', en: 'Alhamdulillah' },
-          primary: { ur: 'اَلْحَمْدُ لِلّٰهِ', ar: 'الْحَمْدُ لِلّٰهِ', en: 'Alhamdulillah' },
-          fallback: { ur: 'اَلْحَمْدُ لِلّٰهِ', ar: 'الْحَمْدُ لِلّٰهِ', en: 'Alhamdulillah' }
-        },
-        {
-          banner: { ur: 'جَزَاكَ اللّٰهُ خَيْرًا', ar: 'جَزَاكَ اللّٰهُ خَيْرًا', en: 'JazakAllahu Khayran' },
-          primary: { ur: 'جَزَاكَ اللّٰهُ خَيْرًا', ar: 'جَزَاكَ اللّٰهُ خَيْرًا', en: 'JazakAllahu Khayran' },
-          fallback: { ur: 'مَا شَاءَ اللّٰهُ! بہت خوب', ar: 'مَا شَاءَ اللّٰهُ! أَحْسَنْتَ', en: 'MashaAllah! Wonderful!' }
-        },
-        {
-          banner: { ur: 'بَارَكَ اللّٰهُ فِيكَ', ar: 'بَارَكَ اللّٰهُ فِيكَ', en: 'BarakAllahu Feek' },
-          primary: { ur: 'بَارَكَ اللّٰهُ فِيكَ', ar: 'بَارَكَ اللّٰهُ فِيكَ', en: 'BarakAllahu Feek' },
-          fallback: { ur: 'مَا شَاءَ اللّٰهُ', ar: 'مَا شَاءَ اللّٰهُ', en: 'MashaAllah' }
-        }
-      ];
-      threeRace.bubbles.forEach((b, idx) => {
-        if (!b.collected && Math.abs(lapS - b.s) < 2.5 && Math.abs(raceSim.x - b.laneOffset) < 1.95) {
+      // Check Collectible Islamic Rewards:
+      // 1) 'salah_mat' (جائے نماز): Gives instant Turbo Boost + Power & announces "نماز میری قوت ہے / Prayer is My Power / الصلاة قوتي"
+      // 2) 'book' (کتاب): Gives +10 Stars & announces "مَا شَاءَ اللّٰهُ"
+      // 3) 'crescent' (ہلال و ستارہ): Gives +8 Stars & announces "سُبْحَانَ اللّٰهِ"
+      threeRace.bubbles.forEach((b) => {
+        if (!b.collected && Math.abs(lapS - b.s) < 2.6 && Math.abs(raceSim.x - b.laneOffset) < 2.0) {
           b.collected = true;
           b.mesh.visible = false;
           raceSim.bubblesCollected++;
-          const bonusStars = b.shapeType === 'lantern' || b.shapeType === 'book' ? 10 : (b.shapeType === 'crescent' ? 8 : 5);
-          const bonusTurbo = b.shapeType === 'lantern' ? 100 : 40;
-          raceSim.turboCharge = Math.min(100, raceSim.turboCharge + bonusTurbo);
-          addStars(bonusStars);
-          const p = praises[idx % praises.length];
-          const bText = p.banner[appState.uiLang] || p.banner.ur;
-          showPraiseBanner(`✨ ${bText}! +${bonusStars} ⭐`);
-          speakRaceIslamicPhrase(p.primary, p.fallback);
+
+          if (b.shapeType === 'salah_mat') {
+            // Prayer Mat Power & Automatic Turbo Boost!
+            raceSim.turboCharge = 100;
+            raceSim.turboTimer = 105;
+            raceSim.speed = Math.min(1.48, Math.max(raceSim.speed + 0.40, 1.25));
+            addStars(10);
+            showPraiseBanner(
+              appState.uiLang === 'en'
+                ? '🕌 Prayer is My Power! +10 ⭐'
+                : (appState.uiLang === 'ar' ? '🕌 الصَّلَاةُ قُوَّتِي! +10 ⭐' : '🕌 نماز میری قوت ہے! +10 ⭐')
+            );
+            speakRaceIslamicPhrase(
+              { ur: 'نماز میری قوت ہے', ar: 'الصَّلَاةُ قُوَّتِي', en: 'Prayer is My Power' },
+              { ur: 'مَا شَاءَ اللّٰهُ! بہت خوب', ar: 'مَا شَاءَ اللّٰهُ! أَحْسَنْتَ', en: 'MashaAllah! Wonderful!' },
+              'allahuakbar.mp3'
+            );
+          } else if (b.shapeType === 'book') {
+            raceSim.turboCharge = Math.min(100, raceSim.turboCharge + 50);
+            addStars(10);
+            showPraiseBanner(
+              appState.uiLang === 'en'
+                ? '📖 MashaAllah! +10 ⭐'
+                : '📖 مَا شَاءَ اللّٰهُ! +10 ⭐'
+            );
+            speakRaceIslamicPhrase(
+              { ur: 'مَا شَاءَ اللّٰهُ', ar: 'مَا شَاءَ اللّٰهُ', en: 'MashaAllah' },
+              { ur: 'مَا شَاءَ اللّٰهُ', ar: 'مَا شَاءَ اللّٰهُ', en: 'MashaAllah' },
+              'barakallah.mp3'
+            );
+          } else {
+            raceSim.turboCharge = Math.min(100, raceSim.turboCharge + 40);
+            addStars(8);
+            showPraiseBanner(
+              appState.uiLang === 'en'
+                ? '🌙 SubhanAllah! +8 ⭐'
+                : '🌙 سُبْحَانَ اللّٰهِ! +8 ⭐'
+            );
+            speakRaceIslamicPhrase(
+              { ur: 'سُبْحَانَ اللّٰهِ', ar: 'سُبْحَانَ اللّٰهِ', en: 'SubhanAllah' },
+              { ur: 'سُبْحَانَ اللّٰهِ', ar: 'سُبْحَانَ اللّٰهِ', en: 'SubhanAllah' }
+            );
+          }
         }
       });
 
@@ -4731,17 +4865,183 @@
       }
     }
 
+    // ================= IN-CANVAS MODULAR ZIP DOWNLOADER & VS CODE INSTALLER GENERATOR =================
+    function crc32Bytes(u8) {
+      let c = 0xffffffff;
+      for (let i = 0; i < u8.length; i++) {
+        c ^= u8[i];
+        for (let k = 0; k < 8; k++) {
+          c = (c >>> 1) ^ (0xedb88320 & -(c & 1));
+        }
+      }
+      return (c ^ 0xffffffff) >>> 0;
+    }
+
+    function buildValidZipBlob(fileEntries) {
+      const encoder = new TextEncoder();
+      const localParts = [];
+      const centralParts = [];
+      let offset = 0;
+
+      fileEntries.forEach(entry => {
+        const nameBytes = encoder.encode(entry.name);
+        const dataBytes = encoder.encode(entry.content);
+        const crc = crc32Bytes(dataBytes);
+        const size = dataBytes.length;
+
+        const localHdr = new Uint8Array(30 + nameBytes.length);
+        const lv = new DataView(localHdr.buffer);
+        lv.setUint32(0, 0x04034b50, true);
+        lv.setUint16(4, 20, true);
+        lv.setUint16(6, 0x0800, true); // UTF-8
+        lv.setUint16(8, 0, true);      // Store (uncompressed)
+        lv.setUint16(10, 0, true);
+        lv.setUint16(12, 0, true);
+        lv.setUint32(14, crc, true);
+        lv.setUint32(18, size, true);
+        lv.setUint32(22, size, true);
+        lv.setUint16(26, nameBytes.length, true);
+        lv.setUint16(28, 0, true);
+        localHdr.set(nameBytes, 30);
+
+        localParts.push(localHdr, dataBytes);
+
+        const centralHdr = new Uint8Array(46 + nameBytes.length);
+        const cv = new DataView(centralHdr.buffer);
+        cv.setUint32(0, 0x02014b50, true);
+        cv.setUint16(4, 20, true);
+        cv.setUint16(6, 20, true);
+        cv.setUint16(8, 0x0800, true);
+        cv.setUint16(10, 0, true);
+        cv.setUint16(12, 0, true);
+        cv.setUint16(14, 0, true);
+        cv.setUint32(16, crc, true);
+        cv.setUint32(20, size, true);
+        cv.setUint32(24, size, true);
+        cv.setUint16(28, nameBytes.length, true);
+        cv.setUint16(30, 0, true);
+        cv.setUint16(32, 0, true);
+        cv.setUint16(34, 0, true);
+        cv.setUint16(36, 0, true);
+        cv.setUint32(38, 0, true);
+        cv.setUint32(42, offset, true);
+        centralHdr.set(nameBytes, 46);
+
+        centralParts.push(centralHdr);
+        offset += localHdr.length + dataBytes.length;
+      });
+
+      const centralSize = centralParts.reduce((acc, a) => acc + a.length, 0);
+      const eocd = new Uint8Array(22);
+      const ev = new DataView(eocd.buffer);
+      ev.setUint32(0, 0x06054b50, true);
+      ev.setUint16(4, 0, true);
+      ev.setUint16(6, 0, true);
+      ev.setUint16(8, fileEntries.length, true);
+      ev.setUint16(10, fileEntries.length, true);
+      ev.setUint32(12, centralSize, true);
+      ev.setUint32(16, offset, true);
+      ev.setUint16(20, 0, true);
+
+      return new Blob([...localParts, ...centralParts, eocd], { type: 'application/zip' });
+    }
+
+    function generateModularFilesFromCurrentDoc() {
+      const fullSource = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+      const gameIds = ['wordsearch', 'quiz', 'alphabet', 'masjid', 'racing'];
+      const entries = [
+        { name: 'qaaf-games.html', content: fullSource }
+      ];
+      gameIds.forEach(gid => {
+        let gHtml = fullSource.replace("let initialScreen = 'quiz';", "let initialScreen = '" + gid + "';");
+        entries.push({ name: 'games/' + gid + '.html', content: gHtml });
+      });
+      return entries;
+    }
+
+    function downloadModularZipFromBrowser() {
+      playHalalTactileClick('star');
+      const badge = document.getElementById('exportStatusBadge');
+      try {
+        const entries = generateModularFilesFromCurrentDoc();
+        const blob = buildValidZipBlob(entries);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'qaaf-games-modular.zip';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          URL.revokeObjectURL(url);
+          a.remove();
+        }, 1500);
+        if (badge) badge.textContent = '✅ زپ ڈاؤن لوڈ شروع ہو گیا!';
+      } catch (e) {
+        if (badge) badge.textContent = 'کمانڈ کاپی والا بٹن استعمال کریں';
+      }
+    }
+
+    function copyPowerShellInstallerToClipboard() {
+      playHalalTactileClick('star');
+      const badge = document.getElementById('exportStatusBadge');
+      const fullSource = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+      const b64 = btoa(unescape(encodeURIComponent(fullSource)));
+
+      const psCmd = [
+        'cd "K:\Qaaf Tube"',
+        'New-Item -ItemType Directory -Force -Path "K:\Qaaf Tube\qaaf-games\games" | Out-Null',
+        '$b64 = "' + b64 + '"',
+        '$html = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($b64))',
+        '[System.IO.File]::WriteAllText("K:\Qaaf Tube\qaaf-games.html", $html, [System.Text.Encoding]::UTF8)',
+        '[System.IO.File]::WriteAllText("K:\Qaaf Tube\qaaf-games\qaaf-games.html", $html, [System.Text.Encoding]::UTF8)',
+        'foreach ($g in @("wordsearch","quiz","alphabet","masjid","racing")) {',
+        '  $gh = $html.Replace("let initialScreen = \'hub\';", "let initialScreen = \'$g\';")',
+        '  [System.IO.File]::WriteAllText("K:\Qaaf Tube\qaaf-games\games\$g.html", $gh, [System.Text.Encoding]::UTF8)',
+        '}',
+        'Write-Host "✅ Alhamdulillah! All 5 modular game files and qaaf-games.html updated in K:\Qaaf Tube\qaaf-games\!" -ForegroundColor Green'
+      ].join('\r\n');
+
+      const finishCopy = () => {
+        if (badge) badge.textContent = '✅ کمانڈ کاپی ہو گئی! ٹرمینل میں پیسٹ کریں';
+      };
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(psCmd).then(finishCopy).catch(() => {
+          const ta = document.createElement('textarea');
+          ta.value = psCmd;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          ta.remove();
+          finishCopy();
+        });
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = psCmd;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+        finishCopy();
+      }
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
       loadStoredData();
       setupWordSearchTouchListeners();
       setupBikeRaceControls();
 
-      let initialScreen = 'quiz';
+      let initialScreen = 'hub';
       try {
         const params = new URLSearchParams(window.location.search);
         const requested = params.get('game');
         if (['wordsearch', 'quiz', 'alphabet', 'masjid', 'racing'].includes(requested)) {
           initialScreen = requested;
+        }
+        const urlLang = params.get('lang');
+        if (urlLang && ['ur', 'ar', 'en'].includes(urlLang.toLowerCase())) {
+          appState.uiLang = urlLang.toLowerCase();
+          appState.wsLang = appState.uiLang;
         }
       } catch (e) {}
 
