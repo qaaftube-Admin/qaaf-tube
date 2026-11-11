@@ -692,7 +692,7 @@
     }
 
     document.querySelectorAll("#videoGrid > div").forEach(function(card) {
-      var favBtnEl = card.querySelector('button[onclick*="toggleFavoriteVideo"]');
+      var favBtnEl = null;
       if (!favBtnEl) return;
       var m = favBtnEl.getAttribute("onclick").match(/'([^']+)'/);
       if (!m || !m[1]) return;
@@ -5011,40 +5011,46 @@
   }
 
   function buildFastVideoCard(video, isFav, inPl, isChVer, isAdminMode) {
-    var isPreferred = (video.lang === preferredContentLang || video.lang === "global");
     var categoryArtwork = getCategoryIslamicArtwork(video.category);
     var thumbHq = "https://i.ytimg.com/vi/" + video.ytId + "/hqdefault.jpg";
     var thumbMq = "https://i.ytimg.com/vi/" + video.ytId + "/mqdefault.jpg";
     var cardThumb = video.customThumb || thumbHq;
-    var modeTxt = video.audienceMode === "kids_preferred" ? "🧒 Kids Preferred" : ((video.audienceMode === "family_only" || !video.kidsSafe) ? "🎙️ Family Only" : "👨‍👩‍👧‍👦 Kids + Family");
+    var chName = (video.channel || "QAAF Channel").trim();
+    var chInitial = (chName.charAt(0) || "Q").toUpperCase();
+    var viewsStr = (((video.views || 2500) / 1000).toFixed(1)) + "K views";
+    var safeCh = chName.replace(/'/g, "\\'");
 
     var card = document.createElement("div");
-    card.className = "bg-[#131720]/95 hover:bg-[#1b212d] rounded-xl overflow-hidden border " + (isPreferred ? "border-emerald-500/60 shadow-lg shadow-emerald-950/30" : "border-white/10") + " transition group relative";
+    card.className = "qaaf-yt-clean-card bg-transparent rounded-none sm:rounded-xl overflow-visible transition group relative";
     card.dataset.videoId = video.id;
 
     card.innerHTML =
-      '<a ' + (isKidsLocked ? '' : 'href="?watch=' + encodeURIComponent(video.id) + '"') + ' onclick="return handleQaafVideoLinkClick(event, \'' + video.id + '\')" class="block relative aspect-video bg-slate-900 flex items-center justify-center overflow-hidden cursor-pointer no-underline text-inherit">' +
-        '<img src="' + cardThumb + '" alt="" class="absolute inset-0 w-full h-full object-cover pointer-events-none select-none" loading="lazy" decoding="async" onerror="if(!this.dataset.retried){this.dataset.retried=\'1\';this.src=\'' + thumbMq + '\';}else{this.onerror=null;this.src=\'' + categoryArtwork + '\';}" />' +
-        '<div class="absolute inset-0 flex items-center justify-center pointer-events-none"><div class="w-12 h-12 rounded-full bg-red-600/95 group-hover:scale-110 transition flex items-center justify-center shadow-lg"><span class="text-white text-lg ml-0.5">▶</span></div></div>' +
-        '<div class="absolute top-2 left-2 flex flex-wrap gap-1 z-10 pointer-events-none">' +
-          (isPreferred ? '<span class="bg-emerald-500 text-black text-[10px] font-extrabold px-2 py-0.5 rounded shadow">⭐ Preferred</span>' : '') +
+      '<div class="relative aspect-video bg-slate-900 overflow-hidden sm:rounded-xl">' +
+        '<a ' + (isKidsLocked ? '' : 'href="?watch=' + encodeURIComponent(video.id) + '"') + ' onclick="return handleQaafVideoLinkClick(event, \'' + video.id + '\')" class="block w-full h-full cursor-pointer no-underline text-inherit">' +
+          '<img src="' + cardThumb + '" alt="" class="w-full h-full object-cover pointer-events-none select-none group-hover:scale-[1.02] transition duration-300" loading="lazy" decoding="async" onerror="if(!this.dataset.retried){this.dataset.retried=\'1\';this.src=\'' + thumbMq + '\';}else{this.onerror=null;this.src=\'' + categoryArtwork + '\';}" />' +
+          '<span class="absolute bottom-2 right-2 bg-black/85 text-white text-[11px] font-bold px-1.5 py-0.5 rounded z-10 pointer-events-none">' + (video.duration || "12:00") + '</span>' +
+        '</a>' +
+        '<div id="cardActionMenu_' + video.id + '" class="hidden absolute top-2 right-2 z-30 bg-[#111620]/95 backdrop-blur-md border border-emerald-500/40 rounded-xl p-1.5 flex items-center gap-1.5 shadow-2xl">' +
+          '<button type="button" onclick="toggleVideoInPlaylist(\'' + video.id + '\', event)" class="w-8 h-8 rounded-lg ' + (inPl ? 'bg-emerald-500 text-black' : 'bg-slate-800 hover:bg-[#164e3a] text-emerald-300 hover:text-white') + ' flex items-center justify-center text-xs font-extrabold shadow" title="Save to Playlist">' + (inPl ? '&#10004;' : '&#10133;') + '</button>' +
+          '<button type="button" onclick="toggleFavoriteVideo(\'' + video.id + '\', event)" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center text-xs shadow" title="Favorite">' + (isFav ? '&#10084;&#65039;' : '&#129293;') + '</button>' +
+          '<button type="button" onclick="openFlagModal(\'' + video.id + '\', event)" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-rose-950 text-white flex items-center justify-center text-xs shadow" title="Report">&#128681;</button>' +
+          (isAdminMode ? '<button type="button" onclick="adminDeleteVideoCard(\'' + video.id + '\', event)" class="w-8 h-8 rounded-lg bg-rose-700 hover:bg-rose-600 text-white flex items-center justify-center text-xs shadow" title="Admin: Delete Video">&#128465;&#65039;</button>' : '') +
         '</div>' +
-        '<span class="absolute bottom-2 right-2 bg-black/90 text-white text-[10px] font-bold px-1.5 py-0.5 rounded z-10 pointer-events-none">' + (video.duration || "12:00") + '</span>' +
-        '<span class="absolute bottom-2 left-2 bg-black/75 text-slate-300 text-[10px] px-1.5 py-0.5 rounded z-10 pointer-events-none">👁️ ' + (((video.views || 2500) / 1000).toFixed(1)) + 'K</span>' +
-      '</a>' +
-      '<div class="absolute top-2 right-2 z-10 flex items-center gap-1">' +
-        '<button type="button" onclick="toggleVideoInPlaylist(\'' + video.id + '\', event)" class="w-7 h-7 rounded-full ' + (inPl ? 'bg-emerald-500 text-black' : 'bg-black/80 hover:bg-emerald-600 text-emerald-300') + ' flex items-center justify-center text-xs font-extrabold shadow border border-emerald-400/40" title="Save to Playlist">' + (inPl ? '✔' : '➕') + '</button>' +
-        '<button type="button" onclick="toggleFavoriteVideo(\'' + video.id + '\', event)" class="w-7 h-7 rounded-full bg-black/75 hover:bg-black flex items-center justify-center text-xs shadow border border-white/10" title="Favorite">' + (isFav ? '❤️' : '🤍') + '</button>' +
-        '<button type="button" onclick="openFlagModal(\'' + video.id + '\', event)" class="w-7 h-7 rounded-full bg-black/75 hover:bg-rose-950 flex items-center justify-center text-xs shadow border border-white/10" title="Report">🚩</button>' +
-        (isAdminMode ? '<button type="button" onclick="adminDeleteVideoCard(\'' + video.id + '\', event)" class="w-7 h-7 rounded-full bg-red-600/90 hover:bg-red-500 text-white flex items-center justify-center text-xs shadow border border-white/20" title="Admin: Delete Video">🗑️</button>' : '') +
       '</div>' +
-      '<a ' + (isKidsLocked ? '' : 'href="?watch=' + encodeURIComponent(video.id) + '"') + ' onclick="return handleQaafVideoLinkClick(event, \'' + video.id + '\')" class="block p-3 cursor-pointer no-underline text-inherit">' +
-        '<h3 class="text-sm font-bold text-white line-clamp-2 leading-snug">' + video.title + '</h3>' +
-        '<div class="flex items-center justify-between mt-2 text-[11px] text-slate-400">' +
-          '<span class="truncate max-w-[160px] flex items-center gap-1">' + video.channel + (isChVer ? ' <span class="text-emerald-400 font-bold text-[10px]" title="Verified Channel">✓</span>' : '') + '</span>' +
-          '<span class="text-emerald-400 font-semibold shrink-0">' + modeTxt + '</span>' +
+      '<div class="qaaf-yt-meta-row flex items-start gap-3 pt-2.5 px-3 sm:px-1 pb-1">' +
+        '<div onclick="window.pickChannelFromTopBar(\'' + safeCh + '\', event); window.scrollTo({top:0,behavior:\'smooth\'});" class="w-9 h-9 rounded-full bg-[#164e3a] border border-emerald-400/40 text-white font-extrabold text-xs flex items-center justify-center shrink-0 mt-0.5 shadow cursor-pointer" title="' + chName + '">' +
+          chInitial +
         '</div>' +
-      '</a>';
+        '<a ' + (isKidsLocked ? '' : 'href="?watch=' + encodeURIComponent(video.id) + '"') + ' onclick="return handleQaafVideoLinkClick(event, \'' + video.id + '\')" class="flex-1 min-w-0 cursor-pointer no-underline text-inherit">' +
+          '<h3 class="text-[14px] sm:text-[15px] font-bold text-white line-clamp-2 leading-snug">' + video.title + '</h3>' +
+          '<div class="text-[11px] sm:text-xs text-slate-400 mt-1 flex items-center gap-1 truncate">' +
+            '<span onclick="event.preventDefault(); event.stopPropagation(); window.pickChannelFromTopBar(\'' + safeCh + '\', event); window.scrollTo({top:0,behavior:\'smooth\'});" class="hover:text-emerald-400 truncate">' + chName + '</span>' +
+            (isChVer ? '<span class="text-emerald-400 font-bold text-[10px] shrink-0" title="Verified Channel">&#10003;</span>' : '') +
+            '<span class="shrink-0">&bull; ' + viewsStr + '</span>' +
+          '</div>' +
+        '</a>' +
+        '<button type="button" onclick="event.stopPropagation(); var m=document.getElementById(\'cardActionMenu_' + video.id + '\'); if(m){m.classList.toggle(\'hidden\');}" class="w-8 h-8 rounded-full hover:bg-white/10 text-slate-300 hover:text-white flex items-center justify-center shrink-0 text-lg font-extrabold cursor-pointer" title="More Options">&#8942;</button>' +
+      '</div>';
     return card;
   }
 
