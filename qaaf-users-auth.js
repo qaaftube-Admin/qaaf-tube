@@ -2530,143 +2530,263 @@
     return (localStorage.getItem("qaaf_firebase_db_url") || FIREBASE_DEFAULT_URL).replace(/\/+$/, "");
   }
 
-  // 1. INJECT PLAY STORE SAFE GREEN & WHITE THEME + BORDERLESS MOBILE VIDEO FEED CSS
+  // 1. INJECT YOUTUBE-STYLE BORDERLESS FEED + KIDS MODE LOCK + GREEN THEME CSS
   if (!document.getElementById("qaafPlayStoreGreenAndSleekFeedCss")) {
     var st = document.createElement("style");
     st.id = "qaafPlayStoreGreenAndSleekFeedCss";
     st.textContent = [
-      /* Fixed/Sticky Top Header at top: 0 */
-      "header, #mainTopHeader { position: sticky !important; top: 0 !important; z-index: 120 !important; }",
-
-      /* Replace YouTube-like Red buttons/badges with Islamic Deep Green (#164e3a / #059669) & Pure White (#ffffff) */
+      /* Replace YouTube-like Red buttons/badges with Islamic Deep Green (#164e3a) & Pure White (#ffffff) */
       ".bg-rose-600, .bg-red-600, .bg-rose-500, .bg-red-500 { background-color: #164e3a !important; background-image: none !important; color: #ffffff !important; border-color: rgba(16,185,129,0.4) !important; }",
       ".hover\\:bg-rose-500:hover, .hover\\:bg-red-500:hover, .hover\\:bg-rose-600:hover { background-color: #1e6b50 !important; color: #ffffff !important; }",
       "body.qaaf-games-mode-active #tabGamesBtn, body.qaaf-games-mode-active #kidsContentSwitcher button:last-child { background-color: #164e3a !important; color: #ffffff !important; box-shadow: 0 2px 10px rgba(16,185,129,0.35) !important; }",
-      "#videosSection .from-rose-600, #videosSection .from-red-600 { --tw-gradient-from: #164e3a !important; --tw-gradient-to: #0d9488 !important; }",
 
-      /* Hide permanent main-screen Video Request button & bottom Sponsor ticker bar (moved to ☰ menu!) */
-      "#sponsorTickerBar { display: none !important; }",
-      "button[onclick*='openParentRequestModal']:not(.qaaf-drawer-req-btn) { display: none !important; }",
+      /* Hide permanent main-screen Video Request button & bottom Sponsor ticker bar */
+      "#sponsorTickerBar, #parentRequestBtn, button[onclick*='RequestModal']:not(.qaaf-drawer-req-btn) { display: none !important; }",
+      ".qaaf-main-request-row-hidden { display: none !important; }",
 
       /* Hide permanent search bar row unless toggled open by the header 'ق' search icon */
-      "#qaafCollapsibleSearchRow.qaaf-search-collapsed { display: none !important; }",
+      ".qaaf-search-row-hidden { display: none !important; }",
 
-      /* Mobile Open Full-Width Video Feed (No boxes, no borders, 1 full-width video per row on mobile!) */
-      "@media (max-width: 640px) {",
-      "  #videoGrid { grid-template-columns: 1fr !important; gap: 20px !important; padding-left: 0 !important; padding-right: 0 !important; }",
-      "  #videoGrid > div { background: transparent !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; padding: 0 !important; }",
-      "  #videoGrid > div img { border-radius: 0px !important; width: 100% !important; }",
-      "  main { padding-left: 0 !important; padding-right: 0 !important; padding-bottom: 74px !important; }",
-      "  #shortsSection, #categoryBar, #qaafCollapsibleSearchRow, #gamesSection { padding-left: 10px !important; padding-right: 10px !important; }",
-      "  #videoGrid > div > div:last-child { padding-left: 12px !important; padding-right: 12px !important; padding-top: 8px !important; padding-bottom: 4px !important; }",
+      /* KIDS MODE STRICT BUTTON RULES:
+         When Kids Mode is active (body.qaaf-kids-locked), hide ☰ Drawer button, Profile button,
+         Settings button, and Bottom Nav Profile button so kids cannot open menus!
+         Keep 🔒 Kids Unlock button & Logo Home button 100% clickable! */
+      "body.qaaf-kids-locked button[onclick*='toggleUserProfileDrawer'], body.qaaf-kids-locked #headerProfileBtn, body.qaaf-kids-locked button[onclick*='openParentModal'], body.qaaf-kids-locked #bnavProfileBtn { display: none !important; }",
+      "#kidsModeBtn { pointer-events: auto !important; position: relative !important; z-index: 250 !important; cursor: pointer !important; }",
+      "#kidsLockModal, #parentModal { z-index: 9999 !important; }",
+
+      /* YOUTUBE-STYLE CLEAN BORDERLESS VIDEO FEED (Mobile & Desktop) */
+      "#videoGrid > div { background: transparent !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; padding: 0 !important; overflow: visible !important; }",
+      /* Hide the big center play circle overlay & top-left Preferred badge on video thumbnails */
+      "#videoGrid > div .aspect-video .bg-rose-600, #videoGrid > div .aspect-video .bg-red-600, #videoGrid > div .aspect-video .rounded-full.w-11, #videoGrid > div .aspect-video .rounded-full.w-12, #videoGrid > div .aspect-video . pointer-events-none { display: none !important; }",
+      "@media (max-width: 768px) {",
+      "  #videoGrid { grid-template-columns: 1fr !important; gap: 22px !important; padding-left: 0 !important; padding-right: 0 !important; }",
+      "  #videoGrid > div .aspect-video, #videoGrid > div img { border-radius: 0px !important; width: 100% !important; }",
+      "  main { padding-left: 0 !important; padding-right: 0 !important; padding-bottom: 72px !important; }",
+      "  #shortsSection, #categoryBar, #gamesSection { padding-left: 10px !important; padding-right: 10px !important; }",
+      "  #videoGrid > div > div:last-child { padding: 10px 12px 4px 12px !important; }",
       "}",
-      "@media (min-width: 641px) {",
-      "  main { padding-bottom: 76px !important; }",
+      "@media (min-width: 769px) {",
+      "  #videoGrid > div .aspect-video, #videoGrid > div img { border-radius: 12px !important; }",
+      "  #videoGrid > div > div:last-child { padding: 10px 4px 6px 4px !important; }",
+      "  main { padding-bottom: 74px !important; }",
       "}",
 
-      /* Full-Screen Sleek Parent Control Modal (No cramped half-screen box!) */
+      /* Full-Screen Sleek Parent Control Modal */
       "#parentModal { padding: 0 !important; align-items: stretch !important; justify-content: stretch !important; }",
       "#parentModal > div { width: 100% !important; max-width: 100% !important; height: 100dvh !important; max-height: 100dvh !important; border-radius: 0 !important; border: none !important; margin: 0 !important; overflow-y: auto !important; padding: 16px 16px 90px 16px !important; background: #090d14 !important; }",
-
-      /* Hide confusing 'Approved Channels Filter / Ban Channel' inside Parent Control */
       "#parentChannelFilterList { display: none !important; }",
 
       /* Smooth Auto-Hide Transitions for Category Bar and Bottom Navigation Footer */
-      "#categoryBar { transition: transform 0.28s ease, opacity 0.28s ease, max-height 0.28s ease !important; }",
+      "#categoryBar { transition: transform 0.25s ease, opacity 0.25s ease, max-height 0.25s ease !important; }",
       "#categoryBar.qaaf-bar-autohidden { transform: translateY(-100%) !important; opacity: 0 !important; max-height: 0 !important; padding-top: 0 !important; padding-bottom: 0 !important; margin: 0 !important; overflow: hidden !important; pointer-events: none !important; }",
-      "#qaafMobileBottomNav { transition: transform 0.28s ease !important; }",
+      "#qaafMobileBottomNav { transition: transform 0.25s ease !important; }",
       "#qaafMobileBottomNav.qaaf-nav-autohidden { transform: translateY(100%) !important; }"
     ].join("\n");
     document.head.appendChild(st);
   }
 
-  // 2. COLLAPSIBLE SEARCH BAR + HEADER WHITE MAGNIFIER ICON WITH 'ق' INSIDE LENS
-  function setupHeaderQaafSearchIcon() {
-    var searchInp = document.getElementById("searchInput");
-    if (!searchInp) return;
+  // 2. FIX LOGO HOME CLICK & KIDS UNLOCK BUTTON WHEN INSIDE GAMES OR KIDS MODE
+  function ensureKidsModeAndLogoButtonsAlwaysWork() {
+    var isKids = !!window.isKidsMode;
+    document.body.classList.toggle("qaaf-kids-locked", isKids);
 
-    var searchRow = searchInp.closest(".mb-4") || searchInp.parentElement.parentElement;
-    if (searchRow && !searchRow.id) {
-      searchRow.id = "qaafCollapsibleSearchRow";
-      searchRow.classList.add("qaaf-search-collapsed");
+    /* Ensure clicking Logo ALWAYS exits Games tab and returns to Home Videos */
+    var logoContainer = document.querySelector("header [onclick*='resetToAllVideos']");
+    if (logoContainer && !logoContainer.getAttribute("data-home-fixed")) {
+      logoContainer.setAttribute("data-home-fixed", "1");
+      logoContainer.addEventListener("click", function() {
+        if (typeof window.closeInstalledGameModal === "function") window.closeInstalledGameModal();
+        if (typeof window.switchKidsTab === "function") window.switchKidsTab("videos");
+      }, true);
     }
 
+    /* Ensure clicking 🔒 Kids button while in Games or Kids Mode ALWAYS triggers unlock PIN modal */
+    var kidsBtn = document.getElementById("kidsModeBtn");
+    if (kidsBtn && !kidsBtn.getAttribute("data-unlock-fixed")) {
+      kidsBtn.setAttribute("data-unlock-fixed", "1");
+      kidsBtn.addEventListener("click", function(e) {
+        if (typeof window.closeInstalledGameModal === "function") {
+          var gm = document.getElementById("installedGameModal");
+          if (gm && !gm.classList.contains("hidden")) window.closeInstalledGameModal();
+        }
+      }, true);
+    }
+  }
+
+  // 3. HIDE MAIN-SCREEN SEARCH BAR & VIDEO REQUEST ROW + ADD YOUTUBE-STYLE WHITE 'ق' LENS IN HEADER
+  function setupYoutubeStyleHeaderSearchAndHideMainRows() {
+    var searchInp = document.getElementById("searchInput");
+    if (searchInp) {
+      /* Find the outer wrapper containing the search input */
+      var sBox = searchInp.parentElement;
+      while (sBox && sBox.parentElement && sBox.parentElement.tagName !== "MAIN" && sBox.parentElement.tagName !== "BODY") {
+        sBox = sBox.parentElement;
+      }
+      if (sBox && !sBox.getAttribute("data-qaaf-search-managed")) {
+        sBox.setAttribute("data-qaaf-search-managed", "1");
+        sBox.id = "qaafCollapsibleSearchRow";
+        sBox.classList.add("qaaf-search-row-hidden");
+      }
+    }
+
+    /* Hide any Video Request button/row on the main screen */
+    document.querySelectorAll("main button, main div").forEach(function(el) {
+      var txt = (el.innerText || "").trim();
+      if ((txt.indexOf("Video Request") === 0 || txt === "📩 Video Request") && el.tagName === "BUTTON" && !el.classList.contains("qaaf-drawer-req-btn")) {
+        el.style.setProperty("display", "none", "important");
+        if (el.parentElement && el.parentElement.children.length === 1) {
+          el.parentElement.classList.add("qaaf-main-request-row-hidden");
+        }
+      }
+    });
+
+    /* Inject YouTube-style borderless White Magnifier Icon with 'ق' inside lens into Header */
     if (!document.getElementById("qaafHeaderSearchToggleBtn")) {
       var langBtn = document.getElementById("headerLangBtn");
-      var headerRightContainer = langBtn ? langBtn.parentElement : document.querySelector("header .flex.items-center.gap-1\\.5, header .flex.items-center");
-      if (headerRightContainer) {
+      var headerRight = langBtn ? langBtn.parentElement : document.querySelector("header .flex.items-center:last-child");
+      if (headerRight) {
         var sBtn = document.createElement("button");
         sBtn.id = "qaafHeaderSearchToggleBtn";
         sBtn.type = "button";
-        sBtn.title = "Search QAAF Tube";
-        sBtn.className = "w-8 h-8 rounded-full bg-[#164e3a] hover:bg-[#1e6b50] border border-emerald-400/40 text-white flex items-center justify-center shadow transition cursor-pointer shrink-0";
-        /* Custom White Magnifying Glass SVG with White 'ق' inside the lens! */
+        sBtn.title = "Search";
+        /* Pure YouTube-style clean white icon without any heavy box border */
+        sBtn.className = "w-8 h-8 rounded-full hover:bg-white/10 text-white flex items-center justify-center transition cursor-pointer shrink-0";
         sBtn.innerHTML =
-          '<svg viewBox="0 0 32 32" class="w-4 h-4" fill="none" xmlns="http://www.w3.org/2000/svg">' +
-            '<circle cx="13.5" cy="13.5" r="9.5" stroke="#FFFFFF" stroke-width="2.6"/>' +
-            '<line x1="20.5" y1="20.5" x2="28.5" y2="28.5" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>' +
-            '<text x="13.5" y="17.2" text-anchor="middle" fill="#FFFFFF" font-size="11.5" font-weight="900" font-family="Noto Naskh Arabic, Amiri, sans-serif">ق</text>' +
+          '<svg viewBox="0 0 28 28" class="w-5 h-5" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+            '<circle cx="12" cy="12" r="8.2" stroke="#FFFFFF" stroke-width="2.2"/>' +
+            '<line x1="18.2" y1="18.2" x2="25" y2="25" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round"/>' +
+            '<text x="12" y="15.3" text-anchor="middle" fill="#FFFFFF" font-size="10.2" font-weight="900" font-family="Noto Naskh Arabic, Amiri, sans-serif">ق</text>' +
           '</svg>';
         sBtn.onclick = function() {
           var row = document.getElementById("qaafCollapsibleSearchRow");
           if (!row) return;
-          if (row.classList.contains("qaaf-search-collapsed")) {
-            row.classList.remove("qaaf-search-collapsed");
-            setTimeout(function() { searchInp.focus(); }, 60);
+          if (row.classList.contains("qaaf-search-row-hidden")) {
+            row.classList.remove("qaaf-search-row-hidden");
+            if (searchInp) setTimeout(function() { searchInp.focus(); }, 50);
           } else {
-            row.classList.add("qaaf-search-collapsed");
+            row.classList.add("qaaf-search-row-hidden");
           }
         };
-        headerRightContainer.insertBefore(sBtn, headerRightContainer.firstChild);
+        headerRight.insertBefore(sBtn, headerRight.firstChild);
       }
     }
   }
 
-  // 3. REPLACE RED SHORTS ICON WITH GREEN & WHITE SHORTS ICON
-  function updateShortsHeaderToGreenWhite() {
+  // 4. TRANSFORM VIDEO CARDS INTO YOUTUBE'S CLEAN BORDERLESS LAYOUT (AVATAR + TITLE + CHANNEL + 3 DOTS)
+  function styleVideoFeedLikeYouTube() {
+    var grid = document.getElementById("videoGrid");
+    if (!grid) return;
+
+    grid.querySelectorAll(":scope > div").forEach(function(card) {
+      if (card.getAttribute("data-yt-styled") === "1") return;
+      var thumbBox = card.querySelector(".aspect-video");
+      if (!thumbBox) return;
+      card.setAttribute("data-yt-styled", "1");
+
+      /* Remove center red play overlay & top-left Preferred badge from thumbnail */
+      thumbBox.querySelectorAll("div, span").forEach(function(el) {
+        var t = (el.innerText || "").trim();
+        if (t === "▶" || t.indexOf("Preferred") !== -1) {
+          el.style.setProperty("display", "none", "important");
+        }
+      });
+
+      /* Move the top-right action buttons (+, ♥, 🚩) into a clean toggleable ⋮ menu */
+      var topActions = thumbBox.querySelector(".top-2.right-2, .absolute.top-2.right-2");
+      if (topActions) {
+        topActions.style.setProperty("display", "none", "important");
+      }
+
+      /* Style the bottom metadata section like YouTube: Left Channel Avatar + Center Title/Channel + Right ⋮ button */
+      var infoBox = card.lastElementChild;
+      if (infoBox && infoBox !== thumbBox) {
+        var titleEl = infoBox.querySelector("h3, h4, .font-bold, .line-clamp-2");
+        var chTextEl = infoBox.querySelector("p, .text-slate-400, .text-xs");
+        var chName = chTextEl ? (chTextEl.innerText || "QAAF Channel").replace(/✓.*$/, "").trim() : "QAAF";
+        var initial = (chName.charAt(0) || "ق").toUpperCase();
+
+        if (titleEl && !infoBox.querySelector(".qaaf-yt-meta-row")) {
+          var metaWrap = document.createElement("div");
+          metaWrap.className = "qaaf-yt-meta-row flex items-start gap-3 pt-1";
+
+          /* Left Circular Channel Avatar */
+          var avatar = document.createElement("div");
+          avatar.className = "w-9 h-9 rounded-full bg-[#164e3a] border border-emerald-400/40 text-white font-extrabold text-xs flex items-center justify-center shrink-0 mt-0.5 shadow";
+          avatar.innerText = initial;
+
+          /* Center Title & Subtitle */
+          var centerCol = document.createElement("div");
+          centerCol.className = "flex-1 min-w-0";
+          titleEl.className = "text-sm sm:text-[15px] font-bold text-white leading-snug line-clamp-2";
+          centerCol.appendChild(titleEl);
+          if (chTextEl) {
+            chTextEl.className = "text-[11px] text-slate-400 mt-1 truncate";
+            centerCol.appendChild(chTextEl);
+          }
+
+          /* Right ⋮ Three Vertical Dots Button (toggles card quick actions) */
+          var dotsBtn = document.createElement("button");
+          dotsBtn.type = "button";
+          dotsBtn.className = "w-7 h-8 rounded-full hover:bg-white/10 text-slate-300 hover:text-white flex items-center justify-center shrink-0 text-base font-bold cursor-pointer";
+          dotsBtn.innerHTML = "&#8942;";
+          dotsBtn.onclick = function(ev) {
+            ev.stopPropagation();
+            if (topActions) {
+              var isHidden = topActions.style.display === "none";
+              topActions.style.setProperty("display", isHidden ? "flex" : "none", "important");
+            }
+          };
+
+          infoBox.innerHTML = "";
+          metaWrap.appendChild(avatar);
+          metaWrap.appendChild(centerCol);
+          metaWrap.appendChild(dotsBtn);
+          infoBox.appendChild(metaWrap);
+        }
+      }
+    });
+
+    /* Also clean orange/red lightning bolt ⚡ inside Shorts badges to pure White play symbol */
     var shortsSec = document.getElementById("shortsSection");
-    if (!shortsSec) return;
-    var badge = shortsSec.querySelector(".bg-rose-600, .bg-red-600, .from-rose-600, .from-red-600");
-    if (badge) {
-      badge.className = "w-7 h-7 rounded-lg bg-[#164e3a] border border-emerald-400/40 flex items-center justify-center text-white shadow";
-      badge.innerHTML =
-        '<svg viewBox="0 0 24 24" class="w-4 h-4" fill="#FFFFFF">' +
-          '<path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>' +
-        '</svg>';
+    if (shortsSec) {
+      shortsSec.querySelectorAll("span, div").forEach(function(el) {
+        if (el.children.length === 0 && (el.innerText || "").indexOf("⚡") !== -1) {
+          el.innerText = el.innerText.replace(/⚡/g, "▶");
+        }
+      });
     }
   }
 
-  // 4. CREATE SLEEK 4-BUTTON BOTTOM NAVIGATION FOOTER BAR (HOME, SHORTS, GAMES, PROFILE)
+  // 5. YOUTUBE-STYLE 4-BUTTON BOTTOM NAVIGATION FOOTER BAR (HOME, SHORTS, GAMES/PLAYLISTS, PROFILE)
   function injectMobileBottomNavigationBar() {
     if (document.getElementById("qaafMobileBottomNav")) return;
     var nav = document.createElement("nav");
     nav.id = "qaafMobileBottomNav";
-    nav.className = "fixed bottom-0 left-0 right-0 z-[130] h-14 bg-[#0a1017]/95 backdrop-blur-md border-t border-emerald-500/25 px-3 flex items-center justify-around shadow-2xl";
+    nav.className = "fixed bottom-0 left-0 right-0 z-[130] h-14 bg-[#090d14]/98 backdrop-blur-md border-t border-white/10 px-2 flex items-center justify-around shadow-2xl";
     nav.innerHTML =
-      /* 1. Home Button */
-      '<button type="button" onclick="window.qaafBottomNavAction(\'home\')" id="bnavHomeBtn" class="flex flex-col items-center justify-center gap-0.5 text-emerald-400 hover:text-white transition cursor-pointer py-1 px-3">' +
+      /* 1. Home */
+      '<button type="button" onclick="window.qaafBottomNavAction(\'home\')" id="bnavHomeBtn" class="flex flex-col items-center justify-center gap-1 text-white transition cursor-pointer py-1 px-3">' +
         '<svg viewBox="0 0 24 24" class="w-5 h-5" fill="currentColor"><path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3l9-8z"/></svg>' +
-        '<span class="text-[10px] font-extrabold tracking-wide">Home</span>' +
+        '<span class="text-[10px] font-bold">Home</span>' +
       '</button>' +
 
-      /* 2. Shorts Button (Unique Green & White QAAF Shorts Icon - NO YouTube Red!) */
-      '<button type="button" onclick="window.qaafBottomNavAction(\'shorts\')" id="bnavShortsBtn" class="flex flex-col items-center justify-center gap-0.5 text-slate-300 hover:text-emerald-300 transition cursor-pointer py-1 px-3">' +
-        '<div class="w-6 h-5 rounded-md bg-[#164e3a] border border-emerald-400/50 flex items-center justify-center text-white shadow">' +
-          '<svg viewBox="0 0 24 24" class="w-3.5 h-3.5" fill="#FFFFFF"><polygon points="9,6 18,12 9,18"/></svg>' +
-        '</div>' +
-        '<span class="text-[10px] font-extrabold tracking-wide">Shorts</span>' +
+      /* 2. Shorts (Clean White Outline Icon) */
+      '<button type="button" onclick="window.qaafBottomNavAction(\'shorts\')" id="bnavShortsBtn" class="flex flex-col items-center justify-center gap-1 text-slate-400 hover:text-white transition cursor-pointer py-1 px-3">' +
+        '<svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="3" width="12" height="18" rx="3"/><polygon points="10,8 15,12 10,16" fill="currentColor" stroke="none"/></svg>' +
+        '<span class="text-[10px] font-bold">Shorts</span>' +
       '</button>' +
 
-      /* 3. Games & Playlists Button */
-      '<button type="button" onclick="window.qaafBottomNavAction(\'games\')" id="bnavGamesBtn" class="flex flex-col items-center justify-center gap-0.5 text-slate-300 hover:text-emerald-300 transition cursor-pointer py-1 px-3">' +
+      /* 3. Games / Playlists */
+      '<button type="button" onclick="window.qaafBottomNavAction(\'games\')" id="bnavGamesBtn" class="flex flex-col items-center justify-center gap-1 text-slate-400 hover:text-white transition cursor-pointer py-1 px-3">' +
         '<svg viewBox="0 0 24 24" class="w-5 h-5" fill="currentColor"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S18.67 9 19.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>' +
-        '<span class="text-[10px] font-extrabold tracking-wide">Games</span>' +
+        '<span class="text-[10px] font-bold">Games</span>' +
       '</button>' +
 
-      /* 4. Circular User Profile Button */
-      '<button type="button" onclick="window.qaafBottomNavAction(\'profile\')" id="bnavProfileBtn" class="flex flex-col items-center justify-center gap-0.5 text-slate-300 hover:text-emerald-300 transition cursor-pointer py-1 px-3">' +
-        '<div class="w-6 h-6 rounded-full bg-[#164e3a] border border-emerald-400/60 flex items-center justify-center text-white text-xs font-extrabold shadow">👤</div>' +
-        '<span class="text-[10px] font-extrabold tracking-wide">Profile</span>' +
+      /* 4. Circular User Profile Avatar (like YouTube's bottom-right Profile circle) */
+      '<button type="button" onclick="window.qaafBottomNavAction(\'profile\')" id="bnavProfileBtn" class="flex flex-col items-center justify-center gap-1 text-slate-400 hover:text-white transition cursor-pointer py-1 px-3">' +
+        '<div id="bnavProfileCircle" class="w-6 h-6 rounded-full bg-[#164e3a] border border-emerald-400/60 flex items-center justify-center text-white text-[11px] font-extrabold shadow">ق</div>' +
+        '<span class="text-[10px] font-bold">You</span>' +
       '</button>';
 
     document.body.appendChild(nav);
@@ -2677,16 +2797,18 @@
     var bShorts = document.getElementById("bnavShortsBtn");
     var bGames = document.getElementById("bnavGamesBtn");
     [bHome, bShorts, bGames].forEach(function(b) {
-      if (b) b.className = "flex flex-col items-center justify-center gap-0.5 text-slate-300 hover:text-emerald-300 transition cursor-pointer py-1 px-3";
+      if (b) b.className = "flex flex-col items-center justify-center gap-1 text-slate-400 hover:text-white transition cursor-pointer py-1 px-3";
     });
 
     if (tab === "home") {
-      if (bHome) bHome.className = "flex flex-col items-center justify-center gap-0.5 text-emerald-400 transition cursor-pointer py-1 px-3";
+      if (bHome) bHome.className = "flex flex-col items-center justify-center gap-1 text-white transition cursor-pointer py-1 px-3";
+      if (typeof window.closeInstalledGameModal === "function") window.closeInstalledGameModal();
       if (typeof window.switchKidsTab === "function") window.switchKidsTab("videos");
       if (typeof window.selectCategory === "function") window.selectCategory("all");
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else if (tab === "shorts") {
-      if (bShorts) bShorts.className = "flex flex-col items-center justify-center gap-0.5 text-emerald-400 transition cursor-pointer py-1 px-3";
+      if (bShorts) bShorts.className = "flex flex-col items-center justify-center gap-1 text-white transition cursor-pointer py-1 px-3";
+      if (typeof window.closeInstalledGameModal === "function") window.closeInstalledGameModal();
       if (typeof window.switchKidsTab === "function") window.switchKidsTab("videos");
       var sSec = document.getElementById("shortsSection");
       if (sSec) {
@@ -2694,19 +2816,18 @@
         sSec.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     } else if (tab === "games") {
-      if (bGames) bGames.className = "flex flex-col items-center justify-center gap-0.5 text-emerald-400 transition cursor-pointer py-1 px-3";
-      if (typeof window.switchKidsTab === "function") {
-        window.switchKidsTab("games");
-      }
+      if (bGames) bGames.className = "flex flex-col items-center justify-center gap-1 text-white transition cursor-pointer py-1 px-3";
+      if (typeof window.switchKidsTab === "function") window.switchKidsTab("games");
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else if (tab === "profile") {
+      if (window.isKidsMode) return;
       if (typeof window.toggleUserProfileDrawer === "function") {
         window.toggleUserProfileDrawer(true);
       }
     }
   };
 
-  // 5. AUTO-HIDE CATEGORY BAR & BOTTOM FOOTER ON SCROLL DOWN, SHOW ON SCROLL UP
+  // 6. AUTO-HIDE CATEGORY BAR & BOTTOM FOOTER ON SCROLL DOWN OR VIDEO PLAY
   var lastScrollY = window.scrollY || 0;
   window.addEventListener("scroll", function() {
     var curY = window.scrollY || 0;
@@ -2720,12 +2841,10 @@
       return;
     }
 
-    if (curY > lastScrollY + 14 && curY > 90) {
-      /* Scrolling Down -> Hide bars smoothly */
+    if (curY > lastScrollY + 12 && curY > 70) {
       if (catBar) catBar.classList.add("qaaf-bar-autohidden");
       if (botNav) botNav.classList.add("qaaf-nav-autohidden");
-    } else if (curY < lastScrollY - 10 || curY < 50) {
-      /* Scrolling Up -> Show bars smoothly */
+    } else if (curY < lastScrollY - 10 || curY < 45) {
       if (catBar && !document.body.classList.contains("qaaf-games-mode-active")) {
         catBar.classList.remove("qaaf-bar-autohidden");
       }
@@ -2734,10 +2853,7 @@
     lastScrollY = curY;
   }, { passive: true });
 
-  // 6. ENHANCE ☰ MENU DRAWER WITH:
-  //    - Video Request + Status Count Badge
-  //    - Pro Membership / Activation Code Button
-  //    - Sponsor / Promote Contact Info (moved from bottom bar)
+  // 7. ENHANCE ☰ MENU DRAWER WITH VIDEO REQUEST + STATUS, PRO MEMBERSHIP & APK DOWNLOAD
   function enhanceDrawerWithRequestProAndSponsor() {
     var drawer = document.getElementById("userProfileDrawer");
     if (!drawer) return;
@@ -2760,25 +2876,21 @@
     var isPro = localStorage.getItem("qaaf_pro_unlocked") === "true" || !!window.isProUnlocked;
 
     extraBox.innerHTML =
-      /* 1. Video Request with Live Status Badge */
       '<button type="button" onclick="window.openVideoRequestWithStatusModal()" class="qaaf-drawer-req-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-[#11221c] hover:bg-[#16382b] border border-emerald-500/35 text-xs font-extrabold text-white transition cursor-pointer">' +
         '<span class="flex items-center gap-2"><span>📩</span> <span>Video Request &amp; Status</span></span>' +
         '<span id="drawerVideoRequestBadge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500 text-black">' + reqCount + '</span>' +
       '</button>' +
 
-      /* 2. Get Pro Membership / Enter Activation Code */
       '<button type="button" onclick="window.openQaafProMembershipModal()" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-[#164e3a] to-[#0f3d2e] hover:from-[#1d634a] hover:to-[#164e3a] border border-emerald-400/50 text-xs font-extrabold text-white shadow transition cursor-pointer">' +
         '<span class="flex items-center gap-2"><span>👑</span> <span>' + (isPro ? 'QAAF Pro Member (Active)' : 'Get Pro Membership / Code') + '</span></span>' +
         '<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-white text-[#0f3d2e]">' + (isPro ? 'ACTIVE' : 'PRO') + '</span>' +
       '</button>' +
 
-      /* 3. Download Android APK Button */
       '<a href="./apk/qaaf-tube.apk" download="qaaf-tube.apk" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-xs font-bold text-emerald-300 transition cursor-pointer">' +
         '<span class="flex items-center gap-2"><span>🤖</span> <span>Download Android App (APK)</span></span>' +
         '<span class="text-[10px] font-extrabold text-white">⬇ APK</span>' +
       '</a>' +
 
-      /* 4. Sponsor / Promote Info (Moved from bottom screen bar into ☰ menu) */
       '<div class="bg-black/40 border border-slate-800 rounded-xl p-3 text-[11px] text-slate-300 space-y-1">' +
         '<div class="font-extrabold text-emerald-300 flex items-center gap-1.5"><span>📣</span> <span>Sponsor &amp; Promotion</span></div>' +
         '<p class="text-[10px] text-slate-400 leading-relaxed">For halal sponsorship, promotion, or support on QAAF Tube:</p>' +
@@ -2797,21 +2909,17 @@
     }
   };
 
-  // 7. CLEAN UP PARENT CONTROL MODAL:
-  //    - Hide Approved Channels Filter / Ban Channel box
-  //    - Replace PWA text with Android APK Download (./apk/qaaf-tube.apk)
+  // 8. CLEAN UP PARENT CONTROL MODAL (FULL SCREEN + ANDROID APK + HIDE CHANNEL FILTER)
   function cleanupParentControlModalContent() {
     var pModal = document.getElementById("parentModal");
     if (!pModal) return;
 
-    /* Hide Approved Channels Filter box completely */
     var filterList = document.getElementById("parentChannelFilterList");
     if (filterList) {
       var filterBox = filterList.closest(".border") || filterList.parentElement;
       if (filterBox) filterBox.style.display = "none";
     }
 
-    /* Update PWA Install Box to Android App (APK) Download Box */
     pModal.querySelectorAll("h3, h4, div").forEach(function(el) {
       if ((el.innerText || "").indexOf("Install QAAF Tube as Mobile App (PWA)") !== -1 && el.children.length <= 4) {
         var box = el.closest(".border") || el;
@@ -2830,8 +2938,7 @@
     });
   }
 
-  // 8. PRO MEMBERSHIP MODAL (GOOGLE PLAY SUBSCRIPTION BRIDGE + PROMO/ACTIVATION CODE)
-  //    + ADMIN MANUAL PRO UPGRADE BY EMAIL & PROMO CODE GENERATOR
+  // 9. PRO MEMBERSHIP + PROMO CODE + ADMIN MANUAL PRO ENGINE
   var BUILTIN_PROMO_CODES = ["QAAFPRO786", "MAKKAH786", "QAAFVIPSADQAH", "ALLAH99"];
   window.qaafCloudPromoCodes = {};
 
@@ -2891,8 +2998,6 @@
             '<p class="text-[11px] text-emerald-300 font-bold">' + (isPro ? '✅ Your Pro Membership is Currently ACTIVE!' : 'Unlock all game stages & support 100% ad-free Islamic hub') + '</p>' +
           '</div>' +
         '</div>' +
-
-        /* Option 1: Google Play Subscription (sends bridge message to React Native App) */
         '<div class="bg-black/45 border border-emerald-500/30 rounded-2xl p-3.5 space-y-2">' +
           '<div class="text-xs font-extrabold text-emerald-300">1. Subscribe via Google Play (Mobile App)</div>' +
           '<p class="text-[11px] text-slate-300">Instant monthly/yearly supporter subscription through Google Play Billing.</p>' +
@@ -2900,8 +3005,6 @@
             '<span>🤖</span> <span>Subscribe with Google Play</span>' +
           '</button>' +
         '</div>' +
-
-        /* Option 2: Enter Promo Code / Activation Code */
         '<div class="bg-black/45 border border-slate-700 rounded-2xl p-3.5 space-y-2">' +
           '<div class="text-xs font-extrabold text-white">2. Have a Promo / Activation Code?</div>' +
           '<p class="text-[11px] text-slate-400">Enter the activation code received from QAAF Tube Admin (contactqaaftube@gmail.com):</p>' +
@@ -2955,16 +3058,6 @@
     }
   };
 
-  // Listen for Google Play success message from React Native WebView
-  window.addEventListener("message", function(ev) {
-    if (!ev || !ev.data) return;
-    var d = ev.data;
-    if (d === "QAAF_GOOGLE_PLAY_PRO_SUCCESS" || (d && d.type === "QAAF_GOOGLE_PLAY_PRO_SUCCESS")) {
-      activateUserProMembershipNow("Google Play");
-    }
-  });
-
-  // Inject Admin Manual Pro by Email & Activation Code Generator inside Admin Users & Pro tab
   function injectAdminManualProAndCodeBox() {
     if (document.getElementById("admManualProAndPromoBox")) return;
     var usersPane = document.getElementById("admPane_users");
@@ -3034,8 +3127,9 @@
   };
 
   function runAllUXEnhancements() {
-    setupHeaderQaafSearchIcon();
-    updateShortsHeaderToGreenWhite();
+    ensureKidsModeAndLogoButtonsAlwaysWork();
+    setupYoutubeStyleHeaderSearchAndHideMainRows();
+    styleVideoFeedLikeYouTube();
     injectMobileBottomNavigationBar();
     enhanceDrawerWithRequestProAndSponsor();
     cleanupParentControlModalContent();
@@ -3043,6 +3137,6 @@
   }
 
   pullPromoCodesFromCloud();
-  setTimeout(runAllUXEnhancements, 200);
-  setInterval(runAllUXEnhancements, 1200);
+  setTimeout(runAllUXEnhancements, 120);
+  setInterval(runAllUXEnhancements, 800);
 })();
