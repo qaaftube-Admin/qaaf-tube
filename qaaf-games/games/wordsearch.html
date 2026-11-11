@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html lang="ur" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -5136,6 +5136,80 @@
     praiseIdx++;
     playShortMp3(f);
   };
+})();
+</script>
+<style id="qaafStep2DirectStyle">
+  #devExportBox, #devBanner, #zipExportBanner, #exportPackageBox, .dev-export-box,
+  #hubView, #hubListView, #mainHubHeader, #gamesMenuView, #hubContainer, #gameSelectionMenu {
+    display: none !important;
+  }
+</style>
+<script id="qaafStep2DirectScript">
+(function() {
+  var GAME_ID = "wordsearch";
+
+  window.qaafExitGameNow = function(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    try { window.parent.postMessage("QAAF_EXIT_GAME", "*"); } catch (err) {}
+    try { window.parent.postMessage({ type: "QAAF_EXIT_GAME" }, "*"); } catch (err) {}
+    try { window.parent.postMessage({ type: "QAAF_BACK_TO_HUB" }, "*"); } catch (err) {}
+    try { window.parent.postMessage({ type: "QAAF_EXIT_GAMES" }, "*"); } catch (err) {}
+    try { if (window.parent && window.parent.closeInstalledGameModal) window.parent.closeInstalledGameModal(); } catch (err) {}
+    try { if (window.parent && window.parent !== window && window.parent.closeGameFileToHub) window.parent.closeGameFileToHub(); } catch (err) {}
+    if (window.parent === window) window.location.href = "../qaaf-games.html";
+  };
+
+  function applyDirectGameAndClean() {
+    document.querySelectorAll("div, section, aside, header").forEach(function(el) {
+      if (!el || !el.parentElement) return;
+      var t = (el.innerText || "");
+      if ((t.indexOf("Download ZIP") !== -1 || t.indexOf("Copy Command") !== -1 || t.indexOf("\u0632\u067e \u067e\u06cc\u06a9\u062c") !== -1 || t.indexOf("\u06a9\u0645\u0627\u0646\u0688 \u06a9\u0627\u067e\u06cc") !== -1) && !el.querySelector("canvas") && t.length < 1600) {
+        el.style.setProperty("display", "none", "important");
+        try { el.remove(); } catch (e) {}
+      }
+    });
+
+    var lang = "en";
+    try {
+      var qLang = new URLSearchParams(window.location.search).get("lang");
+      if (qLang === "ur" || qLang === "ar" || qLang === "en") lang = qLang;
+    } catch (e) {}
+
+    if (!window.__qaafStep2LangDone) {
+      window.__qaafStep2LangDone = true;
+      window.currentLang = lang;
+      var lFn = window.setLanguage || window.changeLanguage || window.setHubLanguage;
+      if (typeof lFn === "function") { try { lFn(lang); } catch (e) {} }
+    }
+
+    if (!window.__qaafStep2GameDone) {
+      var fns = ["openGame", "switchGame", "startGame", "selectGame", "showGame", "loadGame"];
+      for (var i = 0; i < fns.length; i++) {
+        if (typeof window[fns[i]] === "function") {
+          try { window[fns[i]](GAME_ID); window.__qaafStep2GameDone = true; break; } catch (e) {}
+        }
+      }
+      if (!window.__qaafStep2GameDone) {
+        var b = document.querySelector("[onclick*=\"'" + GAME_ID + "'\"]") || document.querySelector("[data-game=\"" + GAME_ID + "\"]");
+        if (b && b.click) { try { b.click(); window.__qaafStep2GameDone = true; } catch (e) {} }
+      }
+    }
+
+    window.backToHub = window.returnToHub = window.showHub = window.exitToMainQaafApp = window.exitGame = window.closeGame = window.qaafExitGameNow;
+    document.querySelectorAll("button, a").forEach(function(btn) {
+      var oc = btn.getAttribute("onclick") || "";
+      var tx = (btn.innerText || "").trim();
+      if (oc.indexOf("backToHub") !== -1 || oc.indexOf("exitToMain") !== -1 || oc.indexOf("showHub") !== -1 || oc.indexOf("closeGame") !== -1 || tx === "Exit" || tx === "\u0628\u0627\u06c1\u0631 \u0646\u06a9\u0644\u06cc\u06ba" || tx === "\u062e\u0631\u0648\u062c" || tx === "\u0645\u06cc\u0646\u0648 \u0645\u06cc\u06ba \u0648\u0627\u067e\u0633") {
+        btn.onclick = window.qaafExitGameNow;
+      }
+    });
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", applyDirectGameAndClean);
+  else applyDirectGameAndClean();
+  window.addEventListener("load", applyDirectGameAndClean);
+  setTimeout(applyDirectGameAndClean, 80);
+  setTimeout(applyDirectGameAndClean, 300);
 })();
 </script>
 </body>
