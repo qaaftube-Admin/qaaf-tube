@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html lang="ur" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -47,7 +47,7 @@
   </style>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 </head>
-<body class="font-urdu">
+<body class="font-english">
 
   <!-- Top Header for Main Hub -->
   <header id="mainHubHeader" class="sticky top-0 z-40 bg-[#070d17]/95 backdrop-blur-md border-b border-slate-800/90 shadow-md">
@@ -216,16 +216,22 @@
     }
 
     function exitToMainQaafApp() {
+      try { window.parent.postMessage('QAAF_EXIT_GAME', '*'); } catch (e) {}
+      try { window.parent.postMessage({ type: 'QAAF_EXIT_GAMES' }, '*'); } catch (e) {}
       try {
-        if (window.parent && window.parent !== window) {
-          window.parent.postMessage({ type: 'QAAF_EXIT_GAMES' }, '*');
+        if (window.parent && window.parent !== window && window.parent.closeInstalledGameModal) {
+          window.parent.closeInstalledGameModal();
+          return;
         }
       } catch (e) {}
       if (window.history.length > 1) window.history.back();
-      else window.location.href = 'index.html';
+      else window.location.href = '../index.html';
     }
 
+    window.closeInstalledGameModal = closeGameFileToHub;
+    window.closeGameFileToHub = closeGameFileToHub;
     window.addEventListener('message', (event) => {
+      if (event.data === 'QAAF_EXIT_GAME' || event.data === 'QAAF_BACK_TO_HUB') { closeGameFileToHub(); return; }
       const data = event.data;
       if (!data || typeof data !== 'object') return;
       if (data.type === 'QAAF_BACK_TO_HUB' || data.type === 'QAAF_EXIT_GAMES') {
@@ -246,8 +252,8 @@
       refreshStars();
       let savedLang = 'en';
       try {
-        const l = localStorage.getItem(STORAGE_PREF_LANG_KEY);
-        if (['ur', 'ar', 'en'].includes(l)) savedLang = l;
+        const qLang = new URLSearchParams(window.location.search).get('lang');
+        if (['en', 'ur', 'ar'].includes(qLang)) savedLang = qLang;
       } catch (e) {}
       setHubLanguage(savedLang);
 
@@ -262,93 +268,6 @@
     });
   </script>
 <!-- QAAF SHORT 1-SECOND NATURAL MALE VOICE AUDIO BRIDGE v52.0 -->
-<script id="qaafAuthenticQariAudioBridge">
-(function() {
-  var isSubGame = window.location.pathname.replace(/\\/g, '/').indexOf('/games/') !== -1;
-  var AUDIO_BASE = isSubGame ? '../../audio/' : '../audio/';
-  var GAMES_AUDIO_BASE = AUDIO_BASE + 'games/';
-  var currentGameVoiceAudio = null;
-  var AUTO_GAME_KEY = "";
 
-  /* Hide any developer Download ZIP / Copy Command box inside the game file */
-  function hideDevExportBoxAndAutoOpenGame() {
-    document.querySelectorAll('button, div').forEach(function(el) {
-      var t = (el.innerText || '');
-      if ((t.indexOf('Download ZIP') !== -1 || t.indexOf('Copy Command') !== -1) && el.tagName === 'BUTTON') {
-        var box = el.parentElement;
-        if (box && box.parentElement && (box.parentElement.innerText || '').indexOf('Download ZIP') !== -1 && box.parentElement.children.length <= 4) {
-          box.parentElement.style.display = 'none';
-        } else if (box) {
-          box.style.display = 'none';
-        }
-      }
-    });
-    if (AUTO_GAME_KEY) {
-      if (typeof window.openGame === 'function') {
-        try { window.openGame(AUTO_GAME_KEY); } catch(e) {}
-      } else if (typeof window.startGame === 'function') {
-        try { window.startGame(AUTO_GAME_KEY); } catch(e) {}
-      } else if (typeof window.switchGame === 'function') {
-        try { window.switchGame(AUTO_GAME_KEY); } catch(e) {}
-      }
-    }
-  }
-  setTimeout(hideDevExportBoxAndAutoOpenGame, 80);
-  setTimeout(hideDevExportBoxAndAutoOpenGame, 350);
-
-  var OrigAudio = window.Audio;
-  window.Audio = function(src) {
-    if (typeof src === 'string') {
-      if (src.indexOf('mashaallah_verse.mp3') !== -1 || src.indexOf('mashaallah_clean.mp3') !== -1) {
-        src = GAMES_AUDIO_BASE + 'short_mashaallah.mp3';
-      } else if (src.indexOf('alhamdulillah_full.mp3') !== -1) {
-        src = GAMES_AUDIO_BASE + 'short_alhamdulillah.mp3';
-      } else if (isSubGame && src.indexOf('./audio/') === 0) {
-        src = '../../audio/' + src.substring(8);
-      } else if (isSubGame && src.indexOf('../audio/') === 0 && src.indexOf('../../audio/') !== 0) {
-        src = '../' + src;
-      }
-    }
-    return new OrigAudio(src);
-  };
-  window.Audio.prototype = OrigAudio.prototype;
-
-  var SHORT_PRAISE_FILES = [
-    'short_mashaallah.mp3',
-    'short_subhanallah.mp3',
-    'short_barakallah.mp3'
-  ];
-  var praiseIdx = 0;
-
-  function playShortMp3(fileName) {
-    if (typeof soundEnabled !== 'undefined' && !soundEnabled) return;
-    try {
-      if (currentGameVoiceAudio) {
-        currentGameVoiceAudio.pause();
-        currentGameVoiceAudio.currentTime = 0;
-      }
-      var aud = new OrigAudio(GAMES_AUDIO_BASE + fileName);
-      currentGameVoiceAudio = aud;
-      aud.play().catch(function() {
-        var aud2 = new OrigAudio('/audio/games/' + fileName);
-        currentGameVoiceAudio = aud2;
-        aud2.play().catch(function() {});
-      });
-    } catch (e) {}
-  }
-
-  window.speakMashaAllah = function() {
-    var f = SHORT_PRAISE_FILES[praiseIdx % SHORT_PRAISE_FILES.length];
-    praiseIdx++;
-    playShortMp3(f);
-  };
-
-  window.speakRaceIslamicPhrase = function(phraseObjOrText, lang) {
-    var f = SHORT_PRAISE_FILES[praiseIdx % SHORT_PRAISE_FILES.length];
-    praiseIdx++;
-    playShortMp3(f);
-  };
-})();
-</script>
 </body>
 </html>
