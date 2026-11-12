@@ -5055,7 +5055,8 @@
 
 
 
-<!-- QAAF SHORT 1-SECOND NATURAL MALE VOICE AUDIO BRIDGE v60.0 -->
+
+<!-- QAAF SHORT 1-SECOND NATURAL MALE VOICE AUDIO BRIDGE v61.0 -->
 <script id="qaafAuthenticQariAudioBridge">
 (function() {
   var AUDIO_BASE = '../../audio/';
@@ -5081,7 +5082,7 @@
     return Math.abs(h).toString(36);
   }
 
-  function launchGameAndHideDevBox() {
+  function hideDevBoxAndInit() {
     document.querySelectorAll('button').forEach(function(btn) {
       var t = (btn.innerText || '');
       if (t.indexOf('Download ZIP') !== -1 || t.indexOf('Copy Command') !== -1) {
@@ -5094,18 +5095,6 @@
       }
     });
 
-    var qLang = 'en';
-    try {
-      var pLang = new URLSearchParams(window.location.search).get('lang');
-      if (pLang === 'ur' || pLang === 'ar' || pLang === 'en') qLang = pLang;
-    } catch (e) {}
-
-    if (!window.__qaafLangInitDone) {
-      window.__qaafLangInitDone = true;
-      var lFn = window.setLang || window.setLanguage || window.changeLang || window.changeLanguage;
-      if (typeof lFn === 'function') { try { lFn(qLang); } catch (e) {} }
-    }
-
     if (!gameAutoClicked && TARGET_CARD_INDEX >= 0) {
       var cards = document.querySelectorAll('[onclick*="openGame("], [onclick*="startGame("], [onclick*="launchGame("], [onclick*="selectGame("], .game-card[onclick]');
       if (cards && cards.length > TARGET_CARD_INDEX) {
@@ -5117,36 +5106,23 @@
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
-      setTimeout(launchGameAndHideDevBox, 40);
-      setTimeout(launchGameAndHideDevBox, 200);
+      setTimeout(hideDevBoxAndInit, 30);
+      setTimeout(hideDevBoxAndInit, 180);
     });
   } else {
-    setTimeout(launchGameAndHideDevBox, 40);
-    setTimeout(launchGameAndHideDevBox, 200);
+    setTimeout(hideDevBoxAndInit, 30);
+    setTimeout(hideDevBoxAndInit, 180);
   }
-
-  document.addEventListener('click', function(ev) {
-    var btn = ev.target && ev.target.closest ? ev.target.closest('button') : null;
-    if (!btn) return;
-    var oc = btn.getAttribute('onclick') || '';
-    var txt = (btn.innerText || '').trim();
-    if (oc.indexOf('backToHub') !== -1 || oc.indexOf('exitGame') !== -1 || oc.indexOf('showHub') !== -1 || txt.indexOf('Exit') !== -1 || txt.indexOf('\u0628\u0627\u06c1\u0631') !== -1 || txt.indexOf('\u062e\u0631\u0648\u062c') !== -1) {
-      ev.preventDefault();
-      ev.stopPropagation();
-      try { window.parent.postMessage('QAAF_EXIT_GAME', '*'); } catch (e) {}
-      try { window.parent.postMessage({ type: 'QAAF_BACK_TO_HUB' }, '*'); } catch (e) {}
-      try { if (window.parent && window.parent.closeInstalledGameModal) window.parent.closeInstalledGameModal(); } catch (e) {}
-      try { if (window.parent && window.parent.closeGameFileToHub) window.parent.closeGameFileToHub(); } catch (e) {}
-    }
-  }, true);
 
   var OrigAudio = window.Audio;
   window.Audio = function(src) {
     if (typeof src === 'string') {
       if (src.indexOf('mashaallah_verse.mp3') !== -1 || src.indexOf('mashaallah_clean.mp3') !== -1) src = GAMES_AUDIO_BASE + 'short_mashaallah.mp3';
       else if (src.indexOf('alhamdulillah_full.mp3') !== -1) src = GAMES_AUDIO_BASE + 'short_alhamdulillah.mp3';
-      else if (src.indexOf('./audio/') === 0) src = '../../audio/' + src.substring(8);
-      else if (src.indexOf('../audio/') === 0 && src.indexOf('../../audio/') !== 0) src = '../' + src;
+      else if (src.indexOf('./audio/games/') === 0) src = GAMES_AUDIO_BASE + src.substring(14);
+      else if (src.indexOf('../audio/games/') === 0) src = GAMES_AUDIO_BASE + src.substring(15);
+      else if (src.indexOf('../../audio/games/') === 0) src = GAMES_AUDIO_BASE + src.substring(18);
+      else if (src.indexOf('./audio/') === 0) src = AUDIO_BASE + src.substring(8);
     }
     return new OrigAudio(src);
   };
