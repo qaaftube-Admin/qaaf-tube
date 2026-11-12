@@ -16,11 +16,11 @@
           <p class="text-xs text-emerald-300 font-semibold">Select any 3D game below to play</p>
         </div>
       </div>
-      <button onclick="if(window.parent && window.parent.closeInstalledGameModal){window.parent.closeInstalledGameModal();}else{window.history.back();}" class="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-xl text-xs font-extrabold shadow cursor-pointer">✕ Exit</button>
+      <button onclick="exitToMainApp()" class="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-xl text-xs font-extrabold shadow cursor-pointer">✕ Exit</button>
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
       
-      <div onclick="window.location.href='01-Desk racer Pro/desk_racer_pro.html'" class="bg-[#0e231c] hover:bg-[#133227] border-2 border-emerald-500/40 hover:border-emerald-400 rounded-2xl p-5 cursor-pointer transition shadow-xl flex flex-col justify-between group">
+      <div onclick="launch3dGame('01-Desk racer Pro/desk_racer_pro.html')" class="bg-[#0e231c] hover:bg-[#133227] border-2 border-emerald-500/40 hover:border-emerald-400 rounded-2xl p-5 cursor-pointer transition shadow-xl flex flex-col justify-between group">
         <div>
           <div class="flex items-center justify-between mb-3">
             <span class="w-12 h-12 rounded-2xl bg-[#164e3a] border border-emerald-400/40 flex items-center justify-center text-2xl shadow">🏎️</span>
@@ -33,5 +33,25 @@
       </div>
     </div>
   </div>
+  <script>
+    var currentLang = new URLSearchParams(window.location.search).get('lang') || 'en';
+    function launch3dGame(relUrl) {
+      var sep = relUrl.indexOf('?') === -1 ? '?' : '&';
+      window.location.href = relUrl + sep + 'lang=' + encodeURIComponent(currentLang) + '&exitUrl=' + encodeURIComponent('../index.html?lang=' + currentLang);
+    }
+    function exitToMainApp() {
+      if (window.parent && window.parent !== window) {
+        try {
+          if (typeof window.parent.closeInstalledGameModal === 'function') {
+            window.parent.closeInstalledGameModal();
+            return;
+          }
+          window.parent.postMessage('QAAF_EXIT_GAMES', '*');
+          return;
+        } catch (e) {}
+      }
+      window.location.href = '../index.html';
+    }
+  </script>
 </body>
 </html>

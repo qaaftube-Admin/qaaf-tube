@@ -3263,6 +3263,29 @@
 (function initQaafHonestRealViewsEngine() {
   window.qaafRealViewsMap = JSON.parse(localStorage.getItem("qaaf_real_inapp_views_map") || "{}");
 
+  /* Also listen for Antigravity's QAAF_EXIT_GAMES postMessage and send QAAF_SET_LANG to game iframe */
+  window.addEventListener("message", function(ev) {
+    var d = ev && ev.data;
+    if (d === "QAAF_EXIT_GAMES" || (d && (d.type === "QAAF_EXIT_GAMES" || d.action === "QAAF_EXIT_GAMES"))) {
+      if (typeof window.closeInstalledGameModal === "function") {
+        window.closeInstalledGameModal();
+      }
+    }
+  });
+
+  var gFrame = document.getElementById("qaafInstalledGameIframe");
+  if (gFrame && !gFrame.getAttribute("data-qaaf-lang-bridge")) {
+    gFrame.setAttribute("data-qaaf-lang-bridge", "1");
+    gFrame.addEventListener("load", function() {
+      try {
+        var curL = window.currentPreferredLanguage || window.currentLanguage || "en";
+        if (gFrame.contentWindow) {
+          gFrame.contentWindow.postMessage({ type: "QAAF_SET_LANG", lang: curL }, "*");
+        }
+      } catch (e) {}
+    });
+  }
+
   window.getQaafRealViewCount = function(videoObj) {
     if (!videoObj) return 0;
     var key = videoObj.ytId || videoObj.id || "";
@@ -3298,7 +3321,6 @@
     }
   };
 
-  /* Sync realViewsMapJson with Firebase Cloud so real views are shared across all users */
   if (window.qaafCloudSync) {
     var origGetP = window.qaafCloudSync.getStatePayload.bind(window.qaafCloudSync);
     window.qaafCloudSync.getStatePayload = function() {
@@ -3324,7 +3346,6 @@
     };
   }
 
-  /* Strip any legacy fake default views (2500, 1500, 250) from videosData on startup */
   function scrubLegacyFakeViews() {
     if (!Array.isArray(window.videosData)) return;
     window.videosData.forEach(function(v) {
