@@ -2768,7 +2768,7 @@
         '<span class="text-[10px] font-bold">Home</span>' +
       '</button>' +
       '<button type="button" onclick="window.qaafBottomNavAction(\'shorts\')" id="bnavShortsBtn" class="flex flex-col items-center justify-center gap-1 text-slate-400 hover:text-white transition cursor-pointer py-1 px-3">' +
-        '<svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="3" width="12" height="18" rx="3"/><polygon points="10,8 15,12 10,16" fill="currentColor" stroke="none"/></svg>' +
+        '<svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M14.2 8.6C14.2 7 9.8 7 9.8 9.2C9.8 11.3 14.2 11.7 14.2 14.2C14.2 16.5 9.8 16.5 9.8 14.8"/></svg>' +
         '<span class="text-[10px] font-bold">Shorts</span>' +
       '</button>' +
       '<button type="button" onclick="window.qaafBottomNavAction(\'games\')" id="bnavGamesBtn" class="flex flex-col items-center justify-center gap-1 text-slate-400 hover:text-white transition cursor-pointer py-1 px-3">' +
