@@ -356,9 +356,9 @@
   pullSavedPlaylistsFromCloudDb();
 
   var CHANNEL_UI_LABELS = {
-    en: { backAll: "⬅️ All Channels", tabVideos: "🎬 Videos", tabShorts: "⚡ Shorts", tabPlaylists: "📂 Playlists", verifiedCh: "Verified Islamic Channel", singleVidCh: "Selected Videos Channel", videosCount: "videos", openPl: "View full playlist", backPl: "⬅️ Back to Playlists", noShorts: "No Shorts in this channel yet.", noPlaylists: "No official YouTube playlists found for this channel.", loadingPls: "⏳ Preparing channel playlists...", loadingPlVids: "⏳ Opening playlist videos...", refreshPls: "🔄 Update Playlists" },
-    ur: { backAll: "⬅️ تمام چینلز", tabVideos: "🎬 ویڈیوز", tabShorts: "⚡ شارٹس", tabPlaylists: "📂 پلے لسٹس", verifiedCh: "تصدیق شدہ اسلامی چینل", singleVidCh: "منتخب ویڈیوز والا چینل", videosCount: "ویڈیوز", openPl: "پوری پلے لسٹ دیکھیں", backPl: "⬅️ تمام پلے لسٹس پر واپس", noShorts: "اس چینل میں ابھی کوئی شارٹس نہیں ہیں۔", noPlaylists: "اس چینل پر کوئی یوٹیوب پلے لسٹ نہیں ملی۔", loadingPls: "⏳ پلے لسٹس کھل رہی ہیں...", loadingPlVids: "⏳ پلے لسٹ کی ویڈیوز کھل رہی ہیں...", refreshPls: "🔄 پلے لسٹس اپ ڈیٹ کریں" },
-    ar: { backAll: "⬅️ جميع القنوات", tabVideos: "🎬 الفيديوهات", tabShorts: "⚡ المقاطع القصيرة", tabPlaylists: "📂 قوائم التشغيل", verifiedCh: "قناة إسلامية موثقة", singleVidCh: "قناة فيديوهات مختارة", videosCount: "فيديو", openPl: "عرض قائمة التشغيل الكاملة", backPl: "⬅️ العودة لقوائم التشغيل", noShorts: "لا توجد مقاطع قصيرة في هذه القناة.", noPlaylists: "لا توجد قوائم تشغيل على يوتيوب لهذه القناة.", loadingPls: "⏳ جاري فتح قوائم التشغيل...", loadingPlVids: "⏳ جاري فتح فيديوهات القائمة...", refreshPls: "🔄 تحديث القوائم" }
+    en: { backAll: "⬅️ All Channels", tabVideos: "🎬 Videos", tabShorts: '<svg viewBox="0 0 24 24" class="w-3.5 h-3.5 text-white shrink-0" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M14.2 8.6C14.2 7 9.8 7 9.8 9.2C9.8 11.3 14.2 11.7 14.2 14.2C14.2 16.5 9.8 16.5 9.8 14.8"/></svg> <span>Shorts</span>', tabPlaylists: "📂 Playlists", verifiedCh: "Verified Islamic Channel", singleVidCh: "Selected Videos Channel", videosCount: "videos", openPl: "View full playlist", backPl: "⬅️ Back to Playlists", noShorts: "No Shorts in this channel yet.", noPlaylists: "No official YouTube playlists found for this channel.", loadingPls: "⏳ Preparing channel playlists...", loadingPlVids: "⏳ Opening playlist videos...", refreshPls: "🔄 Update Playlists" },
+    ur: { backAll: "⬅️ تمام چینلز", tabVideos: "🎬 ویڈیوز", tabShorts: '<svg viewBox="0 0 24 24" class="w-3.5 h-3.5 text-white shrink-0" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M14.2 8.6C14.2 7 9.8 7 9.8 9.2C9.8 11.3 14.2 11.7 14.2 14.2C14.2 16.5 9.8 16.5 9.8 14.8"/></svg> <span>شارٹس</span>', tabPlaylists: "📂 پلے لسٹس", verifiedCh: "تصدیق شدہ اسلامی چینل", singleVidCh: "منتخب ویڈیوز والا چینل", videosCount: "ویڈیوز", openPl: "پوری پلے لسٹ دیکھیں", backPl: "⬅️ تمام پلے لسٹس پر واپس", noShorts: "اس چینل میں ابھی کوئی شارٹس نہیں ہیں۔", noPlaylists: "اس چینل پر کوئی یوٹیوب پلے لسٹ نہیں ملی۔", loadingPls: "⏳ پلے لسٹس کھل رہی ہیں...", loadingPlVids: "⏳ پلے لسٹ کی ویڈیوز کھل رہی ہیں...", refreshPls: "🔄 پلے لسٹس اپ ڈیٹ کریں" },
+    ar: { backAll: "⬅️ جميع القنوات", tabVideos: "🎬 الفيديوهات", tabShorts: '<svg viewBox="0 0 24 24" class="w-3.5 h-3.5 text-white shrink-0" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M14.2 8.6C14.2 7 9.8 7 9.8 9.2C9.8 11.3 14.2 11.7 14.2 14.2C14.2 16.5 9.8 16.5 9.8 14.8"/></svg> <span>المقاطع القصيرة</span>', tabPlaylists: "📂 قوائم التشغيل", verifiedCh: "قناة إسلامية موثقة", singleVidCh: "قناة فيديوهات مختارة", videosCount: "فيديو", openPl: "عرض قائمة التشغيل الكاملة", backPl: "⬅️ العودة لقوائم التشغيل", noShorts: "لا توجد مقاطع قصيرة في هذه القناة.", noPlaylists: "لا توجد قوائم تشغيل على يوتيوب لهذه القناة.", loadingPls: "⏳ جاري فتح قوائم التشغيل...", loadingPlVids: "⏳ جاري فتح فيديوهات القائمة...", refreshPls: "🔄 تحديث القوائم" }
   };
 
   function getChLabels() {
@@ -3220,34 +3220,42 @@
   (function qaafEnforceUnifiedShortsIcon() {
     var sHdr = '<svg viewBox="0 0 24 24" class="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M14.2 8.6C14.2 7 9.8 7 9.8 9.2C9.8 11.3 14.2 11.7 14.2 14.2C14.2 16.5 9.8 16.5 9.8 14.8"/></svg>';
     var sBdg = '<svg viewBox="0 0 24 24" class="w-3.5 h-3.5 text-white shrink-0" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M14.2 8.6C14.2 7 9.8 7 9.8 9.2C9.8 11.3 14.2 11.7 14.2 14.2C14.2 16.5 9.8 16.5 9.8 14.8"/></svg>';
-    var sNav = '<svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M14.2 8.6C14.2 7 9.8 7 9.8 9.2C9.8 11.3 14.2 11.7 14.2 14.2C14.2 16.5 9.8 16.5 9.8 14.8"/></svg>';
 
-    function syncAllShortsIconsInDom() {
-      /* 1. Bottom Nav Shorts button */
-      var b = document.getElementById("bnavShortsBtn");
-      if (b && b.innerHTML.indexOf("polygon") !== -1) {
-        var sp = b.querySelector("span");
-        b.innerHTML = sNav + (sp ? sp.outerHTML : '<span class="text-[10px] font-bold">Shorts</span>');
-      }
-
-      /* 2. Shorts Shelf Heading & Card Badges */
+    function upgradeShortsShelfDomNow() {
       var shelf = document.getElementById("qaafShortsShelf");
-      if (shelf) {
-        var h3 = shelf.querySelector("h3");
-        if (h3 && h3.previousElementSibling && !h3.previousElementSibling.querySelector("svg")) {
-          h3.previousElementSibling.className = "bg-[#164e3a] border border-emerald-400/50 text-white w-7 h-7 rounded-lg flex items-center justify-center shadow shrink-0";
-          h3.previousElementSibling.innerHTML = sHdr;
+      if (!shelf) return;
+
+      /* 1. Heading icon box before h3 */
+      var h3 = shelf.querySelector("h3");
+      if (h3 && h3.previousElementSibling) {
+        var iconBox = h3.previousElementSibling;
+        if (!iconBox.getAttribute("data-qaaf-s-icon")) {
+          iconBox.setAttribute("data-qaaf-s-icon", "1");
+          iconBox.className = "bg-[#164e3a] border border-emerald-400/50 text-white w-7 h-7 rounded-lg flex items-center justify-center shadow shrink-0";
+          iconBox.innerHTML = sHdr;
         }
-        shelf.querySelectorAll("a > span").forEach(function(badge) {
-          if (!badge.querySelector("svg") && (badge.textContent || "").indexOf("Short") !== -1) {
-            badge.className = "absolute top-2.5 left-2.5 bg-[#164e3a] border border-emerald-400/40 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1 shadow";
-            badge.innerHTML = sBdg + "<span>Short</span>";
-          }
-        });
       }
+
+      /* 2. Every Short Card top-left badge */
+      shelf.querySelectorAll("a > span").forEach(function(badge) {
+        if (!badge.getAttribute("data-qaaf-s-icon")) {
+          badge.setAttribute("data-qaaf-s-icon", "1");
+          badge.className = "absolute top-2.5 left-2.5 bg-[#164e3a] border border-emerald-400/40 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1 shadow";
+          badge.innerHTML = sBdg + "<span>Short</span>";
+        }
+      });
     }
 
-    setTimeout(syncAllShortsIconsInDom, 80);
-    setInterval(syncAllShortsIconsInDom, 500);
+    var prevRVN = window.renderVideosNow;
+    if (typeof prevRVN === "function") {
+      window.renderVideosNow = function() {
+        var res = prevRVN.apply(this, arguments);
+        upgradeShortsShelfDomNow();
+        return res;
+      };
+    }
+
+    setTimeout(upgradeShortsShelfDomNow, 50);
+    setInterval(upgradeShortsShelfDomNow, 400);
   })();
 
