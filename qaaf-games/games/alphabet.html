@@ -5227,5 +5227,124 @@
   };
 })();
 </script>
+<!-- QAAF SHORT 1-SECOND NATURAL MALE VOICE AUDIO BRIDGE v59.0 -->
+<script id="qaafAuthenticQariAudioBridge">
+(function() {
+  var isSubGame = window.location.pathname.replace(/\\/g, '/').indexOf('/games/') !== -1;
+  var AUDIO_BASE = isSubGame ? '../../audio/' : '../audio/';
+  var GAMES_AUDIO_BASE = AUDIO_BASE + 'games/';
+  var currentGameVoiceAudio = null;
+  var TARGET_CARD_INDEX = 2;
+
+  /* 1. Hide Developer ZIP/Command box & Click the exact native Hub Card for this game */
+  var gameAutoClicked = false;
+  function launchCorrectNativeGameCard() {
+    document.querySelectorAll('button, div').forEach(function(el) {
+      var t = (el.innerText || '');
+      if ((t.indexOf('Download ZIP') !== -1 || t.indexOf('Copy Command') !== -1) && el.tagName === 'BUTTON') {
+        var box = el.parentElement;
+        if (box && box.parentElement && (box.parentElement.innerText || '').indexOf('Download ZIP') !== -1 && box.parentElement.children.length <= 4) {
+          box.parentElement.style.display = 'none';
+        } else if (box) {
+          box.style.display = 'none';
+        }
+      }
+    });
+
+    if (!gameAutoClicked && TARGET_CARD_INDEX >= 0) {
+      var cards = document.querySelectorAll('[onclick*="openGame("], [onclick*="startGame("], [onclick*="launchGame("], [onclick*="selectGame("], .game-card[onclick]');
+      if (cards && cards.length > TARGET_CARD_INDEX) {
+        gameAutoClicked = true;
+        try {
+          cards[TARGET_CARD_INDEX].click();
+        } catch (e) {}
+      }
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(launchCorrectNativeGameCard, 50);
+      setTimeout(launchCorrectNativeGameCard, 250);
+    });
+  } else {
+    setTimeout(launchCorrectNativeGameCard, 50);
+    setTimeout(launchCorrectNativeGameCard, 250);
+  }
+
+  /* 2. Connect Exit Button inside game to QAAF Tube modal close */
+  document.addEventListener('click', function(ev) {
+    var btn = ev.target && ev.target.closest ? ev.target.closest('button') : null;
+    if (!btn) return;
+    var oc = btn.getAttribute('onclick') || '';
+    var txt = (btn.innerText || '').trim();
+    if (oc.indexOf('backToHub') !== -1 || oc.indexOf('exitGame') !== -1 || oc.indexOf('showHub') !== -1 || txt.indexOf('Exit') !== -1 || txt.indexOf('باہر') !== -1 || txt.indexOf('خروج') !== -1) {
+      if (window.parent && window.parent !== window) {
+        try {
+          if (typeof window.parent.closeInstalledGameModal === 'function') {
+            window.parent.closeInstalledGameModal();
+          } else {
+            window.parent.postMessage('QAAF_EXIT_GAME', '*');
+          }
+        } catch (e) {}
+      }
+    }
+  }, true);
+
+  /* 3. Audio Path Fixer & 1-Second Natural Male Voice Praise */
+  var OrigAudio = window.Audio;
+  window.Audio = function(src) {
+    if (typeof src === 'string') {
+      if (src.indexOf('mashaallah_verse.mp3') !== -1 || src.indexOf('mashaallah_clean.mp3') !== -1) {
+        src = GAMES_AUDIO_BASE + 'short_mashaallah.mp3';
+      } else if (src.indexOf('alhamdulillah_full.mp3') !== -1) {
+        src = GAMES_AUDIO_BASE + 'short_alhamdulillah.mp3';
+      } else if (isSubGame && src.indexOf('./audio/') === 0) {
+        src = '../../audio/' + src.substring(8);
+      } else if (isSubGame && src.indexOf('../audio/') === 0 && src.indexOf('../../audio/') !== 0) {
+        src = '../' + src;
+      }
+    }
+    return new OrigAudio(src);
+  };
+  window.Audio.prototype = OrigAudio.prototype;
+
+  var SHORT_PRAISE_FILES = [
+    'short_mashaallah.mp3',
+    'short_subhanallah.mp3',
+    'short_barakallah.mp3'
+  ];
+  var praiseIdx = 0;
+
+  function playShortMp3(fileName) {
+    if (typeof soundEnabled !== 'undefined' && !soundEnabled) return;
+    try {
+      if (currentGameVoiceAudio) {
+        currentGameVoiceAudio.pause();
+        currentGameVoiceAudio.currentTime = 0;
+      }
+      var aud = new OrigAudio(GAMES_AUDIO_BASE + fileName);
+      currentGameVoiceAudio = aud;
+      aud.play().catch(function() {
+        var aud2 = new OrigAudio('/audio/games/' + fileName);
+        currentGameVoiceAudio = aud2;
+        aud2.play().catch(function() {});
+      });
+    } catch (e) {}
+  }
+
+  window.speakMashaAllah = function() {
+    var f = SHORT_PRAISE_FILES[praiseIdx % SHORT_PRAISE_FILES.length];
+    praiseIdx++;
+    playShortMp3(f);
+  };
+
+  window.speakRaceIslamicPhrase = function() {
+    var f = SHORT_PRAISE_FILES[praiseIdx % SHORT_PRAISE_FILES.length];
+    praiseIdx++;
+    playShortMp3(f);
+  };
+})();
+</script>
 </body>
 </html>
