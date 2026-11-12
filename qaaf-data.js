@@ -285,7 +285,7 @@ const globalLanguagesList = [
             <a ${isKidsLocked ? '' : `href="?watch=${encodeURIComponent(sh.id)}"`} onclick="return handleQaafVideoLinkClick(event, '${sh.id}')" class="w-40 sm:w-48 shrink-0 bg-[#12151c] rounded-2xl overflow-hidden border border-white/10 hover:border-red-500/60 transition cursor-pointer group relative aspect-[9/16] flex flex-col justify-end shadow-lg no-underline text-inherit">
               <img src="${thumbUrl}" alt="" class="absolute inset-0 w-full h-full object-cover pointer-events-none select-none" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${categoryArtwork}';" />
               <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent"></div>
-              <span class="absolute top-2.5 left-2.5 bg-red-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1 shadow">⚡ Short</span>
+              <span class="absolute top-2.5 left-2.5 bg-red-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1 shadow"><svg viewBox="0 0 24 24" class="w-3.5 h-3.5 text-white shrink-0" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M14.2 8.6C14.2 7 9.8 7 9.8 9.2C9.8 11.3 14.2 11.7 14.2 14.2C14.2 16.5 9.8 16.5 9.8 14.8"/></svg> <span>Short</span></span>
               <div class="relative z-10 p-3 text-left">
                 <h4 class="text-xs font-extrabold text-white line-clamp-2 leading-snug mb-1">${sh.title}</h4>
                 <p class="text-[10px] text-slate-300 font-semibold truncate">${sh.channel}</p>
@@ -297,7 +297,7 @@ const globalLanguagesList = [
         shortsShelf.innerHTML = `
           <div class="flex items-center justify-between mb-2.5 px-1">
             <div class="flex items-center gap-2">
-              <span class="bg-red-600 text-white w-6 h-6 rounded-lg flex items-center justify-center text-xs font-extrabold shadow">⚡</span>
+              <span class="bg-red-600 text-white w-6 h-6 rounded-lg flex items-center justify-center text-xs font-extrabold shadow"><svg viewBox="0 0 24 24" class="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M14.2 8.6C14.2 7 9.8 7 9.8 9.2C9.8 11.3 14.2 11.7 14.2 14.2C14.2 16.5 9.8 16.5 9.8 14.8"/></svg></span>
               <h3 class="text-sm sm:text-base font-extrabold text-white tracking-tight">QAAF Islamic Shorts &amp; Quick Bayans</h3>
             </div>
             <span class="text-[11px] text-slate-400 font-semibold">Swipe / Scroll ➔</span>

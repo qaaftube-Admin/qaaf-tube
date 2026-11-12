@@ -3216,3 +3216,38 @@
   setTimeout(function() { setFooterMode(false); }, 120);
 })();
 
+  // Guarantee Bottom Nav Shorts button, Shorts Shelf Heading, and Short Card Badges ALWAYS display the unified single-line 'S' icon
+  (function qaafEnforceUnifiedShortsIcon() {
+    var sHdr = '<svg viewBox="0 0 24 24" class="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M14.2 8.6C14.2 7 9.8 7 9.8 9.2C9.8 11.3 14.2 11.7 14.2 14.2C14.2 16.5 9.8 16.5 9.8 14.8"/></svg>';
+    var sBdg = '<svg viewBox="0 0 24 24" class="w-3.5 h-3.5 text-white shrink-0" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M14.2 8.6C14.2 7 9.8 7 9.8 9.2C9.8 11.3 14.2 11.7 14.2 14.2C14.2 16.5 9.8 16.5 9.8 14.8"/></svg>';
+    var sNav = '<svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M14.2 8.6C14.2 7 9.8 7 9.8 9.2C9.8 11.3 14.2 11.7 14.2 14.2C14.2 16.5 9.8 16.5 9.8 14.8"/></svg>';
+
+    function syncAllShortsIconsInDom() {
+      /* 1. Bottom Nav Shorts button */
+      var b = document.getElementById("bnavShortsBtn");
+      if (b && b.innerHTML.indexOf("polygon") !== -1) {
+        var sp = b.querySelector("span");
+        b.innerHTML = sNav + (sp ? sp.outerHTML : '<span class="text-[10px] font-bold">Shorts</span>');
+      }
+
+      /* 2. Shorts Shelf Heading & Card Badges */
+      var shelf = document.getElementById("qaafShortsShelf");
+      if (shelf) {
+        var h3 = shelf.querySelector("h3");
+        if (h3 && h3.previousElementSibling && !h3.previousElementSibling.querySelector("svg")) {
+          h3.previousElementSibling.className = "bg-[#164e3a] border border-emerald-400/50 text-white w-7 h-7 rounded-lg flex items-center justify-center shadow shrink-0";
+          h3.previousElementSibling.innerHTML = sHdr;
+        }
+        shelf.querySelectorAll("a > span").forEach(function(badge) {
+          if (!badge.querySelector("svg") && (badge.textContent || "").indexOf("Short") !== -1) {
+            badge.className = "absolute top-2.5 left-2.5 bg-[#164e3a] border border-emerald-400/40 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1 shadow";
+            badge.innerHTML = sBdg + "<span>Short</span>";
+          }
+        });
+      }
+    }
+
+    setTimeout(syncAllShortsIconsInDom, 80);
+    setInterval(syncAllShortsIconsInDom, 500);
+  })();
+
