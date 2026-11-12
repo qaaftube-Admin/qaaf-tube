@@ -347,27 +347,6 @@
          MAIN HUB SCREEN (QAAF GAMES LIST + LANGUAGE SWITCHER ONLY HERE)
          ===================================================================== -->
     <section id="gameSection-hub" class="max-w-xl mx-auto space-y-3 py-1">
-      <!-- Direct Download ZIP & 1-Click VS Code Installer Card -->
-      <div class="card-3d p-3 border-2 border-emerald-400/60 bg-emerald-950/30 space-y-2">
-        <div class="flex items-center justify-between gap-2 flex-wrap">
-          <span class="text-xs sm:text-sm font-bold text-emerald-300 flex items-center gap-1.5">
-            <i class="fa-solid fa-box-open text-amber-400"></i>
-            <span>مین ایپ اپ گریڈ پیکج (پانچوں الگ فائلیں + ہب):</span>
-          </span>
-          <span id="exportStatusBadge" class="text-[11px] font-bold text-amber-300">تیار ہے</span>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <button onclick="downloadModularZipFromBrowser()" class="btn-3d-gold py-2 px-3 text-xs sm:text-sm flex items-center justify-center gap-2">
-            <i class="fa-solid fa-download"></i>
-            <span>📥 زپ پیکج ڈاؤن لوڈ کریں (Download ZIP)</span>
-          </button>
-          <button onclick="copyPowerShellInstallerToClipboard()" class="btn-3d-emerald py-2 px-3 text-xs sm:text-sm flex items-center justify-center gap-2">
-            <i class="fa-solid fa-terminal"></i>
-            <span>📋 وی ایس کوڈ کمانڈ کاپی کریں (Copy Command)</span>
-          </button>
-        </div>
-      </div>
-
       <!-- Language Selector Card (Only on Hub Screen) -->
       <div class="card-3d p-3 flex items-center justify-between gap-2 flex-wrap">
         <span id="hubLangTitle" class="text-xs sm:text-sm font-bold text-amber-300 flex items-center gap-1.5">
@@ -933,7 +912,7 @@
 
     // Pure Original MP3 Audio Engine (Zero Browser Robotic SpeechSynthesis!)
     // Supports both K:\Qaaf Tube\audio\games\ (hashed TTS MP3s) and K:\Qaaf Tube\audio\ (existing reciter MP3s: subhanallah.mp3, barakallah.mp3, etc.)
-    const AUDIO_GAMES_DIRS = ['../../audio/games/', '../../audio/games/', 'audio/games/', '/audio/games/'];
+    const AUDIO_GAMES_DIRS = ['../audio/games/', '../../audio/games/', 'audio/games/', '/audio/games/'];
     const AUDIO_ROOT_DIRS = ['../../audio/', '../audio/', 'audio/', '/audio/'];
     let activeMaleVoiceAudio = null;
 
@@ -1214,23 +1193,19 @@
       if (appState.activeGame === 'racing') {
         stopActiveBikeRace(true);
       }
-      // 1. If opened inside the main QAAF Tube app modal iframe, close the modal immediately in 1 click!
+      if (appState.activeGame !== 'hub' && !window.location.pathname.replace(/\\/g, '/').includes('/games/')) {
+        switchGame('hub');
+        return;
+      }
       try {
         if (window.parent && window.parent !== window) {
           window.parent.postMessage('QAAF_EXIT_GAME', '*');
-          window.parent.postMessage({ type: 'QAAF_EXIT_GAME', action: 'closeGame' }, '*');
-          window.parent.postMessage({ type: 'QAAF_BACK_TO_HUB' }, '*');
           if (typeof window.parent.closeInstalledGameModal === 'function') {
             window.parent.closeInstalledGameModal();
             return;
           }
         }
       } catch (e) {}
-      // 2. If running standalone multi-game hub, go back to hub screen
-      if (appState.activeGame !== 'hub' && !window.location.pathname.includes('/games/')) {
-        switchGame('hub');
-        return;
-      }
       if (window.history.length > 1) window.history.back();
       else window.location.href = '../index.html';
     }
@@ -4953,7 +4928,7 @@
         { name: 'qaaf-games.html', content: fullSource }
       ];
       gameIds.forEach(gid => {
-        let gHtml = fullSource.replace("let initialScreen = 'wordsearch';", "let initialScreen = '" + gid + "';");
+        let gHtml = fullSource.replace("let initialScreen = 'quiz';", "let initialScreen = '" + gid + "';");
         entries.push({ name: 'games/' + gid + '.html', content: gHtml });
       });
       return entries;
@@ -5056,86 +5031,20 @@
 
 
 
-<!-- QAAF SHORT 1-SECOND NATURAL MALE VOICE AUDIO BRIDGE v61.0 -->
+
+<!-- QAAF SHORT 1-SECOND NATURAL MALE VOICE AUDIO BRIDGE v62.0 -->
 <script id="qaafAuthenticQariAudioBridge">
 (function() {
-  var AUDIO_BASE = '../../audio/';
   var GAMES_AUDIO_BASE = '../../audio/games/';
   var currentVoiceAudio = null;
-  var TARGET_CARD_INDEX = 1;
-  var gameAutoClicked = false;
-
-  try {
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak = function() {};
-    }
-  } catch (e) {}
-
-  function computeQaafHash(str) {
-    var s = String(str || '').trim();
-    var h = 0;
-    for (var i = 0; i < s.length; i++) {
-      h = ((h << 5) - h) + s.charCodeAt(i);
-      h |= 0;
-    }
-    return Math.abs(h).toString(36);
-  }
-
-  function hideDevBoxAndInit() {
-    document.querySelectorAll('button').forEach(function(btn) {
-      var t = (btn.innerText || '');
-      if (t.indexOf('Download ZIP') !== -1 || t.indexOf('Copy Command') !== -1) {
-        var box = btn.parentElement;
-        if (box && box.parentElement && (box.parentElement.innerText || '').length < 600) {
-          box.parentElement.style.display = 'none';
-        } else if (box) {
-          box.style.display = 'none';
-        }
-      }
-    });
-
-    if (!gameAutoClicked && TARGET_CARD_INDEX >= 0) {
-      var cards = document.querySelectorAll('[onclick*="openGame("], [onclick*="startGame("], [onclick*="launchGame("], [onclick*="selectGame("], .game-card[onclick]');
-      if (cards && cards.length > TARGET_CARD_INDEX) {
-        gameAutoClicked = true;
-        try { cards[TARGET_CARD_INDEX].click(); } catch (e) {}
-      }
-    }
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
-      setTimeout(hideDevBoxAndInit, 30);
-      setTimeout(hideDevBoxAndInit, 180);
-    });
-  } else {
-    setTimeout(hideDevBoxAndInit, 30);
-    setTimeout(hideDevBoxAndInit, 180);
-  }
-
-  var OrigAudio = window.Audio;
-  window.Audio = function(src) {
-    if (typeof src === 'string') {
-      if (src.indexOf('mashaallah_verse.mp3') !== -1 || src.indexOf('mashaallah_clean.mp3') !== -1) src = GAMES_AUDIO_BASE + 'short_mashaallah.mp3';
-      else if (src.indexOf('alhamdulillah_full.mp3') !== -1) src = GAMES_AUDIO_BASE + 'short_alhamdulillah.mp3';
-      else if (src.indexOf('./audio/games/') === 0) src = GAMES_AUDIO_BASE + src.substring(14);
-      else if (src.indexOf('../audio/games/') === 0) src = GAMES_AUDIO_BASE + src.substring(15);
-      else if (src.indexOf('../../audio/games/') === 0) src = GAMES_AUDIO_BASE + src.substring(18);
-      else if (src.indexOf('./audio/') === 0) src = AUDIO_BASE + src.substring(8);
-    }
-    return new OrigAudio(src);
-  };
-  window.Audio.prototype = OrigAudio.prototype;
-
   var SHORT_PRAISE_FILES = ['short_mashaallah.mp3', 'short_subhanallah.mp3', 'short_barakallah.mp3'];
   var praiseIdx = 0;
 
   function playShortMp3(fileName) {
-    if (typeof window.soundEnabled !== 'undefined' && !window.soundEnabled) return;
+    if (typeof appState !== 'undefined' && appState.audioMuted) return;
     try {
       if (currentVoiceAudio) { currentVoiceAudio.pause(); currentVoiceAudio.currentTime = 0; }
-      var aud = new OrigAudio(GAMES_AUDIO_BASE + fileName);
+      var aud = new Audio(GAMES_AUDIO_BASE + fileName);
       currentVoiceAudio = aud;
       aud.play().catch(function() {});
     } catch (e) {}
@@ -5149,14 +5058,6 @@
 
   window.speakRaceIslamicPhrase = function() {
     window.speakMashaAllah();
-  };
-
-  window.speakText = window.playVoice = window.speakArabic = function(text, lang) {
-    var clean = String(text || '').trim();
-    if (!clean) return;
-    var l = String(lang || window.currentLang || 'ar').toLowerCase();
-    var prefix = l.indexOf('ur') === 0 ? 'ur' : (l.indexOf('en') === 0 ? 'en' : 'ar');
-    playShortMp3(prefix + '_' + computeQaafHash(clean) + '.mp3');
   };
 })();
 </script>

@@ -1866,7 +1866,7 @@
       mainCat: "qaaf_2d",
       title: "QAAF Games",
       icon: "\ud83c\udfae",
-      path: "qaaf-games/qaaf-games.html?v=60.0"
+      path: "qaaf-games/qaaf-games.html?v=62.0"
     },
     {
       id: "quran_game_01_birr",
@@ -2039,8 +2039,9 @@
 
     var activeLang = window.preferredContentLang || localStorage.getItem("qaaf_preferred_content_lang") || "ur";
     var gLang = (activeLang === "ar" || activeLang === "en") ? activeLang : "ur";
-    var sep = game.launchUrl.indexOf("?") === -1 ? "?" : "&";
-    var targetSrc = game.launchUrl + sep + "lang=" + encodeURIComponent(gLang) + "&v=" + Date.now();
+    var rawUrl = game.launchUrl || game.path || "qaaf-games/qaaf-games.html";
+    var sep = rawUrl.indexOf("?") === -1 ? "?" : "&";
+    var targetSrc = rawUrl + sep + "lang=" + encodeURIComponent(gLang) + "&v=" + Date.now();
 
     var modal = document.getElementById("qaafActiveGamePlayModal");
     if (!modal) {
