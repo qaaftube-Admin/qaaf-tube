@@ -1,0 +1,37 @@
+﻿<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QAAF 3D Games Hub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#071510] text-white min-h-screen p-4 sm:p-6 select-none">
+  <div class="max-w-5xl mx-auto">
+    <div class="flex items-center justify-between border-b border-emerald-500/30 pb-4 mb-6">
+      <div class="flex items-center gap-3">
+        <span class="w-10 h-10 rounded-xl bg-[#164e3a] border border-emerald-400/50 flex items-center justify-center text-xl shadow">🏎️</span>
+        <div>
+          <h1 class="text-lg sm:text-xl font-extrabold text-white">3. QAAF 3D Games — تھری ڈی گیمز</h1>
+          <p class="text-xs text-emerald-300 font-semibold">Select any 3D game below to play</p>
+        </div>
+      </div>
+      <button onclick="if(window.parent && window.parent.closeInstalledGameModal){window.parent.closeInstalledGameModal();}else{window.history.back();}" class="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-xl text-xs font-extrabold shadow cursor-pointer">✕ Exit</button>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      
+      <div onclick="window.location.href='01-Desk racer Pro/desk_racer_pro.html'" class="bg-[#0e231c] hover:bg-[#133227] border-2 border-emerald-500/40 hover:border-emerald-400 rounded-2xl p-5 cursor-pointer transition shadow-xl flex flex-col justify-between group">
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <span class="w-12 h-12 rounded-2xl bg-[#164e3a] border border-emerald-400/40 flex items-center justify-center text-2xl shadow">🏎️</span>
+            <span class="bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-xs font-extrabold px-3 py-1 rounded-full">3D Game #1</span>
+          </div>
+          <h3 class="text-lg font-extrabold text-white group-hover:text-emerald-300 transition">Desk racer Pro</h3>
+          <p class="text-xs text-slate-300 mt-1">100% Music-Free Islamic 3D Challenge</p>
+        </div>
+        <button type="button" class="mt-5 w-full bg-[#164e3a] group-hover:bg-emerald-500 group-hover:text-black text-white font-extrabold py-2.5 rounded-xl text-xs shadow transition">▶ Play 3D Game</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -101,7 +101,7 @@
           ytId: req.ytId,
           isCustomAdded: true,
           duration: '12:00',
-          views: 250,
+          views: 0,
           createdAt: Math.floor(Date.now() / 1000)
         });
         count++;
@@ -2008,7 +2008,7 @@
 
       uniqueChs.forEach(function(ch) {
         var chVids = videosData.filter(function(v) { return v.channel === ch; });
-        var totalChViews = chVids.reduce(function(acc, v) { return acc + (v.views || 0); }, 0);
+        var totalChViews = chVids.reduce(function(acc, v) { return acc + ((typeof window.getQaafRealViewCount === 'function') ? window.getQaafRealViewCount(v) : (v.realViews || 0)); }, 0);
         var safeCh = (ch || "").replace(/'/g, "\\'");
         var isSel = (activeCh === ch);
         htmlOut += '<div class="inline-flex items-center rounded-lg overflow-hidden border ' + (isSel ? 'border-emerald-400 bg-emerald-950/60' : 'border-slate-700 bg-black') + '">';
@@ -2036,7 +2036,7 @@
       var safeCh = (v.channel || "").replace(/'/g, "\\'");
       var safeTitle = (v.title || "").replace(/'/g, "\\'");
       var thumb = v.customThumb || ("https://i.ytimg.com/vi/" + v.ytId + "/hqdefault.jpg");
-      var vViews = ((v.views || 1500) / 1000).toFixed(1) + "K views";
+      var vViews = ((typeof window.formatQaafRealViews === 'function') ? window.formatQaafRealViews(v) : ((v.realViews || 0) + ' views'));
 
       htmlOut += '<div class="bg-black/65 border border-slate-800 hover:border-slate-600 p-2.5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 transition">';
       htmlOut += '<div onclick="playVideoInsideAdminModal(\'' + v.ytId + '\', \'' + safeTitle + '\')" class="min-w-0 flex-1 flex items-center gap-3 cursor-pointer group" title="Click to Play & Inspect Video">';
@@ -4530,7 +4530,7 @@
       chEl.innerHTML = video.channel + (isChVer ? ' <span class="text-emerald-400 font-bold ml-1 text-xs" title="Verified Channel">✓</span>' : '');
     }
     if (vwEl) {
-      vwEl.innerText = ((video.views || 1500) / 1000).toFixed(1) + "K views • " + (video.lang || "en").toUpperCase();
+      vwEl.innerText = ((typeof window.formatQaafRealViews === 'function') ? window.formatQaafRealViews(video) : ((video.realViews || 0) + ' views')) + " • " + (video.lang || "en").toUpperCase();
     }
   };
 
@@ -4689,7 +4689,7 @@
     currentPlayingVideoId = videoId;
     var video = (videosData || []).find(function(v) { return v.id === videoId; }) || (videosData && videosData[0]);
     if (!video) return;
-    video.views = (video.views || 1500) + 1;
+    if (typeof window.incrementQaafRealView === 'function') { window.incrementQaafRealView(video); }
 
     if (typeof recordVideoInHistory === "function") recordVideoInHistory(videoId);
 
@@ -4703,7 +4703,7 @@
     }
     var vwEl = document.getElementById("playingViewsText");
     if (vwEl) {
-      vwEl.innerText = ((video.views || 1500) / 1000).toFixed(1) + "K views • " + (video.lang || "en").toUpperCase();
+      vwEl.innerText = ((typeof window.formatQaafRealViews === 'function') ? window.formatQaafRealViews(video) : ((video.realViews || 0) + ' views')) + " • " + (video.lang || "en").toUpperCase();
     }
 
     var shortsNav = document.getElementById("shortsSideNav");
@@ -5017,7 +5017,7 @@
     var cardThumb = video.customThumb || thumbHq;
     var chName = (video.channel || "QAAF Channel").trim();
     var chInitial = (chName.charAt(0) || "Q").toUpperCase();
-    var viewsStr = (((video.views || 2500) / 1000).toFixed(1)) + "K views";
+    var viewsStr = (typeof window.formatQaafRealViews === 'function') ? window.formatQaafRealViews(video) : ((video.realViews || 0) + ' views');
     var safeCh = chName.replace(/'/g, "\\'");
 
     var card = document.createElement("div");
@@ -5436,7 +5436,7 @@
     var handleStr = "@" + (video.channel || "Channel").replace(/\s+/g, "");
     var vwEl = document.getElementById("playingViewsText");
     if (vwEl) {
-      vwEl.innerText = handleStr + "  •  " + (((video.views || 1500) / 1000).toFixed(1)) + "K views  •  " + (video.lang || "en").toUpperCase();
+      vwEl.innerText = handleStr + "  •  " + ((typeof window.formatQaafRealViews === 'function') ? window.formatQaafRealViews(video) : ((video.realViews || 0) + ' views')) + "  •  " + (video.lang || "en").toUpperCase();
     }
     var titleEl = document.getElementById("playingTitle");
     if (titleEl) {

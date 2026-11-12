@@ -1276,7 +1276,7 @@
           ytId: item.ytId,
           isCustomAdded: true,
           duration: item.isShort ? '0:55' : '14:20',
-          views: 1500,
+          views: 0,
           createdAt: Math.floor(Date.now() / 1000) - idx
         });
       });
@@ -2230,7 +2230,7 @@
             ytId: item.ytId,
             isCustomAdded: true,
             duration: item.isShort ? '0:55' : '12:45',
-            views: 2500,
+            views: 0,
             createdAt: Math.floor(Date.now() / 1000) - i
           });
         }

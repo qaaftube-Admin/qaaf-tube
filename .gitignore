@@ -1,8 +1,19 @@
-﻿*.psd
+*.psd
 *.ai
 *.log
 backups index/
 logo data/
 logo_svg_files/*.psd
 remaing works/
-
+# Never sync old backup or raw 3D team folders
+Bike racing game/
+**/old backup*/
+**/old data*/
+**/old_backup*/
+**/old_data*/
+**/*old*backup*/
+**/*backup*data*/
+**/Old Backup*/
+**/Old Data*/
+**/OLD*/
+**/node_modules/

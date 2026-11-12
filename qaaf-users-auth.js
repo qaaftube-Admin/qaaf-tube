@@ -1873,7 +1873,7 @@
       mainCat: "qaaf_quran",
       title: "1. Ayat al-Birr — Surah Al-Baqarah (177)",
       icon: "\ud83d\udcd6",
-      path: "Qaaf quran Games/game-01-ayat-al-birr.html"
+      path: "Qaaf quran Games/index.html"
     },
     {
       id: "quran_game_02_muminun",
@@ -3258,4 +3258,84 @@
     setTimeout(upgradeShortsShelfDomNow, 50);
     setInterval(upgradeShortsShelfDomNow, 400);
   })();
+
+// === QAAF 100% HONEST REAL IN-APP VIEWS ENGINE ===
+(function initQaafHonestRealViewsEngine() {
+  window.qaafRealViewsMap = JSON.parse(localStorage.getItem("qaaf_real_inapp_views_map") || "{}");
+
+  window.getQaafRealViewCount = function(videoObj) {
+    if (!videoObj) return 0;
+    var key = videoObj.ytId || videoObj.id || "";
+    var fromMap = key && window.qaafRealViewsMap[key] ? parseInt(window.qaafRealViewsMap[key], 10) : 0;
+    var fromProp = videoObj.realViews ? parseInt(videoObj.realViews, 10) : 0;
+    var count = Math.max(fromMap || 0, fromProp || 0);
+    return count > 0 ? count : 0;
+  };
+
+  window.formatQaafRealViews = function(videoObj) {
+    var c = window.getQaafRealViewCount(videoObj);
+    if (c === 1) return "1 view";
+    if (c < 1000) return c + " views";
+    return (c / 1000).toFixed(1).replace(/\.0$/, "") + "K views";
+  };
+
+  window.incrementQaafRealView = function(videoObj) {
+    if (!videoObj) return;
+    var key = videoObj.ytId || videoObj.id || "";
+    if (!key) return;
+    var nextCount = window.getQaafRealViewCount(videoObj) + 1;
+    window.qaafRealViewsMap[key] = nextCount;
+    videoObj.realViews = nextCount;
+    videoObj.views = nextCount;
+    localStorage.setItem("qaaf_real_inapp_views_map", JSON.stringify(window.qaafRealViewsMap));
+    try {
+      localStorage.setItem("qaaf_videos_data", JSON.stringify(videosData));
+    } catch (e) {}
+    if (window.qaafCloudSync && typeof window.qaafCloudSync.pushState === "function") {
+      setTimeout(function() {
+        window.qaafCloudSync.pushState("Incremented Real Video View");
+      }, 600);
+    }
+  };
+
+  /* Sync realViewsMapJson with Firebase Cloud so real views are shared across all users */
+  if (window.qaafCloudSync) {
+    var origGetP = window.qaafCloudSync.getStatePayload.bind(window.qaafCloudSync);
+    window.qaafCloudSync.getStatePayload = function() {
+      var data = origGetP();
+      data.realViewsMapJson = JSON.stringify(window.qaafRealViewsMap || {});
+      return data;
+    };
+
+    var origAppS = window.qaafCloudSync.applyIncomingState.bind(window.qaafCloudSync);
+    window.qaafCloudSync.applyIncomingState = function(payload, source) {
+      if (payload && payload.realViewsMapJson && typeof payload.realViewsMapJson === "string") {
+        try {
+          var cloudViews = JSON.parse(payload.realViewsMapJson);
+          Object.keys(cloudViews || {}).forEach(function(k) {
+            var cv = parseInt(cloudViews[k], 10) || 0;
+            var lv = parseInt(window.qaafRealViewsMap[k], 10) || 0;
+            window.qaafRealViewsMap[k] = Math.max(cv, lv);
+          });
+          localStorage.setItem("qaaf_real_inapp_views_map", JSON.stringify(window.qaafRealViewsMap));
+        } catch (e) {}
+      }
+      return origAppS(payload, source);
+    };
+  }
+
+  /* Strip any legacy fake default views (2500, 1500, 250) from videosData on startup */
+  function scrubLegacyFakeViews() {
+    if (!Array.isArray(window.videosData)) return;
+    window.videosData.forEach(function(v) {
+      if (!v) return;
+      v.views = window.getQaafRealViewCount(v);
+    });
+  }
+  scrubLegacyFakeViews();
+  setTimeout(function() {
+    scrubLegacyFakeViews();
+    if (typeof window.renderVideosNow === "function") window.renderVideosNow();
+  }, 300);
+})();
 
