@@ -1861,188 +1861,176 @@
   }
 
   var REAL_GAMES_CATALOG = [
-    {"id": "g1", "categoryGroup": "qaaf_games", "title": "1. Word Search Puzzle — الفاظ کی تلاش", "icon": "🔍", "launchUrl": "./qaaf-games/games/wordsearch.html"},
-    {"id": "g2", "categoryGroup": "qaaf_games", "title": "2. Quran & Sunnah Quiz — اسلامی کوئز", "icon": "📖", "launchUrl": "./qaaf-games/games/quiz.html"},
-    {"id": "g3", "categoryGroup": "qaaf_games", "title": "3. Arabic Alphabet Puzzle — حروفِ تہجی", "icon": "🔤", "launchUrl": "./qaaf-games/games/alphabet.html"},
-    {"id": "g4", "categoryGroup": "qaaf_games", "title": "4. Masjid & Wudu Builder — مسجد اور وضو", "icon": "🕌", "launchUrl": "./qaaf-games/games/masjid.html"},
-    {"id": "g5", "categoryGroup": "qaaf_games", "title": "5. Islamic Adhkar Racing — اذکار ریسنگ", "icon": "🏎️", "launchUrl": "./qaaf-games/games/racing.html"},
-    {"id": "qg_01", "categoryGroup": "quranic", "title": "1. Ayat Al-Birr — آیت البر (البقرۃ 2:177)", "icon": "🕋", "launchUrl": "./Qaaf%20quran%20Games/game-01-ayat-al-birr.html"},
-    {"id": "qg_02", "categoryGroup": "quranic", "title": "2. Sifat Al-Mu'minun — صفات المؤمنین (23:1-11)", "icon": "🌟", "launchUrl": "./Qaaf%20quran%20Games/game-02-sifat-al-muminun.html"},
-    {"id": "qg_03", "categoryGroup": "quranic", "title": "3. Surah Al-Asr — سورۃ العصر (103:1-3)", "icon": "⏳", "launchUrl": "./Qaaf%20quran%20Games/game-03-surah-al-asr.html"},
-    {"id": "qg_04", "categoryGroup": "quranic", "title": "4. QAAF Tube - قرآنی کھیل", "icon": "📖", "launchUrl": "./Qaaf%20quran%20Games/qaaf-Quran-games.html"}
+    {
+      id: "qaaf_games_main_hub",
+      mainCat: "qaaf_2d",
+      title: "QAAF Games",
+      icon: "\ud83c\udfae",
+      path: "qaaf-games/qaaf-games.html?v=60.0"
+    },
+    {
+      id: "quran_game_01_birr",
+      mainCat: "qaaf_quran",
+      title: "1. Ayat al-Birr — Surah Al-Baqarah (177)",
+      icon: "\ud83d\udcd6",
+      path: "Qaaf quran Games/game-01-ayat-al-birr.html"
+    },
+    {
+      id: "quran_game_02_muminun",
+      mainCat: "qaaf_quran",
+      title: "2. Sifat al-Muminun — Surah Al-Mu'minun (1-11)",
+      icon: "\ud83c\udf1f",
+      path: "Qaaf quran Games/game-02-sifat-al-muminun.html"
+    },
+    {
+      id: "quran_game_03_asr",
+      mainCat: "qaaf_quran",
+      title: "3. Surah Al-Asr — Interactive Tafsir & Quiz",
+      icon: "\u23f3",
+      path: "Qaaf quran Games/game-03-surah-al-asr.html"
+    },
+    {
+      id: "quran_game_all_hub",
+      mainCat: "qaaf_quran",
+      title: "4. QAAF Quranic Games Complete Hub",
+      icon: "\ud83d\udd4b",
+      path: "Qaaf quran Games/qaaf-quran-games.html"
+    }
   ];
 
-  if (typeof gamesCatalog !== "undefined" && Array.isArray(gamesCatalog)) {
-    gamesCatalog.length = 0;
-    REAL_GAMES_CATALOG.forEach(function(g) { gamesCatalog.push(g); });
-  }
-  window.gamesCatalog = REAL_GAMES_CATALOG;
+  window.REAL_GAMES_CATALOG = REAL_GAMES_CATALOG;
+  window.activeMainGameCat = "";
 
-  if (typeof installedGameIds === "undefined" || !Array.isArray(installedGameIds)) {
-    window.installedGameIds = ["g1", "g2", "g3", "g4", "g5", "qg_01", "qg_02", "qg_03", "qg_04"];
-  }
+  window.selectMainGameCategory = function(catId) {
+    if (catId === "qaaf_2d") {
+      /* Directly open the QAAF Games Hub where the 5 games are already listed! */
+      window.openInstalledGameModal("qaaf_games_main_hub");
+      return;
+    }
+    window.activeMainGameCat = (window.activeMainGameCat === catId) ? "" : catId;
+    window.renderGames();
+  };
 
-  function updateHeaderTabsAndTopBarsForMode(tab) {
+  window.switchKidsTab = function(tab) {
     var vSec = document.getElementById("videosSection");
     var gSec = document.getElementById("gamesSection");
     var catBar = document.getElementById("categoryBar");
+    var chHeader = document.getElementById("qaafChannelViewHeaderBox");
+    var bV = document.getElementById("tabVideosBtn");
+    var bG = document.getElementById("tabGamesBtn");
 
     if (tab === "games") {
       document.body.classList.add("qaaf-games-mode-active");
       if (vSec) vSec.classList.add("hidden");
+      if (catBar) catBar.classList.add("hidden");
+      if (chHeader) chHeader.classList.add("hidden");
       if (gSec) gSec.classList.remove("hidden");
-      if (catBar) catBar.style.setProperty("display", "none", "important");
+      if (bG) bG.className = "px-3.5 py-1 rounded-full text-xs font-bold transition bg-[#164e3a] text-white shadow cursor-pointer flex items-center gap-1";
+      if (bV) bV.className = "px-3.5 py-1 rounded-full text-xs font-bold transition text-slate-300 hover:text-white cursor-pointer flex items-center gap-1";
+      window.activeMainGameCat = "";
+      if (typeof window.renderGames === "function") window.renderGames();
     } else {
       document.body.classList.remove("qaaf-games-mode-active");
       if (gSec) gSec.classList.add("hidden");
       if (vSec) vSec.classList.remove("hidden");
-      if (catBar) catBar.style.removeProperty("display");
+      if (catBar) catBar.classList.remove("hidden");
+      if (bV) bV.className = "px-3.5 py-1 rounded-full text-xs font-bold transition bg-emerald-500 text-black shadow cursor-pointer flex items-center gap-1";
+      if (bG) bG.className = "px-3.5 py-1 rounded-full text-xs font-bold transition text-slate-300 hover:text-white cursor-pointer flex items-center gap-1";
     }
-  }
-
-  setInterval(function() {
-    var gSec = document.getElementById("gamesSection");
-    var isGamesOpen = gSec && !gSec.classList.contains("hidden");
-    var catBar = document.getElementById("categoryBar");
-    if (isGamesOpen) {
-      if (!document.body.classList.contains("qaaf-games-mode-active")) {
-        document.body.classList.add("qaaf-games-mode-active");
-      }
-      if (catBar) catBar.style.setProperty("display", "none", "important");
-    } else {
-      if (document.body.classList.contains("qaaf-games-mode-active")) {
-        document.body.classList.remove("qaaf-games-mode-active");
-        if (catBar) catBar.style.removeProperty("display");
-      }
-    }
-  }, 200);
-
-  window.switchKidsTab = function(tab) {
-    currentActiveKidsTab = tab || "videos";
-    window.currentActiveKidsTab = currentActiveKidsTab;
-    updateHeaderTabsAndTopBarsForMode(currentActiveKidsTab);
-    if (currentActiveKidsTab === "games") {
-      window.renderGames();
-    } else if (typeof window.renderVideosNow === "function") {
-      window.renderVideosNow();
-    }
-  };
-
-  window.selectGamesSubTab = function(gTab) {
-    window.activeGamesSubTab = gTab || "qaaf_games";
-    window.renderGames();
-  };
-
-  window.installQaafGameInstant = function(gameId, ev) {
-    if (ev && ev.stopPropagation) ev.stopPropagation();
-    if (!Array.isArray(installedGameIds)) window.installedGameIds = [];
-    if (installedGameIds.indexOf(gameId) === -1) {
-      installedGameIds.push(gameId);
-      localStorage.setItem("qaaf_installed_games", JSON.stringify(installedGameIds));
-    }
-    window.renderGames();
   };
 
   window.renderGames = function() {
-    var gSec = document.getElementById("gamesSection");
-    if (gSec && !gSec.classList.contains("hidden")) {
-      updateHeaderTabsAndTopBarsForMode("games");
-    }
-
-    if (gSec) {
-      Array.prototype.slice.call(gSec.children).forEach(function(child) {
-        if (child.id !== "gamesGrid" && child.id !== "qaafSimpleGamesHeading" && child.id !== "kidsTotalStarsBadge") {
-          child.remove();
-        }
-      });
-      var h2 = document.getElementById("qaafSimpleGamesHeading");
-      if (!h2) {
-        h2 = document.createElement("h2");
-        h2.id = "qaafSimpleGamesHeading";
-        gSec.insertBefore(h2, gSec.firstChild);
-      }
-      h2.className = "text-lg sm:text-xl font-extrabold text-white px-1 pb-1 flex items-center gap-2 tracking-wide";
-      h2.innerHTML = "<span>🎮</span> <span>QAAF Kids Islamic Games Zone</span>";
-    }
-
     var grid = document.getElementById("gamesGrid");
     if (!grid) return;
-    grid.className = "grid grid-cols-1 sm:grid-cols-2 gap-1.5";
 
-    var curTab = window.activeGamesSubTab || "qaaf_games";
-    var countQaaf = REAL_GAMES_CATALOG.filter(function(g) { return g.categoryGroup === "qaaf_games"; }).length;
-    var countQuran = REAL_GAMES_CATALOG.filter(function(g) { return g.categoryGroup === "quranic"; }).length;
-    var count3D = REAL_GAMES_CATALOG.filter(function(g) { return g.categoryGroup === "3d_games"; }).length;
+    var headEl = document.getElementById("qaafSimpleGamesHeading");
+    if (headEl) {
+      headEl.innerHTML = '<span class="text-xl">\ud83c\udfae</span> <span>QAAF Kids Islamic Games Zone</span>';
+    }
 
-    var navHtml =
-      '<div class="col-span-full grid grid-cols-1 sm:grid-cols-3 gap-1.5 mb-1.5">' +
-        '<button type="button" onclick="selectGamesSubTab(\'qaaf_games\')" class="py-2 px-3 rounded-xl border-2 text-left transition flex items-center justify-between cursor-pointer ' +
-          (curTab === "qaaf_games" ? "bg-emerald-600/25 border-emerald-400 text-white shadow-md" : "bg-[#111620] border-slate-800/90 text-slate-300 hover:border-emerald-500/40") + '">' +
-          '<div class="flex items-center gap-2.5 min-w-0">' +
-            '<span class="text-xl shrink-0">🎮</span>' +
-            '<div class="truncate">' +
-              '<div class="text-base sm:text-lg font-extrabold leading-tight truncate text-white">1. QAAF Games</div>' +
-              '<div class="text-[10px] text-slate-400 truncate">Simple Puzzles, Quiz &amp; Builder</div>' +
+    var activeCat = window.activeMainGameCat || "";
+
+    var catTabsHtml =
+      '<div class="col-span-full grid grid-cols-1 sm:grid-cols-3 gap-3 mb-2">' +
+        /* Category 1: QAAF Games (Opens qaaf-games.html directly on click!) */
+        '<button type="button" onclick="window.selectMainGameCategory(\'qaaf_2d\')" class="flex items-center justify-between px-4 py-4 rounded-2xl border-2 border-emerald-500/50 bg-[#0d1f1a] hover:bg-[#16382b] text-white transition cursor-pointer text-left shadow-lg">' +
+          '<div class="flex items-center gap-3 min-w-0">' +
+            '<span class="text-2xl shrink-0">\ud83c\udfae</span>' +
+            '<div class="min-w-0">' +
+              '<div class="text-sm sm:text-base font-extrabold truncate">1. QAAF Games</div>' +
+              '<div class="text-[11px] text-slate-400 truncate">Simple Puzzles, Quiz &amp; Builder</div>' +
             '</div>' +
           '</div>' +
-          '<span class="bg-emerald-950/90 border border-emerald-500/40 px-2 py-0.5 rounded-full text-[10px] font-extrabold text-emerald-300 shrink-0">' + countQaaf + ' Games</span>' +
+          '<span class="px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shrink-0">5 Games &#9654;</span>' +
         '</button>' +
 
-        '<button type="button" onclick="selectGamesSubTab(\'quranic\')" class="py-2 px-3 rounded-xl border-2 text-left transition flex items-center justify-between cursor-pointer ' +
-          (curTab === "quranic" ? "bg-teal-600/25 border-teal-400 text-white shadow-md" : "bg-[#111620] border-slate-800/90 text-slate-300 hover:border-teal-500/40") + '">' +
-          '<div class="flex items-center gap-2.5 min-w-0">' +
-            '<span class="text-xl shrink-0">📖</span>' +
-            '<div class="truncate">' +
-              '<div class="text-base sm:text-lg font-extrabold leading-tight truncate text-white">2. QAAF Quranic Games</div>' +
-              '<div class="text-[10px] text-slate-400 truncate">Ayah-by-Ayah Interactive Games</div>' +
+        /* Category 2: QAAF Quranic Games */
+        '<button type="button" onclick="window.selectMainGameCategory(\'qaaf_quran\')" class="flex items-center justify-between px-4 py-4 rounded-2xl border-2 transition cursor-pointer text-left ' +
+          (activeCat === "qaaf_quran"
+            ? "bg-amber-950/60 border-amber-400 text-white shadow-lg"
+            : "bg-[#111622] border-slate-800 hover:border-amber-500/50 text-slate-300") + '">' +
+          '<div class="flex items-center gap-3 min-w-0">' +
+            '<span class="text-2xl shrink-0">\ud83d\udcd6</span>' +
+            '<div class="min-w-0">' +
+              '<div class="text-sm sm:text-base font-extrabold truncate">2. QAAF Quranic Games</div>' +
+              '<div class="text-[11px] text-slate-400 truncate">Ayah-by-Ayah Interactive Games</div>' +
             '</div>' +
           '</div>' +
-          '<span class="bg-teal-950/90 border border-teal-500/40 px-2 py-0.5 rounded-full text-[10px] font-extrabold text-teal-300 shrink-0">' + countQuran + ' Games</span>' +
+          '<span class="px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">4 Games &#9662;</span>' +
         '</button>' +
 
-        '<button type="button" onclick="selectGamesSubTab(\'3d_games\')" class="py-2 px-3 rounded-xl border-2 text-left transition flex items-center justify-between cursor-pointer ' +
-          (curTab === "3d_games" ? "bg-cyan-600/25 border-cyan-400 text-white shadow-md" : "bg-[#111620] border-slate-800/90 text-slate-300 hover:border-cyan-500/40") + '">' +
-          '<div class="flex items-center gap-2.5 min-w-0">' +
-            '<span class="text-xl shrink-0">🏎️</span>' +
-            '<div class="truncate">' +
-              '<div class="text-base sm:text-lg font-extrabold leading-tight truncate text-white">3. QAAF 3D Games</div>' +
-              '<div class="text-[10px] text-slate-400 truncate">3D Adventures for Older Kids</div>' +
+        /* Category 3: QAAF 3D Games */
+        '<button type="button" onclick="window.selectMainGameCategory(\'qaaf_3d\')" class="flex items-center justify-between px-4 py-4 rounded-2xl border-2 transition cursor-pointer text-left ' +
+          (activeCat === "qaaf_3d"
+            ? "bg-sky-950/60 border-sky-400 text-white shadow-lg"
+            : "bg-[#111622] border-slate-800 hover:border-sky-500/50 text-slate-300") + '">' +
+          '<div class="flex items-center gap-3 min-w-0">' +
+            '<span class="text-2xl shrink-0">\ud83c\udfce\ufe0f</span>' +
+            '<div class="min-w-0">' +
+              '<div class="text-sm sm:text-base font-extrabold truncate">3. QAAF 3D Games</div>' +
+              '<div class="text-[11px] text-slate-400 truncate">3D Adventures for Older Kids</div>' +
             '</div>' +
           '</div>' +
-          (count3D > 0 ? ('<span class="bg-cyan-950/90 border border-cyan-500/40 px-2 py-0.5 rounded-full text-[10px] font-extrabold text-cyan-300 shrink-0">' + count3D + ' Games</span>') : '<span class="bg-slate-900 border border-slate-700 px-2 py-0.5 rounded-full text-[10px] font-bold text-slate-400 shrink-0">Soon</span>') +
+          '<span class="px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-sky-500/20 text-sky-300 border border-sky-500/30 shrink-0">Soon</span>' +
         '</button>' +
       '</div>';
 
-    var filteredGames = REAL_GAMES_CATALOG.filter(function(g) { return g.categoryGroup === curTab; });
-
-    var cardsHtml = "";
-    filteredGames.forEach(function(g) {
-      var isInstalled = true;
-      var activeBorder = (curTab === "quranic") ? "border-teal-500/40 hover:border-teal-400" : "border-emerald-500/40 hover:border-emerald-400";
-
-      cardsHtml +=
-        '<div onclick="' + (isInstalled ? ("openInstalledGameModal('" + g.id + "')") : ("installQaafGameInstant('" + g.id + "', event)")) + '" class="bg-[#111722] hover:bg-[#162030] border ' + (isInstalled ? activeBorder : 'border-slate-800') + ' rounded-xl px-3 py-1.5 transition cursor-pointer group flex flex-col justify-center">' +
-          '<div class="flex items-center justify-between gap-2.5">' +
-            '<div class="flex items-center gap-2.5 min-w-0 flex-1">' +
-              '<div class="w-8 h-8 rounded-lg bg-slate-800/90 border border-white/10 flex items-center justify-center text-base shrink-0 shadow group-hover:scale-105 transition">' +
-                g.icon +
-              '</div>' +
-              '<h3 class="text-xs sm:text-sm font-bold text-slate-100 truncate group-hover:text-emerald-300 transition">' +
-                g.title +
-              '</h3>' +
-            '</div>' +
-            (isInstalled ? (
-              '<span class="w-6 h-6 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 group-hover:bg-emerald-500 group-hover:text-black flex items-center justify-center text-[10px] font-extrabold shrink-0 transition">▶</span>'
-            ) : (
-              '<button type="button" onclick="installQaafGameInstant(\'' + g.id + '\', event)" class="bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1 rounded-lg text-[11px] font-extrabold shadow shrink-0 transition cursor-pointer">' +
-                '⬇️ Install' +
-              '</button>'
-            )) +
-          '</div>' +
+    var listHtml = "";
+    if (activeCat === "qaaf_3d") {
+      listHtml =
+        '<div class="col-span-full bg-[#111622] border border-sky-500/30 rounded-2xl p-6 text-center space-y-2">' +
+          '<div class="text-3xl">\ud83c\udfce\ufe0f</div>' +
+          '<h4 class="text-sm sm:text-base font-extrabold text-white">QAAF 3D Islamic Games</h4>' +
+          '<p class="text-xs text-slate-400 max-w-md mx-auto">Our 3D team is currently preparing 3D Bike Racing &amp; 3D Quranic Adventures. They will appear here once ready InshaAllah.</p>' +
         '</div>';
-    });
+    } else if (activeCat === "qaaf_quran") {
+      var disabledMap = {};
+      try {
+        disabledMap = JSON.parse(localStorage.getItem("qaaf_disabled_games_map") || "{}") || {};
+      } catch (e) {}
 
-    grid.innerHTML = navHtml + cardsHtml;
+      var visibleGames = REAL_GAMES_CATALOG.filter(function(g) {
+        return g.mainCat === "qaaf_quran" && !disabledMap[g.id];
+      });
+
+      listHtml = '<div class="col-span-full flex flex-col gap-2.5 mt-1">' +
+        visibleGames.map(function(g) {
+          return (
+            '<div onclick="window.openInstalledGameModal(\'' + g.id + '\')" ' +
+              'class="w-full bg-[#121824] hover:bg-[#182232] border border-slate-700/80 hover:border-amber-400 rounded-2xl px-4 py-3 flex items-center justify-between gap-3 transition cursor-pointer shadow-md group">' +
+              '<div class="flex items-center gap-3 min-w-0">' +
+                '<span class="w-9 h-9 rounded-xl bg-slate-800/90 border border-slate-700 flex items-center justify-center text-lg shrink-0">' + g.icon + '</span>' +
+                '<span class="text-sm sm:text-base font-extrabold text-white group-hover:text-amber-300 transition truncate">' + g.title + '</span>' +
+              '</div>' +
+              '<span class="w-8 h-8 rounded-full bg-amber-500/20 group-hover:bg-amber-500 text-amber-300 group-hover:text-black flex items-center justify-center text-xs font-extrabold transition shrink-0">&#9654;</span>' +
+            '</div>'
+          );
+        }).join("") +
+      '</div>';
+    }
+
+    grid.className = "flex flex-col gap-2";
+    grid.innerHTML = catTabsHtml + listHtml;
   };
 
   window.openInstalledGameModal = function(gameId) {
