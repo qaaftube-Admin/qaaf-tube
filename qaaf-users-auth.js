@@ -3110,3 +3110,120 @@
   setTimeout(runAllV55Enhancements, 60);
   setInterval(runAllV55Enhancements, 600);
 })();
+
+// === SECTION 7: STRICT FOOTER & PROMO BAR MUTUAL EXCLUSIVITY ===
+(function initStrictFooterAndPromoBarSwitcher() {
+  /* 1. Inject solid opaque CSS so nothing EVER bleeds behind #qaafMobileBottomNav */
+  if (!document.getElementById("qaafV58SolidFooterCss")) {
+    var st = document.createElement("style");
+    st.id = "qaafV58SolidFooterCss";
+    st.textContent = [
+      "#qaafMobileBottomNav {",
+      "  background: #090d14 !important;",
+      "  background-color: #090d14 !important;",
+      "  backdrop-filter: none !important;",
+      "  -webkit-backdrop-filter: none !important;",
+      "  border-top: 1px solid #1e293b !important;",
+      "  z-index: 160 !important;",
+      "}",
+      /* When Bottom Nav is visible (default), completely hide #regionalPromoBar so it NEVER moves behind it */
+      "body:not(.qaaf-show-promo-only) #regionalPromoBar {",
+      "  display: none !important;",
+      "  visibility: hidden !important;",
+      "  opacity: 0 !important;",
+      "  pointer-events: none !important;",
+      "}",
+      /* When scrolling down (.qaaf-show-promo-only), completely hide #qaafMobileBottomNav and show #regionalPromoBar */
+      "body.qaaf-show-promo-only #qaafMobileBottomNav {",
+      "  display: none !important;",
+      "  visibility: hidden !important;",
+      "  opacity: 0 !important;",
+      "  pointer-events: none !important;",
+      "}"
+    ].join("\n");
+    document.head.appendChild(st);
+  }
+
+  function setFooterMode(showPromoInsteadOfNav) {
+    var botNav = document.getElementById("qaafMobileBottomNav");
+    var promoBar = document.getElementById("regionalPromoBar");
+    var catBar = document.getElementById("categoryBar");
+    var pModal = document.getElementById("playerModal");
+    var scrollWrap = document.getElementById("ytWatchScrollContainer");
+    var isWatchingFull = pModal && !pModal.classList.contains("hidden") && scrollWrap && !scrollWrap.classList.contains("hidden");
+
+    if (isWatchingFull) {
+      document.body.classList.add("qaaf-show-promo-only");
+      if (botNav) botNav.style.setProperty("display", "none", "important");
+      if (promoBar) promoBar.style.setProperty("display", "none", "important");
+      return;
+    }
+
+    if (showPromoInsteadOfNav) {
+      /* User is scrolling DOWN: Hide Home/Shorts/Games/You bar, Show Sponsor/Promo Bar */
+      document.body.classList.add("qaaf-show-promo-only");
+      if (catBar) catBar.classList.add("qaaf-bar-autohidden");
+      if (botNav) {
+        botNav.classList.add("qaaf-nav-autohidden");
+        botNav.style.setProperty("display", "none", "important");
+      }
+      if (promoBar && !promoBar.classList.contains("hidden")) {
+        promoBar.style.removeProperty("display");
+      }
+    } else {
+      /* User is at TOP or scrolled UP: Hide Sponsor/Promo Bar completely, Show Home/Shorts/Games/You bar */
+      document.body.classList.remove("qaaf-show-promo-only");
+      if (catBar && !document.body.classList.contains("qaaf-games-mode-active")) {
+        catBar.classList.remove("qaaf-bar-autohidden");
+      }
+      if (promoBar) {
+        promoBar.style.setProperty("display", "none", "important");
+      }
+      if (botNav) {
+        botNav.classList.remove("qaaf-nav-autohidden");
+        botNav.style.setProperty("display", "flex", "important");
+        botNav.style.setProperty("background-color", "#090d14", "important");
+      }
+    }
+  }
+
+  /* 2. Track both scroll and touch swipe on window & document */
+  var lastY = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+  function handleAnyScroll() {
+    var curY = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    if (curY < 40) {
+      setFooterMode(false);
+    } else if (curY > lastY + 8 && curY > 55) {
+      setFooterMode(true);
+    } else if (curY < lastY - 8) {
+      setFooterMode(false);
+    }
+    lastY = curY;
+  }
+
+  window.addEventListener("scroll", handleAnyScroll, { passive: true, capture: true });
+  document.addEventListener("scroll", handleAnyScroll, { passive: true, capture: true });
+
+  var touchStartY = 0;
+  window.addEventListener("touchstart", function(e) {
+    if (e.touches && e.touches.length > 0) {
+      touchStartY = e.touches[0].clientY;
+    }
+  }, { passive: true });
+
+  window.addEventListener("touchmove", function(e) {
+    if (!e.touches || e.touches.length === 0) return;
+    var dy = touchStartY - e.touches[0].clientY;
+    var curY = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    if (dy > 18 && curY > 40) {
+      /* Finger swiping UP (scrolling DOWN the page) */
+      setFooterMode(true);
+    } else if (dy < -18 || curY < 35) {
+      /* Finger swiping DOWN (scrolling UP the page) */
+      setFooterMode(false);
+    }
+  }, { passive: true });
+
+  setTimeout(function() { setFooterMode(false); }, 120);
+})();
+
