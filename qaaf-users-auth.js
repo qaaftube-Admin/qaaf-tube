@@ -3360,3 +3360,30 @@
   }, 300);
 })();
 
+// === QAAF 3D & QURAN GAMES LIST ACTIVATOR ===
+(function activateQaaf3dAndQuranGamesList() {
+  window.QAAF_QURAN_GAMES_LIST = [
+    { id: "qg_1", title: "1. Ayat al-Birr — Surah Al-Baqarah (177)", url: "Qaaf quran Games/game-01-ayat-al-birr.html", icon: "📖" },
+    { id: "qg_2", title: "2. Sifat al-Muminun — Surah Al-Mu'minun (1-11)", url: "Qaaf quran Games/game-02-sifat-al-muminun.html", icon: "🌟" },
+    { id: "qg_3", title: "3. Surah Al-Asr — Interactive Tafsir & Quiz", url: "Qaaf quran Games/game-03-surah-al-asr.html", icon: "⏳" }
+  ];
+  window.QAAF_3D_GAMES_LIST = [{"id":"g3d_1","title":"1. Desk racer Pro","url":"Qaaf 3d games/01-Desk racer Pro/desk_racer_pro.html","icon":"🏎️"}];
+
+  /* Re-render the Kids Games Hub cards so "3. QAAF 3D Games" shows "1 Game ▾" instead of "Soon" */
+  if (typeof window.renderKidsGamesHub === "function") {
+    try { window.renderKidsGamesHub(); } catch (e) {}
+  }
+  setTimeout(function() {
+    if (typeof window.renderKidsGamesHub === "function") {
+      try { window.renderKidsGamesHub(); } catch (e) {}
+    }
+    /* Also update badge text on 2. Quranic Games and 3. 3D Games if already in DOM */
+    var qBadge = document.getElementById("qaafQuranGamesCountBadge");
+    if (qBadge) qBadge.textContent = window.QAAF_QURAN_GAMES_LIST.length + " Games ▾";
+    var dBadge = document.getElementById("qaaf3dGamesCountBadge");
+    if (dBadge) {
+      dBadge.textContent = window.QAAF_3D_GAMES_LIST.length + (window.QAAF_3D_GAMES_LIST.length === 1 ? " Game ▾" : " Games ▾");
+    }
+  }, 250);
+})();
+
