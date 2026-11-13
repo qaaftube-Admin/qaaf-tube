@@ -3345,3 +3345,66 @@
   }, 300);
 })();
 
+// === QAAF V72 AUTH, SYNC, KIDS GATE & 3D BRIDGE ===
+(function() {
+  try { localStorage.removeItem('qaaf_quranic_games_list'); } catch(e) {}
+  window.addEventListener('message', function(ev) {
+    var d = ev && ev.data;
+    if (d === 'QAAF_EXIT_GAMES' || d === 'QAAF_EXIT_GAME' || (d && (d.type === 'QAAF_EXIT_GAMES' || d.type === 'QAAF_EXIT_GAME'))) {
+      if (typeof window.closeQaafExternalGamePage === 'function') window.closeQaafExternalGamePage();
+      if (typeof window.closeInstalledGameModal === 'function') window.closeInstalledGameModal();
+    }
+  });
+  /* 1. Require Login/Account ONLY when switching to Kids Mode (Guest allowed in normal mode) */
+  var origToggleMode = window.toggleMode;
+  window.toggleMode = function() {
+    if (!window.isKidsMode && !window.currentFamilyUser) {
+      if (typeof window.openUserAuthModal === 'function') window.openUserAuthModal('signin');
+      if (typeof window.showToast === 'function') window.showToast('Please Sign In or Create an Account to use Kids Mode & PIN.');
+      return;
+    }
+    if (typeof origToggleMode === 'function') return origToggleMode.apply(this, arguments);
+  };
+  /* 2. Sync user profile data (likes, history, playlists, PIN, Pro) across App & Browser via Firebase */
+  window.syncCurrentUserProfileToCloud = function() {
+    if (!window.currentFamilyUser || !window.currentFamilyUser.email) return;
+    var key = window.currentFamilyUser.email.toLowerCase();
+    window.registeredUsersMap = window.registeredUsersMap || {};
+    var u = window.registeredUsersMap[key] || window.currentFamilyUser;
+    u.likedVideos = JSON.parse(localStorage.getItem('qaaf_liked_videos') || '[]');
+    u.watchHistory = JSON.parse(localStorage.getItem('qaaf_watch_history') || '[]');
+    u.userPlaylists = JSON.parse(localStorage.getItem('qaaf_user_playlists') || '{}');
+    u.pin = localStorage.getItem('qaaf_parent_pin') || u.pin || '123456';
+    window.registeredUsersMap[key] = u;
+    localStorage.setItem('qaaf_registered_users_map', JSON.stringify(window.registeredUsersMap));
+    if (window.qaafCloudSync && typeof window.qaafCloudSync.pushState === 'function') window.qaafCloudSync.pushState('User Profile Sync');
+  };
+  window.restoreUserProfileFromCloud = function(u) {
+    if (!u) return;
+    if (Array.isArray(u.likedVideos) && u.likedVideos.length) localStorage.setItem('qaaf_liked_videos', JSON.stringify(u.likedVideos));
+    if (Array.isArray(u.watchHistory) && u.watchHistory.length) localStorage.setItem('qaaf_watch_history', JSON.stringify(u.watchHistory));
+    if (u.userPlaylists && Object.keys(u.userPlaylists).length) localStorage.setItem('qaaf_user_playlists', JSON.stringify(u.userPlaylists));
+    if (u.pin) localStorage.setItem('qaaf_parent_pin', u.pin);
+  };
+  /* 3. Streamline Continue with Google (Gmail): auto-connect remembered Gmail or 1-field instant Gmail connect */
+  window.triggerQuickGmailLogin = function() {
+    if (window.qaafCloudSync && typeof window.qaafCloudSync.pullFromCloud === 'function') window.qaafCloudSync.pullFromCloud(true);
+    var pinInp = document.getElementById('quickGmailPinInput');
+    if (pinInp) { pinInp.value = localStorage.getItem('qaaf_parent_pin') || '123456'; pinInp.style.display = 'none'; }
+    var lastGm = localStorage.getItem('qaaf_last_gmail_address') || '';
+    var gmInp = document.getElementById('quickGmailAddressInput');
+    if (lastGm && gmInp) { gmInp.value = lastGm; if (typeof window.completeQuickGmailLogin === 'function') { window.completeQuickGmailLogin(); return; } }
+    var box = document.getElementById('quickGmailPromptBox');
+    if (box) { box.classList.remove('hidden'); if (gmInp) gmInp.focus(); }
+  };
+  var origCompleteGm = window.completeQuickGmailLogin;
+  if (typeof origCompleteGm === 'function') {
+    window.completeQuickGmailLogin = function() {
+      var gmInp = document.getElementById('quickGmailAddressInput');
+      if (gmInp && gmInp.value) localStorage.setItem('qaaf_last_gmail_address', gmInp.value.trim().toLowerCase());
+      var res = origCompleteGm.apply(this, arguments);
+      if (window.currentFamilyUser) { window.restoreUserProfileFromCloud(window.registeredUsersMap[window.currentFamilyUser.email.toLowerCase()]); window.syncCurrentUserProfileToCloud(); }
+      return res;
+    };
+  }
+})();
