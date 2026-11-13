@@ -1890,11 +1890,11 @@
       path: "Qaaf quran Games/game-03-surah-al-asr.html"
     },
     {
-      id: "quran_game_all_hub",
-      mainCat: "qaaf_quran",
-      title: "4. QAAF Quranic Games Complete Hub",
-      icon: "\ud83d\udd4b",
-      path: "Qaaf quran Games/qaaf-quran-games.html"
+      id: "game_3d_01_desk_racer",
+      mainCat: "qaaf_3d",
+      title: "1. Desk Racer Pro",
+      icon: "\ud83c\udfce\ufe0f",
+      path: "Qaaf 3d games/01-Desk racer Pro/desk_racer_pro.html"
     }
   ];
 
@@ -1976,7 +1976,7 @@
               '<div class="text-[11px] text-slate-400 truncate">Ayah-by-Ayah Interactive Games</div>' +
             '</div>' +
           '</div>' +
-          '<span class="px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">4 Games &#9662;</span>' +
+          '<span class="px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">3 Games &#9662;</span>' +
         '</button>' +
 
         /* Category 3: QAAF 3D Games */
@@ -1991,26 +1991,19 @@
               '<div class="text-[11px] text-slate-400 truncate">3D Adventures for Older Kids</div>' +
             '</div>' +
           '</div>' +
-          '<span class="px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-sky-500/20 text-sky-300 border border-sky-500/30 shrink-0">Soon</span>' +
+          '<span class="px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-sky-500/20 text-sky-300 border border-sky-500/30 shrink-0">1 Game &#9662;</span>' +
         '</button>' +
       '</div>';
 
     var listHtml = "";
-    if (activeCat === "qaaf_3d") {
-      listHtml =
-        '<div class="col-span-full bg-[#111622] border border-sky-500/30 rounded-2xl p-6 text-center space-y-2">' +
-          '<div class="text-3xl">\ud83c\udfce\ufe0f</div>' +
-          '<h4 class="text-sm sm:text-base font-extrabold text-white">QAAF 3D Islamic Games</h4>' +
-          '<p class="text-xs text-slate-400 max-w-md mx-auto">Our 3D team is currently preparing 3D Bike Racing &amp; 3D Quranic Adventures. They will appear here once ready InshaAllah.</p>' +
-        '</div>';
-    } else if (activeCat === "qaaf_quran") {
+    if (activeCat === "qaaf_quran" || activeCat === "qaaf_3d") {
       var disabledMap = {};
       try {
         disabledMap = JSON.parse(localStorage.getItem("qaaf_disabled_games_map") || "{}") || {};
       } catch (e) {}
 
       var visibleGames = REAL_GAMES_CATALOG.filter(function(g) {
-        return g.mainCat === "qaaf_quran" && !disabledMap[g.id];
+        return g.mainCat === activeCat && !disabledMap[g.id];
       });
 
       listHtml = '<div class="col-span-full flex flex-col gap-2.5 mt-1">' +
@@ -3343,74 +3336,4 @@
     scrubLegacyFakeViews();
     if (typeof window.renderVideosNow === "function") window.renderVideosNow();
   }, 300);
-})();
-
-// === QAAF V72 AUTH, SYNC, KIDS GATE & 3D BRIDGE ===
-// Build v73.0
-(function() {
-  try { localStorage.removeItem('qaaf_quranic_games_list'); } catch(e) {}
-  window.addEventListener('message', function(ev) {
-    var d = ev && ev.data;
-    if (d === 'QAAF_EXIT_GAMES' || d === 'QAAF_EXIT_GAME' || (d && (d.type === 'QAAF_EXIT_GAMES' || d.type === 'QAAF_EXIT_GAME'))) {
-      if (typeof window.closeQaafExternalGamePage === 'function') window.closeQaafExternalGamePage();
-      if (typeof window.closeInstalledGameModal === 'function') window.closeInstalledGameModal();
-    }
-  });
-  var origToggleMode = window.toggleMode;
-  window.toggleMode = function() {
-    if (!window.isKidsMode && !window.currentFamilyUser) {
-      if (typeof window.openUserAuthModal === 'function') window.openUserAuthModal('signin');
-      if (typeof window.showToast === 'function') window.showToast('Please Sign In or Create an Account to use Kids Mode & PIN.');
-      return;
-    }
-    if (typeof origToggleMode === 'function') return origToggleMode.apply(this, arguments);
-  };
-  window.syncCurrentUserProfileToCloud = function() {
-    if (!window.currentFamilyUser || !window.currentFamilyUser.email) return;
-    var key = window.currentFamilyUser.email.toLowerCase();
-    window.registeredUsersMap = window.registeredUsersMap || {};
-    var u = window.registeredUsersMap[key] || window.currentFamilyUser;
-    u.likedVideos = JSON.parse(localStorage.getItem('qaaf_liked_videos') || '[]');
-    u.watchHistory = JSON.parse(localStorage.getItem('qaaf_watch_history') || '[]');
-    u.userPlaylists = JSON.parse(localStorage.getItem('qaaf_user_playlists') || '{}');
-    u.pin = localStorage.getItem('qaaf_parent_pin') || u.pin || '123456';
-    window.registeredUsersMap[key] = u;
-    localStorage.setItem('qaaf_registered_users_map', JSON.stringify(window.registeredUsersMap));
-    if (window.qaafCloudSync && typeof window.qaafCloudSync.pushState === 'function') window.qaafCloudSync.pushState('User Profile Sync');
-  };
-  window.restoreUserProfileFromCloud = function(u) {
-    if (!u) return;
-    if (Array.isArray(u.likedVideos) && u.likedVideos.length) localStorage.setItem('qaaf_liked_videos', JSON.stringify(u.likedVideos));
-    if (Array.isArray(u.watchHistory) && u.watchHistory.length) localStorage.setItem('qaaf_watch_history', JSON.stringify(u.watchHistory));
-    if (u.userPlaylists && Object.keys(u.userPlaylists).length) localStorage.setItem('qaaf_user_playlists', JSON.stringify(u.userPlaylists));
-    if (u.pin) localStorage.setItem('qaaf_parent_pin', u.pin);
-  };
-  window.triggerQuickGmailLogin = function() {
-    if (window.qaafCloudSync && typeof window.qaafCloudSync.pullFromCloud === 'function') window.qaafCloudSync.pullFromCloud(true);
-    var pinInp = document.getElementById('quickGmailPinInput');
-    if (pinInp) { pinInp.value = localStorage.getItem('qaaf_parent_pin') || '123456'; pinInp.style.display = 'none'; }
-    var lastGm = localStorage.getItem('qaaf_last_gmail_address') || '';
-    var gmInp = document.getElementById('quickGmailAddressInput');
-    if (lastGm && gmInp) { gmInp.value = lastGm; if (typeof window.completeQuickGmailLogin === 'function') { window.completeQuickGmailLogin(); return; } }
-    var box = document.getElementById('quickGmailPromptBox');
-    if (box) { box.classList.remove('hidden'); if (gmInp) gmInp.focus(); }
-  };
-  var origCompleteGm = window.completeQuickGmailLogin;
-  if (typeof origCompleteGm === 'function') {
-    window.completeQuickGmailLogin = function() {
-      var gmInp = document.getElementById('quickGmailAddressInput');
-      if (gmInp && gmInp.value) localStorage.setItem('qaaf_last_gmail_address', gmInp.value.trim().toLowerCase());
-      var res = origCompleteGm.apply(this, arguments);
-      if (window.currentFamilyUser) { window.restoreUserProfileFromCloud(window.registeredUsersMap[window.currentFamilyUser.email.toLowerCase()]); window.syncCurrentUserProfileToCloud(); }
-      return res;
-    };
-  }
-})();
-
-// === QAAF V75 COMPACT PATCH ===
-(function(){
-  try { localStorage.removeItem('qaaf_quranic_games_list'); } catch(e){}
-  document.title = 'QAAF Tube \u2014 Muslim Family & Kids Hub';
-  window.addEventListener('message', function(ev){ var d=ev&&ev.data; if(d==='QAAF_EXIT_GAMES'||d==='QAAF_EXIT_GAME'||(d&&(d.type==='QAAF_EXIT_GAMES'||d.type==='QAAF_EXIT_GAME'))){ if(window.closeQaafExternalGamePage)window.closeQaafExternalGamePage(); if(window.closeInstalledGameModal)window.closeInstalledGameModal(); } });
-  var origTM = window.toggleMode; window.toggleMode = function(){ if(!window.isKidsMode && !window.currentFamilyUser){ if(window.openUserAuthModal)window.openUserAuthModal('signin'); return; } if(origTM) return origTM.apply(this,arguments); };
 })();
