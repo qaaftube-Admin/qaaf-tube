@@ -3346,6 +3346,7 @@
 })();
 
 // === QAAF V72 AUTH, SYNC, KIDS GATE & 3D BRIDGE ===
+// Build v73.0
 (function() {
   try { localStorage.removeItem('qaaf_quranic_games_list'); } catch(e) {}
   window.addEventListener('message', function(ev) {
@@ -3355,7 +3356,6 @@
       if (typeof window.closeInstalledGameModal === 'function') window.closeInstalledGameModal();
     }
   });
-  /* 1. Require Login/Account ONLY when switching to Kids Mode (Guest allowed in normal mode) */
   var origToggleMode = window.toggleMode;
   window.toggleMode = function() {
     if (!window.isKidsMode && !window.currentFamilyUser) {
@@ -3365,7 +3365,6 @@
     }
     if (typeof origToggleMode === 'function') return origToggleMode.apply(this, arguments);
   };
-  /* 2. Sync user profile data (likes, history, playlists, PIN, Pro) across App & Browser via Firebase */
   window.syncCurrentUserProfileToCloud = function() {
     if (!window.currentFamilyUser || !window.currentFamilyUser.email) return;
     var key = window.currentFamilyUser.email.toLowerCase();
@@ -3386,7 +3385,6 @@
     if (u.userPlaylists && Object.keys(u.userPlaylists).length) localStorage.setItem('qaaf_user_playlists', JSON.stringify(u.userPlaylists));
     if (u.pin) localStorage.setItem('qaaf_parent_pin', u.pin);
   };
-  /* 3. Streamline Continue with Google (Gmail): auto-connect remembered Gmail or 1-field instant Gmail connect */
   window.triggerQuickGmailLogin = function() {
     if (window.qaafCloudSync && typeof window.qaafCloudSync.pullFromCloud === 'function') window.qaafCloudSync.pullFromCloud(true);
     var pinInp = document.getElementById('quickGmailPinInput');
