@@ -3368,32 +3368,75 @@
   var origOpenKids = window.openKidsLockOrTimer;
   window.openKidsLockOrTimer = function() {
     if (!isKidsLocked && !currentUserEmail) {
-      openAccountModal();
-      if (typeof showSyncToast === "function") showSyncToast("🔐 کڈز موڈ اور پن کوڈ کے لیے پہلے لاگ ان کریں / Please Sign In first");
+      openAccountModal("Please Sign In or Continue with Gmail to use Kids Mode & PIN!");
       return;
     }
     if (origOpenKids) return origOpenKids.apply(this, arguments);
   };
   window.toggleKidsMode = function() { window.openKidsLockOrTimer(); };
+  window.completeGoogleQuickSignIn = function(directEmail) {
+    var inp = document.getElementById("googleQuickEmailInput");
+    var mainInp = document.getElementById("userEmailInput");
+    var em = String(directEmail || (inp && inp.value) || (mainInp && mainInp.value) || "").trim().toLowerCase();
+    if (!em || em.indexOf("@") === -1) { alert("Please enter your Gmail address (e.g. name@gmail.com)."); return; }
+    if (em === "qaaftube@gmail.com" || em === "adminqaaftube") { alert("Super Admin must sign in using Admin Password below."); return; }
+    localStorage.setItem("qaaf_last_gmail_email", em);
+    window.registeredUsersMap = window.registeredUsersMap || {};
+    var isNewGoogleUser = !window.registeredUsersMap[em];
+    if (isNewGoogleUser) {
+      window.registeredUsersMap[em] = { name: em.split("@")[0], userKey: em, email: em, pass: "GoogleAuth_" + em.split("@")[0], recWord: "makkah", pin: parentPin || "123456", authProvider: "Google", isPro: false, createdAt: new Date().toLocaleDateString() };
+    }
+    parentPin = window.registeredUsersMap[em].pin || parentPin || "123456";
+    localStorage.setItem("qaaf_parent_pin_6", parentPin);
+    localStorage.setItem("qaaf_registered_users", JSON.stringify(window.registeredUsersMap));
+    localStorage.removeItem("qaaf_admin_verified_v3");
+    currentUserEmail = em;
+    localStorage.setItem("qaaf_user_email", currentUserEmail);
+    window.restoreUserPersonalDataFromCloud(em);
+    window.saveUserPersonalDataToCloud();
+    syncAccountUI();
+    closeAccountModal();
+    if (window.qaafCloudSync) window.qaafCloudSync.pushState("Google Sign-In: " + em);
+    if (typeof showSyncToast === "function") showSyncToast("🎉 Signed in with Google as " + em);
+    if (isNewGoogleUser && window.qaafOfficialMailerUrl) {
+      try { fetch(window.qaafOfficialMailerUrl, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ email: em, name: em.split("@")[0], resetLink: "https://qaaftube.com" }) }); } catch(e) {}
+    }
+  };
   window.signInWithGoogleAccount = function() {
+    var mainInp = document.getElementById("userEmailInput");
+    var typedMain = (mainInp && mainInp.value) ? mainInp.value.trim().toLowerCase() : "";
     var savedGm = localStorage.getItem("qaaf_last_gmail_email") || "";
     var existingBox = document.getElementById("googleQuickAuthBox");
     if (!existingBox) {
       var gBox = document.createElement("div"); gBox.id = "googleQuickAuthBox";
       gBox.className = "bg-slate-900 border border-blue-500/50 rounded-xl p-3 mb-3 space-y-2 text-left";
-      gBox.innerHTML = "<label class=\"block text-[11px] font-extrabold text-blue-300\">🔵 Enter your Google (Gmail) Address:</label><input id=\"googleQuickEmailInput\" type=\"email\" placeholder=\"yourname@gmail.com\" class=\"w-full bg-black border border-slate-700 rounded-lg px-3 py-2 text-xs text-white\" /><button type=\"button\" onclick=\"completeGoogleQuickSignIn()\" class=\"w-full bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg text-xs font-extrabold shadow cursor-pointer\">✔ Continue with Gmail</button>";
+      gBox.innerHTML = "<label class=\"block text-[11px] font-extrabold text-blue-300\">🔵 Enter your Google (Gmail) Address:</label><input id=\"googleQuickEmailInput\" type=\"email\" placeholder=\"yourname@gmail.com\" class=\"w-full bg-black border border-slate-700 rounded-lg px-3 py-2 text-xs text-white\" /><button type=\"button\" onclick=\"window.completeGoogleQuickSignIn()\" class=\"w-full bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg text-xs font-extrabold shadow cursor-pointer\">✔ Continue with Gmail</button>";
       var btn = document.getElementById("googleSignInBtn"); if (btn && btn.parentNode) btn.parentNode.insertBefore(gBox, btn.nextSibling);
     } else { existingBox.classList.remove("hidden"); }
-    var inp = document.getElementById("googleQuickEmailInput");
-    if (savedGm && inp) { inp.value = savedGm; window.completeGoogleQuickSignIn(); return; }
-    if (inp) inp.focus();
+    var gInp = document.getElementById("googleQuickEmailInput");
+    var readyEmail = (gInp && gInp.value.trim()) || (typedMain.indexOf("@") !== -1 ? typedMain : "") || savedGm;
+    if (readyEmail && readyEmail.indexOf("@") !== -1) { if (gInp) gInp.value = readyEmail; window.completeGoogleQuickSignIn(readyEmail); return; }
+    if (gInp) gInp.focus();
   };
-  var origCompleteGm = window.completeGoogleQuickSignIn;
-  window.completeGoogleQuickSignIn = function() {
-    var inp = document.getElementById("googleQuickEmailInput");
-    var em = (inp ? inp.value : "").trim().toLowerCase();
-    if (em && em.indexOf("@") !== -1) localStorage.setItem("qaaf_last_gmail_email", em);
-    if (origCompleteGm) origCompleteGm.apply(this, arguments);
+  var origReg = window.registerNewFamilyAccount;
+  window.registerNewFamilyAccount = function() {
+    var uKey = (document.getElementById("regEmailInput") ? document.getElementById("regEmailInput").value : "").trim().toLowerCase();
+    if (uKey && window.registeredUsersMap && window.registeredUsersMap[uKey] && uKey !== "adminqaaftube" && uKey !== "qaaftube@gmail.com") {
+      delete window.registeredUsersMap[uKey];
+    }
+    if (origReg) origReg.apply(this, arguments);
+    if (currentUserEmail) window.saveUserPersonalDataToCloud();
+  };
+  var origLoginEm = window.loginWithEmail;
+  window.loginWithEmail = function() {
+    var rawU = (document.getElementById("userEmailInput") ? document.getElementById("userEmailInput").value : "").trim().toLowerCase();
+    var rawP = (document.getElementById("userPassInput") ? document.getElementById("userPassInput").value : "").trim();
+    if (rawU && rawP && rawU !== "adminqaaftube" && rawU !== "qaaftube@gmail.com") {
+      window.registeredUsersMap = window.registeredUsersMap || {};
+      var ex = window.registeredUsersMap[rawU];
+      if (ex && String(ex.pass || "").indexOf("GoogleAuth_") === 0) { ex.pass = rawP; localStorage.setItem("qaaf_registered_users", JSON.stringify(window.registeredUsersMap)); }
+    }
+    if (origLoginEm) origLoginEm.apply(this, arguments);
     if (currentUserEmail) { window.restoreUserPersonalDataFromCloud(currentUserEmail); window.saveUserPersonalDataToCloud(); }
   };
   ["toggleFavoriteVideo", "recordVideoInHistory", "saveActivePlaylistsGroup", "updateParentPin"].forEach(function(fn) {
