@@ -3337,3 +3337,67 @@
     if (typeof window.renderVideosNow === "function") window.renderVideosNow();
   }, 300);
 })();
+
+// === QAAF STEP 2 AUTH & CLOUD SYNC ===
+(function() {
+  window.saveUserPersonalDataToCloud = function() {
+    if (!currentUserEmail) return;
+    var k = currentUserEmail.toLowerCase().trim();
+    window.registeredUsersMap = window.registeredUsersMap || {};
+    var uObj = window.registeredUsersMap[k]; if (!uObj) return;
+    uObj.favorites = favoriteVideoIds || [];
+    uObj.parentHistory = window.parentHistoryIds || [];
+    uObj.kidsHistory = window.kidsHistoryIds || [];
+    uObj.parentPlaylists = window.parentPlaylists || [];
+    uObj.kidsPlaylists = window.kidsPlaylists || [];
+    uObj.pin = parentPin || "123456";
+    localStorage.setItem("qaaf_registered_users", JSON.stringify(window.registeredUsersMap));
+    if (typeof window.syncQaafUsersWithCloudNow === "function") window.syncQaafUsersWithCloudNow(false);
+  };
+  window.restoreUserPersonalDataFromCloud = function(emailStr) {
+    if (!emailStr || !window.registeredUsersMap) return;
+    var uObj = window.registeredUsersMap[emailStr.toLowerCase().trim()]; if (!uObj) return;
+    if (Array.isArray(uObj.favorites) && uObj.favorites.length) { favoriteVideoIds = uObj.favorites; localStorage.setItem("qaaf_favorites", JSON.stringify(favoriteVideoIds)); }
+    if (Array.isArray(uObj.parentHistory) && uObj.parentHistory.length) { window.parentHistoryIds = uObj.parentHistory; localStorage.setItem("qaaf_parent_history", JSON.stringify(window.parentHistoryIds)); }
+    if (Array.isArray(uObj.kidsHistory) && uObj.kidsHistory.length) { window.kidsHistoryIds = uObj.kidsHistory; localStorage.setItem("qaaf_kids_history", JSON.stringify(window.kidsHistoryIds)); }
+    if (Array.isArray(uObj.parentPlaylists) && uObj.parentPlaylists.length) { window.parentPlaylists = uObj.parentPlaylists; localStorage.setItem("qaaf_parent_multi_playlists", JSON.stringify(window.parentPlaylists)); }
+    if (Array.isArray(uObj.kidsPlaylists) && uObj.kidsPlaylists.length) { window.kidsPlaylists = uObj.kidsPlaylists; localStorage.setItem("qaaf_kids_multi_playlists", JSON.stringify(window.kidsPlaylists)); }
+    if (uObj.pin && /^\\d{6}$/.test(uObj.pin)) { parentPin = uObj.pin; localStorage.setItem("qaaf_parent_pin_6", parentPin); }
+    if (typeof window.renderVideosNow === "function") window.renderVideosNow();
+  };
+  var origOpenKids = window.openKidsLockOrTimer;
+  window.openKidsLockOrTimer = function() {
+    if (!isKidsLocked && !currentUserEmail) {
+      openAccountModal();
+      if (typeof showSyncToast === "function") showSyncToast("🔐 کڈز موڈ اور پن کوڈ کے لیے پہلے لاگ ان کریں / Please Sign In first");
+      return;
+    }
+    if (origOpenKids) return origOpenKids.apply(this, arguments);
+  };
+  window.toggleKidsMode = function() { window.openKidsLockOrTimer(); };
+  window.signInWithGoogleAccount = function() {
+    var savedGm = localStorage.getItem("qaaf_last_gmail_email") || "";
+    var existingBox = document.getElementById("googleQuickAuthBox");
+    if (!existingBox) {
+      var gBox = document.createElement("div"); gBox.id = "googleQuickAuthBox";
+      gBox.className = "bg-slate-900 border border-blue-500/50 rounded-xl p-3 mb-3 space-y-2 text-left";
+      gBox.innerHTML = "<label class=\"block text-[11px] font-extrabold text-blue-300\">🔵 Enter your Google (Gmail) Address:</label><input id=\"googleQuickEmailInput\" type=\"email\" placeholder=\"yourname@gmail.com\" class=\"w-full bg-black border border-slate-700 rounded-lg px-3 py-2 text-xs text-white\" /><button type=\"button\" onclick=\"completeGoogleQuickSignIn()\" class=\"w-full bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg text-xs font-extrabold shadow cursor-pointer\">✔ Continue with Gmail</button>";
+      var btn = document.getElementById("googleSignInBtn"); if (btn && btn.parentNode) btn.parentNode.insertBefore(gBox, btn.nextSibling);
+    } else { existingBox.classList.remove("hidden"); }
+    var inp = document.getElementById("googleQuickEmailInput");
+    if (savedGm && inp) { inp.value = savedGm; window.completeGoogleQuickSignIn(); return; }
+    if (inp) inp.focus();
+  };
+  var origCompleteGm = window.completeGoogleQuickSignIn;
+  window.completeGoogleQuickSignIn = function() {
+    var inp = document.getElementById("googleQuickEmailInput");
+    var em = (inp ? inp.value : "").trim().toLowerCase();
+    if (em && em.indexOf("@") !== -1) localStorage.setItem("qaaf_last_gmail_email", em);
+    if (origCompleteGm) origCompleteGm.apply(this, arguments);
+    if (currentUserEmail) { window.restoreUserPersonalDataFromCloud(currentUserEmail); window.saveUserPersonalDataToCloud(); }
+  };
+  ["toggleFavoriteVideo", "recordVideoInHistory", "saveActivePlaylistsGroup", "updateParentPin"].forEach(function(fn) {
+    var orig = window[fn]; if (typeof orig === "function") { window[fn] = function() { var r = orig.apply(this, arguments); window.saveUserPersonalDataToCloud(); return r; }; }
+  });
+  if (currentUserEmail) setTimeout(function() { window.restoreUserPersonalDataFromCloud(currentUserEmail); }, 800);
+})();
