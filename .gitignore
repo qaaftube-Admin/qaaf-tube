@@ -1,10 +1,20 @@
 Bike racing game/
+Channel list/
+quranic ayat codes/
+remaing works/
+backups index/
 backup_before_10pct_center/
-**/old backup*/
-**/old data*/
-**/Old Backup*/
-**/Old Data*/
+**/old/
+**/Old/
+**/OLD/
+**/old*/
 **/*backup*/
-**/*Backup*/
-**/node_modules/
+**/*.psd
+**/*.PSD
+**/*.log
+**/*.rtf
+**/*.zip
+**/*.rar
+index*original*.html
+index_working*.html
 ~$*

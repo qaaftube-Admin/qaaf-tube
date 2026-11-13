@@ -3406,3 +3406,11 @@
     };
   }
 })();
+
+// === QAAF V75 COMPACT PATCH ===
+(function(){
+  try { localStorage.removeItem('qaaf_quranic_games_list'); } catch(e){}
+  document.title = 'QAAF Tube \u2014 Muslim Family & Kids Hub';
+  window.addEventListener('message', function(ev){ var d=ev&&ev.data; if(d==='QAAF_EXIT_GAMES'||d==='QAAF_EXIT_GAME'||(d&&(d.type==='QAAF_EXIT_GAMES'||d.type==='QAAF_EXIT_GAME'))){ if(window.closeQaafExternalGamePage)window.closeQaafExternalGamePage(); if(window.closeInstalledGameModal)window.closeInstalledGameModal(); } });
+  var origTM = window.toggleMode; window.toggleMode = function(){ if(!window.isKidsMode && !window.currentFamilyUser){ if(window.openUserAuthModal)window.openUserAuthModal('signin'); return; } if(origTM) return origTM.apply(this,arguments); };
+})();
