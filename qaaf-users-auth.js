@@ -3340,6 +3340,7 @@
 
 // === QAAF STEP 2 AUTH & CLOUD SYNC ===
 (function() {
+  var FB_BASE = "https://qaaftube-6f251-default-rtdb.firebaseio.com";
   window.saveUserPersonalDataToCloud = function() {
     if (!currentUserEmail) return;
     var k = currentUserEmail.toLowerCase().trim();
@@ -3362,7 +3363,7 @@
     if (Array.isArray(uObj.kidsHistory) && uObj.kidsHistory.length) { window.kidsHistoryIds = uObj.kidsHistory; localStorage.setItem("qaaf_kids_history", JSON.stringify(window.kidsHistoryIds)); }
     if (Array.isArray(uObj.parentPlaylists) && uObj.parentPlaylists.length) { window.parentPlaylists = uObj.parentPlaylists; localStorage.setItem("qaaf_parent_multi_playlists", JSON.stringify(window.parentPlaylists)); }
     if (Array.isArray(uObj.kidsPlaylists) && uObj.kidsPlaylists.length) { window.kidsPlaylists = uObj.kidsPlaylists; localStorage.setItem("qaaf_kids_multi_playlists", JSON.stringify(window.kidsPlaylists)); }
-    if (uObj.pin && /^\\d{6}$/.test(uObj.pin)) { parentPin = uObj.pin; localStorage.setItem("qaaf_parent_pin_6", parentPin); }
+    if (uObj.pin && String(uObj.pin).length === 6) { parentPin = String(uObj.pin); localStorage.setItem("qaaf_parent_pin_6", parentPin); }
     if (typeof window.renderVideosNow === "function") window.renderVideosNow();
   };
   var origOpenKids = window.openKidsLockOrTimer;
@@ -3398,21 +3399,14 @@
     closeAccountModal();
     if (window.qaafCloudSync) window.qaafCloudSync.pushState("Google Sign-In: " + em);
     if (typeof showSyncToast === "function") showSyncToast("🎉 Signed in with Google as " + em);
-    if (isNewGoogleUser && window.qaafOfficialMailerUrl) {
-      try { fetch(window.qaafOfficialMailerUrl, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ email: em, name: em.split("@")[0], resetLink: "https://qaaftube.com" }) }); } catch(e) {}
-    }
   };
   window.signInWithGoogleAccount = function() {
     var mainInp = document.getElementById("userEmailInput");
     var typedMain = (mainInp && mainInp.value) ? mainInp.value.trim().toLowerCase() : "";
     var savedGm = localStorage.getItem("qaaf_last_gmail_email") || "";
     var existingBox = document.getElementById("googleQuickAuthBox");
-    if (!existingBox) {
-      var gBox = document.createElement("div"); gBox.id = "googleQuickAuthBox";
-      gBox.className = "bg-slate-900 border border-blue-500/50 rounded-xl p-3 mb-3 space-y-2 text-left";
-      gBox.innerHTML = "<label class=\"block text-[11px] font-extrabold text-blue-300\">🔵 Enter your Google (Gmail) Address:</label><input id=\"googleQuickEmailInput\" type=\"email\" placeholder=\"yourname@gmail.com\" class=\"w-full bg-black border border-slate-700 rounded-lg px-3 py-2 text-xs text-white\" /><button type=\"button\" onclick=\"window.completeGoogleQuickSignIn()\" class=\"w-full bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg text-xs font-extrabold shadow cursor-pointer\">✔ Continue with Gmail</button>";
-      var btn = document.getElementById("googleSignInBtn"); if (btn && btn.parentNode) btn.parentNode.insertBefore(gBox, btn.nextSibling);
-    } else { existingBox.classList.remove("hidden"); }
+    var gPin = document.getElementById("googleQuickPinInput"); if (gPin) gPin.style.display = "none";
+    if (existingBox) existingBox.classList.remove("hidden");
     var gInp = document.getElementById("googleQuickEmailInput");
     var readyEmail = (gInp && gInp.value.trim()) || (typedMain.indexOf("@") !== -1 ? typedMain : "") || savedGm;
     if (readyEmail && readyEmail.indexOf("@") !== -1) { if (gInp) gInp.value = readyEmail; window.completeGoogleQuickSignIn(readyEmail); return; }
@@ -3421,9 +3415,7 @@
   var origReg = window.registerNewFamilyAccount;
   window.registerNewFamilyAccount = function() {
     var uKey = (document.getElementById("regEmailInput") ? document.getElementById("regEmailInput").value : "").trim().toLowerCase();
-    if (uKey && window.registeredUsersMap && window.registeredUsersMap[uKey] && uKey !== "adminqaaftube" && uKey !== "qaaftube@gmail.com") {
-      delete window.registeredUsersMap[uKey];
-    }
+    if (uKey && window.registeredUsersMap && window.registeredUsersMap[uKey] && uKey !== "adminqaaftube" && uKey !== "qaaftube@gmail.com") { delete window.registeredUsersMap[uKey]; }
     if (origReg) origReg.apply(this, arguments);
     if (currentUserEmail) window.saveUserPersonalDataToCloud();
   };
@@ -3439,43 +3431,23 @@
     if (origLoginEm) origLoginEm.apply(this, arguments);
     if (currentUserEmail) { window.restoreUserPersonalDataFromCloud(currentUserEmail); window.saveUserPersonalDataToCloud(); }
   };
-  ["toggleFavoriteVideo", "recordVideoInHistory", "saveActivePlaylistsGroup", "updateParentPin"].forEach(function(fn) {
-    var orig = window[fn]; if (typeof orig === "function") { window[fn] = function() { var r = orig.apply(this, arguments); window.saveUserPersonalDataToCloud(); return r; }; }
-  });
-  if (currentUserEmail) setTimeout(function() { window.restoreUserPersonalDataFromCloud(currentUserEmail); }, 800);
-})();
-
-// === QAAF STEP 4 ADMIN ANALYTICS & SPONSOR REPORT ===
-(function() {
-  var FB_BASE = (localStorage.getItem("qaaf_firebase_db_url") || "https://qaaftube-6f251-default-rtdb.firebaseio.com").replace(/\\/+$/, "");
   function getTodayKey() { var d = new Date(); return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); }
-  var defStats = { totalViews: 0, totalEngagementSecs: 0, familySecs: 0, kidsSecs: 0, sponsorImpressions: 0, sponsorClicks: 0, langViews: {}, daily: {}, userStats: {} };
+  var defStats = { totalViews: 0, totalEngagementSecs: 0, familySecs: 0, kidsSecs: 0, sponsorImpressions: 0, sponsorClicks: 0, daily: {}, userStats: {} };
   window.qaafAnalytics = Object.assign({}, defStats, JSON.parse(localStorage.getItem("qaaf_analytics_v1") || "{}"));
   window.qaafStatsPeriodDays = 0;
   function ensureDay(k) { if (!window.qaafAnalytics.daily[k]) window.qaafAnalytics.daily[k] = { views: 0, secs: 0, visitors: 0, sponsorClicks: 0 }; return window.qaafAnalytics.daily[k]; }
   function saveStatsLocal() { try { localStorage.setItem("qaaf_analytics_v1", JSON.stringify(window.qaafAnalytics)); } catch(e){} }
-  window.pushAnalyticsToCloud = function() {
-    saveStatsLocal();
-    fetch(FB_BASE + "/qaaf_analytics_db.json", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(window.qaafAnalytics) }).catch(function(){});
-  };
+  window.pushAnalyticsToCloud = function() { saveStatsLocal(); fetch(FB_BASE + "/qaaf_analytics_db.json", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(window.qaafAnalytics) }).catch(function(){}); };
   window.pullAnalyticsFromCloud = function(cb) {
     fetch(FB_BASE + "/qaaf_analytics_db.json?t=" + Date.now()).then(function(r){ return r.ok ? r.json() : null; }).then(function(d){
       if (d && typeof d === "object") {
         var loc = window.qaafAnalytics;
         loc.totalViews = Math.max(loc.totalViews||0, d.totalViews||0);
         loc.totalEngagementSecs = Math.max(loc.totalEngagementSecs||0, d.totalEngagementSecs||0);
-        loc.familySecs = Math.max(loc.familySecs||0, d.familySecs||0);
-        loc.kidsSecs = Math.max(loc.kidsSecs||0, d.kidsSecs||0);
         loc.sponsorImpressions = Math.max(loc.sponsorImpressions||0, d.sponsorImpressions||0);
         loc.sponsorClicks = Math.max(loc.sponsorClicks||0, d.sponsorClicks||0);
-        loc.langViews = Object.assign({}, d.langViews||{}, loc.langViews||{});
         loc.userStats = Object.assign({}, d.userStats||{}, loc.userStats||{});
-        var allDays = Object.assign({}, d.daily||{});
-        Object.keys(loc.daily||{}).forEach(function(dk){
-          if (!allDays[dk]) allDays[dk] = loc.daily[dk];
-          else { allDays[dk].views = Math.max(allDays[dk].views||0, loc.daily[dk].views||0); allDays[dk].secs = Math.max(allDays[dk].secs||0, loc.daily[dk].secs||0); allDays[dk].visitors = Math.max(allDays[dk].visitors||0, loc.daily[dk].visitors||0); }
-        });
-        loc.daily = allDays; saveStatsLocal();
+        var allDays = Object.assign({}, d.daily||{}, loc.daily||{}); loc.daily = allDays; saveStatsLocal();
       }
       if (cb) cb();
     }).catch(function(){ if (cb) cb(); });
@@ -3484,33 +3456,21 @@
   if (localStorage.getItem("qaaf_visited_day") !== tk) { localStorage.setItem("qaaf_visited_day", tk); dObj.visitors = (dObj.visitors||0) + 1; window.qaafAnalytics.sponsorImpressions = (window.qaafAnalytics.sponsorImpressions||0) + 1; saveStatsLocal(); }
   setInterval(function() {
     if (document.hidden) return;
-    var k = getTodayKey(); var day = ensureDay(k);
-    day.secs = (day.secs||0) + 30;
+    var k = getTodayKey(); var day = ensureDay(k); day.secs = (day.secs||0) + 30;
     window.qaafAnalytics.totalEngagementSecs = (window.qaafAnalytics.totalEngagementSecs||0) + 30;
-    if (isKidsLocked) window.qaafAnalytics.kidsSecs = (window.qaafAnalytics.kidsSecs||0) + 30; else window.qaafAnalytics.familySecs = (window.qaafAnalytics.familySecs||0) + 30;
     var uKey = (currentUserEmail || "guest").toLowerCase().trim();
-    window.qaafAnalytics.userStats = window.qaafAnalytics.userStats || {};
     var us = window.qaafAnalytics.userStats[uKey] || { views: 0, secs: 0, lastActive: k };
-    us.secs = (us.secs||0) + 30; us.lastActive = k; window.qaafAnalytics.userStats[uKey] = us;
-    saveStatsLocal();
+    us.secs = (us.secs||0) + 30; us.lastActive = k; window.qaafAnalytics.userStats[uKey] = us; saveStatsLocal();
   }, 30000);
-  setInterval(function(){ if (!document.hidden) window.pushAnalyticsToCloud(); }, 120000);
   var origIncView = window.incrementQaafRealView;
   window.incrementQaafRealView = function(videoObj) {
     if (origIncView) origIncView.apply(this, arguments);
-    var k = getTodayKey(); var day = ensureDay(k);
-    day.views = (day.views||0) + 1;
+    var k = getTodayKey(); var day = ensureDay(k); day.views = (day.views||0) + 1;
     window.qaafAnalytics.totalViews = (window.qaafAnalytics.totalViews||0) + 1;
-    var lg = ((videoObj && videoObj.lang) || preferredContentLang || "en").toUpperCase();
-    window.qaafAnalytics.langViews = window.qaafAnalytics.langViews || {};
-    window.qaafAnalytics.langViews[lg] = (window.qaafAnalytics.langViews[lg]||0) + 1;
     var uKey = (currentUserEmail || "guest").toLowerCase().trim();
-    window.qaafAnalytics.userStats = window.qaafAnalytics.userStats || {};
     var us = window.qaafAnalytics.userStats[uKey] || { views: 0, secs: 0, lastActive: k };
-    us.views = (us.views||0) + 1; us.lastActive = k; window.qaafAnalytics.userStats[uKey] = us;
-    window.pushAnalyticsToCloud();
+    us.views = (us.views||0) + 1; us.lastActive = k; window.qaafAnalytics.userStats[uKey] = us; window.pushAnalyticsToCloud();
   };
-  ["promoTickerLink", "promoImageBannerLink"].forEach(function(id){ var el = document.getElementById(id); if (el) el.addEventListener("click", function(){ window.qaafAnalytics.sponsorClicks = (window.qaafAnalytics.sponsorClicks||0) + 1; ensureDay(getTodayKey()).sponsorClicks++; window.pushAnalyticsToCloud(); }); });
   function fmtHrsMins(secs) { var s = Math.max(0, parseInt(secs||0, 10)); var h = Math.floor(s / 3600); var m = Math.floor((s % 3600) / 60); return h > 0 ? (h + "h " + m + "m") : (m + " mins"); }
   function injectAnalyticsAdminTab() {
     var sb = document.getElementById("edgeAdminSidebar");
@@ -3519,77 +3479,47 @@
     var btn = document.createElement("button"); btn.type = "button"; btn.id = "admTabBtn_analytics";
     btn.onclick = function() { switchAdminTab("analytics"); };
     btn.className = "adm-tab-btn w-full text-left px-3 py-2 rounded-xl text-[11px] sm:text-xs font-bold flex items-center justify-between gap-1.5 transition text-slate-300 hover:bg-white/5";
-    btn.innerHTML = "<span class=\"flex items-center gap-1.5 truncate\"><span>📊</span> <span class=\"truncate\">Analytics &amp; Stats</span></span><span class=\"bg-emerald-500 text-black px-1.5 py-0.5 rounded-full text-[9px] font-extrabold shrink-0\">LIVE</span>";
+    btn.innerHTML = "<span>📊 Analytics &amp; Stats</span><span class=x27bg-emerald-500 text-black px-1.5 py-0.5 rounded-full text-[9px] font-extraboldx27>LIVE</span>".replace(/x27/g, "'");
     sb.appendChild(btn);
     var pane = document.createElement("div"); pane.id = "admPane_analytics"; pane.className = "adm-tab-pane hidden space-y-4 text-xs";
     ra.appendChild(pane);
   }
   window.setQaafAnalyticsPeriod = function(days) { window.qaafStatsPeriodDays = days; window.renderQaafAnalyticsDashboard(); };
-  window.openSponsorClientReportModal = function() {
-    var ex = document.getElementById("qaafSponsorReportModal"); if (ex) ex.remove();
-    var st = window.computeFilteredAnalytics(window.qaafStatsPeriodDays);
-    var totalUsers = Object.keys(window.registeredUsersMap || {}).length;
-    var m = document.createElement("div"); m.id = "qaafSponsorReportModal";
-    m.className = "fixed inset-0 z-[350] bg-black/90 backdrop-blur-md flex items-center justify-center p-4";
-    m.innerHTML = "<div class=\"bg-gradient-to-br from-[#0b1f18] via-[#101824] to-[#0a1018] border-2 border-emerald-500/60 rounded-3xl max-w-xl w-full p-6 shadow-2xl text-white space-y-4\">" +
-      "<div class=\"flex items-center justify-between border-b border-white/10 pb-3\"><div><span class=\"text-[10px] font-extrabold uppercase tracking-wider bg-emerald-500 text-black px-2.5 py-0.5 rounded-full\">Official Sponsor Media Kit</span><h3 class=\"text-lg font-extrabold text-white mt-1\">QAAF Tube — Audience &amp; Engagement Report</h3><p class=\"text-[11px] text-emerald-300\">qaaftube.com • 100% Safe Muslim Family &amp; Kids Platform (" + st.label + ")</p></div><button onclick=\"document.getElementById('qaafSponsorReportModal').remove()\" class=\"bg-white/10 hover:bg-rose-600 w-8 h-8 rounded-full font-bold\">✕</button></div>" +
-      "<div class=\"grid grid-cols-2 sm:grid-cols-3 gap-3 text-center\">" +
-        "<div class=\"bg-black/50 border border-emerald-500/30 rounded-2xl p-3\"><div class=\"text-[10px] text-slate-400\">Total Video Views</div><div class=\"text-xl font-extrabold text-emerald-400 mt-0.5\">" + st.views + "</div></div>" +
-        "<div class=\"bg-black/50 border border-amber-500/30 rounded-2xl p-3\"><div class=\"text-[10px] text-slate-400\">Watch &amp; Engagement Time</div><div class=\"text-xl font-extrabold text-amber-300 mt-0.5\">" + fmtHrsMins(st.secs) + "</div></div>" +
-        "<div class=\"bg-black/50 border border-blue-500/30 rounded-2xl p-3\"><div class=\"text-[10px] text-slate-400\">Registered Families</div><div class=\"text-xl font-extrabold text-blue-300 mt-0.5\">" + totalUsers + "+</div></div>" +
-        "<div class=\"bg-black/50 border border-purple-500/30 rounded-2xl p-3\"><div class=\"text-[10px] text-slate-400\">Approved Islamic Videos</div><div class=\"text-xl font-extrabold text-purple-300 mt-0.5\">" + ((videosData && videosData.length)||0) + "</div></div>" +
-        "<div class=\"bg-black/50 border border-teal-500/30 rounded-2xl p-3\"><div class=\"text-[10px] text-slate-400\">Sponsor Ad Views</div><div class=\"text-xl font-extrabold text-teal-300 mt-0.5\">" + (window.qaafAnalytics.sponsorImpressions||0) + "</div></div>" +
-        "<div class=\"bg-black/50 border border-rose-500/30 rounded-2xl p-3\"><div class=\"text-[10px] text-slate-400\">Sponsor Ad Clicks</div><div class=\"text-xl font-extrabold text-rose-300 mt-0.5\">" + (window.qaafAnalytics.sponsorClicks||0) + "</div></div>" +
-      "</div>" +
-      "<div class=\"bg-black/40 border border-white/10 rounded-2xl p-3 text-xs flex items-center justify-between\"><span>📩 For Sponsorship &amp; Promotion Inquiries:</span><strong class=\"text-emerald-400\">contactqaaftube@gmail.com</strong></div>" +
-    "</div>";
-    document.body.appendChild(m);
-  };
   window.computeFilteredAnalytics = function(days) {
-    var daily = window.qaafAnalytics.daily || {};
-    var keys = Object.keys(daily).sort().reverse();
+    var daily = window.qaafAnalytics.daily || {}; var keys = Object.keys(daily).sort().reverse();
     var cutDate = new Date(); if (days > 0) cutDate.setDate(cutDate.getDate() - (days - 1));
     var cutStr = days > 0 ? (cutDate.getFullYear() + "-" + String(cutDate.getMonth()+1).padStart(2,"0") + "-" + String(cutDate.getDate()).padStart(2,"0")) : "0000-00-00";
     var sumViews = 0, sumSecs = 0, sumVis = 0, rows = [];
     keys.forEach(function(k){ if (k >= cutStr) { var d = daily[k]; sumViews += (d.views||0); sumSecs += (d.secs||0); sumVis += (d.visitors||0); rows.push({ date: k, views: d.views||0, secs: d.secs||0, visitors: d.visitors||0 }); } });
     var realCatalogViews = (videosData||[]).reduce(function(a,v){ return a + ((window.getQaafRealViewCount ? window.getQaafRealViewCount(v) : v.realViews)||0); }, 0);
     if (days === 0) { sumViews = Math.max(sumViews, window.qaafAnalytics.totalViews||0, realCatalogViews); sumSecs = Math.max(sumSecs, window.qaafAnalytics.totalEngagementSecs||0); }
-    var lblMap = { 1: "Today (Daily)", 7: "Last 7 Days (Weekly)", 10: "Last 10 Days", 30: "Last 30 Days (Monthly)", 365: "Last 365 Days (Yearly)", 0: "All-Time Overall" };
+    var lblMap = { 1: "Today (Daily)", 7: "7 Days (Weekly)", 10: "10 Days", 30: "30 Days (Monthly)", 365: "1 Year (Yearly)", 0: "All-Time Overall" };
     return { views: sumViews, secs: sumSecs, visitors: sumVis, rows: rows, label: lblMap[days] || "All-Time" };
   };
   window.renderQaafAnalyticsDashboard = function() {
     injectAnalyticsAdminTab();
     var pane = document.getElementById("admPane_analytics"); if (!pane) return;
-    var p = window.qaafStatsPeriodDays || 0;
-    var st = window.computeFilteredAnalytics(p);
+    var p = window.qaafStatsPeriodDays || 0; var st = window.computeFilteredAnalytics(p);
     var totalUsers = Object.keys(window.registeredUsersMap || {}).length;
-    var periods = [{d:1,t:"Today (Daily)"},{d:7,t:"7 Days (Weekly)"},{d:10,t:"10 Days"},{d:30,t:"30 Days (Monthly)"},{d:365,t:"1 Year"},{d:0,t:"All-Time Overall"}];
-    var btnsHtml = periods.map(function(x){ return "<button type=\"button\" onclick=\"setQaafAnalyticsPeriod(" + x.d + ")\" class=\"px-3 py-1.5 rounded-xl text-[11px] font-extrabold cursor-pointer transition " + (p===x.d ? "bg-emerald-500 text-black shadow" : "bg-slate-800 text-slate-300 hover:bg-slate-700") + "\">" + x.t + "</button>"; }).join("");
-    var dayRows = st.rows.slice(0, 15).map(function(r){ return "<tr class=\"border-b border-slate-800/80\"><td class=\"py-1.5 font-mono text-emerald-300\">" + r.date + "</td><td class=\"py-1.5 font-bold text-white\">" + r.views + " views</td><td class=\"py-1.5 text-amber-300 font-bold\">" + fmtHrsMins(r.secs) + "</td><td class=\"py-1.5 text-blue-300\">" + r.visitors + "</td></tr>"; }).join("") || "<tr><td colspan=\"4\" class=\"py-3 text-center text-slate-500\">Activity recorded starting today.</td></tr>";
+    var periods = [{d:1,t:"Today"},{d:7,t:"7 Days"},{d:10,t:"10 Days"},{d:30,t:"30 Days"},{d:365,t:"1 Year"},{d:0,t:"All-Time"}];
+    var btnsHtml = periods.map(function(x){ return "<button type=button onclick=setQaafAnalyticsPeriod(" + x.d + ") class='px-3 py-1.5 rounded-xl text-[11px] font-extrabold cursor-pointer " + (p===x.d ? "bg-emerald-500 text-black" : "bg-slate-800 text-slate-300") + "'>" + x.t + "</button>"; }).join(" ");
+    var dayRows = st.rows.slice(0, 15).map(function(r){ return "<tr class='border-b border-slate-800'><td class='py-1.5 font-mono text-emerald-300'>" + r.date + "</td><td class='py-1.5 font-bold text-white'>" + r.views + " views</td><td class='py-1.5 text-amber-300 font-bold'>" + fmtHrsMins(r.secs) + "</td><td class='py-1.5 text-blue-300'>" + r.visitors + "</td></tr>"; }).join("") || "<tr><td colspan=4 class='py-3 text-center text-slate-500'>Activity recorded starting today.</td></tr>";
     var uStats = window.qaafAnalytics.userStats || {};
-    var uRows = Object.keys(uStats).map(function(uk){ var us = uStats[uk]; return "<div class=\"bg-black/60 border border-slate-800 rounded-xl px-3 py-2 flex items-center justify-between\"><div><span class=\"font-bold text-white\">" + uk + "</span><span class=\"text-[10px] text-slate-400 ml-2\">Last seen: " + (us.lastActive||"-") + "</span></div><div class=\"flex items-center gap-3\"><span class=\"text-emerald-400 font-bold\">👁️ " + (us.views||0) + " views</span><span class=\"text-amber-300 font-extrabold\">⏱️ " + fmtHrsMins(us.secs||0) + "</span></div></div>"; }).join("") || "<p class=\"text-slate-500\">No individual user sessions yet.</p>";
-    pane.innerHTML = "<div class=\"flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3\"><div><h4 class=\"text-sm sm:text-base font-extrabold text-white\">📊 Audience, Views &amp; Engagement Hours Dashboard</h4><p class=\"text-[11px] text-slate-400\">Live tracking for Sponsor &amp; Client Promotions (" + st.label + ")</p></div><button type=\"button\" onclick=\"openSponsorClientReportModal()\" class=\"bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white px-4 py-2 rounded-xl text-xs font-extrabold shadow-lg cursor-pointer\">📄 Open Client / Sponsor Report Card</button></div>" +
-      "<div class=\"flex flex-wrap items-center gap-1.5\">" + btnsHtml + "</div>" +
-      "<div class=\"grid grid-cols-2 sm:grid-cols-4 gap-3\">" +
-        "<div class=\"bg-[#141821] border border-emerald-500/40 rounded-2xl p-3.5\"><div class=\"text-[10px] text-slate-400\">Video Views (" + st.label + ")</div><div class=\"text-xl font-extrabold text-emerald-400 mt-1\">👁️ " + st.views + "</div></div>" +
-        "<div class=\"bg-[#141821] border border-amber-500/40 rounded-2xl p-3.5\"><div class=\"text-[10px] text-slate-400\">Engagement Time (" + st.label + ")</div><div class=\"text-xl font-extrabold text-amber-300 mt-1\">⏱️ " + fmtHrsMins(st.secs) + "</div></div>" +
-        "<div class=\"bg-[#141821] border border-blue-500/40 rounded-2xl p-3.5\"><div class=\"text-[10px] text-slate-400\">Registered Accounts</div><div class=\"text-xl font-extrabold text-blue-300 mt-1\">👥 " + totalUsers + "</div></div>" +
-        "<div class=\"bg-[#141821] border border-purple-500/40 rounded-2xl p-3.5\"><div class=\"text-[10px] text-slate-400\">Sponsor Views / Clicks</div><div class=\"text-xl font-extrabold text-purple-300 mt-1\">📢 " + (window.qaafAnalytics.sponsorImpressions||0) + " / " + (window.qaafAnalytics.sponsorClicks||0) + "</div></div>" +
+    var uRows = Object.keys(uStats).map(function(uk){ var us = uStats[uk]; return "<div class='bg-black/60 border border-slate-800 rounded-xl px-3 py-2 flex items-center justify-between'><div><span class='font-bold text-white'>" + uk + "</span><span class='text-[10px] text-slate-400 ml-2'>Last: " + (us.lastActive||"-") + "</span></div><div class='flex items-center gap-3'><span class='text-emerald-400 font-bold'>👁️ " + (us.views||0) + " views</span><span class='text-amber-300 font-extrabold'>⏱️ " + fmtHrsMins(us.secs||0) + "</span></div></div>"; }).join("") || "<p class='text-slate-500'>No individual user sessions yet.</p>";
+    pane.innerHTML = "<div class='border-b border-slate-800 pb-3'><h4 class='text-sm sm:text-base font-extrabold text-white'>📊 Audience, Views &amp; Engagement Hours (" + st.label + ")</h4></div>" +
+      "<div class='flex flex-wrap items-center gap-1.5'>" + btnsHtml + "</div>" +
+      "<div class='grid grid-cols-2 sm:grid-cols-4 gap-3'>" +
+        "<div class='bg-[#141821] border border-emerald-500/40 rounded-2xl p-3.5'><div class='text-[10px] text-slate-400'>Video Views</div><div class='text-xl font-extrabold text-emerald-400 mt-1'>👁️ " + st.views + "</div></div>" +
+        "<div class='bg-[#141821] border border-amber-500/40 rounded-2xl p-3.5'><div class='text-[10px] text-slate-400'>Watch &amp; Engagement</div><div class='text-xl font-extrabold text-amber-300 mt-1'>⏱️ " + fmtHrsMins(st.secs) + "</div></div>" +
+        "<div class='bg-[#141821] border border-blue-500/40 rounded-2xl p-3.5'><div class='text-[10px] text-slate-400'>Registered Users</div><div class='text-xl font-extrabold text-blue-300 mt-1'>👥 " + totalUsers + "</div></div>" +
+        "<div class='bg-[#141821] border border-purple-500/40 rounded-2xl p-3.5'><div class='text-[10px] text-slate-400'>Sponsor Views / Clicks</div><div class='text-xl font-extrabold text-purple-300 mt-1'>📢 " + (window.qaafAnalytics.sponsorImpressions||0) + " / " + (window.qaafAnalytics.sponsorClicks||0) + "</div></div>" +
       "</div>" +
-      "<div class=\"bg-[#141821] border border-slate-800 rounded-2xl p-4 space-y-2\"><h5 class=\"font-extrabold text-emerald-300\">📅 Daily Breakdown (Views, Watch Hours &amp; Visitors)</h5><table class=\"w-full text-left text-[11px]\"><thead><tr class=\"border-b border-slate-700 text-slate-400\"><th class=\"pb-1.5\">Date</th><th class=\"pb-1.5\">Views</th><th class=\"pb-1.5\">Engagement Time</th><th class=\"pb-1.5\">Daily Visitors</th></tr></thead><tbody>" + dayRows + "</tbody></table></div>" +
-      "<div class=\"bg-[#141821] border border-slate-800 rounded-2xl p-4 space-y-2\"><h5 class=\"font-extrabold text-amber-300\">👤 Individual User Engagement &amp; Watch Time</h5><div class=\"space-y-1.5 max-h-60 overflow-y-auto\">" + uRows + "</div></div>";
+      "<div class='bg-[#141821] border border-slate-800 rounded-2xl p-4 space-y-2'><h5 class='font-extrabold text-emerald-300'>📅 Daily Breakdown (Views, Engagement Hours &amp; Visitors)</h5><table class='w-full text-left text-[11px]'><thead><tr class='border-b border-slate-700 text-slate-400'><th class='pb-1.5'>Date</th><th class='pb-1.5'>Views</th><th class='pb-1.5'>Engagement Time</th><th class='pb-1.5'>Visitors</th></tr></thead><tbody>" + dayRows + "</tbody></table></div>" +
+      "<div class='bg-[#141821] border border-slate-800 rounded-2xl p-4 space-y-2'><h5 class='font-extrabold text-amber-300'>👤 Individual User Engagement &amp; Watch Time</h5><div class='space-y-1.5 max-h-60 overflow-y-auto'>" + uRows + "</div></div>";
   };
   var origSwitch = window.switchAdminTab;
-  window.switchAdminTab = function(tabKey) {
-    injectAnalyticsAdminTab();
-    if (origSwitch) origSwitch.apply(this, arguments);
-    if (tabKey === "analytics") { window.pullAnalyticsFromCloud(function(){ window.renderQaafAnalyticsDashboard(); }); }
-  };
+  window.switchAdminTab = function(tabKey) { injectAnalyticsAdminTab(); if (origSwitch) origSwitch.apply(this, arguments); if (tabKey === "analytics") { window.pullAnalyticsFromCloud(function(){ window.renderQaafAnalyticsDashboard(); }); } };
   var origOpenA = window.openAdminModal;
-  window.openAdminModal = function() {
-    if (origOpenA) origOpenA.apply(this, arguments);
-    injectAnalyticsAdminTab();
-    window.pullAnalyticsFromCloud(function(){ window.renderQaafAnalyticsDashboard(); });
-  };
-  setTimeout(function(){ injectAnalyticsAdminTab(); window.pullAnalyticsFromCloud(); }, 1000);
+  window.openAdminModal = function() { if (origOpenA) origOpenA.apply(this, arguments); injectAnalyticsAdminTab(); window.pullAnalyticsFromCloud(function(){ window.renderQaafAnalyticsDashboard(); }); };
+  setTimeout(function(){ injectAnalyticsAdminTab(); window.pullAnalyticsFromCloud(); }, 800);
 })();
