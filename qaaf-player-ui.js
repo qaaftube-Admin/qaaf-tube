@@ -4635,7 +4635,7 @@
       modal.style.cssText = "position:fixed; inset:0; z-index:999; background:rgba(0,0,0,0.96); display:flex; flex-direction:column; justify-content:flex-start; align-items:center; overflow:hidden; padding:0;";
       if (isShort) {
         box.style.cssText = "width:100%; max-width:420px; height:100%; background:#0f0f0f; display:flex; flex-direction:column; overflow:hidden; border-left:1px solid rgba(255,255,255,0.1); border-right:1px solid rgba(255,255,255,0.1); transform:none;";
-        aspect.style.cssText = "position:relative; width:100%; height:58vh; min-height:320px; max-height:64vh; background:#000; flex-shrink:0; overflow:hidden; display:block; margin:0 auto;";
+        aspect.style.cssText = "position:relative; width:100%; height:94vh; min-height:480px; max-height:94vh; background:#000; flex-shrink:0; overflow:hidden; display:block; margin:0 auto;";
       } else {
         box.style.cssText = "width:100%; max-width:1024px; height:100%; background:#0f0f0f; display:flex; flex-direction:column; overflow:hidden; border-left:1px solid rgba(255,255,255,0.1); border-right:1px solid rgba(255,255,255,0.1); transform:none;";
         aspect.style.cssText = "position:relative; width:100%; height:42vh; min-height:240px; max-height:480px; background:#000; flex-shrink:0; overflow:hidden; display:block;";
@@ -4707,9 +4707,7 @@
     }
 
     var shortsNav = document.getElementById("shortsSideNav");
-    if (isVideoShort(video)) {
-      if (shortsNav) { shortsNav.classList.remove("hidden"); shortsNav.classList.add("flex"); }
-    } else {
+    if (shortsNav) { shortsNav.classList.add("hidden"); shortsNav.classList.remove("flex"); } else {
       if (shortsNav) { shortsNav.classList.add("hidden"); shortsNav.classList.remove("flex"); }
     }
 
@@ -5391,7 +5389,7 @@
       modal.style.cssText = "position:fixed; inset:0; z-index:999; background:#0f0f0f; display:flex; flex-direction:column; justify-content:flex-start; align-items:center; overflow:hidden; padding:0;";
       if (isShort) {
         box.style.cssText = "width:100%; max-width:420px; height:100%; background:#0f0f0f; display:flex; flex-direction:column; overflow:hidden; transform:none;";
-        aspect.style.cssText = "position:relative; width:100%; height:58vh; min-height:300px; max-height:64vh; background:#000; flex-shrink:0; overflow:hidden; display:block; margin:0 auto;";
+        aspect.style.cssText = "position:relative; width:100%; height:94vh; min-height:480px; max-height:94vh; background:#000; flex-shrink:0; overflow:hidden; display:block; margin:0 auto;";
       } else {
         box.style.cssText = "width:100%; max-width:1024px; height:100%; background:#0f0f0f; display:flex; flex-direction:column; overflow:hidden; transform:none;";
         aspect.style.cssText = "position:relative; width:100%; aspect-ratio:16/9; height:auto; max-height:54vh; background:#000; flex-shrink:0; overflow:hidden; display:block;";
@@ -5900,7 +5898,7 @@
       modal.style.cssText = "position:fixed; inset:0; z-index:999; background:#0f0f0f; display:flex; flex-direction:column; justify-content:flex-start; align-items:center; overflow:hidden; padding:0;";
       if (isShort) {
         box.style.cssText = "width:100%; max-width:420px; height:100%; background:#0f0f0f; display:flex; flex-direction:column; overflow:hidden; transition:all 0.24s ease;";
-        aspect.style.cssText = "position:relative; width:100%; height:58vh; min-height:300px; max-height:64vh; background:#000; flex-shrink:0; overflow:hidden; display:block; margin:0 auto;";
+        aspect.style.cssText = "position:relative; width:100%; height:94vh; min-height:480px; max-height:94vh; background:#000; flex-shrink:0; overflow:hidden; display:block; margin:0 auto;";
       } else {
         box.style.cssText = "width:100%; max-width:1024px; height:100%; background:#0f0f0f; display:flex; flex-direction:column; overflow:hidden; transition:all 0.24s ease;";
         aspect.style.cssText = "position:relative; width:100%; aspect-ratio:16/9; height:auto; min-height:0px !important; max-height:55vh; background:#000; flex-shrink:0; overflow:hidden; display:block; margin:0;";
