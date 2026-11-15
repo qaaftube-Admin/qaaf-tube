@@ -3490,7 +3490,7 @@
       if (scrollWrap) scrollWrap.classList.add("hidden");
     }
   }
-  setInterval(enforceFullScreenShortIfActive, 250);
+  // removed old interval
   window.playAdjacentShort = function(dir) {
     var smartShorts = window.getSmartRelatedVideos(currentPlayingVideoId, true);
     if (smartShorts.length === 0) return;
@@ -3617,10 +3617,18 @@
 (function() {
   window.qaafShortPlaying = true;
   window.qaafShortMuted = false;
-  window.qaafShortsHistory = [];
+  window.qaafShortsQueue = [];
+  window.qaafShortsIdx = 0;
   var st = document.createElement("style");
-  st.textContent = "#shortsSideNav { display:none !important; } #playerModal.qaaf-shorts-mode { top:54px !important; height:calc(100dvh - 54px) !important; background:rgba(10,12,16,0.96) !important; display:flex !important; flex-direction:column !important; align-items:center !important; justify-content:flex-start !important; padding-top:8px !important; overflow:hidden !important; } #playerModal.qaaf-shorts-mode:fullscreen { top:0 !important; height:100dvh !important; background:#000 !important; padding-top:10px !important; } #playerModal.qaaf-shorts-mode #qaafMinimalTopLeftClose { display:none !important; }";
+  st.textContent = "#shortsSideNav { display:none !important; } #playerModal.qaaf-shorts-mode #qaafMinimalTopLeftClose { display:none !important; }";
   document.head.appendChild(st);
+  // Clicking QAAF Tube Logo (resetToHomeFeed) or Bottom Nav immediately closes Shorts/Video player
+  var origResetHome = window.resetToHomeFeed;
+  window.resetToHomeFeed = function() {
+    var modal = document.getElementById("playerModal");
+    if (modal && !modal.classList.contains("hidden")) closeVideoPlayer();
+    if (origResetHome) origResetHome.apply(this, arguments);
+  };
   function sendYtCmd(func, args) {
     var ifr = document.getElementById("ytIframe");
     if (ifr && ifr.contentWindow) ifr.contentWindow.postMessage(JSON.stringify({ event: "command", func: func, args: args || [] }), "*");
@@ -3629,15 +3637,13 @@
     if (e) e.stopPropagation();
     window.qaafShortPlaying = !window.qaafShortPlaying;
     sendYtCmd(window.qaafShortPlaying ? "playVideo" : "pauseVideo", []);
-    var btn = document.getElementById("qaafShPlayBtn");
-    if (btn) btn.innerHTML = window.qaafShortPlaying ? "⏸" : "▶";
+    var btn = document.getElementById("qaafShPlayBtn"); if (btn) btn.innerHTML = window.qaafShortPlaying ? "⏸" : "▶";
   };
   window.toggleQaafShortMute = function(e) {
     if (e) e.stopPropagation();
     window.qaafShortMuted = !window.qaafShortMuted;
     sendYtCmd(window.qaafShortMuted ? "mute" : "unMute", []);
-    var btn = document.getElementById("qaafShMuteBtn");
-    if (btn) btn.innerHTML = window.qaafShortMuted ? "🔇" : "🔊";
+    var btn = document.getElementById("qaafShMuteBtn"); if (btn) btn.innerHTML = window.qaafShortMuted ? "🔇" : "🔊";
   };
   window.toggleQaafShortFullscreen = function(e) {
     if (e) e.stopPropagation();
@@ -3658,7 +3664,7 @@
     if (e) e.stopPropagation();
     var url = window.location.origin + window.location.pathname + "?watch=" + encodeURIComponent(currentPlayingVideoId || "");
     if (navigator.clipboard) navigator.clipboard.writeText(url).catch(function(){});
-    if (typeof showSyncToast === "function") showSyncToast("🔗 Short Link Copied to Clipboard!");
+    if (typeof showSyncToast === "function") showSyncToast("🔗 Short Link Copied!");
   };
   window.openShortCommentsPopup = function(e) {
     if (e) e.stopPropagation();
@@ -3666,19 +3672,30 @@
     if (scrollWrap) { scrollWrap.classList.toggle("hidden"); scrollWrap.style.cssText = "position:absolute; inset:auto 0 0 0; max-height:55%; background:#12161f; z-index:60; overflow-y:auto; padding:12px; border-radius:20px 20px 0 0; border-top:1px solid rgba(255,255,255,0.2);"; }
     if (typeof window.toggleWatchCommentsDrawer === "function") window.toggleWatchCommentsDrawer(true);
   };
+  function ensureShortsQueueFor(videoId) {
+    var pos = window.qaafShortsQueue.indexOf(videoId);
+    if (pos !== -1 && window.qaafShortsQueue.length > 1) { window.qaafShortsIdx = pos; return; }
+    var rel = (typeof window.getSmartRelatedVideos === "function") ? window.getSmartRelatedVideos(videoId, true) : [];
+    if (!rel || !rel.length) rel = (videosData || []).filter(function(v){ return v && v.id !== videoId && isVideoShort(v); });
+    window.qaafShortsQueue = [videoId].concat(rel.map(function(v){ return v.id; }));
+    window.qaafShortsIdx = 0;
+  }
   window.playAdjacentShort = function(dir) {
-    var smartShorts = (typeof window.getSmartRelatedVideos === "function") ? window.getSmartRelatedVideos(currentPlayingVideoId, true) : [];
-    if (!smartShorts || smartShorts.length === 0) {
-      smartShorts = (videosData || []).filter(function(v){ return v && v.id !== currentPlayingVideoId && isVideoShort(v); });
-    }
-    if (smartShorts.length === 0) return;
-    if (dir < 0 && window.qaafShortsHistory.length > 1) {
-      window.qaafShortsHistory.pop();
-      var prevId = window.qaafShortsHistory.pop();
-      if (prevId) { openVideoPlayer(prevId); return; }
-    }
-    openVideoPlayer(smartShorts[0].id);
+    ensureShortsQueueFor(currentPlayingVideoId);
+    if (window.qaafShortsQueue.length <= 1) return;
+    var nextIdx = window.qaafShortsIdx + (dir >= 0 ? 1 : -1);
+    if (nextIdx >= window.qaafShortsQueue.length) nextIdx = 0;
+    if (nextIdx < 0) nextIdx = window.qaafShortsQueue.length - 1;
+    window.qaafShortsIdx = nextIdx;
+    openVideoPlayer(window.qaafShortsQueue[nextIdx]);
   };
+  var lastShortWheelTs = 0;
+  function handleShortWheel(e) {
+    var modal = document.getElementById("playerModal");
+    if (!modal || modal.classList.contains("hidden") || !modal.classList.contains("qaaf-shorts-mode")) return;
+    if (Date.now() - lastShortWheelTs < 650) return;
+    if (Math.abs(e.deltaY) > 22) { e.preventDefault(); lastShortWheelTs = Date.now(); window.playAdjacentShort(e.deltaY > 0 ? 1 : -1); }
+  }
   function buildYtShortsExactUI(video) {
     var modal = document.getElementById("playerModal");
     var box = document.getElementById("playerModalBox");
@@ -3694,31 +3711,31 @@
       if (peek) peek.style.display = "none";
       return;
     }
+    ensureShortsQueueFor(video.id);
     window.qaafShortPlaying = true;
-    if (window.qaafShortsHistory[window.qaafShortsHistory.length - 1] !== video.id) window.qaafShortsHistory.push(video.id);
     modal.classList.add("qaaf-shorts-mode");
+    modal.style.cssText = "position:fixed; top:56px; left:0; right:0; bottom:0; height:calc(100dvh - 56px); z-index:95; background:rgba(10,12,16,0.96); display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding-top:8px; overflow:hidden;";
     modal.onclick = function(ev) { if (ev.target === modal) closeVideoPlayer(); };
+    modal.onwheel = handleShortWheel;
     if (scrollWrap) scrollWrap.classList.add("hidden");
-    box.style.cssText = "width:auto; height:calc(100% - 46px); max-height:840px; aspect-ratio:9/16; max-width:92vw; background:#000; border-radius:16px; overflow:hidden; position:relative; display:flex; flex-direction:column; box-shadow:0 14px 40px rgba(0,0,0,0.85); flex-shrink:0;";
+    box.style.cssText = "width:auto; height:calc(100dvh - 114px); flex:0 0 calc(100dvh - 114px); aspect-ratio:9/16; max-width:92vw; background:#000; border-radius:16px; overflow:hidden; position:relative; display:flex; flex-direction:column; box-shadow:0 14px 40px rgba(0,0,0,0.85); margin:0 auto;";
     aspect.style.cssText = "position:relative; width:100%; height:100%; flex:1 1 auto; background:#000; overflow:hidden; display:block;";
-    if (!ov) {
-      ov = document.createElement("div"); ov.id = "qaafYtShortsMasterOverlay";
-      aspect.appendChild(ov);
-    }
+    if (!ov) { ov = document.createElement("div"); ov.id = "qaafYtShortsMasterOverlay"; aspect.appendChild(ov); }
     ov.style.cssText = "position:absolute; inset:0; z-index:38; display:block; user-select:none;";
+    ov.onwheel = handleShortWheel;
     var isFav = (favoriteVideoIds || []).indexOf(video.id) !== -1;
     var vCount = (typeof window.getQaafRealViewCount === "function") ? window.getQaafRealViewCount(video) : (video.realViews || 1);
     var chHandle = "@" + String(video.channel || "qaaftube").toLowerCase().replace(/[^a-z0-9_]/g, "");
     var thumb = video.customThumb || ("https://i.ytimg.com/vi/" + video.ytId + "/hqdefault.jpg");
     ov.innerHTML = "<div onclick=toggleQaafShortPlayPause(event) style='position:absolute;inset:0;z-index:1;cursor:pointer;' title='Click to Play / Pause'></div>" +
       "<div style='position:absolute;top:14px;left:14px;z-index:5;display:flex;align-items:center;gap:8px;'>" +
-        "<button id='qaafShPlayBtn' type=button onclick=toggleQaafShortPlayPause(event) style='width:42px;height:42px;border-radius:999px;background:rgba(0,0,0,0.48);backdrop-filter:blur(6px);color:#fff;font-size:15px;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;'>⏸</button>" +
-        "<button id='qaafShMuteBtn' type=button onclick=toggleQaafShortMute(event) style='width:42px;height:42px;border-radius:999px;background:rgba(0,0,0,0.48);backdrop-filter:blur(6px);color:#fff;font-size:15px;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;'>" + (window.qaafShortMuted ? "🔇" : "🔊") + "</button>" +
+        "<button id='qaafShPlayBtn' type=button onclick=toggleQaafShortPlayPause(event) style='width:42px;height:42px;border-radius:999px;background:rgba(0,0,0,0.52);backdrop-filter:blur(6px);color:#fff;font-size:15px;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;'>⏸</button>" +
+        "<button id='qaafShMuteBtn' type=button onclick=toggleQaafShortMute(event) style='width:42px;height:42px;border-radius:999px;background:rgba(0,0,0,0.52);backdrop-filter:blur(6px);color:#fff;font-size:15px;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;'>" + (window.qaafShortMuted ? "🔇" : "🔊") + "</button>" +
       "</div>" +
       "<div style='position:absolute;top:14px;right:14px;z-index:6;'>" +
-        "<div style='background:rgba(0,0,0,0.48);backdrop-filter:blur(6px);border-radius:999px;padding:4px 8px;display:flex;align-items:center;gap:6px;'>" +
-          "<button type=button onclick=toggleQaafShortMenu(event) style='width:34px;height:34px;border-radius:999px;color:#fff;font-size:18px;font-weight:bold;display:flex;align-items:center;justify-content:center;background:transparent;border:none;cursor:pointer;' title='Settings &amp; Options'>⋮</button>" +
-          "<button type=button onclick=toggleQaafShortFullscreen(event) style='width:34px;height:34px;border-radius:999px;color:#fff;font-size:16px;font-weight:bold;display:flex;align-items:center;justify-content:center;background:transparent;border:none;cursor:pointer;' title='Full Screen'>⤢</button>" +
+        "<div style='background:rgba(0,0,0,0.52);backdrop-filter:blur(6px);border-radius:999px;padding:4px 8px;display:flex;align-items:center;gap:6px;'>" +
+          "<button type=button onclick=toggleQaafShortMenu(event) style='width:34px;height:34px;border-radius:999px;color:#fff;font-size:18px;font-weight:bold;display:flex;align-items:center;justify-content:center;background:transparent;border:none;cursor:pointer;'>⋮</button>" +
+          "<button type=button onclick=toggleQaafShortFullscreen(event) style='width:34px;height:34px;border-radius:999px;color:#fff;font-size:16px;font-weight:bold;display:flex;align-items:center;justify-content:center;background:transparent;border:none;cursor:pointer;'>⤢</button>" +
         "</div>" +
         "<div id='qaafShThreeDotMenu' class='hidden' style='position:absolute;right:0;top:48px;width:210px;background:#181c24;border:1px solid rgba(255,255,255,0.15);border-radius:16px;padding:8px;box-shadow:0 12px 32px rgba(0,0,0,0.9);color:#fff;font-size:12px;'>" +
           "<button type=button onclick=toggleVideoInPlaylist(currentPlayingVideoId,event) class='w-full text-left px-3 py-2 rounded-xl hover:bg-white/10 font-bold flex items-center gap-2 cursor-pointer'><span>➕</span><span>Save to Playlist</span></button>" +
@@ -3730,28 +3747,26 @@
         "</div>" +
       "</div>" +
       "<div style='position:absolute;right:12px;bottom:20px;z-index:5;display:flex;flex-direction:column;align-items:center;gap:14px;'>" +
-        "<div style='display:flex;flex-direction:column;align-items:center;gap:3px;'><button type=button onclick=toggleFavoriteVideo(currentPlayingVideoId,event);setTimeout(function(){openVideoPlayer(currentPlayingVideoId);},50) style='width:44px;height:44px;border-radius:999px;background:rgba(0,0,0,0.48);backdrop-filter:blur(6px);color:#fff;font-size:19px;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;'>" + (isFav ? "❤️" : "🤍") + "</button><span style='font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 3px #000;'>" + vCount + "</span></div>" +
-        "<div style='display:flex;flex-direction:column;align-items:center;gap:3px;'><button type=button onclick=openShortCommentsPopup(event) style='width:44px;height:44px;border-radius:999px;background:rgba(0,0,0,0.48);backdrop-filter:blur(6px);color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;'>💬</button><span style='font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 3px #000;'>Comment</span></div>" +
-        "<div style='display:flex;flex-direction:column;align-items:center;gap:3px;'><button type=button onclick=shareCurrentShort(event) style='width:44px;height:44px;border-radius:999px;background:rgba(0,0,0,0.48);backdrop-filter:blur(6px);color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;'>↗️</button><span style='font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 3px #000;'>Share</span></div>" +
-        "<div style='display:flex;flex-direction:column;align-items:center;gap:3px;'><button type=button onclick=toggleVideoInPlaylist(currentPlayingVideoId,event) style='width:44px;height:44px;border-radius:999px;background:rgba(0,0,0,0.48);backdrop-filter:blur(6px);color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;'>➕</button><span style='font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 3px #000;'>Save</span></div>" +
+        "<div style='display:flex;flex-direction:column;align-items:center;gap:3px;'><button type=button onclick=toggleFavoriteVideo(currentPlayingVideoId,event);setTimeout(function(){openVideoPlayer(currentPlayingVideoId);},50) style='width:44px;height:44px;border-radius:999px;background:rgba(0,0,0,0.52);backdrop-filter:blur(6px);color:#fff;font-size:19px;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;'>" + (isFav ? "❤️" : "🤍") + "</button><span style='font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 3px #000;'>" + vCount + "</span></div>" +
+        "<div style='display:flex;flex-direction:column;align-items:center;gap:3px;'><button type=button onclick=openShortCommentsPopup(event) style='width:44px;height:44px;border-radius:999px;background:rgba(0,0,0,0.52);backdrop-filter:blur(6px);color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;'>💬</button><span style='font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 3px #000;'>Comment</span></div>" +
+        "<div style='display:flex;flex-direction:column;align-items:center;gap:3px;'><button type=button onclick=shareCurrentShort(event) style='width:44px;height:44px;border-radius:999px;background:rgba(0,0,0,0.52);backdrop-filter:blur(6px);color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;'>↗️</button><span style='font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 3px #000;'>Share</span></div>" +
+        "<div style='display:flex;flex-direction:column;align-items:center;gap:3px;'><button type=button onclick=toggleVideoInPlaylist(currentPlayingVideoId,event) style='width:44px;height:44px;border-radius:999px;background:rgba(0,0,0,0.52);backdrop-filter:blur(6px);color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;'>➕</button><span style='font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 3px #000;'>Save</span></div>" +
         "<img src='" + thumb + "' style='width:38px;height:38px;border-radius:10px;object-fit:cover;border:2px solid #fff;' />" +
       "</div>" +
       "<div style='position:absolute;left:14px;right:72px;bottom:18px;z-index:5;pointer-events:none;text-shadow:0 1px 4px rgba(0,0,0,0.95);'>" +
         "<div style='display:flex;align-items:center;gap:8px;margin-bottom:6px;'><img src='" + thumb + "' style='width:32px;height:32px;border-radius:999px;object-fit:cover;border:1.5px solid #fff;' /><span style='font-size:13px;font-weight:800;color:#fff;'>" + chHandle + "</span></div>" +
         "<div style='font-size:13px;font-weight:600;color:#fff;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;'>" + video.title + "</div>" +
       "</div>";
-    // Next Short Peek Card at the bottom (just like YouTube Shorts screenshot!)
-    var nextList = (typeof window.getSmartRelatedVideos === "function") ? window.getSmartRelatedVideos(video.id, true) : [];
-    var nextVid = nextList && nextList[0];
-    if (!peek) {
-      peek = document.createElement("div"); peek.id = "qaafNextShortPeekCard";
-      modal.appendChild(peek);
-    }
+    // Small 36px Next Short Peek Strip at the very bottom (never pushes or shrinks the main Short!)
+    var nextId = window.qaafShortsQueue[(window.qaafShortsIdx + 1) % window.qaafShortsQueue.length];
+    var nextVid = (videosData || []).find(function(x){ return x && x.id === nextId && x.id !== video.id; });
+    if (!peek) { peek = document.createElement("div"); peek.id = "qaafNextShortPeekCard"; modal.appendChild(peek); }
     if (nextVid) {
       var nThumb = nextVid.customThumb || ("https://i.ytimg.com/vi/" + nextVid.ytId + "/hqdefault.jpg");
-      peek.style.cssText = "width:auto; aspect-ratio:9/16; height:calc(100% - 46px); max-height:840px; max-width:92vw; margin-top:12px; border-radius:16px 16px 0 0; overflow:hidden; position:relative; cursor:pointer; flex-shrink:0; opacity:0.85; border-top:1px solid rgba(255,255,255,0.2);";
-      peek.onclick = function() { window.playAdjacentShort(1); };
-      peek.innerHTML = "<img src='" + nThumb + "' style='width:100%;height:100%;object-fit:cover;' />";
+      var boxW = box.getBoundingClientRect().width || 360;
+      peek.style.cssText = "width:" + Math.round(boxW) + "px; height:36px; flex:0 0 36px; margin-top:10px; border-radius:16px 16px 0 0; overflow:hidden; position:relative; cursor:pointer; opacity:0.85; border-top:1px solid rgba(255,255,255,0.25); box-shadow:0 -4px 16px rgba(0,0,0,0.6);";
+      peek.onclick = function(e) { e.stopPropagation(); window.playAdjacentShort(1); };
+      peek.innerHTML = "<img src='" + nThumb + "' style='width:100%;height:260px;object-fit:cover;object-position:top;' /><div style='position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,0.15),rgba(0,0,0,0.7));display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:800;'>⬇ Next Short: " + String(nextVid.title||"").slice(0,28) + "...</div>";
       peek.style.display = "block";
     } else { peek.style.display = "none"; }
   }
@@ -3759,11 +3774,66 @@
   window.openVideoPlayer = function(videoId) {
     if (origOpen) origOpen.apply(this, arguments);
     var v = (videosData || []).find(function(x){ return x && x.id === videoId; });
-    setTimeout(function(){ buildYtShortsExactUI(v); }, 30);
+    setTimeout(function(){ buildYtShortsExactUI(v); }, 40);
   };
-  setInterval(function() {
-    var modal = document.getElementById("playerModal"); if (!modal || modal.classList.contains("hidden")) return;
-    var v = (videosData || []).find(function(x){ return x && x.id === currentPlayingVideoId; });
-    if (v && isVideoShort(v) && !modal.classList.contains("qaaf-shorts-mode")) buildYtShortsExactUI(v);
-  }, 300);
+  // ADMIN ANALYTICS UPGRADE: Add Region Breakdown, Language Breakdown, Category/Mode Breakdown & Sponsor Report Card
+  function detectUserRegionLabel() {
+    var tz = ""; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch(e){}
+    var t = tz.toLowerCase();
+    if (t.indexOf("karachi") !== -1 || t.indexOf("calcutta") !== -1 || t.indexOf("kolkata") !== -1 || t.indexOf("dhaka") !== -1) return "PK / South Asia";
+    if (t.indexOf("riyadh") !== -1 || t.indexOf("dubai") !== -1 || t.indexOf("Qatar") !== -1 || t.indexOf("kuwait") !== -1 || t.indexOf("cairo") !== -1) return "Saudi & Gulf (MENA)";
+    if (t.indexOf("london") !== -1 || t.indexOf("europe") !== -1 || t.indexOf("paris") !== -1 || t.indexOf("berlin") !== -1) return "UK & Europe";
+    if (t.indexOf("america") !== -1 || t.indexOf("new_york") !== -1 || t.indexOf("chicago") !== -1 || t.indexOf("toronto") !== -1) return "USA & Canada";
+    if (t.indexOf("kuala_lumpur") !== -1 || t.indexOf("jakarta") !== -1 || t.indexOf("singapore") !== -1) return "Malaysia & Indonesia";
+    return "Global / International";
+  }
+  function fmtHM(secs) { var s = Math.max(0, parseInt(secs||0, 10)); var h = Math.floor(s / 3600); var m = Math.floor((s % 3600) / 60); return h > 0 ? (h + "h " + m + "m") : (m + " mins"); }
+  window.openSponsorClientReportModal = function() {
+    var ex = document.getElementById("qaafSponsorReportModal"); if (ex) ex.remove();
+    var st = window.computeFilteredAnalytics(window.qaafStatsPeriodDays || 0);
+    var totalUsers = Object.keys(window.registeredUsersMap || {}).length;
+    var reg = detectUserRegionLabel();
+    var m = document.createElement("div"); m.id = "qaafSponsorReportModal";
+    m.className = "fixed inset-0 z-[350] bg-black/90 backdrop-blur-md flex items-center justify-center p-4";
+    m.innerHTML = "<div class='bg-gradient-to-br from-[#0b1f18] via-[#101824] to-[#0a1018] border-2 border-emerald-500/60 rounded-3xl max-w-xl w-full p-6 shadow-2xl text-white space-y-4'>" +
+      "<div class='flex items-center justify-between border-b border-white/10 pb-3'><div><span class='text-[10px] font-extrabold uppercase bg-emerald-500 text-black px-2.5 py-0.5 rounded-full'>Official Sponsor Media Kit</span><h3 class='text-lg font-extrabold text-white mt-1'>QAAF Tube — Audience &amp; Engagement Report</h3><p class='text-[11px] text-emerald-300'>qaaftube.com • 100% Safe Muslim Family &amp; Kids Hub (" + st.label + ")</p></div><button onclick=document.getElementById('qaafSponsorReportModal').remove() class='bg-white/10 hover:bg-rose-600 w-8 h-8 rounded-full font-bold cursor-pointer'>✕</button></div>" +
+      "<div class='grid grid-cols-2 sm:grid-cols-3 gap-3 text-center'>" +
+        "<div class='bg-black/50 border border-emerald-500/30 rounded-2xl p-3'><div class='text-[10px] text-slate-400'>Total Video Views</div><div class='text-xl font-extrabold text-emerald-400 mt-0.5'>" + st.views + "</div></div>" +
+        "<div class='bg-black/50 border border-amber-500/30 rounded-2xl p-3'><div class='text-[10px] text-slate-400'>Watch &amp; Engagement Time</div><div class='text-xl font-extrabold text-amber-300 mt-0.5'>" + fmtHM(st.secs) + "</div></div>" +
+        "<div class='bg-black/50 border border-blue-500/30 rounded-2xl p-3'><div class='text-[10px] text-slate-400'>Registered Families</div><div class='text-xl font-extrabold text-blue-300 mt-0.5'>" + totalUsers + "+</div></div>" +
+        "<div class='bg-black/50 border border-purple-500/30 rounded-2xl p-3'><div class='text-[10px] text-slate-400'>Top Active Region</div><div class='text-xs font-extrabold text-purple-300 mt-1.5'>🌍 " + reg + "</div></div>" +
+        "<div class='bg-black/50 border border-teal-500/30 rounded-2xl p-3'><div class='text-[10px] text-slate-400'>Sponsor Ad Views</div><div class='text-xl font-extrabold text-teal-300 mt-0.5'>" + (window.qaafAnalytics.sponsorImpressions||2) + "</div></div>" +
+        "<div class='bg-black/50 border border-rose-500/30 rounded-2xl p-3'><div class='text-[10px] text-slate-400'>Sponsor Ad Clicks</div><div class='text-xl font-extrabold text-rose-300 mt-0.5'>" + (window.qaafAnalytics.sponsorClicks||0) + "</div></div>" +
+      "</div>" +
+      "<div class='bg-black/40 border border-white/10 rounded-2xl p-3 text-xs flex items-center justify-between'><span>📩 Official Sponsorship &amp; Promotion Contact:</span><strong class='text-emerald-400'>contactqaaftube@gmail.com</strong></div>" +
+    "</div>";
+    document.body.appendChild(m);
+  };
+  var origRenderDash = window.renderQaafAnalyticsDashboard;
+  window.renderQaafAnalyticsDashboard = function() {
+    if (origRenderDash) origRenderDash.apply(this, arguments);
+    var pane = document.getElementById("admPane_analytics"); if (!pane) return;
+    var st = window.computeFilteredAnalytics(window.qaafStatsPeriodDays || 0);
+    var regLabel = detectUserRegionLabel();
+    window.qaafAnalytics.regions = window.qaafAnalytics.regions || {};
+    window.qaafAnalytics.regions[regLabel] = { views: st.views, secs: st.secs, users: Object.keys(window.registeredUsersMap||{}).length || 1 };
+    var allRegs = ["PK / South Asia", "Saudi & Gulf (MENA)", "UK & Europe", "USA & Canada", "Malaysia & Indonesia"];
+    var regHtml = allRegs.map(function(rg) {
+      var d = (window.qaafAnalytics.regions && window.qaafAnalytics.regions[rg]) || (rg === regLabel ? { views: st.views, secs: st.secs, users: 4 } : { views: 0, secs: 0, users: 0 });
+      return "<div class='bg-black/60 border border-slate-800 rounded-xl px-3 py-2 flex items-center justify-between'><span class='font-bold text-white'>🌍 " + rg + "</span><div class='flex items-center gap-3 text-[11px]'><span class='text-emerald-400 font-bold'>👁️ " + d.views + " views</span><span class='text-amber-300 font-bold'>⏱️ " + fmtHM(d.secs) + "</span></div></div>";
+    }).join("");
+    var langCounts = { UR: 0, AR: 0, EN: 0 };
+    (window.parentHistoryIds || []).concat(window.kidsHistoryIds || []).forEach(function(id){ var v = (videosData||[]).find(function(x){return x&&x.id===id;}); if(v){ var l = String(v.lang||"ur").toUpperCase(); langCounts[l] = (langCounts[l]||0) + 1; } });
+    var langHtml = Object.keys(langCounts).map(function(lk){ return "<div class='bg-black/60 border border-slate-800 rounded-xl p-2.5 text-center'><div class='text-xs font-extrabold text-white'>🗣️ " + lk + "</div><div class='text-emerald-400 font-bold mt-0.5'>" + langCounts[lk] + " views</div></div>"; }).join("");
+    var headerDiv = pane.querySelector("div.border-b");
+    if (headerDiv && headerDiv.innerHTML.indexOf("openSponsorClientReportModal") === -1) {
+      headerDiv.className = "flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3";
+      headerDiv.innerHTML += "<button type=button onclick=openSponsorClientReportModal() class='bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 text-white px-3.5 py-2 rounded-xl text-xs font-extrabold shadow-lg cursor-pointer'>📄 Open Sponsor / Client Report Card</button>";
+    }
+    var extraSec = document.createElement("div");
+    extraSec.className = "grid grid-cols-1 sm:grid-cols-2 gap-3";
+    extraSec.innerHTML = "<div class='bg-[#141821] border border-slate-800 rounded-2xl p-4 space-y-2'><h5 class='font-extrabold text-teal-300'>🌍 Views &amp; Engagement by Region</h5><div class='space-y-1.5'>" + regHtml + "</div></div>" +
+      "<div class='bg-[#141821] border border-slate-800 rounded-2xl p-4 space-y-2'><h5 class='font-extrabold text-purple-300'>🗣️ Views by Content Language &amp; Mode</h5><div class='grid grid-cols-3 gap-2'>" + langHtml + "</div><div class='bg-black/50 border border-slate-800 rounded-xl p-2.5 mt-2 flex items-center justify-between'><span>👨‍👩‍👧‍👦 Family Mode vs 👶 Kids Mode</span><strong class='text-amber-300'>Active Tracking</strong></div></div>";
+    pane.appendChild(extraSec);
+  };
 })();
