@@ -182,88 +182,83 @@
 
   <!-- 3D Canvas Container -->
   <div id="gameCanvasContainer"></div>
+  <!-- Dynamic Speed Wind Lines Overlay -->
+  <canvas id="speedLinesCanvas" class="fixed inset-0 pointer-events-none z-10 w-full h-full hidden"></canvas>
 
   <!-- In-Game HUD Overlay -->
-  <div id="hudLayer" class="hud-layer p-2 sm:p-4 hidden">
-    <!-- Top Bar: Position, Lap, Stage, Speed Mode & Controls -->
-    <div class="relative flex flex-col gap-1.5 sm:gap-2 w-full max-w-6xl mx-auto">
-      <div class="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 bg-[#070d17]/95 border border-amber-400/20 rounded-2xl px-2.5 sm:px-3 py-1.5 sm:py-2 shadow-xl pointer-auto">
-        <!-- Position, Lap & Live Readout -->
-        <div class="flex items-center gap-1.5 sm:gap-3">
-          <div id="positionBadge" class="bg-amber-400 text-slate-950 px-2 sm:px-3 py-0.5 sm:py-1 rounded-xl font-black text-xs sm:text-lg flex items-center gap-1 shadow">
-            <span id="hudPosLabel">Pos:</span>
-            <span id="hudRank" class="num-font text-sm sm:text-xl">1/3</span>
-          </div>
-          <div id="lapBadge" class="bg-indigo-600 text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded-xl font-black text-xs sm:text-lg flex items-center gap-1 shadow border border-indigo-400/40">
-            <span id="hudLapLabel">Lap:</span>
-            <span id="hudLap" class="num-font text-sm sm:text-xl">1/2</span>
-          </div>
-          <div>
-            <div id="hudStageTitle" class="text-[11px] sm:text-sm font-bold text-sky-300 whitespace-nowrap leading-normal py-0.5">Stage 1</div>
-            <div class="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-slate-300">
-              <span><span id="hudSpeedLabel">Speed:</span> <strong id="hudKmh" class="num-font text-emerald-400">0 km/h</strong></span>
-              <span>•</span>
-              <span class="text-amber-300">⭐ <strong id="hudStars" class="num-font text-white">0</strong></span>
-              <span>•</span>
-              <span class="text-sky-300">⚡ <strong id="hudTurboStock" class="num-font text-amber-300">0</strong></span>
+  <div id="hudLayer" class="hud-layer p-1.5 sm:p-3 hidden">
+    <!-- Top HUD Row: Floating Transparent Minimap (Left) + Light Glass Info Card (Right) -->
+    <div class="relative w-full max-w-4xl mx-auto flex items-start gap-1.5 sm:gap-3 pointer-auto select-none" dir="ltr">
+      
+      <!-- 1. FLOATING TRANSPARENT MINIMAP (No dark card, larger, crisp white outline + car dots) -->
+      <div class="relative shrink-0 flex items-center justify-center p-0">
+        <canvas id="minimapCanvas" width="100" height="100" class="w-[74px] h-[74px] sm:w-[98px] sm:h-[98px] drop-shadow-md"></canvas>
+      </div>
+
+      <!-- 2. LIGHT GLASS INFO CARD (Stats, Buttons, Shorter Progress Bar) -->
+      <div class="flex-1 min-w-0 bg-[#070d17]/40 backdrop-blur-md border border-white/15 rounded-2xl p-1.5 sm:p-2.5 shadow-xl flex flex-col gap-1.5">
+        <!-- Upper Row: Stats & Action Buttons -->
+        <div class="flex items-center justify-between gap-1 sm:gap-2 w-full">
+          <!-- Stats Column -->
+          <div class="flex flex-col justify-center gap-0.5 min-w-0 shrink-0">
+            <!-- Row A: Pos & Lap Badges -->
+            <div class="flex items-center gap-1 sm:gap-1.5 whitespace-nowrap">
+              <div id="positionBadge" class="bg-amber-400 text-slate-950 px-1.5 sm:px-2 py-0.5 rounded-lg font-black text-[10px] sm:text-xs flex items-center gap-0.5 shadow shrink-0">
+                <span id="hudPosLabel">Pos:</span>
+                <span id="hudRank" class="num-font font-black">1/3</span>
+              </div>
+              <div id="lapBadge" class="bg-indigo-600 text-white px-1.5 sm:px-2 py-0.5 rounded-lg font-black text-[10px] sm:text-xs flex items-center gap-0.5 shadow border border-indigo-400/40 shrink-0">
+                <span id="hudLapLabel">Lap:</span>
+                <span id="hudLap" class="num-font font-black">1/2</span>
+              </div>
+            </div>
+
+            <!-- Row B: Stage, Speed, Stars, Turbos -->
+            <div class="flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-xs text-slate-200 whitespace-nowrap leading-tight">
+              <span id="hudStageTitle" class="font-bold text-sky-300 truncate max-w-[55px] sm:max-w-[100px]">Stage 1</span>
+              <span class="text-slate-400">•</span>
+              <span class="num-font text-emerald-400 font-extrabold whitespace-nowrap" id="hudKmh">0 km/h</span>
+              <span class="text-slate-400">•</span>
+              <span class="text-amber-300 font-bold whitespace-nowrap">✨<span id="hudStars" class="num-font text-white">0</span></span>
+              <span class="text-slate-400">•</span>
+              <span class="text-sky-300 font-bold whitespace-nowrap">⚡<span id="hudTurboStock" class="num-font text-amber-300">0</span></span>
             </div>
           </div>
+
+          <!-- Action Buttons -->
+          <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
+            <button id="autoDriveToggleBtn" type="button" class="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg text-[9px] sm:text-xs font-bold bg-slate-800/80 text-slate-300 border border-white/15 hover:bg-slate-700 active:scale-95 transition whitespace-nowrap" title="Auto Drive">
+              🤖 Off
+            </button>
+            <button id="soundToggleBtn" type="button" class="btn-3d-emerald px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg text-xs sm:text-sm font-bold active:scale-95 shrink-0" title="Sound Toggle">
+              🔊
+            </button>
+            <button id="openMenuBtn" type="button" class="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 border border-white/20 text-white text-[9px] sm:text-xs font-bold active:scale-95 transition whitespace-nowrap">
+              Menu
+            </button>
+            <button id="hudExitBtn" type="button" class="btn-3d-exit px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg text-[9px] sm:text-xs font-bold active:scale-95 whitespace-nowrap">
+              Exit
+            </button>
+          </div>
         </div>
 
-        <!-- Speed Selector (Slow / Normal / Fast) -->
-        <div class="flex items-center gap-1 bg-slate-900/90 p-0.5 sm:p-1 rounded-xl border border-white/10">
-          <button id="speedSlowBtn" type="button" class="speed-pill px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg text-[11px] sm:text-xs transition">Slow</button>
-          <button id="speedNormalBtn" type="button" class="speed-pill active px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg text-[11px] sm:text-xs transition">Normal</button>
-          <button id="speedFastBtn" type="button" class="speed-pill px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg text-[11px] sm:text-xs transition">Fast</button>
-        </div>
-
-        <!-- Quick Action Buttons -->
-        <div class="flex items-center gap-1 sm:gap-1.5">
-          <button id="autoDriveToggleBtn" type="button" class="px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-bold bg-slate-800 text-slate-300 border border-white/15 hover:bg-slate-700 transition">
-            Auto: Off
-          </button>
-          <button id="soundToggleBtn" type="button" class="btn-3d-emerald px-2 py-1 rounded-xl text-xs sm:text-sm font-bold">
-            🔊
-          </button>
-          <button id="openMenuBtn" type="button" class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-white/15 text-white text-[11px] sm:text-xs font-bold transition">
-            Menu
-          </button>
-          <button id="hudExitBtn" type="button" class="btn-3d-exit px-2.5 py-1 rounded-xl text-[11px] sm:text-xs font-bold">
-            Exit
-          </button>
+        <!-- Lower Row: Shorter Progress Bar (Contained inside this card) -->
+        <div class="w-full bg-slate-900/60 border border-white/10 rounded-full h-3 sm:h-3.5 px-2 flex items-center gap-1.5 shadow-inner" dir="ltr">
+          <span id="hudProgressStart" class="text-[8px] sm:text-[9px] text-amber-300 font-bold shrink-0">Start</span>
+          <div class="relative flex-1 h-1 sm:h-1.5 bg-slate-700/70 rounded-full overflow-visible">
+            <div id="progressFill" class="h-full bg-gradient-to-r from-sky-400 to-emerald-400 rounded-full" style="width: 0%;"></div>
+            <div id="playerMarker" class="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-amber-400 border border-white shadow" style="left: 0%;"></div>
+          </div>
+          <span id="minimapDist" class="num-font text-[8px] sm:text-[9px] text-slate-300 font-semibold shrink-0">0m / 1000m</span>
+          <span id="hudProgressFinish" class="text-[8px] sm:text-[9px] text-emerald-300 font-bold shrink-0">🏁 Finish</span>
         </div>
       </div>
+    </div>
 
-      <!-- Track Progress Bar -->
-      <div class="w-full bg-[#070d17]/95 border border-white/15 rounded-full h-4 sm:h-5 px-3 flex items-center gap-2 shadow" dir="ltr">
-        <span id="hudProgressStart" class="text-[10px] sm:text-[11px] text-amber-300 font-bold shrink-0">Start</span>
-        <div class="relative flex-1 h-1.5 sm:h-2 bg-slate-700 rounded-full overflow-visible">
-          <div id="progressFill" class="h-full bg-gradient-to-r from-sky-400 to-emerald-400 rounded-full" style="width: 0%;"></div>
-          <div id="playerMarker" class="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-amber-400 border-2 border-white shadow-md" style="left: 0%;"></div>
-        </div>
-        <span id="hudProgressFinish" class="text-[10px] sm:text-[11px] text-emerald-300 font-bold shrink-0">🏁 Finish</span>
-      </div>
-
-      <!-- Sub-row: Minimap & Dua Toast -->
-      <div class="relative flex items-start justify-between gap-2 w-full pointer-events-none mt-0.5" dir="ltr">
-        <div id="minimapBox" class="pointer-auto bg-[#070d17]/95 border border-amber-400/25 rounded-2xl p-1.5 sm:p-2.5 shadow-2xl flex flex-col items-center select-none w-[112px] sm:w-[144px]" dir="ltr">
-          <div class="flex flex-col items-center w-full mb-1 leading-tight">
-            <span id="minimapTitle" class="text-[10px] sm:text-[11px] font-bold text-sky-300">🗺️ Track Map</span>
-            <span id="minimapDist" class="num-font text-amber-300 text-[9px] sm:text-[10px] font-bold">0m / 1000m</span>
-          </div>
-          <canvas id="minimapCanvas" width="120" height="120" class="w-[92px] h-[92px] sm:w-[120px] sm:h-[120px] rounded-xl bg-slate-950/95 border border-white/10 shadow-inner"></canvas>
-          <div id="minimapLegend" class="flex items-center justify-center gap-1.5 sm:gap-2 mt-1 text-[9px] sm:text-[10px] text-slate-300 font-bold">
-            <span class="flex items-center gap-0.5"><span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-amber-400 inline-block"></span><span id="legendYou">You</span></span>
-            <span class="flex items-center gap-0.5"><span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-sky-400 inline-block"></span><span id="legendRival">Rival</span></span>
-            <span class="flex items-center gap-0.5"><span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-400 inline-block"></span><span id="legendFinish">Finish</span></span>
-          </div>
-        </div>
-
-        <div class="flex-1 flex justify-center pt-1">
-          <div id="duaPopup" class="hidden px-3 sm:px-5 py-1.5 sm:py-2 rounded-2xl bg-gradient-to-r from-emerald-600/95 to-teal-700/95 border-2 border-amber-300 text-white text-sm sm:text-xl font-black shadow-2xl text-center" dir="rtl">
-            <span class="font-arabic">✨ سُبْحَانَ اللّٰهِ!</span>
-          </div>
-        </div>
+    <!-- Floating Dua Toast (Appears briefly under top bar) -->
+    <div class="fixed top-24 left-1/2 -translate-x-1/2 pointer-events-none z-30">
+      <div id="duaPopup" class="hidden px-4 py-1.5 rounded-2xl bg-gradient-to-r from-emerald-600/95 to-teal-700/95 border-2 border-amber-300 text-white text-base sm:text-xl font-black shadow-2xl text-center" dir="rtl">
+        <span class="font-arabic">✨ سُبْحَانَ اللّٰهِ!</span>
       </div>
     </div>
 
@@ -455,8 +450,8 @@
         posLabel: 'Pos:',
         lapLabel: 'Lap:',
         speedLabel: 'Speed:',
-        autoOn: 'Auto: On',
-        autoOff: 'Auto: Off',
+        autoOn: '🤖 On',
+        autoOff: '🤖 Off',
         menu: 'Menu',
         start: 'Start',
         finish: '🏁 Finish',
@@ -495,7 +490,7 @@
         fontClass: 'font-urdu',
         pageTitle: 'ڈیسک ریسر پرو - تھری ڈی ریسنگ گیم',
         menuTitle: 'ڈیسک ریسر پرو',
-        exit: 'باہر نکلیں',
+        exit: 'باہر',
         langLabel: 'زبان منتخب کریں:',
         stageHeading: 'اسٹیج منتخب کریں:',
         stageWord: 'اسٹیج',
@@ -511,8 +506,8 @@
         posLabel: 'پوزیشن:',
         lapLabel: 'چکر:',
         speedLabel: 'رفتار:',
-        autoOn: 'آٹو: آن',
-        autoOff: 'آٹو: آف',
+        autoOn: '🤖 آن',
+        autoOff: '🤖 آف',
         menu: 'مینو',
         start: 'آغاز',
         finish: '🏁 اختتام',
@@ -2072,6 +2067,8 @@
       const chromeMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.2, metalness: 0.85 });
       const wheelRubberMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.85 });
       const rimMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.7, roughness: 0.3 });
+      const headMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
+      const tailMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
 
       const wheelRadius = carConfig.style === 'monster' ? 0.68 : 0.58;
       const bodyY = carConfig.style === 'monster' ? 0.85 : 0.72;
@@ -2093,6 +2090,21 @@
         wing.position.set(0, bodyY + 0.85, -1.95);
         chassis.add(lowerBody, stripe, cockpit, roof, wing);
 
+        // Dual chrome rear exhaust pipes
+        [-0.55, 0.55].forEach(ex => {
+          const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 0.35, 10), chromeMat);
+          pipe.rotation.x = Math.PI / 2;
+          pipe.position.set(ex, bodyY - 0.12, -2.18);
+          chassis.add(pipe);
+        });
+        // Hood scoops
+        [-0.38, 0.38].forEach(hx => {
+          const scoop = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.07, 0.75), accentMat);
+          scoop.position.set(hx, bodyY + 0.34, 1.15);
+          scoop.rotation.x = -0.15;
+          chassis.add(scoop);
+        });
+
       } else if (carConfig.style === 'monster') {
         const truckCab = new THREE.Mesh(new THREE.BoxGeometry(2.35, 0.75, 2.4), bodyMat);
         truckCab.position.set(0, bodyY + 0.15, 0.3);
@@ -2108,6 +2120,20 @@
         bullbar.position.set(0, bodyY - 0.1, 1.75);
         chassis.add(truckCab, truckBed, cabGlass, rollbar, bullbar);
 
+        // Twin vertical smokestacks behind cab
+        [-0.88, 0.88].forEach(sx => {
+          const stack = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 1.4, 10), chromeMat);
+          stack.position.set(sx, bodyY + 1.1, -0.55);
+          stack.castShadow = true;
+          chassis.add(stack);
+        });
+        // Amber roof marker lights
+        [-0.55, -0.18, 0.18, 0.55].forEach(lx => {
+          const cl = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), headMat);
+          cl.position.set(lx, bodyY + 0.98, 0.3);
+          chassis.add(cl);
+        });
+
       } else if (carConfig.style === 'buggy') {
         const nose = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.52, 2.2), bodyMat);
         nose.position.set(0, bodyY - 0.05, 0.9);
@@ -2120,6 +2146,16 @@
         spareTire.rotation.x = Math.PI / 4;
         spareTire.position.set(0, bodyY + 0.55, -1.65);
         chassis.add(nose, cageRoof, engineBlock, spareTire);
+
+        // 4 roof rally lights
+        [-0.55, -0.18, 0.18, 0.55].forEach(rx => {
+          const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), headMat);
+          lamp.position.set(rx, bodyY + 0.92, 0.6);
+          const housing = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.12, 8), chromeMat);
+          housing.rotation.x = Math.PI / 2;
+          housing.position.set(rx, bodyY + 0.92, 0.55);
+          chassis.add(lamp, housing);
+        });
 
       } else if (carConfig.style === 'police') {
         const mainBody = new THREE.Mesh(new THREE.BoxGeometry(2.35, 0.68, 4.3), bodyMat);
@@ -2135,6 +2171,11 @@
         chassis.add(mainBody, cabin, redLight, blueLight);
         root.userData.lightbar = { redLight, blueLight };
 
+        // Front push bumper
+        const pushBumper = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.42, 0.22), chromeMat);
+        pushBumper.position.set(0, bodyY - 0.04, 2.25);
+        chassis.add(pushBumper);
+
       } else {
         const fuselage = new THREE.Mesh(new THREE.CylinderGeometry(0.82, 1.2, 4.3, 16), bodyMat);
         fuselage.rotation.x = Math.PI / 2;
@@ -2145,6 +2186,14 @@
         noseCone.position.set(0, bodyY, 2.75);
         const fin = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.92, 2.0), accentMat);
         fin.position.set(0, bodyY + 0.8, -1.05);
+
+        // Delta winglets
+        [-1.2, 1.2].forEach(wx => {
+          const winglet = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.08, 1.3), accentMat);
+          winglet.position.set(wx, bodyY - 0.05, -0.4);
+          winglet.rotation.z = (wx > 0 ? 0.22 : -0.22);
+          chassis.add(winglet);
+        });
 
         const thrusters = [];
         [-0.48, 0.48].forEach(tx => {
@@ -2162,8 +2211,6 @@
       }
 
       // Headlights & Taillights
-      const headMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
-      const tailMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
       [-0.76, 0.76].forEach(hx => {
         const hl = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.2, 0.1), headMat);
         hl.position.set(hx, bodyY + 0.05, 2.15);
@@ -2210,36 +2257,309 @@
     }
 
     // ==========================================
-    // 8. 3D ISLAMIC STARS & FLOATING BUBBLES
+    // 8. 3D GLOWING ISLAMIC COLLECTIBLES (Janamaz, Tasbeeh, Kitab)
     // ==========================================
+    function createJanamazTexture() {
+      const c = document.createElement('canvas');
+      c.width = 128; c.height = 192;
+      const ctx = c.getContext('2d');
+      // Emerald green rug
+      ctx.fillStyle = '#064e3b';
+      ctx.fillRect(0, 0, 128, 192);
+      // Gold ornate border
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 6;
+      ctx.strokeRect(6, 6, 116, 180);
+      ctx.strokeStyle = '#fef08a';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(12, 12, 104, 168);
+      // Mihrab arch
+      ctx.fillStyle = '#047857';
+      ctx.beginPath();
+      ctx.moveTo(22, 150);
+      ctx.lineTo(22, 60);
+      ctx.quadraticCurveTo(64, 16, 106, 60);
+      ctx.lineTo(106, 150);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 3.5;
+      ctx.stroke();
+      // Center star
+      ctx.fillStyle = '#fbbf24';
+      ctx.beginPath();
+      ctx.arc(64, 75, 8, 0, Math.PI * 2);
+      ctx.fill();
+      // Fringe lines
+      ctx.fillStyle = '#fef3c7';
+      for (let x = 8; x < 120; x += 6) {
+        ctx.fillRect(x, 0, 3, 5);
+        ctx.fillRect(x, 187, 3, 5);
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.encoding = THREE.sRGBEncoding;
+      return tex;
+    }
+
+    function createKitabTexture() {
+      const c = document.createElement('canvas');
+      c.width = 128; c.height = 160;
+      const ctx = c.getContext('2d');
+      // Green cover
+      ctx.fillStyle = '#065f46';
+      ctx.fillRect(0, 0, 128, 160);
+      // Gold ornate frame
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 6;
+      ctx.strokeRect(8, 8, 112, 144);
+      // Crescent medallion
+      ctx.fillStyle = '#fbbf24';
+      ctx.beginPath();
+      ctx.arc(64, 80, 22, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#065f46';
+      ctx.beginPath();
+      ctx.arc(70, 76, 18, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fef08a';
+      ctx.beginPath();
+      ctx.arc(54, 76, 4, 0, Math.PI * 2);
+      ctx.fill();
+      const tex = new THREE.CanvasTexture(c);
+      tex.encoding = THREE.sRGBEncoding;
+      return tex;
+    }
+
+    let cachedJanamazTex = null;
+    let cachedKitabTex = null;
+
     function createIslamicStarPickup(x, y, z, index) {
+      if (!cachedJanamazTex) cachedJanamazTex = createJanamazTexture();
+      if (!cachedKitabTex) cachedKitabTex = createKitabTexture();
+
       const g = new THREE.Group();
       g.position.set(x, y, z);
 
-      const bubbleMat = new THREE.MeshStandardMaterial({
-        color: 0x38bdf8,
-        emissive: 0x0284c7,
-        emissiveIntensity: 0.35,
-        transparent: true,
-        opacity: 0.45,
-        roughness: 0.1,
-        metalness: 0.8
-      });
-      const bubble = new THREE.Mesh(new THREE.SphereGeometry(1.5, 16, 16), bubbleMat);
-
-      const goldMat = new THREE.MeshStandardMaterial({
+      // Gold halo glow ring around the item
+      const haloMat = new THREE.MeshStandardMaterial({
         color: 0xfacc15,
-        metalness: 0.85,
-        roughness: 0.2,
         emissive: 0xd97706,
-        emissiveIntensity: 0.4
+        emissiveIntensity: 0.8,
+        roughness: 0.2,
+        metalness: 0.8,
+        transparent: true,
+        opacity: 0.75
       });
-      const star = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.0, 0.35, 5), goldMat);
-      star.rotation.x = Math.PI / 2;
+      const halo = new THREE.Mesh(new THREE.TorusGeometry(1.65, 0.08, 8, 24), haloMat);
+      halo.rotation.x = Math.PI / 2;
+      g.add(halo);
 
-      g.add(bubble, star);
-      g.userData = { bubble, star, baseY: y, index, collected: false };
+      // Glowing aura sphere
+      const auraMat = new THREE.MeshBasicMaterial({
+        color: 0x38bdf8,
+        transparent: true,
+        opacity: 0.18
+      });
+      const aura = new THREE.Mesh(new THREE.SphereGeometry(1.9, 12, 12), auraMat);
+      g.add(aura);
+
+      // Sparkle diamond stars that orbit the item
+      const sparkleGroup = new THREE.Group();
+      const sparkMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
+      for (let s = 0; s < 4; s++) {
+        const spark = new THREE.Mesh(new THREE.OctahedronGeometry(0.14, 0), sparkMat);
+        const ang = (s / 4) * Math.PI * 2;
+        spark.position.set(Math.cos(ang) * 1.5, Math.sin(s * 1.5) * 0.4, Math.sin(ang) * 1.5);
+        sparkleGroup.add(spark);
+      }
+      g.add(sparkleGroup);
+
+      let itemMesh = null;
+      const type = index % 3; // 0: Janamaz, 1: Tasbeeh, 2: Kitab
+
+      if (type === 0) {
+        // --- 1. JAYE NAMAZ (Prayer Mat) ---
+        const mat = new THREE.MeshStandardMaterial({
+          map: cachedJanamazTex,
+          roughness: 0.35,
+          emissive: 0x064e3b,
+          emissiveIntensity: 0.45
+        });
+        const rug = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.06, 2.2), mat);
+        rug.rotation.x = 0.35;
+        g.add(rug);
+        itemMesh = rug;
+
+      } else if (type === 1) {
+        // --- 2. TASBEEH (Prayer Beads) ---
+        const tasbeehGroup = new THREE.Group();
+        const beadMat = new THREE.MeshStandardMaterial({
+          color: 0xfef08a,
+          emissive: 0xd97706,
+          emissiveIntensity: 0.65,
+          metalness: 0.85,
+          roughness: 0.15
+        });
+        const beadGeo = new THREE.SphereGeometry(0.18, 8, 8);
+        const beadCount = 20;
+        const radius = 1.1;
+        for (let b = 0; b < beadCount; b++) {
+          const ang = (b / beadCount) * Math.PI * 2;
+          const bead = new THREE.Mesh(beadGeo, beadMat);
+          bead.position.set(Math.cos(ang) * radius, Math.sin(ang) * radius, 0);
+          tasbeehGroup.add(bead);
+        }
+        const imama = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.22, 0.6, 8), beadMat);
+        imama.position.set(0, -radius - 0.25, 0);
+        const tassel = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.55, 8), beadMat);
+        tassel.rotation.x = Math.PI;
+        tassel.position.set(0, -radius - 0.65, 0);
+        tasbeehGroup.add(imama, tassel);
+        tasbeehGroup.rotation.x = 0.25;
+        g.add(tasbeehGroup);
+        itemMesh = tasbeehGroup;
+
+      } else {
+        // --- 3. KITAB (Holy Book with Gold Ribbon) ---
+        const bookGroup = new THREE.Group();
+        const coverMat = new THREE.MeshStandardMaterial({
+          map: cachedKitabTex,
+          roughness: 0.3,
+          emissive: 0x065f46,
+          emissiveIntensity: 0.5
+        });
+        const pagesMat = new THREE.MeshStandardMaterial({
+          color: 0xfef08a,
+          roughness: 0.5,
+          metalness: 0.5
+        });
+        const cover = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.25, 1.8), coverMat);
+        const pages = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.2, 1.7), pagesMat);
+        cover.position.y = 0;
+        pages.position.y = 0;
+        const ribbonMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+        const ribbon = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.05, 0.8), ribbonMat);
+        ribbon.position.set(0, 0.14, 0.7);
+        bookGroup.add(cover, pages, ribbon);
+        bookGroup.rotation.x = 0.45;
+        bookGroup.rotation.z = -0.2;
+        g.add(bookGroup);
+        itemMesh = bookGroup;
+      }
+
+      g.userData = { halo, haloMat, aura, sparkles: sparkleGroup, itemMesh, baseY: y, index, type, collected: false };
       return g;
+    }
+
+    // ==========================================
+    // HAPTIC FEEDBACK (Zero weight mobile vibration)
+    // ==========================================
+    function triggerHaptic(type) {
+      try {
+        if (!navigator || !navigator.vibrate) return;
+        if (type === 'collect') navigator.vibrate(35);
+        else if (type === 'boost') navigator.vibrate([25, 30, 45]);
+        else if (type === 'collision') navigator.vibrate(50);
+      } catch (e) {}
+    }
+
+    // ==========================================
+    // TIRE SKIDMARKS (Lightweight 36-segment quad pool)
+    // ==========================================
+    const SKID_POOL_SIZE = 36;
+    const skidMeshes = [];
+    let nextSkidIdx = 0;
+    let skidSpawnTimer = 0;
+    const skidGeo = new THREE.PlaneGeometry(0.38, 0.85);
+    skidGeo.rotateX(-Math.PI / 2);
+    const skidBaseMat = new THREE.MeshBasicMaterial({
+      color: 0x0f172a,
+      transparent: true,
+      opacity: 0.4,
+      depthWrite: false
+    });
+
+    function initSkidmarks(parentGroup) {
+      skidMeshes.length = 0;
+      nextSkidIdx = 0;
+      for (let i = 0; i < SKID_POOL_SIZE; i++) {
+        const m = new THREE.Mesh(skidGeo, skidBaseMat.clone());
+        m.visible = false;
+        m.userData = { life: 0 };
+        parentGroup.add(m);
+        skidMeshes.push(m);
+      }
+    }
+
+    function spawnSkidmark(x, y, z, yaw) {
+      if (!skidMeshes.length) return;
+      const m = skidMeshes[nextSkidIdx];
+      nextSkidIdx = (nextSkidIdx + 1) % SKID_POOL_SIZE;
+      m.position.set(x, y + 0.05, z);
+      m.rotation.y = yaw;
+      m.material.opacity = 0.4;
+      m.userData.life = 2.4;
+      m.visible = true;
+    }
+
+    function updateSkidmarks(dt) {
+      for (let i = 0; i < skidMeshes.length; i++) {
+        const m = skidMeshes[i];
+        if (m.visible && m.userData.life > 0) {
+          m.userData.life -= dt;
+          m.material.opacity = (m.userData.life / 2.4) * 0.4;
+          if (m.userData.life <= 0) {
+            m.visible = false;
+          }
+        }
+      }
+    }
+
+    // ==========================================
+    // NITRO SPEED LINES (Procedural 2D wind streaks)
+    // ==========================================
+    let speedLinesCanvasEl = null;
+    let speedLinesCtx = null;
+
+    function updateSpeedLines() {
+      if (!speedLinesCanvasEl) {
+        speedLinesCanvasEl = document.getElementById('speedLinesCanvas');
+        if (speedLinesCanvasEl) speedLinesCtx = speedLinesCanvasEl.getContext('2d');
+      }
+      if (!speedLinesCanvasEl || !speedLinesCtx) return;
+
+      if (state.boostTimer <= 0 || !state.isPlaying) {
+        if (!speedLinesCanvasEl.classList.contains('hidden')) {
+          speedLinesCanvasEl.classList.add('hidden');
+          speedLinesCtx.clearRect(0, 0, speedLinesCanvasEl.width, speedLinesCanvasEl.height);
+        }
+        return;
+      }
+
+      if (speedLinesCanvasEl.classList.contains('hidden')) {
+        speedLinesCanvasEl.classList.remove('hidden');
+        speedLinesCanvasEl.width = window.innerWidth;
+        speedLinesCanvasEl.height = window.innerHeight;
+      }
+
+      const w = speedLinesCanvasEl.width;
+      const h = speedLinesCanvasEl.height;
+      const cx = w * 0.5;
+      const cy = h * 0.55;
+      speedLinesCtx.clearRect(0, 0, w, h);
+
+      speedLinesCtx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+      speedLinesCtx.lineWidth = 2.5;
+      const count = 16;
+      for (let i = 0; i < count; i++) {
+        const angle = (i / count) * Math.PI * 2 + (Math.sin(state.raceTime * 25 + i) * 0.08);
+        const r1 = Math.min(w, h) * (0.28 + (i % 3) * 0.08);
+        const r2 = Math.min(w, h) * (0.75 + (i % 2) * 0.15);
+        speedLinesCtx.beginPath();
+        speedLinesCtx.moveTo(cx + Math.cos(angle) * r1, cy + Math.sin(angle) * r1);
+        speedLinesCtx.lineTo(cx + Math.cos(angle) * r2, cy + Math.sin(angle) * r2);
+        speedLinesCtx.stroke();
+      }
     }
 
     let duaToastTimerId = null;
@@ -2970,6 +3290,9 @@
         }
       }
 
+      // Initialize lightweight tire skidmarks pool
+      initSkidmarks(worldGroup);
+
       // 6. Floating 3D Islamic Stars Pickups (Balanced frequency: 5 pickups around loop)
       let starIdx = 0;
       const numStars = 5;
@@ -3182,7 +3505,7 @@
       if (!stage || !minimapCtx || !minimapCanvas) return;
       const w = minimapCanvas.width;
       const h = minimapCanvas.height;
-      const pad = 12;
+      const pad = Math.max(6, Math.round(w * 0.08));
 
       const rangeX = cachedMaxX - cachedMinX || 1;
       const rangeZ = cachedMaxZ - cachedMinZ || 1;
@@ -3194,7 +3517,7 @@
       const scaleW = (w - pad * 2) / maxDim;
       const scaleH = (h - pad * 2) / maxDim;
 
-      if (!stage.minimapBaseCanvas) {
+      if (!stage.minimapBaseCanvas || stage.minimapBaseCanvas.width !== w) {
         const pts = [];
         const mapSteps = 64;
         for (let i = 0; i <= mapSteps; i++) {
@@ -3206,12 +3529,14 @@
         off.width = w;
         off.height = h;
         const octx = off.getContext('2d');
+        octx.clearRect(0, 0, w, h);
 
+        // Dark outer casing for sharp contrast on light 3D backgrounds
         octx.beginPath();
-        octx.lineWidth = 8;
+        octx.lineWidth = Math.max(5, Math.round(w * 0.075));
         octx.lineCap = 'round';
         octx.lineJoin = 'round';
-        octx.strokeStyle = '#0f172a';
+        octx.strokeStyle = 'rgba(7, 13, 23, 0.72)';
         for (let i = 0; i < pts.length; i++) {
           const mx = halfW + (pts[i].x - centerX) * scaleW;
           const my = halfH - (pts[i].z - centerZ) * scaleH;
@@ -3221,9 +3546,10 @@
         octx.closePath();
         octx.stroke();
 
+        // Crisp brilliant white track line
         octx.beginPath();
-        octx.lineWidth = 4;
-        octx.strokeStyle = '#e2e8f0';
+        octx.lineWidth = Math.max(2.5, Math.round(w * 0.038));
+        octx.strokeStyle = '#ffffff';
         for (let i = 0; i < pts.length; i++) {
           const mx = halfW + (pts[i].x - centerX) * scaleW;
           const my = halfH - (pts[i].z - centerZ) * scaleH;
@@ -3233,12 +3559,16 @@
         octx.closePath();
         octx.stroke();
 
+        // Start / finish marker dot
         const sx = halfW + (pts[0].x - centerX) * scaleW;
         const sy = halfH - (pts[0].z - centerZ) * scaleH;
         octx.fillStyle = '#22c55e';
         octx.beginPath();
-        octx.arc(sx, sy, 4.5, 0, Math.PI * 2);
+        octx.arc(sx, sy, Math.max(3, w * 0.04), 0, Math.PI * 2);
         octx.fill();
+        octx.strokeStyle = '#ffffff';
+        octx.lineWidth = 1.2;
+        octx.stroke();
 
         stage.minimapBaseCanvas = off;
       }
@@ -3253,8 +3583,11 @@
         const my = halfH - ((frame.cz + frame.rz * r.laneOffset) - centerZ) * scaleH;
         minimapCtx.fillStyle = r.cfg.hex || '#38bdf8';
         minimapCtx.beginPath();
-        minimapCtx.arc(mx, my, 3.5, 0, Math.PI * 2);
+        minimapCtx.arc(mx, my, Math.max(2.8, w * 0.036), 0, Math.PI * 2);
         minimapCtx.fill();
+        minimapCtx.strokeStyle = 'rgba(0,0,0,0.75)';
+        minimapCtx.lineWidth = 1;
+        minimapCtx.stroke();
       }
 
       const player = racers[0];
@@ -3262,20 +3595,20 @@
         const pFrame = getTrackFrame(player.s, stage);
         const px = halfW + ((pFrame.cx + pFrame.rx * player.laneOffset) - centerX) * scaleW;
         const py = halfH - ((pFrame.cz + pFrame.rz * player.laneOffset) - centerZ) * scaleH;
-        const pulse = 6 + Math.sin(state.raceTime * 8) * 2;
-        minimapCtx.strokeStyle = 'rgba(250, 204, 21, 0.55)';
-        minimapCtx.lineWidth = 2;
+        const pulse = Math.max(5, w * 0.06) + Math.sin(state.raceTime * 8) * 1.5;
+        minimapCtx.strokeStyle = 'rgba(250, 204, 21, 0.75)';
+        minimapCtx.lineWidth = 1.5;
         minimapCtx.beginPath();
         minimapCtx.arc(px, py, pulse, 0, Math.PI * 2);
         minimapCtx.stroke();
 
         minimapCtx.fillStyle = '#facc15';
         minimapCtx.beginPath();
-        minimapCtx.arc(px, py, 4.5, 0, Math.PI * 2);
+        minimapCtx.arc(px, py, Math.max(3.8, w * 0.048), 0, Math.PI * 2);
         minimapCtx.fill();
         minimapCtx.fillStyle = '#ffffff';
         minimapCtx.beginPath();
-        minimapCtx.arc(px, py, 2, 0, Math.PI * 2);
+        minimapCtx.arc(px, py, Math.max(1.8, w * 0.022), 0, Math.PI * 2);
         minimapCtx.fill();
 
         if (minimapDistEl) {
@@ -3319,6 +3652,7 @@
         state.turboStock--;
         state.boostTimer = 1.85;
         playSynthEffect('boost');
+        triggerHaptic('boost');
         updateTurboUI();
         showDuaToast(t.turboFired);
       } else {
@@ -3577,8 +3911,8 @@
       if (!btn) return;
       btn.textContent = state.autoDrive ? t.autoOn : t.autoOff;
       btn.className = state.autoDrive
-        ? 'px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 transition'
-        : 'px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-bold bg-slate-800 text-slate-300 border border-white/15 hover:bg-slate-700 transition';
+        ? 'px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg text-[9px] sm:text-xs font-bold bg-emerald-500/30 text-emerald-300 border border-emerald-400/50 active:scale-95 transition whitespace-nowrap'
+        : 'px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg text-[9px] sm:text-xs font-bold bg-slate-800 text-slate-300 border border-white/15 hover:bg-slate-700 active:scale-95 transition whitespace-nowrap';
     }
 
     function updateSoundButtonsUI() {
@@ -3798,9 +4132,12 @@
       } catch (e) {}
     });
 
-    document.getElementById('speedSlowBtn').addEventListener('click', () => setSpeedMode('slow'));
-    document.getElementById('speedNormalBtn').addEventListener('click', () => setSpeedMode('normal'));
-    document.getElementById('speedFastBtn').addEventListener('click', () => setSpeedMode('fast'));
+    const sSlow = document.getElementById('speedSlowBtn');
+    if (sSlow) sSlow.addEventListener('click', () => setSpeedMode('slow'));
+    const sNorm = document.getElementById('speedNormalBtn');
+    if (sNorm) sNorm.addEventListener('click', () => setSpeedMode('normal'));
+    const sFast = document.getElementById('speedFastBtn');
+    if (sFast) sFast.addEventListener('click', () => setSpeedMode('fast'));
     document.getElementById('menuSpeedSlow').addEventListener('click', () => setSpeedMode('slow'));
     document.getElementById('menuSpeedNormal').addEventListener('click', () => setSpeedMode('normal'));
     document.getElementById('menuSpeedFast').addEventListener('click', () => setSpeedMode('fast'));
@@ -4032,14 +4369,21 @@
 
       const player = racers[0];
 
-      // Rotate Islamic stars & hovering bob (zero closure alloc, skip collected)
+      // Animate Islamic collectibles (bobbing, rotating, halo pulse, sparkle glitter)
       for (let idx = 0; idx < starPickups.length; idx++) {
-        const starMesh = starPickups[idx];
-        if (!starMesh.userData.collected) {
-          starMesh.userData.star.rotation.z += dt * 3.2;
-          starMesh.position.y = starMesh.userData.baseY + Math.sin(state.raceTime * 3.5 + idx) * 0.35;
+        const sm = starPickups[idx];
+        if (!sm.userData.collected) {
+          if (sm.userData.itemMesh) sm.userData.itemMesh.rotation.y += dt * 1.6;
+          if (sm.userData.halo) sm.userData.halo.rotation.z += dt * 2.2;
+          if (sm.userData.sparkles) sm.userData.sparkles.rotation.y += dt * 3.2;
+          if (sm.userData.haloMat) sm.userData.haloMat.emissiveIntensity = 0.6 + Math.sin(state.raceTime * 5 + idx) * 0.35;
+          sm.position.y = sm.userData.baseY + Math.sin(state.raceTime * 3.5 + idx) * 0.35;
         }
       }
+
+      // Update tire skidmarks
+      updateSkidmarks(dt);
+      updateSpeedLines();
 
       racers.forEach((r) => {
         if (r.finished) {
@@ -4055,6 +4399,20 @@
           const frame = getTrackFrame(r.s, stage);
           const boostFactor = state.boostTimer > 0 ? 1.60 : (state.isDrifting ? 1.12 : 1.0);
           const topSpeed = baseMaxSpeed * r.cfg.speedBonus * boostFactor;
+
+          // Tire skidmarks on drifting or braking
+          if (r.speed > 10 && (state.isDrifting || input.down)) {
+            skidSpawnTimer += dt;
+            if (skidSpawnTimer > 0.065) {
+              skidSpawnTimer = 0;
+              const leftX = r.mesh.position.x - frame.rx * 0.7;
+              const leftZ = r.mesh.position.z - frame.rz * 0.7;
+              const rightX = r.mesh.position.x + frame.rx * 0.7;
+              const rightZ = r.mesh.position.z + frame.rz * 0.7;
+              spawnSkidmark(leftX, r.mesh.position.y, leftZ, r.mesh.rotation.y);
+              spawnSkidmark(rightX, r.mesh.position.y, rightZ, r.mesh.rotation.y);
+            }
+          }
 
           if (state.autoDrive || input.up) {
             const throttleIntensity = input.throttle || 1.0;
@@ -4164,6 +4522,7 @@
               if (menuStarsTotalEl) menuStarsTotalEl.textContent = String(state.totalStars);
               saveProgress();
               playSynthEffect('star');
+              triggerHaptic('collect');
 
               let duaIdx = Math.floor(Math.random() * DUA_MESSAGES.length);
               if (DUA_MESSAGES.length > 1 && duaIdx === lastDuaPickedIdx) {
@@ -4416,29 +4775,20 @@
       const camHeight = 4.8;
       const pFrame = getTrackFrame(player.s, stage);
 
-      // Dynamic camera roll lean ONLY when moving
-      let steerSign = (input.right ? 1 : 0) - (input.left ? 1 : 0);
-      let steerAmount = input.steer ? input.steer : (steerSign !== 0 ? 1.0 : 0);
-      let steerVal = player.speed > 3 ? (steerSign * steerAmount) : 0;
-      const leanFactor = -steerVal * (state.isDrifting ? 0.08 : 0.04);
-
-      // Speed vibration shake ONLY during Turbo Boost while moving
-      const shakeY = (state.boostTimer > 0 && player.speed > 5) ? (Math.sin(state.raceTime * 55) * 0.08) : 0;
-      const shakeX = (state.boostTimer > 0 && player.speed > 5) ? (Math.cos(state.raceTime * 45) * 0.06) : 0;
-
-      camera.up.set(pFrame.rx * leanFactor, 1.0, pFrame.rz * leanFactor);
-      camera.up.normalize();
+      // ZERO CAMERA TILT / ROLL: Keep horizon rock-solid level and upright
+      camera.up.set(0, 1, 0);
 
       const targetCamX = player.mesh.position.x - pFrame.dirX * camDist;
       const targetCamZ = player.mesh.position.z - pFrame.dirZ * camDist;
       const targetCamY = player.y + camHeight;
 
-      camera.position.x += (targetCamX + pFrame.rx * shakeX - camera.position.x) * Math.min(1, dt * 11);
-      camera.position.y += (targetCamY + shakeY - camera.position.y) * Math.min(1, dt * 9);
-      camera.position.z += (targetCamZ + pFrame.rz * shakeX - camera.position.z) * Math.min(1, dt * 11);
+      // Smooth, stable follow behind car without sideways tilting or jerking
+      camera.position.x += (targetCamX - camera.position.x) * Math.min(1, dt * 10);
+      camera.position.y += (targetCamY - camera.position.y) * Math.min(1, dt * 8);
+      camera.position.z += (targetCamZ - camera.position.z) * Math.min(1, dt * 10);
 
-      const targetLookX = player.mesh.position.x + pFrame.dirX * 24;
-      const targetLookZ = player.mesh.position.z + pFrame.dirZ * 24;
+      const targetLookX = player.mesh.position.x + pFrame.dirX * 22;
+      const targetLookZ = player.mesh.position.z + pFrame.dirZ * 22;
       const targetLookY = player.y + 1.4;
 
       camera.lookAt(targetLookX, targetLookY, targetLookZ);

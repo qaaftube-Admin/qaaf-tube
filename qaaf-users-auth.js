@@ -3568,3 +3568,86 @@
     if (origResetH) origResetH.apply(this, arguments);
   };
 })();
+
+// === QAAF V90 CLEAN NATIVE YOUTUBE SHORTS & WATCH UI ===
+(function() {
+  var YT_SHARE_SVG = "<svg viewBox='0 0 24 24' width='17' height='17' fill='currentColor' style='display:inline-block;vertical-align:middle;'><path d='M15 5.63 20.66 12 15 18.37V14h-1c-3.96 0-7.14 1-9.75 3.09 1.84-4.07 5.11-6.4 9.89-7.1l.86-.13V5.63M14 3v6C6.22 10.13 3.11 15.33 2 21c2.78-3.97 6.44-6 12-6v6l8-9-8-9z'/></svg>";
+  // 1. Browser Cache Installer for 3D Game (3.8 MB)
+  var origInstall = window.installAndOpenGame;
+  window.installAndOpenGame = function(gameId) {
+    if (window.caches && gameId === "game_3d_01_desk_racer") {
+      caches.open("qaaf-3d-games-v1").then(function(cache) {
+        cache.addAll(["Qaaf 3d games/01-Desk racer Pro/desk_racer_pro.html", "Qaaf 3d games/01-Desk racer Pro/stage_panoramas.js"]).catch(function(){});
+      }).catch(function(){});
+    }
+    if (origInstall) return origInstall.apply(this, arguments);
+  };
+  // 2. Override buildCleanWatchDetailsLayout so 16:9 Videos show Official Share Button instead of Dua, and never cut off on mobile
+  var origBuildWatch = window.buildCleanWatchDetailsLayout;
+  window.buildCleanWatchDetailsLayout = function(video) {
+    if (origBuildWatch) origBuildWatch.apply(this, arguments);
+    var details = document.getElementById("ytCleanWatchDetails"); if (!details || !video) return;
+    details.querySelectorAll("button").forEach(function(b) {
+      var txt = (b.textContent || "").trim();
+      if (txt.indexOf("Dua") !== -1 || b.getAttribute("onclick") === "triggerAdCoverNow()") {
+        b.onclick = function(ev) { window.shareQaafCurrentVideo(ev); };
+        b.setAttribute("onclick", "window.shareQaafCurrentVideo(event)");
+        b.className = "bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-full text-[11px] font-bold flex items-center gap-1 transition shrink-0 cursor-pointer";
+        b.innerHTML = YT_SHARE_SVG + "<span>Share</span>";
+      }
+    });
+    // Make the channel + action buttons row wrap cleanly on narrow mobile screens so nothing cuts off
+    var rows = details.querySelectorAll("div.flex.items-center.justify-between");
+    rows.forEach(function(r) { r.className = "flex flex-wrap items-center justify-between gap-2 pt-1"; });
+  };
+  // 3. Override renderWatchPageExtras so Up Next always shows All | From Channel | Related + Smart Related Videos + Real Views
+  var origExtras = window.renderWatchPageExtras;
+  window.renderWatchPageExtras = function(videoId) {
+    if (origExtras) origExtras.apply(this, arguments);
+    var cur = (videosData || []).find(function(x){ return x && x.id === videoId; });
+    var upNextGrid = document.getElementById("watchUpNextGrid"); if (!upNextGrid || !cur) return;
+    var bar = document.getElementById("qaafUpNextFilterPillsBar");
+    if (!bar && upNextGrid.parentNode) {
+      bar = document.createElement("div"); bar.id = "qaafUpNextFilterPillsBar";
+      bar.className = "flex items-center gap-2 overflow-x-auto pb-2 mb-2 no-scrollbar";
+      upNextGrid.parentNode.insertBefore(bar, upNextGrid);
+    }
+    if (bar) {
+      bar.innerHTML = "<button id='qaafUpNextPill_all' type=button onclick=filterUpNextByMode('all') class='px-3 py-1 rounded-lg text-xs font-extrabold bg-white text-black cursor-pointer shrink-0'>All</button>" +
+        "<button id='qaafUpNextPill_channel' type=button onclick=filterUpNextByMode('channel') class='px-3 py-1 rounded-lg text-xs font-bold bg-white/10 hover:bg-white/20 text-white cursor-pointer shrink-0'>From " + (cur.channel || "Channel") + "</button>" +
+        "<button id='qaafUpNextPill_related' type=button onclick=filterUpNextByMode('related') class='px-3 py-1 rounded-lg text-xs font-bold bg-white/10 hover:bg-white/20 text-white cursor-pointer shrink-0'>Related</button>";
+    }
+    if (typeof window.filterUpNextByMode === "function") window.filterUpNextByMode("all");
+  };
+  // 4. CLEAN NATIVE YOUTUBE SHORTS: Keep YouTube native top-right (Speaker, CC, Settings) & bottom-right (Enlarge/Minimize) 100% uncovered and working!
+  function applyCleanNativeShortsUI() {
+    var modal = document.getElementById("playerModal");
+    if (!modal || modal.classList.contains("hidden")) return;
+    var video = (videosData || []).find(function(x){ return x && x.id === currentPlayingVideoId; });
+    if (!video || !isVideoShort(video)) return;
+    // Ensure YouTube native controls=1 stays ON in Shorts so YouTube Speaker, CC, Settings, Seekbar & Fullscreen work directly!
+    var ifr = document.getElementById("ytIframe");
+    if (ifr) {
+      ifr.style.pointerEvents = "auto";
+      if (ifr.src && ifr.src.indexOf("controls=0") !== -1) ifr.src = ifr.src.replace("controls=0", "controls=1");
+    }
+    // Replace the full-screen blocking overlay with ONLY a small floating right-side bar positioned HIGHER UP (bottom: 130px) so YouTube bottom-right Fullscreen (Enlarge/Minimize) and top-right (Speaker/CC/Gear) are 100% uncovered!
+    var ov = document.getElementById("qaafYtShortsMasterOverlay");
+    if (ov) {
+      var isFav = (favoriteVideoIds || []).indexOf(video.id) !== -1;
+      var vCount = (typeof window.getQaafRealViewCount === "function") ? window.getQaafRealViewCount(video) : (video.realViews || 1);
+      ov.style.cssText = "position:absolute; right:10px; bottom:128px; top:auto; left:auto; width:46px; height:auto; z-index:38; display:flex; flex-direction:column; align-items:center; gap:12px; pointer-events:auto;";
+      ov.innerHTML = "<button type=button onclick=playAdjacentShort(-1) style='width:38px;height:38px;border-radius:999px;background:rgba(0,0,0,0.55);color:#fff;font-size:14px;border:1px solid rgba(255,255,255,0.2);cursor:pointer;' title='Previous Short'>▲</button>" +
+        "<div style='display:flex;flex-direction:column;align-items:center;gap:2px;'><button type=button onclick=toggleFavoriteVideo(currentPlayingVideoId,event);setTimeout(applyCleanNativeShortsUI,50) style='width:42px;height:42px;border-radius:999px;background:rgba(0,0,0,0.55);color:#fff;font-size:17px;border:1px solid rgba(255,255,255,0.2);cursor:pointer;'>" + (isFav ? "❤️" : "🤍") + "</button><span style='font-size:10px;font-weight:800;color:#fff;text-shadow:0 1px 3px #000;'>" + vCount + "</span></div>" +
+        "<div style='display:flex;flex-direction:column;align-items:center;gap:2px;'><button type=button onclick=openShortCommentsPopup(event) style='width:42px;height:42px;border-radius:999px;background:rgba(0,0,0,0.55);color:#fff;font-size:16px;border:1px solid rgba(255,255,255,0.2);cursor:pointer;'>💬</button><span style='font-size:9px;font-weight:800;color:#fff;text-shadow:0 1px 3px #000;'>Comment</span></div>" +
+        "<div style='display:flex;flex-direction:column;align-items:center;gap:2px;'><button type=button onclick=shareQaafCurrentVideo(event) style='width:42px;height:42px;border-radius:999px;background:rgba(0,0,0,0.55);color:#fff;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.2);cursor:pointer;'>" + YT_SHARE_SVG + "</button><span style='font-size:9px;font-weight:800;color:#fff;text-shadow:0 1px 3px #000;'>Share</span></div>" +
+        "<button type=button onclick=playAdjacentShort(1) style='width:38px;height:38px;border-radius:999px;background:rgba(0,0,0,0.55);color:#fff;font-size:14px;border:1px solid rgba(255,255,255,0.2);cursor:pointer;' title='Next Short'>▼</button>";
+    }
+  }
+  var prevOpen90 = window.openVideoPlayer;
+  window.openVideoPlayer = function(videoId) {
+    if (prevOpen90) prevOpen90.apply(this, arguments);
+    setTimeout(applyCleanNativeShortsUI, 45);
+    setTimeout(function(){ var v = (videosData||[]).find(function(x){return x&&x.id===videoId;}); if (v && !isVideoShort(v)) { window.buildCleanWatchDetailsLayout(v); window.renderWatchPageExtras(videoId); } }, 60);
+  };
+})();
