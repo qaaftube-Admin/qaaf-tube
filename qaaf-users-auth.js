@@ -3837,3 +3837,141 @@
     pane.appendChild(extraSec);
   };
 })();
+
+// === QAAF STEP 8 SHAREABLE URL ROUTER & SHORTS CAROUSEL SCROLL ===
+(function() {
+  // 1. HOME SHORTS SHELF LEFT/RIGHT SCROLL BUTTONS & MOUSE DRAG
+  window.scrollHomeShortsCarousel = function(dir) {
+    var tr = document.getElementById("shortsCarouselTrack"); if (!tr) return;
+    var step = Math.max(320, Math.round(tr.clientWidth * 0.75));
+    tr.scrollBy({ left: dir * step, behavior: "smooth" });
+  };
+  function enhanceHomeShortsShelfScroll() {
+    var sec = document.getElementById("shortsShelfSection");
+    var tr = document.getElementById("shortsCarouselTrack");
+    if (!sec || !tr || document.getElementById("qaafShortsShelfNavBtns")) return;
+    var hdr = sec.querySelector("div.flex.items-center.justify-between");
+    if (hdr) {
+      var oldSpan = hdr.querySelector("span.text-slate-400"); if (oldSpan) oldSpan.remove();
+      var navWrap = document.createElement("div"); navWrap.id = "qaafShortsShelfNavBtns";
+      navWrap.className = "flex items-center gap-1.5";
+      navWrap.innerHTML = "<button type=button onclick=scrollHomeShortsCarousel(-1) class='w-8 h-8 rounded-full bg-slate-800 hover:bg-emerald-600 text-white font-extrabold text-xs flex items-center justify-center border border-white/15 shadow cursor-pointer transition' title='Scroll Left'>◀</button><button type=button onclick=scrollHomeShortsCarousel(1) class='px-3 h-8 rounded-full bg-slate-800 hover:bg-emerald-600 text-white font-extrabold text-xs flex items-center gap-1 border border-white/15 shadow cursor-pointer transition' title='Scroll Right'><span>Scroll</span><span>▶</span></button>";
+      hdr.appendChild(navWrap);
+    }
+    // Allow mouse drag left/right on desktop
+    var isDown = false, startX = 0, scrollL = 0, dragged = false;
+    tr.addEventListener("mousedown", function(e) { isDown = true; dragged = false; startX = e.pageX - tr.offsetLeft; scrollL = tr.scrollLeft; });
+    window.addEventListener("mouseup", function() { isDown = false; });
+    tr.addEventListener("mousemove", function(e) { if (!isDown) return; var x = e.pageX - tr.offsetLeft; var walk = (x - startX) * 1.5; if (Math.abs(walk) > 8) { dragged = true; e.preventDefault(); tr.scrollLeft = scrollL - walk; } });
+    tr.addEventListener("click", function(e) { if (dragged) { e.stopPropagation(); e.preventDefault(); dragged = false; } }, true);
+  }
+  setTimeout(enhanceHomeShortsShelfScroll, 600);
+  setInterval(enhanceHomeShortsShelfScroll, 2000);
+
+  // 2. DYNAMIC URL TAGS (?watch=, ?shorts=, ?game=, ?category=, ?tab=personal, ?tab=admin)
+  window.setQaafUrlTag = function(paramsObj, pageTitle) {
+    try {
+      var url = new URL(window.location.href);
+      ["watch", "shorts", "game", "category", "channel", "tab"].forEach(function(k){ url.searchParams.delete(k); });
+      if (paramsObj) {
+        Object.keys(paramsObj).forEach(function(k){ if (paramsObj[k]) url.searchParams.set(k, paramsObj[k]); });
+      }
+      window.history.replaceState({}, pageTitle || document.title, url.pathname + url.search);
+      if (pageTitle) document.title = pageTitle;
+    } catch(e) {}
+  };
+  window.shareQaafCurrentVideo = function(e) {
+    if (e) e.stopPropagation();
+    var v = (videosData || []).find(function(x){ return x && x.id === currentPlayingVideoId; });
+    var isSh = v && isVideoShort(v);
+    var keyName = isSh ? "shorts" : "watch";
+    var vidKey = (v && (v.id || v.ytId)) || currentPlayingVideoId || "";
+    var shareUrl = window.location.origin + window.location.pathname + "?" + keyName + "=" + encodeURIComponent(vidKey);
+    var shareTitle = (v && v.title) ? (v.title + " — QAAF Tube") : "QAAF Tube Islamic Video";
+    if (navigator.share) {
+      navigator.share({ title: shareTitle, text: shareTitle, url: shareUrl }).catch(function(){});
+    }
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(shareUrl).catch(function(){});
+    }
+    if (typeof showSyncToast === "function") showSyncToast("🔗 Link Copied: " + shareUrl);
+  };
+  window.shareCurrentShort = window.shareQaafCurrentVideo;
+  // Inject Share button into Regular Video Watch Action Row (#ytActionButtonsRow)
+  function ensureWatchShareButton() {
+    var row = document.getElementById("ytActionButtonsRow");
+    if (!row || document.getElementById("ytCleanShareBtn")) return;
+    var btn = document.createElement("button"); btn.id = "ytCleanShareBtn"; btn.type = "button";
+    btn.onclick = function(ev) { window.shareQaafCurrentVideo(ev); };
+    btn.className = "bg-white/10 hover:bg-[#164e3a] text-white px-3 py-1.5 rounded-full text-[11px] font-bold flex items-center gap-1 transition shrink-0 cursor-pointer";
+    btn.innerHTML = "<span>↗️</span><span>Share</span>";
+    var saveBtn = document.getElementById("ytCleanSaveBtn");
+    if (saveBtn && saveBtn.parentNode === row) row.insertBefore(btn, saveBtn.nextSibling);
+    else row.appendChild(btn);
+  }
+  setInterval(ensureWatchShareButton, 1000);
+  // Hook Video Open / Close / Category / Tab / Game / Admin to update browser URL
+  var prevOpenVid86 = window.openVideoPlayer;
+  window.openVideoPlayer = function(videoId) {
+    if (prevOpenVid86) prevOpenVid86.apply(this, arguments);
+    var v = (videosData || []).find(function(x){ return x && (x.id === videoId || x.ytId === videoId); });
+    if (v) {
+      var isSh = isVideoShort(v);
+      var p = {}; p[isSh ? "shorts" : "watch"] = v.id;
+      window.setQaafUrlTag(p, v.title + " — QAAF Tube");
+    }
+    setTimeout(ensureWatchShareButton, 100);
+  };
+  var prevCloseVid86 = window.closeVideoPlayer;
+  window.closeVideoPlayer = function() {
+    if (prevCloseVid86) prevCloseVid86.apply(this, arguments);
+    window.setQaafUrlTag(null, "QAAF Tube — Muslim Family & Kids Hub");
+  };
+  var prevFilterCat86 = window.filterByCategory;
+  window.filterByCategory = function(cat) {
+    if (prevFilterCat86) prevFilterCat86.apply(this, arguments);
+    if (cat && cat !== "all") window.setQaafUrlTag({ category: cat }, "QAAF Tube — " + cat.toUpperCase());
+    else window.setQaafUrlTag(null, "QAAF Tube — Muslim Family & Kids Hub");
+  };
+  var prevOpenGame86 = window.openInstalledGameModal;
+  window.openInstalledGameModal = function(gameId) {
+    if (prevOpenGame86) prevOpenGame86.apply(this, arguments);
+    if (gameId) window.setQaafUrlTag({ game: gameId }, "QAAF Tube Games — " + gameId);
+  };
+  var prevOpenAdm86 = window.openAdminModal;
+  window.openAdminModal = function() {
+    if (prevOpenAdm86) prevOpenAdm86.apply(this, arguments);
+    window.setQaafUrlTag({ tab: "admin" }, "QAAF Tube — Admin Console");
+  };
+  var prevBotNav86 = window.switchBottomNavTab;
+  window.switchBottomNavTab = function(tabName) {
+    if (prevBotNav86) prevBotNav86.apply(this, arguments);
+    if (tabName === "home") window.setQaafUrlTag(null, "QAAF Tube — Muslim Family & Kids Hub");
+    else if (tabName === "you") window.setQaafUrlTag({ tab: "personal" }, "QAAF Tube — Personal Profile");
+    else if (tabName) window.setQaafUrlTag({ tab: tabName }, "QAAF Tube — " + tabName.toUpperCase());
+  };
+  // Auto-open shared URL (?watch=, ?shorts=, ?game=, ?category=, ?tab=) on page load
+  var initialUrlHandled = false;
+  function checkAndOpenSharedUrl() {
+    if (initialUrlHandled) return;
+    var sp = new URLSearchParams(window.location.search);
+    var wId = sp.get("watch") || sp.get("shorts");
+    var gId = sp.get("game");
+    var cat = sp.get("category");
+    var tab = sp.get("tab");
+    if (wId && videosData && videosData.length > 0) {
+      var target = videosData.find(function(v){ return v && (v.id === wId || v.ytId === wId); });
+      if (target) { initialUrlHandled = true; openVideoPlayer(target.id); return; }
+    }
+    if (gId && typeof window.openInstalledGameModal === "function") { initialUrlHandled = true; window.openInstalledGameModal(gId); return; }
+    if (cat && typeof window.filterByCategory === "function") { initialUrlHandled = true; window.filterByCategory(cat); return; }
+    if (tab) {
+      initialUrlHandled = true;
+      if (tab === "personal" && typeof window.switchBottomNavTab === "function") window.switchBottomNavTab("you");
+      else if ((tab === "games" || tab === "shorts") && typeof window.switchBottomNavTab === "function") window.switchBottomNavTab(tab);
+      else if (tab === "admin" && typeof window.openAdminModal === "function") window.openAdminModal();
+    }
+  }
+  setTimeout(checkAndOpenSharedUrl, 700);
+  setTimeout(checkAndOpenSharedUrl, 2200);
+})();
