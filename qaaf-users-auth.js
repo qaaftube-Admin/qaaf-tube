@@ -3975,3 +3975,104 @@
   setTimeout(checkAndOpenSharedUrl, 700);
   setTimeout(checkAndOpenSharedUrl, 2200);
 })();
+
+// === QAAF STEP 9 YOUTUBE EXACT SHARE SVG, HEADER VISIBLE & CLEAN PLAYER ===
+(function() {
+  // Official YouTube-style Curved Share Arrow SVG
+  var YT_SHARE_SVG = "<svg viewBox='0 0 24 24' width='18' height='18' fill='currentColor' style='display:inline-block;vertical-align:middle;'><path d='M15 5.63 20.66 12 15 18.37V14h-1c-3.96 0-7.14 1-9.75 3.09 1.84-4.07 5.11-6.4 9.89-7.1l.86-.13V5.63M14 3v6C6.22 10.13 3.11 15.33 2 21c2.78-3.97 6.44-6 12-6v6l8-9-8-9z'/></svg>";
+  var YT_HEART_SVG = "<svg viewBox='0 0 24 24' width='20' height='20' fill='none' stroke='currentColor' stroke-width='2'><path d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'/></svg>";
+  // 1. Keep Top Header (56px) Always Visible in Both Regular 16:9 Videos & Shorts, and Hide Red Cross/Red Vol Overlays
+  var st87 = document.createElement("style");
+  st87.textContent = "#qaafMinimalTopLeftClose, #qaafCenterRedVolOverlay { display: none !important; } #playerModal:not(.hidden) { top: 56px !important; height: calc(100dvh - 56px) !important; z-index: 45 !important; } #playerModal:fullscreen { top: 0 !important; height: 100dvh !important; z-index: 200 !important; } header { z-index: 60 !important; }";
+  document.head.appendChild(st87);
+  // 2. Replace Dua Button with Official YouTube Share SVG Button on Regular Watch Page & Shorts
+  function replaceDuaWithOfficialShareBtn() {
+    // Remove any old blue emoji share button
+    var oldBlue = document.getElementById("ytCleanShareBtn"); if (oldBlue) oldBlue.remove();
+    // Find the Dua button inside #ytCleanWatchDetails and turn it into the official YouTube Share button
+    var details = document.getElementById("ytCleanWatchDetails");
+    if (details) {
+      var btns = details.querySelectorAll("button");
+      btns.forEach(function(b) {
+        var txt = (b.textContent || "").trim();
+        if (txt.indexOf("Dua") !== -1 || b.getAttribute("onclick") === "triggerAdCoverNow()") {
+          b.onclick = function(ev) { window.shareQaafCurrentVideo(ev); };
+          b.setAttribute("onclick", "window.shareQaafCurrentVideo(event)");
+          b.className = "bg-white/10 hover:bg-white/20 text-white px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition cursor-pointer";
+          b.innerHTML = YT_SHARE_SVG + "<span>Share</span>";
+        }
+      });
+    }
+    // Also update Shorts right-side Share button to use Official White Curved Arrow SVG instead of blue emoji, and remove Dua from 3-dot menu
+    var shOv = document.getElementById("qaafYtShortsMasterOverlay");
+    if (shOv) {
+      var shBtns = shOv.querySelectorAll("button");
+      shBtns.forEach(function(sb) {
+        var oc = sb.getAttribute("onclick") || "";
+        if (oc.indexOf("shareCurrentShort") !== -1 && sb.innerHTML.indexOf("<svg") === -1) {
+          sb.innerHTML = YT_SHARE_SVG;
+        }
+        if (oc.indexOf("triggerAdCoverNow") !== -1) {
+          sb.remove();
+        }
+      });
+    }
+  }
+  setInterval(replaceDuaWithOfficialShareBtn, 350);
+  // 3. For Shorts, use controls=0 on YouTube iframe so YouTube does not draw duplicate top title/CC/gear/0:02 over our Shorts UI
+  var lastCleanedShortId = null;
+  function cleanShortsIframeChrome() {
+    var modal = document.getElementById("playerModal");
+    if (!modal || modal.classList.contains("hidden")) { lastCleanedShortId = null; return; }
+    var v = (videosData || []).find(function(x){ return x && x.id === currentPlayingVideoId; });
+    if (!v || !isVideoShort(v)) return;
+    var ifr = document.getElementById("ytIframe");
+    if (ifr && ifr.src && ifr.src.indexOf("controls=1") !== -1 && lastCleanedShortId !== v.id) {
+      lastCleanedShortId = v.id;
+      ifr.src = ifr.src.replace("controls=1", "controls=0");
+    }
+  }
+  setInterval(cleanShortsIframeChrome, 250);
+  // 4. Add YouTube-style Filter Pills (All | From Channel | Related) above Up Next on Regular Videos
+  window.filterUpNextByMode = function(mode) {
+    var cur = (videosData || []).find(function(x){ return x && x.id === currentPlayingVideoId; });
+    var upNextGrid = document.getElementById("watchUpNextGrid"); if (!upNextGrid || !cur) return;
+    var allSmart = (typeof window.getSmartRelatedVideos === "function") ? window.getSmartRelatedVideos(cur.id, false) : [];
+    var list = allSmart;
+    if (mode === "channel") {
+      list = (videosData || []).filter(function(v){ return v && v.id !== cur.id && v.channel === cur.channel && !isVideoShort(v); });
+    }
+    upNextGrid.innerHTML = "";
+    list.slice(0, 14).forEach(function(v) {
+      var thumb = v.customThumb || ("https://i.ytimg.com/vi/" + v.ytId + "/hqdefault.jpg");
+      var vStr = (typeof window.formatQaafRealViews === "function") ? window.formatQaafRealViews(v) : ((v.realViews || 0) + " views");
+      var a = document.createElement("a");
+      if (!isKidsLocked) a.href = "?watch=" + encodeURIComponent(v.id);
+      a.onclick = function(e){ return handleQaafVideoLinkClick(e, v.id); };
+      a.className = "bg-[#181818] hover:bg-[#222] rounded-xl overflow-hidden border border-white/10 flex sm:flex-col gap-2.5 p-2 sm:p-0 cursor-pointer transition group no-underline text-inherit";
+      a.innerHTML = "<div class='relative w-36 sm:w-full aspect-video bg-slate-900 rounded-lg sm:rounded-none overflow-hidden shrink-0 pointer-events-none'><img src='" + thumb + "' alt='' class='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition' loading='lazy' /><span class='absolute bottom-1 right-1 bg-black/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded'>" + (v.duration || "12:00") + "</span></div><div class='p-1 sm:p-2.5 min-w-0 flex-1'><h5 class='text-xs font-bold text-white line-clamp-2 leading-snug'>" + v.title + "</h5><p class='text-[10px] text-slate-400 mt-1 truncate'>✅ " + v.channel + " • " + vStr + "</p></div>";
+      upNextGrid.appendChild(a);
+    });
+    ["all", "channel", "related"].forEach(function(m){
+      var pill = document.getElementById("qaafUpNextPill_" + m);
+      if (pill) pill.className = (m === mode) ? "px-3 py-1 rounded-lg text-xs font-extrabold bg-white text-black cursor-pointer shrink-0" : "px-3 py-1 rounded-lg text-xs font-bold bg-white/10 hover:bg-white/20 text-white cursor-pointer shrink-0";
+    });
+  };
+  function injectUpNextFilterPills() {
+    var upNextGrid = document.getElementById("watchUpNextGrid"); if (!upNextGrid || !upNextGrid.parentNode) return;
+    var cur = (videosData || []).find(function(x){ return x && x.id === currentPlayingVideoId; }); if (!cur) return;
+    var bar = document.getElementById("qaafUpNextFilterPillsBar");
+    if (!bar) {
+      bar = document.createElement("div"); bar.id = "qaafUpNextFilterPillsBar";
+      bar.className = "flex items-center gap-2 overflow-x-auto pb-2 mb-2 no-scrollbar";
+      upNextGrid.parentNode.insertBefore(bar, upNextGrid);
+    }
+    if (bar.getAttribute("data-vid") !== cur.id) {
+      bar.setAttribute("data-vid", cur.id);
+      bar.innerHTML = "<button id='qaafUpNextPill_all' type=button onclick=filterUpNextByMode('all') class='px-3 py-1 rounded-lg text-xs font-extrabold bg-white text-black cursor-pointer shrink-0'>All</button>" +
+        "<button id='qaafUpNextPill_channel' type=button onclick=filterUpNextByMode('channel') class='px-3 py-1 rounded-lg text-xs font-bold bg-white/10 hover:bg-white/20 text-white cursor-pointer shrink-0'>From " + (cur.channel || "Channel") + "</button>" +
+        "<button id='qaafUpNextPill_related' type=button onclick=filterUpNextByMode('related') class='px-3 py-1 rounded-lg text-xs font-bold bg-white/10 hover:bg-white/20 text-white cursor-pointer shrink-0'>Related</button>";
+    }
+  }
+  setInterval(injectUpNextFilterPills, 500);
+})();
