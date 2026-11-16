@@ -4031,3 +4031,344 @@
     renderAdminChannelUpdatesBox();
   }, 800);
 })();
+
+
+// === QAAF V92 SHORTS TOUCH SWIPE & PORTRAIT BOTTOM SETTINGS SHEET ===
+(function initQaafV92ShortsSwipeAndBottomSettings() {
+  var currentPlaybackRate = 1.0;
+  var currentQualityLabel = "Auto (720p)";
+  var captionsEnabled = false;
+  var isScreenTouchLocked = false;
+
+  function sendYtCmd(func, args) {
+    var ifr = document.getElementById("ytIframe");
+    if (ifr && ifr.contentWindow) {
+      ifr.contentWindow.postMessage(JSON.stringify({ event: "command", func: func, args: args || [] }), "*");
+    }
+  }
+
+  // =========================================================================
+  // 1. YOUTUBE-STYLE BOTTOM SHEET FOR SETTINGS & PLAYBACK SPEED (PORTRAIT MODE)
+  // =========================================================================
+  function ensureYtBottomSettingsModal() {
+    if (document.getElementById("qaafYtBottomSheetModal")) return;
+    var modal = document.createElement("div");
+    modal.id = "qaafYtBottomSheetModal";
+    modal.dir = "ltr";
+    modal.className = "fixed inset-0 z-[260] bg-black/60 hidden flex-col justify-end";
+    modal.onclick = function(e) {
+      if (e.target === modal) window.closeQaafYtBottomSheet();
+    };
+    modal.innerHTML =
+      "<div id=\x22qaafYtBottomSheetContent\x22 class=\x22w-full max-w-lg mx-auto bg-[#212121] text-white rounded-t-3xl p-4 pb-7 shadow-2xl border-t border-white/10 transition-transform duration-200\x22></div>";
+    document.body.appendChild(modal);
+  }
+
+  window.closeQaafYtBottomSheet = function() {
+    var m = document.getElementById("qaafYtBottomSheetModal");
+    if (m) {
+      m.classList.add("hidden");
+      m.classList.remove("flex");
+    }
+  };
+
+  window.openQaafYtMainSettingsSheet = function(e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    ensureYtBottomSettingsModal();
+    var modal = document.getElementById("qaafYtBottomSheetModal");
+    var box = document.getElementById("qaafYtBottomSheetContent");
+    if (!modal || !box) return;
+    var speedStr = (currentPlaybackRate === 1) ? "1x" : (currentPlaybackRate + "x");
+    var ccStr = captionsEnabled ? "On" : "Off";
+
+    box.innerHTML =
+      "<div class=\x22w-10 h-1 bg-white/30 rounded-full mx-auto mb-4\x22></div>" +
+      "<div class=\x22space-y-1 text-sm font-medium\x22>" +
+        "<button type=\x22button\x22 onclick=\x22openQaafYtQualitySheet()\x22 class=\x22w-full flex items-center justify-between px-3 py-3.5 rounded-2xl hover:bg-white/10 transition cursor-pointer\x22>" +
+          "<div class=\x22flex items-center gap-4\x22>" +
+            "<svg viewBox=\x220 0 24 24\x22 class=\x22w-6 h-6 text-white\x22 fill=\x22none\x22 stroke=\x22currentColor\x22 stroke-width=\x221.8\x22><line x1=\x224\x22 y1=\x227\x22 x2=\x2220\x22 y2=\x227\x22/><circle cx=\x229\x22 cy=\x227\x22 r=\x222.5\x22 fill=\x22#212121\x22/><line x1=\x224\x22 y1=\x2217\x22 x2=\x2220\x22 y2=\x2217\x22/><circle cx=\x2215\x22 cy=\x2217\x22 r=\x222.5\x22 fill=\x22#212121\x22/></svg>" +
+            "<span class=\x22text-[15px] font-semibold\x22>Quality</span>" +
+          "</div>" +
+          "<span class=\x22text-neutral-400 text-sm flex items-center gap-1\x22><span>" + currentQualityLabel + "</span><span>›</span></span>" +
+        "</button>" +
+        "<button type=\x22button\x22 onclick=\x22openQaafYtSpeedSheet()\x22 class=\x22w-full flex items-center justify-between px-3 py-3.5 rounded-2xl hover:bg-white/10 transition cursor-pointer\x22>" +
+          "<div class=\x22flex items-center gap-4\x22>" +
+            "<svg viewBox=\x220 0 24 24\x22 class=\x22w-6 h-6 text-white\x22 fill=\x22none\x22 stroke=\x22currentColor\x22 stroke-width=\x221.8\x22><circle cx=\x2212\x22 cy=\x2212\x22 r=\x229\x22 stroke-dasharray=\x224 2\x22/><polygon points=\x2210,8.5 16,12 10,15.5\x22 fill=\x22currentColor\x22/></svg>" +
+            "<span class=\x22text-[15px] font-semibold\x22>Playback speed</span>" +
+          "</div>" +
+          "<span class=\x22text-neutral-400 text-sm flex items-center gap-1\x22><span>" + speedStr + "</span><span>›</span></span>" +
+        "</button>" +
+        "<button type=\x22button\x22 onclick=\x22toggleQaafYtCaptions()\x22 class=\x22w-full flex items-center justify-between px-3 py-3.5 rounded-2xl hover:bg-white/10 transition cursor-pointer\x22>" +
+          "<div class=\x22flex items-center gap-4\x22>" +
+            "<svg viewBox=\x220 0 24 24\x22 class=\x22w-6 h-6 text-white\x22 fill=\x22none\x22 stroke=\x22currentColor\x22 stroke-width=\x221.8\x22><rect x=\x223\x22 y=\x225\x22 width=\x2218\x22 height=\x2214\x22 rx=\x222.5\x22/><path d=\x22M10 10.5a2 2 0 1 0 0 3M16 10.5a2 2 0 1 0 0 3\x22 stroke-width=\x222\x22 stroke-linecap=\x22round\x22/></svg>" +
+            "<span class=\x22text-[15px] font-semibold\x22>Captions</span>" +
+          "</div>" +
+          "<span class=\x22text-neutral-400 text-sm flex items-center gap-1\x22><span>" + ccStr + "</span><span>›</span></span>" +
+        "</button>" +
+        "<button type=\x22button\x22 onclick=\x22activateQaafScreenTouchLock()\x22 class=\x22w-full flex items-center justify-between px-3 py-3.5 rounded-2xl hover:bg-white/10 transition cursor-pointer\x22>" +
+          "<div class=\x22flex items-center gap-4\x22>" +
+            "<svg viewBox=\x220 0 24 24\x22 class=\x22w-6 h-6 text-white\x22 fill=\x22none\x22 stroke=\x22currentColor\x22 stroke-width=\x221.8\x22><rect x=\x225\x22 y=\x2211\x22 width=\x2214\x22 height=\x2210\x22 rx=\x222\x22/><path d=\x22M8 11V7a4 4 0 0 1 8 0v4\x22/></svg>" +
+            "<span class=\x22text-[15px] font-semibold\x22>Lock screen</span>" +
+          "</div>" +
+        "</button>" +
+      "</div>";
+
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+  };
+
+  window.openQaafYtSpeedSheet = function() {
+    var box = document.getElementById("qaafYtBottomSheetContent");
+    if (!box) return;
+    var r = currentPlaybackRate;
+    var speeds = [0.5, 1.0, 1.25, 1.5, 1.75, 2.0];
+    var pillsHtml = speeds.map(function(sp) {
+      var isAct = Math.abs(r - sp) < 0.03;
+      var lbl = (sp === 1.0) ? "1x" : (sp + "x");
+      return "<div class=\x22flex flex-col items-center gap-1\x22>" +
+        "<button type=\x22button\x22 onclick=\x22applyQaafPlaybackSpeed(" + sp + ")\x22 class=\x22px-3.5 py-2 rounded-full text-xs font-bold transition cursor-pointer " + (isAct ? "bg-white text-black shadow" : "bg-[#333333] hover:bg-[#444444] text-white") + "\x22>" + lbl + "</button>" +
+        (sp === 1.0 ? "<span class=\x22text-[10px] text-neutral-400\x22>Normal</span>" : "") +
+      "</div>";
+    }).join("");
+
+    box.innerHTML =
+      "<div class=\x22w-10 h-1 bg-white/30 rounded-full mx-auto mb-3\x22></div>" +
+      "<div class=\x22text-center text-base font-extrabold text-white mb-4\x22 id=\x22qaafSpeedSheetValueLabel\x22>" + r.toFixed(2).replace(/\\.00$/, "x").replace(/(\\.\\d)0$/, "$1x") + (String(r).indexOf(".") !== -1 && !/0$/.test(r.toFixed(2)) ? "x" : "") + "</div>" +
+      "<div class=\x22flex items-center gap-3 px-2 mb-6\x22>" +
+        "<button type=\x22button\x22 onclick=\x22stepQaafPlaybackSpeed(-0.05)\x22 class=\x22w-10 h-10 rounded-full bg-[#333333] hover:bg-[#444444] text-white text-xl font-bold flex items-center justify-center shrink-0 cursor-pointer\x22>−</button>" +
+        "<input id=\x22qaafSpeedRangeInput\x22 type=\x22range\x22 min=\x220.25\x22 max=\x222.0\x22 step=\x220.05\x22 value=\x22" + r + "\x22 oninput=\x22applyQaafPlaybackSpeed(this.value, true)\x22 class=\x22w-full accent-white h-1 bg-neutral-600 rounded-lg cursor-pointer\x22 />" +
+        "<button type=\x22button\x22 onclick=\x22stepQaafPlaybackSpeed(0.05)\x22 class=\x22w-10 h-10 rounded-full bg-[#333333] hover:bg-[#444444] text-white text-xl font-bold flex items-center justify-center shrink-0 cursor-pointer\x22>+</button>" +
+      "</div>" +
+      "<div class=\x22grid grid-cols-6 gap-1.5 items-start px-1\x22>" + pillsHtml + "</div>";
+  };
+
+  window.applyQaafPlaybackSpeed = function(val, keepSheetOpen) {
+    var num = Math.max(0.25, Math.min(2.0, parseFloat(val) || 1.0));
+    currentPlaybackRate = Math.round(num * 100) / 100;
+    sendYtCmd("setPlaybackRate", [currentPlaybackRate]);
+    var lblEl = document.getElementById("qaafSpeedSheetValueLabel");
+    if (lblEl) lblEl.innerText = currentPlaybackRate + "x";
+    var rngEl = document.getElementById("qaafSpeedRangeInput");
+    if (rngEl && parseFloat(rngEl.value) !== currentPlaybackRate) rngEl.value = currentPlaybackRate;
+    if (!keepSheetOpen) {
+      window.openQaafYtSpeedSheet();
+    }
+  };
+
+  window.stepQaafPlaybackSpeed = function(delta) {
+    window.applyQaafPlaybackSpeed(currentPlaybackRate + delta, false);
+  };
+
+  window.openQaafYtQualitySheet = function() {
+    var box = document.getElementById("qaafYtBottomSheetContent");
+    if (!box) return;
+    var qualities = [
+      { label: "1080p HD", code: "hd1080" },
+      { label: "720p HD", code: "hd720" },
+      { label: "480p", code: "large" },
+      { label: "360p", code: "medium" },
+      { label: "Auto (Recommended)", code: "default" }
+    ];
+    box.innerHTML =
+      "<div class=\x22w-10 h-1 bg-white/30 rounded-full mx-auto mb-3\x22></div>" +
+      "<h4 class=\x22text-sm font-bold text-neutral-300 px-3 mb-2\x22>Quality for current video</h4>" +
+      "<div class=\x22space-y-1\x22>" +
+        qualities.map(function(q) {
+          var act = (currentQualityLabel === q.label);
+          return "<button type=\x22button\x22 onclick=\x22selectQaafYtQuality(\x27" + q.code + "\x27, \x27" + q.label + "\x27)\x22 class=\x22w-full text-left px-4 py-3 rounded-xl hover:bg-white/10 flex items-center justify-between text-sm font-semibold cursor-pointer\x22><span>" + q.label + "</span>" + (act ? "<span class=\x22text-emerald-400 font-extrabold\x22>✓</span>" : "") + "</button>";
+        }).join("") +
+      "</div>";
+  };
+
+  window.selectQaafYtQuality = function(code, label) {
+    currentQualityLabel = label;
+    sendYtCmd("setPlaybackQualityRange", [code, code]);
+    sendYtCmd("setPlaybackQuality", [code]);
+    window.closeQaafYtBottomSheet();
+    if (typeof showSyncToast === "function") showSyncToast("🎬 Quality: " + label);
+  };
+
+  window.toggleQaafYtCaptions = function() {
+    captionsEnabled = !captionsEnabled;
+    if (captionsEnabled) {
+      sendYtCmd("loadModule", ["captions"]);
+      sendYtCmd("setOption", ["captions", "track", { languageCode: preferredContentLang || "en" }]);
+    } else {
+      sendYtCmd("unloadModule", ["captions"]);
+    }
+    window.closeQaafYtBottomSheet();
+    if (typeof showSyncToast === "function") showSyncToast(captionsEnabled ? "CLOSED CAPTIONS [CC] Subtitles Turned ON" : "CLOSED CAPTIONS [CC] Subtitles Turned OFF");
+  };
+
+  window.activateQaafScreenTouchLock = function() {
+    window.closeQaafYtBottomSheet();
+    var aspect = document.getElementById("playerAspectBox");
+    if (!aspect) return;
+    var lockOv = document.getElementById("qaafScreenTouchLockOverlay");
+    if (!lockOv) {
+      lockOv = document.createElement("div");
+      lockOv.id = "qaafScreenTouchLockOverlay";
+      lockOv.style.cssText = "position:absolute; inset:0; z-index:55; background:rgba(0,0,0,0.18); display:flex; align-items:flex-end; justify-content:center; padding-bottom:18px;";
+      lockOv.innerHTML = "<button type=\x22button\x22 onclick=\x22document.getElementById(\x27qaafScreenTouchLockOverlay\x27).remove()\x22 class=\x22bg-black/85 border border-white/30 text-white px-4 py-2 rounded-full text-xs font-extrabold shadow-xl flex items-center gap-2 cursor-pointer\x22><span>🔒</span><span>Screen locked • Tap to unlock</span></button>";
+      aspect.appendChild(lockOv);
+    }
+  };
+
+  function injectPortraitSettingsTriggerOnVideo() {
+    var aspect = document.getElementById("playerAspectBox");
+    if (!aspect) return;
+    var modal = document.getElementById("playerModal");
+    var isShorts = modal && modal.classList.contains("qaaf-shorts-mode");
+    var existingGear = document.getElementById("qaafPortraitTopRightGearBtn");
+    if (isShorts) {
+      if (existingGear) existingGear.style.display = "none";
+      return;
+    }
+    if (!existingGear) {
+      existingGear = document.createElement("button");
+      existingGear.id = "qaafPortraitTopRightGearBtn";
+      existingGear.type = "button";
+      existingGear.title = "Video Settings & Speed";
+      existingGear.style.cssText = "position:absolute; top:6px; right:6px; width:42px; height:42px; z-index:42; background:transparent; border:none; color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; opacity:0.88;";
+      existingGear.innerHTML = "<div class=\x22w-8 h-8 rounded-full bg-black/55 hover:bg-black/80 flex items-center justify-center shadow\x22><svg viewBox=\x220 0 24 24\x22 class=\x22w-5 h-5 text-white\x22 fill=\x22none\x22 stroke=\x22currentColor\x22 stroke-width=\x222\x22><circle cx=\x2212\x22 cy=\x2212\x22 r=\x223\x22/><path d=\x22M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z\x22/></svg></div>";
+      existingGear.onclick = function(ev) {
+        window.openQaafYtMainSettingsSheet(ev);
+      };
+      aspect.appendChild(existingGear);
+    }
+    existingGear.style.display = document.fullscreenElement ? "none" : "flex";
+  }
+
+  // =========================================================================
+  // 2. SHORTS PLAYER: REMOVE ARROWS (▲/▼) & ENABLE TOUCH SWIPE + MOUSE WHEEL
+  // =========================================================================
+  var YT_SHARE_SVG = "<svg viewBox=\x270 0 24 24\x27 width=\x2718\x27 height=\x2718\x27 fill=\x27currentColor\x27 style=\x27display:inline-block;vertical-align:middle;\x27><path d=\x27M15 5.63 20.66 12 15 18.37V14h-1c-3.96 0-7.14 1-9.75 3.09 1.84-4.07 5.11-6.4 9.89-7.1l.86-.13V5.63M14 3v6C6.22 10.13 3.11 15.33 2 21c2.78-3.97 6.44-6 12-6v6l8-9-8-9z\x27/></svg>";
+
+  function setupShortsSwipeAndCleanButtons() {
+    var modal = document.getElementById("playerModal");
+    var box = document.getElementById("playerModalBox");
+    var aspect = document.getElementById("playerAspectBox");
+    if (!modal || modal.classList.contains("hidden") || !aspect) return;
+    var video = (videosData || []).find(function(x) { return x && x.id === currentPlayingVideoId; });
+    if (!video || !isVideoShort(video)) {
+      var swZone = document.getElementById("qaafShortsSwipeGestureZone");
+      if (swZone) swZone.style.display = "none";
+      injectPortraitSettingsTriggerOnVideo();
+      return;
+    }
+
+    injectPortraitSettingsTriggerOnVideo();
+
+    // A. Right-side action bar WITHOUT ▲ and ▼ arrows!
+    var ov = document.getElementById("qaafYtShortsMasterOverlay");
+    if (ov) {
+      var isFav = (favoriteVideoIds || []).indexOf(video.id) !== -1;
+      var vCount = (typeof window.getQaafRealViewCount === "function") ? window.getQaafRealViewCount(video) : (video.realViews || 1);
+      ov.style.cssText = "position:absolute; right:10px; bottom:110px; top:auto; left:auto; width:48px; height:auto; z-index:42; display:flex; flex-direction:column; align-items:center; gap:16px; pointer-events:auto;";
+      ov.innerHTML =
+        "<div style=\x27display:flex;flex-direction:column;align-items:center;gap:3px;\x27>" +
+          "<button type=\x27button\x27 onclick=\x27toggleFavoriteVideo(currentPlayingVideoId,event);setTimeout(window.refreshQaafShortsOverlayNow,40)\x27 style=\x27width:44px;height:44px;border-radius:999px;background:rgba(0,0,0,0.55);color:#fff;font-size:18px;border:1px solid rgba(255,255,255,0.2);cursor:pointer;\x27>" + (isFav ? "❤️" : "🤍") + "</button>" +
+          "<span style=\x27font-size:11px;font-weight:800;color:#fff;text-shadow:0 1px 3px #000;\x27>" + vCount + "</span>" +
+        "</div>" +
+        "<div style=\x27display:flex;flex-direction:column;align-items:center;gap:3px;\x27>" +
+          "<button type=\x27button\x27 onclick=\x27openShortCommentsPopup(event)\x27 style=\x27width:44px;height:44px;border-radius:999px;background:rgba(0,0,0,0.55);color:#fff;font-size:17px;border:1px solid rgba(255,255,255,0.2);cursor:pointer;\x27>💬</button>" +
+          "<span style=\x27font-size:10px;font-weight:800;color:#fff;text-shadow:0 1px 3px #000;\x27>Comment</span>" +
+        "</div>" +
+        "<div style=\x27display:flex;flex-direction:column;align-items:center;gap:3px;\x27>" +
+          "<button type=\x27button\x27 onclick=\x27shareQaafCurrentVideo(event)\x27 style=\x27width:44px;height:44px;border-radius:999px;background:rgba(0,0,0,0.55);color:#fff;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.2);cursor:pointer;\x27>" + YT_SHARE_SVG + "</button>" +
+          "<span style=\x27font-size:10px;font-weight:800;color:#fff;text-shadow:0 1px 3px #000;\x27>Share</span>" +
+        "</div>";
+    }
+
+    // B. Invisible Touch-Swipe & Mouse-Wheel Zone in the middle (leaves Top 64px & Bottom 58px uncovered for YouTube Speaker/CC/Gear/Fullscreen!)
+    var gestureZone = document.getElementById("qaafShortsSwipeGestureZone");
+    if (!gestureZone) {
+      gestureZone = document.createElement("div");
+      gestureZone.id = "qaafShortsSwipeGestureZone";
+      aspect.appendChild(gestureZone);
+
+      var tStartY = 0, tCurY = 0, tStartX = 0, isSwipingShort = false;
+      gestureZone.addEventListener("touchstart", function(e) {
+        if (!e.touches || e.touches.length !== 1) return;
+        tStartY = e.touches[0].clientY;
+        tCurY = tStartY;
+        tStartX = e.touches[0].clientX;
+        isSwipingShort = true;
+      }, { passive: true });
+
+      gestureZone.addEventListener("touchmove", function(e) {
+        if (!isSwipingShort || !e.touches || !e.touches.length) return;
+        tCurY = e.touches[0].clientY;
+        var dy = tCurY - tStartY;
+        var b = document.getElementById("playerModalBox");
+        if (b && Math.abs(dy) > 8) {
+          b.style.transition = "none";
+          b.style.transform = "translateY(" + Math.max(-120, Math.min(120, dy * 0.45)) + "px)";
+        }
+      }, { passive: true });
+
+      gestureZone.addEventListener("touchend", function(e) {
+        if (!isSwipingShort) return;
+        isSwipingShort = false;
+        var dy = tCurY - tStartY;
+        var b = document.getElementById("playerModalBox");
+        if (b) {
+          b.style.transition = "transform 0.2s ease-out";
+          b.style.transform = "none";
+        }
+        if (dy < -42) {
+          window.playAdjacentShort(1);
+        } else if (dy > 42) {
+          window.playAdjacentShort(-1);
+        } else if (Math.abs(dy) < 10) {
+          if (typeof window.toggleQaafShortPlayPause === "function") window.toggleQaafShortPlayPause(e);
+        }
+        tStartY = 0; tCurY = 0;
+      }, { passive: true });
+
+      var lastWheelTs = 0;
+      gestureZone.addEventListener("wheel", function(e) {
+        var now = Date.now();
+        if (now - lastWheelTs < 550) return;
+        if (Math.abs(e.deltaY) > 18) {
+          e.preventDefault();
+          lastWheelTs = now;
+          window.playAdjacentShort(e.deltaY > 0 ? 1 : -1);
+        }
+      }, { passive: false });
+    }
+    gestureZone.style.cssText = "position:absolute; top:64px; bottom:58px; left:0; right:62px; z-index:39; display:block; background:transparent; touch-action:none; cursor:pointer;";
+  }
+
+  window.refreshQaafShortsOverlayNow = setupShortsSwipeAndCleanButtons;
+
+  // Also allow mouse wheel anywhere on #playerModal and Up/Down arrow keys when in Shorts mode
+  var lastModalWheelTs = 0;
+  document.addEventListener("wheel", function(e) {
+    var modal = document.getElementById("playerModal");
+    if (!modal || modal.classList.contains("hidden") || !modal.classList.contains("qaaf-shorts-mode")) return;
+    var now = Date.now();
+    if (now - lastModalWheelTs < 550) return;
+    if (Math.abs(e.deltaY) > 20) {
+      lastModalWheelTs = now;
+      window.playAdjacentShort(e.deltaY > 0 ? 1 : -1);
+    }
+  }, { passive: true });
+
+  document.addEventListener("keydown", function(e) {
+    var modal = document.getElementById("playerModal");
+    if (!modal || modal.classList.contains("hidden") || !modal.classList.contains("qaaf-shorts-mode")) return;
+    if (e.key === "ArrowDown") { e.preventDefault(); window.playAdjacentShort(1); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); window.playAdjacentShort(-1); }
+  });
+
+  var prevOpenV92 = window.openVideoPlayer;
+  window.openVideoPlayer = function(videoId) {
+    currentPlaybackRate = 1.0;
+    if (prevOpenV92) prevOpenV92.apply(this, arguments);
+    setTimeout(setupShortsSwipeAndCleanButtons, 80);
+    setTimeout(setupShortsSwipeAndCleanButtons, 260);
+  };
+
+  setInterval(setupShortsSwipeAndCleanButtons, 500);
+})();
