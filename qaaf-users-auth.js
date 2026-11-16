@@ -3651,3 +3651,383 @@
     setTimeout(function(){ var v = (videosData||[]).find(function(x){return x&&x.id===videoId;}); if (v && !isVideoShort(v)) { window.buildCleanWatchDetailsLayout(v); window.renderWatchPageExtras(videoId); } }, 60);
   };
 })();
+
+
+// === QAAF V91 REAL PLAYLIST FIX, DAILY CHANNEL SCANNER & LIGHT/DARK THEME ===
+(function initQaafV91PlaylistScannerAndTheme() {
+  var FB_BASE = (localStorage.getItem("qaaf_firebase_db_url") || "https://qaaftube-6f251-default-rtdb.firebaseio.com").replace(/\/+$/, "");
+
+  function purgeFakeSearchPlaylistsNow() {
+    var map = window.qaafRealChannelPlaylistsMap || {};
+    var changed = false;
+    if (map["Tarbiah Islamic Centre"]) { delete map["Tarbiah Islamic Centre"]; changed = true; }
+    Object.keys(map).forEach(function(ch) {
+      if (!Array.isArray(map[ch])) return;
+      var before = map[ch].length;
+      map[ch] = map[ch].filter(function(p) {
+        if (!p || !p.listId || !p.title) return false;
+        var t = String(p.title).trim();
+        if (/[·•]\s*\d{1,2}:\d{2}(\s|$)/.test(t)) return false;
+        if (/^Playlist\s*\(PL/i.test(t) || /^Playlist:\s/i.test(t)) return false;
+        if (t.indexOf("Dr. Shakeel Ahmed wani") !== -1 || t.indexOf("Jabir") !== -1 || t.indexOf("Shaykh Adnan") !== -1) return false;
+        return true;
+      });
+      if (map[ch].length !== before) changed = true;
+      if (map[ch].length === 0) delete map[ch];
+    });
+    if (changed) {
+      window.qaafRealChannelPlaylistsMap = map;
+      try { localStorage.setItem("qaaf_real_channel_playlists_v1", JSON.stringify(map)); } catch(e) {}
+      if (typeof window.savePlaylistsToLocalAndCloudDb === "function") window.savePlaylistsToLocalAndCloudDb();
+    }
+  }
+  purgeFakeSearchPlaylistsNow();
+
+  window.discoverYouTubePlaylistsForChannel = async function(channelName, channelUrlHint) {
+    var baseChannel = (channelUrlHint || "").trim();
+    var chUrlCache = JSON.parse(localStorage.getItem("qaaf_channel_urls_map_v1") || "{}");
+    if (!baseChannel && channelName && chUrlCache[channelName]) baseChannel = chUrlCache[channelName];
+    if (!baseChannel && channelName) {
+      var chVids = (videosData || []).filter(function(v) { return v && v.channel === channelName && v.ytId; });
+      if (chVids[0]) {
+        try {
+          var oeRes = await fetch("https://noembed.com/embed?url=https://www.youtube.com/watch?v=" + chVids[0].ytId);
+          var oeData = await oeRes.json();
+          if (oeData && oeData.author_url) {
+            baseChannel = oeData.author_url;
+            chUrlCache[channelName] = baseChannel;
+            localStorage.setItem("qaaf_channel_urls_map_v1", JSON.stringify(chUrlCache));
+          }
+        } catch (e) {}
+      }
+    }
+    if (!baseChannel) return [];
+    baseChannel = baseChannel.replace(/\/(videos|shorts|featured|streams|playlists)?\/?$/, "");
+    var plPageUrl = baseChannel + "/playlists";
+    var plMetaMap = new Map();
+
+    function cleanTitle(rawT) {
+      if (!rawT) return "";
+      var t = String(rawT).replace(/\\u0026/g, "&").replace(/&amp;/g, "&").replace(/&quot;/g, "").replace(/^#+\s*/, "").replace(/\s*-\s*YouTube$/i, "").trim();
+      if (/^(view full playlist|play all|playlist|\d+\s*videos?|!\[image.*)$/i.test(t)) return "";
+      if (/[·•]\s*\d{1,2}:\d{2}(\s|$)/.test(t)) return "";
+      return t;
+    }
+
+    function addRealPl(listId, title, sampleVidId) {
+      if (!listId || !/^PL[a-zA-Z0-9_-]{10,}$/.test(listId)) return;
+      var cTitle = cleanTitle(title);
+      if (!cTitle || cTitle.length < 3) return;
+      var ex = plMetaMap.get(listId) || { listId: listId, title: cTitle, thumb: "", countText: "", sampleVidId: "" };
+      if (cTitle.length > ex.title.length) ex.title = cTitle;
+      if (sampleVidId && /^[a-zA-Z0-9_-]{11}$/.test(sampleVidId)) {
+        ex.sampleVidId = sampleVidId;
+        ex.thumb = "https://i.ytimg.com/vi/" + sampleVidId + "/hqdefault.jpg";
+      }
+      plMetaMap.set(listId, ex);
+    }
+
+    function parseOfficialPlaylistsTab(rawText) {
+      if (!rawText) return false;
+      if (/This channel has no playlists|has no playlists/i.test(rawText)) return true;
+      var lockupRgx = /"contentId"\s*:\s*"(PL[a-zA-Z0-9_-]{10,})"(?:(?!lockupViewModel).){1,2200}?"title"\s*:\s*\{\s*"content"\s*:\s*"([^"]{3,150})"/g;
+      for (var m2 of rawText.matchAll(lockupRgx)) addRealPl(m2[1], m2[2], "");
+      var classicRgx = /"playlistId"\s*:\s*"(PL[a-zA-Z0-9_-]{10,})"(?:(?!playlistRenderer).){1,1800}?"title"\s*:\s*\{(?:\s*"simpleText"\s*:\s*"([^"]{3,150})"|\s*"runs"\s*:\s*\[\s*\{\s*"text"\s*:\s*"([^"]{3,150})")/g;
+      for (var m3 of rawText.matchAll(classicRgx)) addRealPl(m3[1], m3[2] || m3[3] || "", "");
+      var mdRgx = /###\s*\[([^\[\]\n]{3,140})\]\(https?:\/\/(?:www\.)?youtube\.com\/(?:watch\?v=([a-zA-Z0-9_-]{11})(?:&|&amp;)list=|playlist\?list=)(PL[a-zA-Z0-9_-]{10,})[^\)]*\)/g;
+      for (var m1 of rawText.matchAll(mdRgx)) {
+        if (!/!\[image/i.test(m1[1])) addRealPl(m1[3], m1[1], m1[2] || "");
+      }
+      return false;
+    }
+
+    var hasNoPls = false;
+    try {
+      var r1 = await fetch("https://r.jina.ai/" + plPageUrl);
+      if (r1.ok) hasNoPls = parseOfficialPlaylistsTab(await r1.text());
+    } catch (e) {}
+    if (!hasNoPls && plMetaMap.size === 0) {
+      try {
+        var r2 = await fetch("https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(plPageUrl + "?ucbcb=1&hl=en"));
+        if (r2.ok) hasNoPls = parseOfficialPlaylistsTab(await r2.text());
+      } catch (e) {}
+    }
+    if (hasNoPls || plMetaMap.size === 0) {
+      if (channelName && window.qaafRealChannelPlaylistsMap) {
+        delete window.qaafRealChannelPlaylistsMap[channelName];
+        try { localStorage.setItem("qaaf_real_channel_playlists_v1", JSON.stringify(window.qaafRealChannelPlaylistsMap)); } catch(e) {}
+      }
+      return [];
+    }
+    return Array.from(plMetaMap.values()).slice(0, 25);
+  };
+
+  window.qaafChannelUpdatesQueue = JSON.parse(localStorage.getItem("qaaf_channel_updates_queue_v1") || "[]");
+  window.qaafRejectedUpdateYtIds = JSON.parse(localStorage.getItem("qaaf_rejected_update_ytids_v1") || "[]");
+  var isScanningChannelsNow = false;
+
+  function saveChannelUpdatesQueue() {
+    try {
+      localStorage.setItem("qaaf_channel_updates_queue_v1", JSON.stringify(window.qaafChannelUpdatesQueue));
+      localStorage.setItem("qaaf_rejected_update_ytids_v1", JSON.stringify(window.qaafRejectedUpdateYtIds));
+    } catch (e) {}
+    fetch(FB_BASE + "/qaaf_channel_updates_queue.json", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ queue: window.qaafChannelUpdatesQueue, rejectedIds: window.qaafRejectedUpdateYtIds, updatedAt: Date.now() })
+    }).catch(function() {});
+    updateAdminChannelUpdatesBadge();
+    renderAdminChannelUpdatesBox();
+  }
+
+  function updateAdminChannelUpdatesBadge() {
+    var qCount = (window.qaafChannelUpdatesQueue || []).length;
+    var fCount = (typeof flaggedVideosQueue !== "undefined" && Array.isArray(flaggedVideosQueue)) ? flaggedVideosQueue.length : 0;
+    var rCount = (window.parentRequestsQueue && Array.isArray(window.parentRequestsQueue)) ? window.parentRequestsQueue.length : 0;
+    var hdrBadge = document.getElementById("adminFlagCountBadge");
+    if (hdrBadge) hdrBadge.innerText = fCount + rCount + qCount;
+  }
+
+  window.scanApprovedChannelsForNewVideos = async function(isManualTrigger) {
+    if (isScanningChannelsNow) return;
+    isScanningChannelsNow = true;
+    if (isManualTrigger && typeof showSyncToast === "function") showSyncToast("⏳ منظور شدہ چینلز میں نئی ویڈیوز چیک کی جا رہی ہیں...");
+    var approvedChannelsSet = new Set(window.verifiedChannelsList || []);
+    (videosData || []).forEach(function(v) { if (v && v.channel && v.channelVerified) approvedChannelsSet.add(v.channel); });
+    var approvedChannels = Array.from(approvedChannelsSet);
+    var chUrlCache = JSON.parse(localStorage.getItem("qaaf_channel_urls_map_v1") || "{}");
+    var existingYtIds = new Set((videosData || []).map(function(v) { return v && v.ytId; }).filter(Boolean));
+    var blockedSet = new Set((blockedVideoIds || []).concat(window.qaafRejectedUpdateYtIds || []));
+    var queuedIds = new Set((window.qaafChannelUpdatesQueue || []).map(function(u) { return u && u.ytId; }).filter(Boolean));
+    var newlyFoundCount = 0;
+
+    for (var i = 0; i < approvedChannels.length; i++) {
+      var chName = approvedChannels[i];
+      var chVids = (videosData || []).filter(function(v) { return v && v.channel === chName && v.ytId; });
+      if (chVids.length === 0) continue;
+      var chKnownYtIds = new Set(chVids.map(function(v) { return v.ytId; }));
+      var sampleCat = chVids[0].category || "bayan";
+      var sampleLang = chVids[0].lang || "ur";
+      var sampleAud = chVids[0].audienceMode || (sampleCat === "bayan" ? "family_only" : "both_family_kids");
+      var baseUrl = chUrlCache[chName] || "";
+      if (!baseUrl) {
+        try {
+          var oe = await fetch("https://noembed.com/embed?url=https://www.youtube.com/watch?v=" + chVids[0].ytId);
+          var oeD = await oe.json();
+          if (oeD && oeD.author_url) {
+            baseUrl = oeD.author_url.replace(/\/+$/, "");
+            chUrlCache[chName] = baseUrl;
+            localStorage.setItem("qaaf_channel_urls_map_v1", JSON.stringify(chUrlCache));
+          }
+        } catch (e) {}
+      }
+      if (!baseUrl) continue;
+      var pageText = "";
+      try {
+        var r = await fetch("https://r.jina.ai/" + baseUrl + "/videos");
+        if (r.ok) pageText = await r.text();
+      } catch (e) {}
+      if (!pageText) continue;
+      var topIds = [];
+      for (var m of pageText.matchAll(/(?:watch\?v=|\/shorts\/|"videoId"\s*:\s*")([a-zA-Z0-9_-]{11})/g)) {
+        if (topIds.indexOf(m[1]) === -1) topIds.push(m[1]);
+        if (topIds.length >= 10) break;
+      }
+      var candidateNewIds = [];
+      for (var k = 0; k < topIds.length; k++) {
+        var vidId = topIds[k];
+        if (chKnownYtIds.has(vidId)) break;
+        if (!existingYtIds.has(vidId) && !blockedSet.has(vidId) && !queuedIds.has(vidId)) candidateNewIds.push(vidId);
+        if (candidateNewIds.length >= 5) break;
+      }
+      for (var n = 0; n < candidateNewIds.length; n++) {
+        var newYtId = candidateNewIds[n];
+        try {
+          var nr = await fetch("https://noembed.com/embed?url=https://www.youtube.com/watch?v=" + newYtId);
+          var nd = await nr.json();
+          if (nd && nd.title) {
+            window.qaafChannelUpdatesQueue.unshift({ id: "upd_" + newYtId, ytId: newYtId, title: nd.title, channel: chName, category: sampleCat, lang: sampleLang, audienceMode: sampleAud, detectedAt: new Date().toLocaleDateString() });
+            queuedIds.add(newYtId);
+            newlyFoundCount++;
+          }
+        } catch (e) {}
+      }
+    }
+    localStorage.setItem("qaaf_last_channel_scan_ts", String(Date.now()));
+    isScanningChannelsNow = false;
+    saveChannelUpdatesQueue();
+    if (newlyFoundCount > 0 && typeof showSyncToast === "function") {
+      showSyncToast("🔔 منظور شدہ چینلز میں " + newlyFoundCount + " نئی ویڈیوز آئی ہیں! ایڈمن پینل میں چیک کریں۔");
+    } else if (isManualTrigger && typeof showSyncToast === "function") {
+      showSyncToast("✅ تمام منظور شدہ چینلز چیک کر لیے گئے۔ کوئی نئی ویڈیو باقی نہیں۔");
+    }
+  };
+
+  window.adminApproveChannelUpdateVideo = function(ytId) {
+    var item = (window.qaafChannelUpdatesQueue || []).find(function(x) { return x && x.ytId === ytId; });
+    if (!item) return;
+    if (!videosData.some(function(v) { return v && v.ytId === item.ytId; })) {
+      videosData.unshift({ id: "v_" + item.ytId, ytId: item.ytId, title: item.title, channel: item.channel, lang: item.lang || "ur", region: (item.lang || "ur").toUpperCase(), category: item.category || "bayan", audienceMode: item.audienceMode || "both_family_kids", kidsSafe: (item.category !== "bayan" && item.audienceMode !== "family_only"), channelVerified: true, isShort: /#short/i.test(item.title), isCustomAdded: true, duration: "12:00", views: 0, createdAt: Math.floor(Date.now() / 1000) });
+      localStorage.setItem("qaaf_videos_data", JSON.stringify(videosData));
+    }
+    window.qaafChannelUpdatesQueue = (window.qaafChannelUpdatesQueue || []).filter(function(x) { return x && x.ytId !== ytId; });
+    saveChannelUpdatesQueue();
+    if (typeof window.renderVideosNow === "function") window.renderVideosNow();
+    if (window.qaafCloudSync) window.qaafCloudSync.pushState("Approved New Channel Video: " + item.title);
+    if (typeof showSyncToast === "function") showSyncToast("✅ نئی ویڈیو منظور ہو کر شامل ہو گئی!");
+  };
+
+  window.adminRejectChannelUpdateVideo = function(ytId) {
+    if (window.qaafRejectedUpdateYtIds.indexOf(ytId) === -1) window.qaafRejectedUpdateYtIds.push(ytId);
+    if (Array.isArray(blockedVideoIds) && blockedVideoIds.indexOf(ytId) === -1) { blockedVideoIds.push(ytId); localStorage.setItem("qaaf_blocked_videos", JSON.stringify(blockedVideoIds)); }
+    window.qaafChannelUpdatesQueue = (window.qaafChannelUpdatesQueue || []).filter(function(x) { return x && x.ytId !== ytId; });
+    saveChannelUpdatesQueue();
+    if (window.qaafCloudSync) window.qaafCloudSync.pushState("Rejected Channel Update Video: " + ytId);
+    if (typeof showSyncToast === "function") showSyncToast("🗑️ ویڈیو رد کر دی گئی۔");
+  };
+
+  window.adminApproveAllChannelUpdates = function() {
+    var list = (window.qaafChannelUpdatesQueue || []).slice();
+    if (list.length === 0) return;
+    list.forEach(function(item) {
+      if (!videosData.some(function(v) { return v && v.ytId === item.ytId; })) {
+        videosData.unshift({ id: "v_" + item.ytId, ytId: item.ytId, title: item.title, channel: item.channel, lang: item.lang || "ur", region: (item.lang || "ur").toUpperCase(), category: item.category || "bayan", audienceMode: item.audienceMode || "both_family_kids", kidsSafe: (item.category !== "bayan" && item.audienceMode !== "family_only"), channelVerified: true, isShort: /#short/i.test(item.title), isCustomAdded: true, duration: "12:00", views: 0, createdAt: Math.floor(Date.now() / 1000) });
+      }
+    });
+    localStorage.setItem("qaaf_videos_data", JSON.stringify(videosData));
+    window.qaafChannelUpdatesQueue = [];
+    saveChannelUpdatesQueue();
+    if (typeof window.renderVideosNow === "function") window.renderVideosNow();
+    if (window.qaafCloudSync) window.qaafCloudSync.pushState("Approved All New Channel Videos");
+    if (typeof showSyncToast === "function") showSyncToast("🎉 تمام نئی ویڈیوز منظور ہو گئیں!");
+  };
+
+  function renderAdminChannelUpdatesBox() {
+    var pubPane = document.getElementById("admPane_publish");
+    if (!pubPane) return;
+    var box = document.getElementById("admDailyChannelUpdatesCard");
+    if (!box) {
+      box = document.createElement("div");
+      box.id = "admDailyChannelUpdatesCard";
+      box.className = "bg-gradient-to-br from-[#0e1b24] to-[#111722] border-2 border-emerald-500/50 rounded-2xl p-4 space-y-3 text-xs mb-4 shadow-xl";
+      pubPane.insertBefore(box, pubPane.children[1] || pubPane.firstChild);
+    }
+    var q = window.qaafChannelUpdatesQueue || [];
+    var rowsHtml = "";
+    if (q.length === 0) {
+      rowsHtml = "<p class=\x22text-slate-400 py-2 text-center\x22>✅ اس وقت منظور شدہ چینلز میں کوئی نئی غیر منظور شدہ ویڈیو نہیں ہے۔</p>";
+    } else {
+      q.forEach(function(item) {
+        var thumb = "https://i.ytimg.com/vi/" + item.ytId + "/mqdefault.jpg";
+        rowsHtml += "<div class=\x22bg-black/70 border border-emerald-500/30 p-2.5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5\x22>" +
+          "<div class=\x22flex items-center gap-2.5 min-w-0 flex-1\x22>" +
+            "<img src=\x22" + thumb + "\x22 class=\x22w-16 h-10 object-cover rounded-lg border border-white/15 shrink-0\x22 />" +
+            "<div class=\x22min-w-0 flex-1\x22>" +
+              "<p class=\x22font-extrabold text-white truncate\x22>" + item.title + "</p>" +
+              "<p class=\x22text-[11px] text-emerald-400 font-bold\x22>📺 " + item.channel + " • " + (item.detectedAt || "New") + "</p>" +
+            "</div>" +
+          "</div>" +
+          "<div class=\x22flex flex-wrap items-center gap-1.5 shrink-0\x22>" +
+            "<button type=\x22button\x22 data-ytid=\x22" + item.ytId + "\x22 onclick=\x22playVideoInsideAdminModal(this.getAttribute(\x27data-ytid\x27), \x27Preview\x27)\x22 class=\x22bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1.5 rounded-lg text-[11px] font-extrabold cursor-pointer\x22>▶ دیکھیں</button>" +
+            "<button type=\x22button\x22 data-ytid=\x22" + item.ytId + "\x22 onclick=\x22adminApproveChannelUpdateVideo(this.getAttribute(\x27data-ytid\x27))\x22 class=\x22bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg text-[11px] font-extrabold cursor-pointer\x22>✅ منظور کریں</button>" +
+            "<button type=\x22button\x22 data-ytid=\x22" + item.ytId + "\x22 onclick=\x22adminRejectChannelUpdateVideo(this.getAttribute(\x27data-ytid\x27))\x22 class=\x22bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1.5 rounded-lg text-[11px] font-extrabold cursor-pointer\x22>🗑️ ڈیلیٹ</button>" +
+          "</div>" +
+        "</div>";
+      });
+    }
+    box.innerHTML =
+      "<div class=\x22flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5\x22>" +
+        "<div>" +
+          "<h4 class=\x22text-xs sm:text-sm font-extrabold text-emerald-300 flex items-center gap-2\x22><span>🔔</span> <span>منظور شدہ چینلز کی نئی ویڈیوز (Daily Channel Updates)</span> <span class=\x22bg-emerald-500 text-black px-2 py-0.5 rounded-full text-[10px] font-extrabold\x22>" + q.length + "</span></h4>" +
+          "<p class=\x22text-[11px] text-slate-400 mt-0.5\x22>منظور شدہ چینلز میں آنے والی نئی ویڈیوز یہاں خودکار جمع ہوتی ہیں تاکہ آپ چیک کر کے منظور یا ڈیلیٹ کر سکیں۔</p>" +
+        "</div>" +
+        "<div class=\x22flex items-center gap-1.5\x22>" +
+          (q.length > 0 ? "<button type=\x22button\x22 onclick=\x22adminApproveAllChannelUpdates()\x22 class=\x22bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-xl text-[11px] font-extrabold shadow cursor-pointer\x22>✅ تمام منظور کریں</button>" : "") +
+          "<button type=\x22button\x22 onclick=\x22scanApprovedChannelsForNewVideos(true)\x22 class=\x22bg-amber-500 hover:bg-amber-400 text-black px-3 py-1.5 rounded-xl text-[11px] font-extrabold shadow cursor-pointer\x22>🔄 ابھی چینلز چیک کریں</button>" +
+        "</div>" +
+      "</div>" +
+      "<div class=\x22space-y-2 max-h-64 overflow-y-auto pr-1\x22>" + rowsHtml + "</div>";
+  }
+
+  fetch(FB_BASE + "/qaaf_channel_updates_queue.json?t=" + Date.now()).then(function(r) { return r.ok ? r.json() : null; }).then(function(d) {
+    if (d && typeof d === "object") {
+      if (Array.isArray(d.queue)) window.qaafChannelUpdatesQueue = d.queue;
+      if (Array.isArray(d.rejectedIds)) window.qaafRejectedUpdateYtIds = d.rejectedIds;
+      localStorage.setItem("qaaf_channel_updates_queue_v1", JSON.stringify(window.qaafChannelUpdatesQueue));
+      localStorage.setItem("qaaf_rejected_update_ytids_v1", JSON.stringify(window.qaafRejectedUpdateYtIds));
+      updateAdminChannelUpdatesBadge();
+      renderAdminChannelUpdatesBox();
+    }
+  }).catch(function() {});
+
+  setTimeout(function() {
+    renderAdminChannelUpdatesBox();
+    updateAdminChannelUpdatesBadge();
+    var lastScan = parseInt(localStorage.getItem("qaaf_last_channel_scan_ts") || "0", 10);
+    if (Date.now() - lastScan > 12 * 3600 * 1000) window.scanApprovedChannelsForNewVideos(false);
+  }, 5000);
+
+  if (!document.getElementById("qaafLightModeMasterCss")) {
+    var thStyle = document.createElement("style");
+    thStyle.id = "qaafLightModeMasterCss";
+    thStyle.textContent = [
+      "body.qaaf-light-mode, body.qaaf-light-mode.bg-islamic-family, body.qaaf-light-mode.bg-islamic-kids { background-color: #f8fafc !important; color: #0f172a !important; }",
+      "body.qaaf-light-mode #mainHeader { background-color: rgba(255,255,255,0.96) !important; border-bottom: 1px solid #e2e8f0 !important; }",
+      "body.qaaf-light-mode #brandMainPrefix { color: #0f172a !important; }",
+      "body.qaaf-light-mode #headerDrawerMenuBtn { background-color: #f1f5f9 !important; color: #0f172a !important; border-color: #cbd5e1 !important; }",
+      "body.qaaf-light-mode #qaafHeaderSearchToggleBtn svg circle, body.qaaf-light-mode #qaafHeaderSearchToggleBtn svg line { stroke: #0f172a !important; }",
+      "body.qaaf-light-mode #qaafHeaderSearchToggleBtn svg text { fill: #0f172a !important; }",
+      "body.qaaf-light-mode #qaafHeaderCenterSearch > div { background-color: #f1f5f9 !important; border-color: #cbd5e1 !important; }",
+      "body.qaaf-light-mode #qaafHeaderSearchInput { color: #0f172a !important; }",
+      "body.qaaf-light-mode #categoryBar { background-color: rgba(255,255,255,0.95) !important; border-bottom: 1px solid #e2e8f0 !important; }",
+      "body.qaaf-light-mode #categoryBar .cat-chip:not(.bg-emerald-500) { background-color: #e2e8f0 !important; color: #0f172a !important; }",
+      "body.qaaf-light-mode #videoGrid h3 { color: #0f172a !important; }",
+      "body.qaaf-light-mode #videoGrid .text-slate-400 { color: #475569 !important; }",
+      "body.qaaf-light-mode #qaafShortsShelf h3 { color: #0f172a !important; }",
+      "body.qaaf-light-mode #qaafChannelViewHeaderBox { background: #ffffff !important; border-color: #cbd5e1 !important; }",
+      "body.qaaf-light-mode #qaafChannelViewHeaderBox h2 { color: #0f172a !important; }",
+      "body.qaaf-light-mode #qaafMobileBottomNav { background: #ffffff !important; background-color: #ffffff !important; border-top: 1px solid #e2e8f0 !important; }",
+      "body.qaaf-light-mode #qaafMobileBottomNav button { color: #475569 !important; }",
+      "body.qaaf-light-mode #qaafMobileBottomNav button.text-white { color: #164e3a !important; }",
+      "body.qaaf-light-mode #qaafLeftSidebarDrawer { background-color: #ffffff !important; border-right: 1px solid #e2e8f0 !important; color: #0f172a !important; }",
+      "body.qaaf-light-mode #qaafLeftSidebarDrawer h3, body.qaaf-light-mode #qaafLeftSidebarDrawer button { color: #0f172a !important; }",
+      "body.qaaf-light-mode #qaafLeftSidebarDrawer .bg-\\[\\#131822\\] { background-color: #f1f5f9 !important; border-color: #cbd5e1 !important; }"
+    ].join("\n");
+    document.head.appendChild(thStyle);
+  }
+
+  window.applyQaafThemeMode = function(mode) {
+    var isLight = (mode === "light");
+    document.body.classList.toggle("qaaf-light-mode", isLight);
+    localStorage.setItem("qaaf_theme_mode", isLight ? "light" : "dark");
+    var btn = document.getElementById("qaafThemeToggleBtn");
+    if (btn) {
+      btn.innerHTML = isLight
+        ? "<span class=\x22flex items-center gap-2.5\x22><span class=\x22text-base\x22>🌙</span> <span>ڈارک موڈ (سیاہ تھیم)</span></span><span class=\x22px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-800 text-white\x22>DARK</span>"
+        : "<span class=\x22flex items-center gap-2.5\x22><span class=\x22text-base\x22>☀️</span> <span>لائٹ موڈ (سفید تھیم)</span></span><span class=\x22px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-400 text-black\x22>LIGHT</span>";
+    }
+  };
+
+  window.toggleQaafThemeMode = function() {
+    var cur = localStorage.getItem("qaaf_theme_mode") || "dark";
+    window.applyQaafThemeMode(cur === "light" ? "dark" : "light");
+  };
+
+  function injectThemeToggleButtonInDrawer() {
+    var extraBox = document.getElementById("qaafDrawerExtraMenuItems");
+    if (!extraBox || document.getElementById("qaafThemeToggleBtn")) return;
+    var btn = document.createElement("button");
+    btn.id = "qaafThemeToggleBtn";
+    btn.type = "button";
+    btn.onclick = function() { window.toggleQaafThemeMode(); };
+    btn.className = "w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-xs font-extrabold text-white transition cursor-pointer";
+    extraBox.insertBefore(btn, extraBox.firstChild);
+    window.applyQaafThemeMode(localStorage.getItem("qaaf_theme_mode") || "dark");
+  }
+
+  window.applyQaafThemeMode(localStorage.getItem("qaaf_theme_mode") || "dark");
+  setInterval(function() {
+    injectThemeToggleButtonInDrawer();
+    renderAdminChannelUpdatesBox();
+  }, 800);
+})();
