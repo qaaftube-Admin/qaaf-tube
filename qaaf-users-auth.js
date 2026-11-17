@@ -5103,3 +5103,208 @@
     window.renderAdminChannelUpdatesBoxEng();
   }, 900);
 })();
+
+
+// === QAAF V94 FLAG Z-INDEX, ADMIN LABEL & GHOST REQUEST FIX ===
+(function initQaafV94FlagZIndexAdminLabelAndRequestFix() {
+  var FB_BASE = (localStorage.getItem("qaaf_firebase_db_url") || "https://qaaftube-6f251-default-rtdb.firebaseio.com").replace(/\/+$/, "");
+
+  // =========================================================================
+  // 1. FIX FLAG MODAL & PLAYLIST MODAL Z-INDEX SO THEY OPEN ABOVE VIDEO PLAYER
+  // =========================================================================
+  if (!document.getElementById("qaafV94ModalZIndexCss")) {
+    var st = document.createElement("style");
+    st.id = "qaafV94ModalZIndexCss";
+    st.textContent = [
+      "#flagVideoModal, #playlistSelectorModal, #sponsorContactModal, #accountModal { z-index: 1200 !important; }",
+      "#adminDashboardModal, #userNotifModal { z-index: 1150 !important; }"
+    ].join("\n");
+    document.head.appendChild(st);
+  }
+
+  // Override submitVideoFlag to give clear toast feedback and close cleanly
+  window.submitVideoFlag = function() {
+    var v = (videosData || []).find(function(x) { return x && x.id === pendingFlagVideoId; });
+    var reasonEl = document.getElementById("flagReasonSelect");
+    var reason = reasonEl ? reasonEl.value : "Reported by User";
+    if (v) {
+      if (!Array.isArray(flaggedVideosQueue)) flaggedVideosQueue = [];
+      var alreadyFlagged = flaggedVideosQueue.some(function(f) { return f && f.videoId === v.id; });
+      if (!alreadyFlagged) {
+        flaggedVideosQueue.unshift({ videoId: v.id, ytId: v.ytId || "", title: v.title, channel: v.channel, reason: reason });
+        localStorage.setItem("qaaf_flagged_queue", JSON.stringify(flaggedVideosQueue));
+      }
+      if (window.qaafCloudSync) window.qaafCloudSync.pushState("User Video Flag Submitted");
+    }
+    closeFlagModal();
+    if (typeof syncAccountUI === "function") syncAccountUI();
+    if (typeof showSyncToast === "function") {
+      showSyncToast("🚩 Report submitted to QAAF Admin!");
+    } else {
+      alert("🚩 Report submitted to QAAF Admin.");
+    }
+  };
+
+  // =========================================================================
+  // 2. REPLACE "SUPER ADMIN" WITH "ADMIN" EVERYWHERE IN UI
+  // =========================================================================
+  function replaceSuperAdminLabels() {
+    var subEl = document.querySelector("#adminDashboardModal h3 + p");
+    if (subEl && subEl.innerText.indexOf("Super Admin") !== -1) {
+      subEl.innerText = subEl.innerText.replace(/Super Admin/g, "Admin");
+    }
+    var roleBadge = document.getElementById("activeAccountRoleBadge");
+    if (roleBadge && roleBadge.innerText.indexOf("Super Admin") !== -1) {
+      roleBadge.innerText = roleBadge.innerText.replace(/Super Admin/g, "Admin");
+    }
+    var drwName = document.getElementById("drawerProfileName");
+    if (drwName && drwName.innerText.indexOf("Super Admin") !== -1) {
+      drwName.innerText = drwName.innerText.replace(/Super Admin/g, "Admin");
+    }
+    var admSecLabel = document.querySelector("#admPane_security label");
+    if (admSecLabel && admSecLabel.innerText.indexOf("Super Admin") !== -1) {
+      admSecLabel.innerText = admSecLabel.innerText.replace(/Super Admin/g, "Admin");
+    }
+  }
+  replaceSuperAdminLabels();
+
+  // =========================================================================
+  // 3. PERMANENTLY FIX GHOST / RETURNING PARENT REQUESTS AFTER APPROVAL
+  // =========================================================================
+  window.qaafHandledRequestIds = JSON.parse(localStorage.getItem("qaaf_handled_request_ids_v1") || "[]");
+
+  function markRequestAsHandled(reqObj) {
+    if (!reqObj) return;
+    if (reqObj.reqId && window.qaafHandledRequestIds.indexOf(reqObj.reqId) === -1) {
+      window.qaafHandledRequestIds.push(reqObj.reqId);
+    }
+    if (reqObj.ytId && window.qaafHandledRequestIds.indexOf(reqObj.ytId) === -1) {
+      window.qaafHandledRequestIds.push(reqObj.ytId);
+    }
+    try { localStorage.setItem("qaaf_handled_request_ids_v1", JSON.stringify(window.qaafHandledRequestIds)); } catch (e) {}
+  }
+
+  window.scrubHandledParentRequestsNow = function() {
+    var existingYtSet = new Set((videosData || []).map(function(v) { return v && v.ytId; }).filter(Boolean));
+    var blockedSet = new Set(blockedVideoIds || []);
+    var handledSet = new Set(window.qaafHandledRequestIds || []);
+
+    var rawQ = window.parentRequestsQueue || parentRequestsQueue || [];
+    if (!Array.isArray(rawQ)) rawQ = [];
+
+    var cleanedQ = rawQ.filter(function(r) {
+      if (!r) return false;
+      if (r.reqId && handledSet.has(r.reqId)) return false;
+      if (r.ytId && (handledSet.has(r.ytId) || existingYtSet.has(r.ytId) || blockedSet.has(r.ytId))) return false;
+      return true;
+    });
+
+    if (cleanedQ.length !== rawQ.length) {
+      parentRequestsQueue = cleanedQ;
+      window.parentRequestsQueue = cleanedQ;
+      try { localStorage.setItem("qaaf_parent_requests", JSON.stringify(cleanedQ)); } catch (e) {}
+    } else {
+      parentRequestsQueue = cleanedQ;
+      window.parentRequestsQueue = cleanedQ;
+    }
+  };
+
+  window.scrubHandledParentRequestsNow();
+
+  // Override adminHandleParentRequest so approved/rejected requests NEVER return
+  window.adminHandleParentRequest = function(index, decision) {
+    window.scrubHandledParentRequestsNow();
+    var q = window.parentRequestsQueue || parentRequestsQueue || [];
+    var req = q[index];
+    if (!req) return;
+    markRequestAsHandled(req);
+
+    if (decision === "approve") {
+      if (!videosData.some(function(v) { return v && v.ytId === req.ytId; })) {
+        videosData.unshift({
+          id: "v_" + req.ytId,
+          title: req.title,
+          channel: req.channel,
+          lang: req.lang || "global",
+          region: (req.lang || "global").toUpperCase(),
+          category: req.category || "kids_cartoon",
+          kidsSafe: (req.category !== "bayan"),
+          ytId: req.ytId,
+          isCustomAdded: true,
+          duration: "12:00",
+          views: 0,
+          createdAt: Math.floor(Date.now() / 1000)
+        });
+        localStorage.setItem("qaaf_videos_data", JSON.stringify(videosData));
+      }
+    } else {
+      if (req.ytId && blockedVideoIds.indexOf(req.ytId) === -1) {
+        blockedVideoIds.push(req.ytId);
+        localStorage.setItem("qaaf_blocked_videos", JSON.stringify(blockedVideoIds));
+      }
+    }
+
+    q.splice(index, 1);
+    parentRequestsQueue = q;
+    window.parentRequestsQueue = q;
+    localStorage.setItem("qaaf_parent_requests", JSON.stringify(q));
+
+    fetch(FB_BASE + "/qaaf_global_state/parentRequestsQueue.json", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(q)
+    }).catch(function() {});
+
+    fetch(FB_BASE + "/qaaf_global_state/handledRequestIdsJson.json", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(JSON.stringify(window.qaafHandledRequestIds))
+    }).catch(function() {});
+
+    if (typeof window.renderAdminParentRequests === "function") window.renderAdminParentRequests();
+    if (typeof window.renderVideosNow === "function") window.renderVideosNow();
+    if (window.qaafCloudSync) window.qaafCloudSync.pushState(decision === "approve" ? "Approved Parent Video Request" : "Rejected Parent Video Request");
+    if (typeof showSyncToast === "function") {
+      showSyncToast(decision === "approve" ? "✅ Request Approved & Published Live!" : "🚫 Request Rejected & Removed.");
+    }
+  };
+
+  var origBatchGreen = window.adminBatchApproveAllGreen;
+  window.adminBatchApproveAllGreen = function() {
+    (window.parentRequestsQueue || parentRequestsQueue || []).forEach(function(r) {
+      var ev = window.evaluateRequestColorCategory ? window.evaluateRequestColorCategory(r) : { color: "GREEN" };
+      if (ev.color === "GREEN") markRequestAsHandled(r);
+    });
+    if (origBatchGreen) origBatchGreen();
+    window.scrubHandledParentRequestsNow();
+    fetch(FB_BASE + "/qaaf_global_state/parentRequestsQueue.json", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(window.parentRequestsQueue || [])
+    }).catch(function() {});
+  };
+
+  // Pull handledRequestIdsJson from Cloud and scrub any returning ghost requests
+  fetch(FB_BASE + "/qaaf_global_state/handledRequestIdsJson.json?t=" + Date.now())
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(str) {
+      if (typeof str === "string" && str.indexOf("[") === 0) {
+        try {
+          var arr = JSON.parse(str);
+          if (Array.isArray(arr)) {
+            arr.forEach(function(id) {
+              if (id && window.qaafHandledRequestIds.indexOf(id) === -1) window.qaafHandledRequestIds.push(id);
+            });
+            localStorage.setItem("qaaf_handled_request_ids_v1", JSON.stringify(window.qaafHandledRequestIds));
+          }
+        } catch (e) {}
+      }
+      window.scrubHandledParentRequestsNow();
+      if (typeof window.renderAdminParentRequests === "function") window.renderAdminParentRequests();
+    }).catch(function() {});
+
+  setInterval(function() {
+    replaceSuperAdminLabels();
+    window.scrubHandledParentRequestsNow();
+  }, 1000);
+})();
