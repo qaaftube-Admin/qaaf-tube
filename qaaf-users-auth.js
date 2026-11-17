@@ -5308,3 +5308,160 @@
     window.scrubHandledParentRequestsNow();
   }, 1000);
 })();
+
+
+// === QAAF V95 SHORTS AUTO-DETECT & OUTLINE LIKE BUTTON ===
+(function initQaafV95ShortsAutoDetectAndOutlineLike() {
+  var FB_BASE = (localStorage.getItem("qaaf_firebase_db_url") || "https://qaaftube-6f251-default-rtdb.firebaseio.com").replace(/\/+$/, "");
+
+  // Clean SVG Icons (YouTube-style thin outline)
+  var YT_LIKE_OUTLINE_SVG = "<svg viewBox=\x270 0 24 24\x27 width=\x2718\x27 height=\x2718\x27 fill=\x27none\x27 stroke=\x27currentColor\x27 stroke-width=\x271.9\x27 stroke-linecap=\x27round\x27 stroke-linejoin=\x27round\x27 style=\x27display:inline-block;vertical-align:middle;\x27><path d=\x27M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3\x27/></svg>";
+  var YT_LIKE_FILLED_SVG = "<svg viewBox=\x270 0 24 24\x27 width=\x2718\x27 height=\x2718\x27 fill=\x27#10b981\x27 stroke=\x27#10b981\x27 stroke-width=\x271.9\x27 stroke-linecap=\x27round\x27 stroke-linejoin=\x27round\x27 style=\x27display:inline-block;vertical-align:middle;\x27><path d=\x27M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3\x27/></svg>";
+
+  // 1. Fix existing Tarbiah Islamic Centre videos (mark as Shorts & remove fake 12:45 duration)
+  function fixExistingShortsAndFakeDurations() {
+    if (!Array.isArray(videosData)) return;
+    var changed = false;
+    videosData.forEach(function(v) {
+      if (!v) return;
+      if (v.duration === "12:45" || v.duration === "12:00" || v.duration === "14:20" || v.duration === "10:00") {
+        v.duration = "";
+        changed = true;
+      }
+      if (v.channel === "Tarbiah Islamic Centre" && !v.isShort) {
+        v.isShort = true;
+        v.duration = "";
+        changed = true;
+      }
+    });
+    if (changed) {
+      try { localStorage.setItem("qaaf_videos_data", JSON.stringify(videosData)); } catch (e) {}
+      if (typeof window.renderVideosNow === "function") window.renderVideosNow();
+      if (window.qaafCloudSync) window.qaafCloudSync.pushState("Fixed Tarbiah Islamic Centre Shorts & Durations");
+    }
+  }
+  fixExistingShortsAndFakeDurations();
+
+  // 2. Auto-detect Shorts vs Regular Videos when importing any Channel
+  window.qaafChannelShortsSet = new Set();
+  async function detectChannelShortsIds(rawChannelUrl) {
+    var base = String(rawChannelUrl || "").trim().replace(/\/(videos|shorts|featured|streams|playlists)?\/?$/, "");
+    if (!base) return;
+    try {
+      var r = await fetch("https://r.jina.ai/" + base + "/shorts");
+      if (r.ok) {
+        var txt = await r.text();
+        for (var m of txt.matchAll(/(?:watch\?v=|\/shorts\/|"videoId"\s*:\s*")([a-zA-Z0-9_-]{11})/g)) {
+          window.qaafChannelShortsSet.add(m[1]);
+        }
+      }
+    } catch (e) {}
+  }
+
+  var prevAutoFetch95 = window.adminAutoFetchYouTubeInfo;
+  window.adminAutoFetchYouTubeInfo = async function() {
+    var urlInp = document.getElementById("adminYtUrlInput");
+    var raw = (urlInp ? urlInp.value : "").trim();
+    if (raw && (raw.indexOf("/@") !== -1 || raw.indexOf("@") === 0 || raw.indexOf("/channel/") !== -1)) {
+      await detectChannelShortsIds(raw);
+    }
+    if (prevAutoFetch95) await prevAutoFetch95.apply(this, arguments);
+    setTimeout(function() {
+      if (Array.isArray(videosData)) {
+        videosData.forEach(function(v) {
+          if (v && v.ytId && window.qaafChannelShortsSet.has(v.ytId)) {
+            v.isShort = true;
+            v.duration = "";
+          }
+        });
+      }
+    }, 400);
+  };
+
+  var prevAddGlobal95 = window.adminAddGlobalVideo;
+  window.adminAddGlobalVideo = async function() {
+    if (prevAddGlobal95) await prevAddGlobal95.apply(this, arguments);
+    setTimeout(function() {
+      var updated = false;
+      (videosData || []).forEach(function(v) {
+        if (!v) return;
+        if (v.ytId && window.qaafChannelShortsSet.has(v.ytId) && !v.isShort) {
+          v.isShort = true;
+          updated = true;
+        }
+        if (v.duration === "12:45" || v.duration === "12:00" || v.duration === "14:20") {
+          v.duration = "";
+          updated = true;
+        }
+      });
+      if (updated) {
+        localStorage.setItem("qaaf_videos_data", JSON.stringify(videosData));
+        if (typeof window.renderVideosNow === "function") window.renderVideosNow();
+      }
+    }, 800);
+  };
+
+  // 3. Hide empty duration badge on video cards so fake 12:00 / 12:45 never shows
+  if (!document.getElementById("qaafHideEmptyDurationCss")) {
+    var dCss = document.createElement("style");
+    dCss.id = "qaafHideEmptyDurationCss";
+    dCss.textContent = ".qaaf-yt-clean-card span.bottom-2.right-2:empty { display: none !important; }";
+    document.head.appendChild(dCss);
+  }
+
+  function cleanFakeDurationBadgesInDom() {
+    document.querySelectorAll(".qaaf-yt-clean-card span.bottom-2.right-2, #watchUpNextGrid span.bottom-1.right-1").forEach(function(sp) {
+      var t = (sp.textContent || "").trim();
+      if (t === "12:00" || t === "12:45" || t === "14:20" || t === "10:00" || t === "") {
+        sp.textContent = "";
+        sp.style.display = "none";
+      }
+    });
+  }
+
+  // 4. Upgrade Watch Bar & Shorts Like Button to YouTube Outline SVG & Make It Work Immediately
+  window.updateWatchAndShortsLikeUI = function() {
+    var vidId = currentPlayingVideoId;
+    if (!vidId) return;
+    var isFav = (favoriteVideoIds || []).indexOf(vidId) !== -1;
+    var video = (videosData || []).find(function(x) { return x && x.id === vidId; });
+    var vCount = video ? ((typeof window.getQaafRealViewCount === "function") ? window.getQaafRealViewCount(video) : (video.realViews || 0)) : 0;
+    var likeCount = isFav ? Math.max(1, vCount) : 0;
+
+    // Update Watch Page Like Button
+    var hdr = document.getElementById("ytCleanWatchHeader");
+    if (hdr) {
+      var likeBtn = hdr.querySelector("button[onclick*=\x27toggleFavoriteVideo\x27]");
+      if (likeBtn) {
+        likeBtn.onclick = function(ev) {
+          toggleFavoriteVideo(currentPlayingVideoId, ev);
+          window.updateWatchAndShortsLikeUI();
+        };
+        likeBtn.className = "bg-[#272727] hover:bg-[#383838] text-white px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition shrink-0 cursor-pointer";
+        likeBtn.innerHTML = (isFav ? YT_LIKE_FILLED_SVG : YT_LIKE_OUTLINE_SVG) + "<span class=\x22text-[11px] " + (isFav ? "text-emerald-400 font-bold" : "text-neutral-200") + "\x22>" + (isFav ? "Liked" : "Like") + "</span>";
+      }
+    }
+
+    // Update Shorts Right-Side Like Button to Outline SVG
+    var shOv = document.getElementById("qaafYtShortsMasterOverlay");
+    if (shOv) {
+      var shLikeBtn = shOv.querySelector("button[onclick*=\x27toggleFavoriteVideo\x27]");
+      if (shLikeBtn) {
+        shLikeBtn.innerHTML = isFav ? YT_LIKE_FILLED_SVG : YT_LIKE_OUTLINE_SVG;
+        var countSpan = shLikeBtn.nextElementSibling;
+        if (countSpan) countSpan.textContent = isFav ? "Liked" : "Like";
+      }
+    }
+  };
+
+  var origToggleFav = window.toggleFavoriteVideo;
+  window.toggleFavoriteVideo = function(videoId, ev) {
+    if (origToggleFav) origToggleFav(videoId, ev);
+    setTimeout(window.updateWatchAndShortsLikeUI, 20);
+  };
+
+  setInterval(function() {
+    cleanFakeDurationBadgesInDom();
+    window.updateWatchAndShortsLikeUI();
+  }, 600);
+})();
