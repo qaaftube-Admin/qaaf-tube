@@ -5465,3 +5465,117 @@
     window.updateWatchAndShortsLikeUI();
   }, 600);
 })();
+
+
+// === QAAF V96 CLEAN 4 WATCH BUTTONS & STABLE SHORTS LIKE ===
+(function initQaafV96CleanFourButtonsAndNoFlickerLike() {
+  var YT_LIKE_OUTLINE_SVG = "<svg viewBox=\x270 0 24 24\x27 width=\x2717\x27 height=\x2717\x27 fill=\x27none\x27 stroke=\x27currentColor\x27 stroke-width=\x272\x27 stroke-linecap=\x27round\x27 stroke-linejoin=\x27round\x27 style=\x27display:inline-block;vertical-align:middle;\x27><path d=\x27M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3\x27/></svg>";
+  var YT_LIKE_FILLED_SVG = "<svg viewBox=\x270 0 24 24\x27 width=\x2717\x27 height=\x2717\x27 fill=\x27#10b981\x27 stroke=\x27#10b981\x27 stroke-width=\x272\x27 stroke-linecap=\x27round\x27 stroke-linejoin=\x27round\x27 style=\x27display:inline-block;vertical-align:middle;\x27><path d=\x27M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3\x27/></svg>";
+  var YT_SHARE_SVG = "<svg viewBox=\x270 0 24 24\x27 width=\x2717\x27 height=\x2717\x27 fill=\x27currentColor\x27 style=\x27display:inline-block;vertical-align:middle;\x27><path d=\x27M15 5.63 20.66 12 15 18.37V14h-1c-3.96 0-7.14 1-9.75 3.09 1.84-4.07 5.11-6.4 9.89-7.1l.86-.13V5.63M14 3v6C6.22 10.13 3.11 15.33 2 21c2.78-3.97 6.44-6 12-6v6l8-9-8-9z\x27/></svg>";
+
+  // 1. Clean Watch Action Row: ONLY 4 Buttons (Like | Save | Share | Flag)
+  function enforceCleanFourWatchButtons() {
+    var hdr = document.getElementById("ytCleanWatchHeader");
+    if (!hdr) return;
+
+    // Remove Speed/Quality pill from bottom row
+    var spPill = document.getElementById("qaafWatchActionSettingsPill");
+    if (spPill) spPill.remove();
+
+    // Replace Dua button inside #ytCleanWatchHeader with Share button
+    var duaBtn = hdr.querySelector("button[onclick*=\x27triggerAdSimulation\x27]");
+    if (duaBtn) {
+      duaBtn.removeAttribute("onclick");
+      duaBtn.onclick = function(ev) { window.shareQaafCurrentVideo(ev); };
+      duaBtn.className = "bg-[#272727] hover:bg-[#383838] text-white px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition shrink-0 cursor-pointer";
+      duaBtn.title = "Share";
+      duaBtn.innerHTML = YT_SHARE_SVG + "<span class=\x22text-[11px] text-neutral-200\x22>Share</span>";
+    }
+
+    // Ensure Like button uses outline Thumbs-Up SVG without flickering
+    var isFav = (favoriteVideoIds || []).indexOf(currentPlayingVideoId) !== -1;
+    var likeBtn = hdr.querySelector("button[onclick*=\x27toggleFavoriteVideo\x27]");
+    if (likeBtn) {
+      var wantState = isFav ? "liked" : "unliked";
+      if (likeBtn.getAttribute("data-like-state") !== wantState) {
+        likeBtn.setAttribute("data-like-state", wantState);
+        likeBtn.className = "bg-[#272727] hover:bg-[#383838] text-white px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition shrink-0 cursor-pointer";
+        likeBtn.innerHTML = (isFav ? YT_LIKE_FILLED_SVG : YT_LIKE_OUTLINE_SVG) + "<span class=\x22text-[11px] " + (isFav ? "text-emerald-400 font-bold" : "text-neutral-200") + "\x22>" + (isFav ? "Liked" : "Like") + "</span>";
+      }
+    }
+  }
+
+  // 2. Lock Shorts Right-Side Overlay so it NEVER flickers to Heart and covers YouTube bottom-right 13/Share
+  function enforceStableShortsOutlineOverlay(forceUpdate) {
+    var modal = document.getElementById("playerModal");
+    if (!modal || modal.classList.contains("hidden")) return;
+    var video = (videosData || []).find(function(x) { return x && x.id === currentPlayingVideoId; });
+    if (!video || !isVideoShort(video)) return;
+
+    var ov = document.getElementById("qaafYtShortsMasterOverlay");
+    if (!ov) return;
+
+    // Lock innerHTML setter so older intervals (v90/v92) can NEVER overwrite it with Heart icon!
+    if (!ov._lockedV96ShortsSetter) {
+      ov._lockedV96ShortsSetter = true;
+      var origDesc = Object.getOwnPropertyDescriptor(Element.prototype, "innerHTML");
+      if (origDesc && origDesc.set) {
+        Object.defineProperty(ov, "innerHTML", {
+          get: function() { return origDesc.get.call(this); },
+          set: function(val) {
+            if (this._allowV96ShortsWrite) origDesc.set.call(this, val);
+          }
+        });
+      }
+    }
+
+    var isFav = (favoriteVideoIds || []).indexOf(video.id) !== -1;
+    var stateKey = video.id + "_" + (isFav ? "1" : "0");
+    if (!forceUpdate && ov.getAttribute("data-v96-state") === stateKey) return;
+    ov.setAttribute("data-v96-state", stateKey);
+
+    // Positioned at bottom-right (bottom: 14px; right: 4px) with solid dark pill background to cover YouTube internal 13/Share!
+    ov.style.cssText = "position:absolute; right:4px; bottom:14px; top:auto; left:auto; width:56px; height:auto; z-index:45; background:rgba(12,15,20,0.92); border:1px solid rgba(255,255,255,0.12); border-radius:28px; padding:10px 4px; display:flex; flex-direction:column; align-items:center; gap:14px; pointer-events:auto; box-shadow:0 8px 24px rgba(0,0,0,0.85);";
+
+    ov._allowV96ShortsWrite = true;
+    ov.innerHTML =
+      "<div style=\x27display:flex;flex-direction:column;align-items:center;gap:3px;\x27>" +
+        "<button type=\x27button\x27 onclick=\x27toggleFavoriteVideo(currentPlayingVideoId,event)\x27 style=\x27width:42px;height:42px;border-radius:999px;background:rgba(255,255,255,0.1);color:#fff;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.18);cursor:pointer;\x27>" + (isFav ? YT_LIKE_FILLED_SVG : YT_LIKE_OUTLINE_SVG) + "</button>" +
+        "<span style=\x27font-size:10px;font-weight:700;color:#fff;\x27>" + (isFav ? "Liked" : "Like") + "</span>" +
+      "</div>" +
+      "<div style=\x27display:flex;flex-direction:column;align-items:center;gap:3px;\x27>" +
+        "<button type=\x27button\x27 onclick=\x27openShortCommentsPopup(event)\x27 style=\x27width:42px;height:42px;border-radius:999px;background:rgba(255,255,255,0.1);color:#fff;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.18);cursor:pointer;\x27><svg viewBox=\x270 0 24 24\x27 width=\x2717\x27 height=\x2717\x27 fill=\x27none\x27 stroke=\x27currentColor\x27 stroke-width=\x272\x27 stroke-linecap=\x27round\x27 stroke-linejoin=\x27round\x27><path d=\x27M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z\x27/></svg></button>" +
+        "<span style=\x27font-size:10px;font-weight:700;color:#fff;\x27>Comment</span>" +
+      "</div>" +
+      "<div style=\x27display:flex;flex-direction:column;align-items:center;gap:3px;\x27>" +
+        "<button type=\x27button\x27 onclick=\x27shareQaafCurrentVideo(event)\x27 style=\x27width:42px;height:42px;border-radius:999px;background:rgba(255,255,255,0.1);color:#fff;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.18);cursor:pointer;\x27>" + YT_SHARE_SVG + "</button>" +
+        "<span style=\x27font-size:10px;font-weight:700;color:#fff;\x27>Share</span>" +
+      "</div>";
+    ov._allowV96ShortsWrite = false;
+  }
+
+  var prevToggleFav96 = window.toggleFavoriteVideo;
+  window.toggleFavoriteVideo = function(videoId, ev) {
+    if (prevToggleFav96) prevToggleFav96(videoId, ev);
+    enforceCleanFourWatchButtons();
+    enforceStableShortsOutlineOverlay(true);
+  };
+
+  var prevOpenV96 = window.openVideoPlayer;
+  window.openVideoPlayer = function(videoId) {
+    if (prevOpenV96) prevOpenV96.apply(this, arguments);
+    setTimeout(function() {
+      enforceCleanFourWatchButtons();
+      enforceStableShortsOutlineOverlay(true);
+    }, 60);
+    setTimeout(function() {
+      enforceCleanFourWatchButtons();
+      enforceStableShortsOutlineOverlay(true);
+    }, 220);
+  };
+
+  setInterval(function() {
+    enforceCleanFourWatchButtons();
+    enforceStableShortsOutlineOverlay(false);
+  }, 400);
+})();
