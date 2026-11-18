@@ -3652,393 +3652,15 @@
   };
 })();
 
-
-// === QAAF V91 REAL PLAYLIST FIX, DAILY CHANNEL SCANNER & LIGHT/DARK THEME ===
-(function initQaafV91PlaylistScannerAndTheme() {
+// === QAAF V97 UNIFIED ZERO-FLICKER MASTER ===
+(function initQaafV97UnifiedZeroFlickerMaster() {
   var FB_BASE = (localStorage.getItem("qaaf_firebase_db_url") || "https://qaaftube-6f251-default-rtdb.firebaseio.com").replace(/\/+$/, "");
+  var ANALYTICS_FB_URL = FB_BASE + "/qaaf_analytics_db.json";
+  var ANALYTICS_CACHE_KEY = "qaaf_analytics_cache_v1";
 
-  function purgeFakeSearchPlaylistsNow() {
-    var map = window.qaafRealChannelPlaylistsMap || {};
-    var changed = false;
-    if (map["Tarbiah Islamic Centre"]) { delete map["Tarbiah Islamic Centre"]; changed = true; }
-    Object.keys(map).forEach(function(ch) {
-      if (!Array.isArray(map[ch])) return;
-      var before = map[ch].length;
-      map[ch] = map[ch].filter(function(p) {
-        if (!p || !p.listId || !p.title) return false;
-        var t = String(p.title).trim();
-        if (/[·•]\s*\d{1,2}:\d{2}(\s|$)/.test(t)) return false;
-        if (/^Playlist\s*\(PL/i.test(t) || /^Playlist:\s/i.test(t)) return false;
-        if (t.indexOf("Dr. Shakeel Ahmed wani") !== -1 || t.indexOf("Jabir") !== -1 || t.indexOf("Shaykh Adnan") !== -1) return false;
-        return true;
-      });
-      if (map[ch].length !== before) changed = true;
-      if (map[ch].length === 0) delete map[ch];
-    });
-    if (changed) {
-      window.qaafRealChannelPlaylistsMap = map;
-      try { localStorage.setItem("qaaf_real_channel_playlists_v1", JSON.stringify(map)); } catch(e) {}
-      if (typeof window.savePlaylistsToLocalAndCloudDb === "function") window.savePlaylistsToLocalAndCloudDb();
-    }
-  }
-  purgeFakeSearchPlaylistsNow();
-
-  window.discoverYouTubePlaylistsForChannel = async function(channelName, channelUrlHint) {
-    var baseChannel = (channelUrlHint || "").trim();
-    var chUrlCache = JSON.parse(localStorage.getItem("qaaf_channel_urls_map_v1") || "{}");
-    if (!baseChannel && channelName && chUrlCache[channelName]) baseChannel = chUrlCache[channelName];
-    if (!baseChannel && channelName) {
-      var chVids = (videosData || []).filter(function(v) { return v && v.channel === channelName && v.ytId; });
-      if (chVids[0]) {
-        try {
-          var oeRes = await fetch("https://noembed.com/embed?url=https://www.youtube.com/watch?v=" + chVids[0].ytId);
-          var oeData = await oeRes.json();
-          if (oeData && oeData.author_url) {
-            baseChannel = oeData.author_url;
-            chUrlCache[channelName] = baseChannel;
-            localStorage.setItem("qaaf_channel_urls_map_v1", JSON.stringify(chUrlCache));
-          }
-        } catch (e) {}
-      }
-    }
-    if (!baseChannel) return [];
-    baseChannel = baseChannel.replace(/\/(videos|shorts|featured|streams|playlists)?\/?$/, "");
-    var plPageUrl = baseChannel + "/playlists";
-    var plMetaMap = new Map();
-
-    function cleanTitle(rawT) {
-      if (!rawT) return "";
-      var t = String(rawT).replace(/\\u0026/g, "&").replace(/&amp;/g, "&").replace(/&quot;/g, "").replace(/^#+\s*/, "").replace(/\s*-\s*YouTube$/i, "").trim();
-      if (/^(view full playlist|play all|playlist|\d+\s*videos?|!\[image.*)$/i.test(t)) return "";
-      if (/[·•]\s*\d{1,2}:\d{2}(\s|$)/.test(t)) return "";
-      return t;
-    }
-
-    function addRealPl(listId, title, sampleVidId) {
-      if (!listId || !/^PL[a-zA-Z0-9_-]{10,}$/.test(listId)) return;
-      var cTitle = cleanTitle(title);
-      if (!cTitle || cTitle.length < 3) return;
-      var ex = plMetaMap.get(listId) || { listId: listId, title: cTitle, thumb: "", countText: "", sampleVidId: "" };
-      if (cTitle.length > ex.title.length) ex.title = cTitle;
-      if (sampleVidId && /^[a-zA-Z0-9_-]{11}$/.test(sampleVidId)) {
-        ex.sampleVidId = sampleVidId;
-        ex.thumb = "https://i.ytimg.com/vi/" + sampleVidId + "/hqdefault.jpg";
-      }
-      plMetaMap.set(listId, ex);
-    }
-
-    function parseOfficialPlaylistsTab(rawText) {
-      if (!rawText) return false;
-      if (/This channel has no playlists|has no playlists/i.test(rawText)) return true;
-      var lockupRgx = /"contentId"\s*:\s*"(PL[a-zA-Z0-9_-]{10,})"(?:(?!lockupViewModel).){1,2200}?"title"\s*:\s*\{\s*"content"\s*:\s*"([^"]{3,150})"/g;
-      for (var m2 of rawText.matchAll(lockupRgx)) addRealPl(m2[1], m2[2], "");
-      var classicRgx = /"playlistId"\s*:\s*"(PL[a-zA-Z0-9_-]{10,})"(?:(?!playlistRenderer).){1,1800}?"title"\s*:\s*\{(?:\s*"simpleText"\s*:\s*"([^"]{3,150})"|\s*"runs"\s*:\s*\[\s*\{\s*"text"\s*:\s*"([^"]{3,150})")/g;
-      for (var m3 of rawText.matchAll(classicRgx)) addRealPl(m3[1], m3[2] || m3[3] || "", "");
-      var mdRgx = /###\s*\[([^\[\]\n]{3,140})\]\(https?:\/\/(?:www\.)?youtube\.com\/(?:watch\?v=([a-zA-Z0-9_-]{11})(?:&|&amp;)list=|playlist\?list=)(PL[a-zA-Z0-9_-]{10,})[^\)]*\)/g;
-      for (var m1 of rawText.matchAll(mdRgx)) {
-        if (!/!\[image/i.test(m1[1])) addRealPl(m1[3], m1[1], m1[2] || "");
-      }
-      return false;
-    }
-
-    var hasNoPls = false;
-    try {
-      var r1 = await fetch("https://r.jina.ai/" + plPageUrl);
-      if (r1.ok) hasNoPls = parseOfficialPlaylistsTab(await r1.text());
-    } catch (e) {}
-    if (!hasNoPls && plMetaMap.size === 0) {
-      try {
-        var r2 = await fetch("https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(plPageUrl + "?ucbcb=1&hl=en"));
-        if (r2.ok) hasNoPls = parseOfficialPlaylistsTab(await r2.text());
-      } catch (e) {}
-    }
-    if (hasNoPls || plMetaMap.size === 0) {
-      if (channelName && window.qaafRealChannelPlaylistsMap) {
-        delete window.qaafRealChannelPlaylistsMap[channelName];
-        try { localStorage.setItem("qaaf_real_channel_playlists_v1", JSON.stringify(window.qaafRealChannelPlaylistsMap)); } catch(e) {}
-      }
-      return [];
-    }
-    return Array.from(plMetaMap.values()).slice(0, 25);
-  };
-
-  window.qaafChannelUpdatesQueue = JSON.parse(localStorage.getItem("qaaf_channel_updates_queue_v1") || "[]");
-  window.qaafRejectedUpdateYtIds = JSON.parse(localStorage.getItem("qaaf_rejected_update_ytids_v1") || "[]");
-  var isScanningChannelsNow = false;
-
-  function saveChannelUpdatesQueue() {
-    try {
-      localStorage.setItem("qaaf_channel_updates_queue_v1", JSON.stringify(window.qaafChannelUpdatesQueue));
-      localStorage.setItem("qaaf_rejected_update_ytids_v1", JSON.stringify(window.qaafRejectedUpdateYtIds));
-    } catch (e) {}
-    fetch(FB_BASE + "/qaaf_channel_updates_queue.json", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ queue: window.qaafChannelUpdatesQueue, rejectedIds: window.qaafRejectedUpdateYtIds, updatedAt: Date.now() })
-    }).catch(function() {});
-    updateAdminChannelUpdatesBadge();
-    renderAdminChannelUpdatesBox();
-  }
-
-  function updateAdminChannelUpdatesBadge() {
-    var qCount = (window.qaafChannelUpdatesQueue || []).length;
-    var fCount = (typeof flaggedVideosQueue !== "undefined" && Array.isArray(flaggedVideosQueue)) ? flaggedVideosQueue.length : 0;
-    var rCount = (window.parentRequestsQueue && Array.isArray(window.parentRequestsQueue)) ? window.parentRequestsQueue.length : 0;
-    var hdrBadge = document.getElementById("adminFlagCountBadge");
-    if (hdrBadge) hdrBadge.innerText = fCount + rCount + qCount;
-  }
-
-  window.scanApprovedChannelsForNewVideos = async function(isManualTrigger) {
-    if (isScanningChannelsNow) return;
-    isScanningChannelsNow = true;
-    if (isManualTrigger && typeof showSyncToast === "function") showSyncToast("⏳ منظور شدہ چینلز میں نئی ویڈیوز چیک کی جا رہی ہیں...");
-    var approvedChannelsSet = new Set(window.verifiedChannelsList || []);
-    (videosData || []).forEach(function(v) { if (v && v.channel && v.channelVerified) approvedChannelsSet.add(v.channel); });
-    var approvedChannels = Array.from(approvedChannelsSet);
-    var chUrlCache = JSON.parse(localStorage.getItem("qaaf_channel_urls_map_v1") || "{}");
-    var existingYtIds = new Set((videosData || []).map(function(v) { return v && v.ytId; }).filter(Boolean));
-    var blockedSet = new Set((blockedVideoIds || []).concat(window.qaafRejectedUpdateYtIds || []));
-    var queuedIds = new Set((window.qaafChannelUpdatesQueue || []).map(function(u) { return u && u.ytId; }).filter(Boolean));
-    var newlyFoundCount = 0;
-
-    for (var i = 0; i < approvedChannels.length; i++) {
-      var chName = approvedChannels[i];
-      var chVids = (videosData || []).filter(function(v) { return v && v.channel === chName && v.ytId; });
-      if (chVids.length === 0) continue;
-      var chKnownYtIds = new Set(chVids.map(function(v) { return v.ytId; }));
-      var sampleCat = chVids[0].category || "bayan";
-      var sampleLang = chVids[0].lang || "ur";
-      var sampleAud = chVids[0].audienceMode || (sampleCat === "bayan" ? "family_only" : "both_family_kids");
-      var baseUrl = chUrlCache[chName] || "";
-      if (!baseUrl) {
-        try {
-          var oe = await fetch("https://noembed.com/embed?url=https://www.youtube.com/watch?v=" + chVids[0].ytId);
-          var oeD = await oe.json();
-          if (oeD && oeD.author_url) {
-            baseUrl = oeD.author_url.replace(/\/+$/, "");
-            chUrlCache[chName] = baseUrl;
-            localStorage.setItem("qaaf_channel_urls_map_v1", JSON.stringify(chUrlCache));
-          }
-        } catch (e) {}
-      }
-      if (!baseUrl) continue;
-      var pageText = "";
-      try {
-        var r = await fetch("https://r.jina.ai/" + baseUrl + "/videos");
-        if (r.ok) pageText = await r.text();
-      } catch (e) {}
-      if (!pageText) continue;
-      var topIds = [];
-      for (var m of pageText.matchAll(/(?:watch\?v=|\/shorts\/|"videoId"\s*:\s*")([a-zA-Z0-9_-]{11})/g)) {
-        if (topIds.indexOf(m[1]) === -1) topIds.push(m[1]);
-        if (topIds.length >= 10) break;
-      }
-      var candidateNewIds = [];
-      for (var k = 0; k < topIds.length; k++) {
-        var vidId = topIds[k];
-        if (chKnownYtIds.has(vidId)) break;
-        if (!existingYtIds.has(vidId) && !blockedSet.has(vidId) && !queuedIds.has(vidId)) candidateNewIds.push(vidId);
-        if (candidateNewIds.length >= 5) break;
-      }
-      for (var n = 0; n < candidateNewIds.length; n++) {
-        var newYtId = candidateNewIds[n];
-        try {
-          var nr = await fetch("https://noembed.com/embed?url=https://www.youtube.com/watch?v=" + newYtId);
-          var nd = await nr.json();
-          if (nd && nd.title) {
-            window.qaafChannelUpdatesQueue.unshift({ id: "upd_" + newYtId, ytId: newYtId, title: nd.title, channel: chName, category: sampleCat, lang: sampleLang, audienceMode: sampleAud, detectedAt: new Date().toLocaleDateString() });
-            queuedIds.add(newYtId);
-            newlyFoundCount++;
-          }
-        } catch (e) {}
-      }
-    }
-    localStorage.setItem("qaaf_last_channel_scan_ts", String(Date.now()));
-    isScanningChannelsNow = false;
-    saveChannelUpdatesQueue();
-    if (newlyFoundCount > 0 && typeof showSyncToast === "function") {
-      showSyncToast("🔔 منظور شدہ چینلز میں " + newlyFoundCount + " نئی ویڈیوز آئی ہیں! ایڈمن پینل میں چیک کریں۔");
-    } else if (isManualTrigger && typeof showSyncToast === "function") {
-      showSyncToast("✅ تمام منظور شدہ چینلز چیک کر لیے گئے۔ کوئی نئی ویڈیو باقی نہیں۔");
-    }
-  };
-
-  window.adminApproveChannelUpdateVideo = function(ytId) {
-    var item = (window.qaafChannelUpdatesQueue || []).find(function(x) { return x && x.ytId === ytId; });
-    if (!item) return;
-    if (!videosData.some(function(v) { return v && v.ytId === item.ytId; })) {
-      videosData.unshift({ id: "v_" + item.ytId, ytId: item.ytId, title: item.title, channel: item.channel, lang: item.lang || "ur", region: (item.lang || "ur").toUpperCase(), category: item.category || "bayan", audienceMode: item.audienceMode || "both_family_kids", kidsSafe: (item.category !== "bayan" && item.audienceMode !== "family_only"), channelVerified: true, isShort: /#short/i.test(item.title), isCustomAdded: true, duration: "12:00", views: 0, createdAt: Math.floor(Date.now() / 1000) });
-      localStorage.setItem("qaaf_videos_data", JSON.stringify(videosData));
-    }
-    window.qaafChannelUpdatesQueue = (window.qaafChannelUpdatesQueue || []).filter(function(x) { return x && x.ytId !== ytId; });
-    saveChannelUpdatesQueue();
-    if (typeof window.renderVideosNow === "function") window.renderVideosNow();
-    if (window.qaafCloudSync) window.qaafCloudSync.pushState("Approved New Channel Video: " + item.title);
-    if (typeof showSyncToast === "function") showSyncToast("✅ نئی ویڈیو منظور ہو کر شامل ہو گئی!");
-  };
-
-  window.adminRejectChannelUpdateVideo = function(ytId) {
-    if (window.qaafRejectedUpdateYtIds.indexOf(ytId) === -1) window.qaafRejectedUpdateYtIds.push(ytId);
-    if (Array.isArray(blockedVideoIds) && blockedVideoIds.indexOf(ytId) === -1) { blockedVideoIds.push(ytId); localStorage.setItem("qaaf_blocked_videos", JSON.stringify(blockedVideoIds)); }
-    window.qaafChannelUpdatesQueue = (window.qaafChannelUpdatesQueue || []).filter(function(x) { return x && x.ytId !== ytId; });
-    saveChannelUpdatesQueue();
-    if (window.qaafCloudSync) window.qaafCloudSync.pushState("Rejected Channel Update Video: " + ytId);
-    if (typeof showSyncToast === "function") showSyncToast("🗑️ ویڈیو رد کر دی گئی۔");
-  };
-
-  window.adminApproveAllChannelUpdates = function() {
-    var list = (window.qaafChannelUpdatesQueue || []).slice();
-    if (list.length === 0) return;
-    list.forEach(function(item) {
-      if (!videosData.some(function(v) { return v && v.ytId === item.ytId; })) {
-        videosData.unshift({ id: "v_" + item.ytId, ytId: item.ytId, title: item.title, channel: item.channel, lang: item.lang || "ur", region: (item.lang || "ur").toUpperCase(), category: item.category || "bayan", audienceMode: item.audienceMode || "both_family_kids", kidsSafe: (item.category !== "bayan" && item.audienceMode !== "family_only"), channelVerified: true, isShort: /#short/i.test(item.title), isCustomAdded: true, duration: "12:00", views: 0, createdAt: Math.floor(Date.now() / 1000) });
-      }
-    });
-    localStorage.setItem("qaaf_videos_data", JSON.stringify(videosData));
-    window.qaafChannelUpdatesQueue = [];
-    saveChannelUpdatesQueue();
-    if (typeof window.renderVideosNow === "function") window.renderVideosNow();
-    if (window.qaafCloudSync) window.qaafCloudSync.pushState("Approved All New Channel Videos");
-    if (typeof showSyncToast === "function") showSyncToast("🎉 تمام نئی ویڈیوز منظور ہو گئیں!");
-  };
-
-  function renderAdminChannelUpdatesBox() {
-    var pubPane = document.getElementById("admPane_publish");
-    if (!pubPane) return;
-    var box = document.getElementById("admDailyChannelUpdatesCard");
-    if (!box) {
-      box = document.createElement("div");
-      box.id = "admDailyChannelUpdatesCard";
-      box.className = "bg-gradient-to-br from-[#0e1b24] to-[#111722] border-2 border-emerald-500/50 rounded-2xl p-4 space-y-3 text-xs mb-4 shadow-xl";
-      pubPane.insertBefore(box, pubPane.children[1] || pubPane.firstChild);
-    }
-    var q = window.qaafChannelUpdatesQueue || [];
-    var rowsHtml = "";
-    if (q.length === 0) {
-      rowsHtml = "<p class=\x22text-slate-400 py-2 text-center\x22>✅ اس وقت منظور شدہ چینلز میں کوئی نئی غیر منظور شدہ ویڈیو نہیں ہے۔</p>";
-    } else {
-      q.forEach(function(item) {
-        var thumb = "https://i.ytimg.com/vi/" + item.ytId + "/mqdefault.jpg";
-        rowsHtml += "<div class=\x22bg-black/70 border border-emerald-500/30 p-2.5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5\x22>" +
-          "<div class=\x22flex items-center gap-2.5 min-w-0 flex-1\x22>" +
-            "<img src=\x22" + thumb + "\x22 class=\x22w-16 h-10 object-cover rounded-lg border border-white/15 shrink-0\x22 />" +
-            "<div class=\x22min-w-0 flex-1\x22>" +
-              "<p class=\x22font-extrabold text-white truncate\x22>" + item.title + "</p>" +
-              "<p class=\x22text-[11px] text-emerald-400 font-bold\x22>📺 " + item.channel + " • " + (item.detectedAt || "New") + "</p>" +
-            "</div>" +
-          "</div>" +
-          "<div class=\x22flex flex-wrap items-center gap-1.5 shrink-0\x22>" +
-            "<button type=\x22button\x22 data-ytid=\x22" + item.ytId + "\x22 onclick=\x22playVideoInsideAdminModal(this.getAttribute(\x27data-ytid\x27), \x27Preview\x27)\x22 class=\x22bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1.5 rounded-lg text-[11px] font-extrabold cursor-pointer\x22>▶ دیکھیں</button>" +
-            "<button type=\x22button\x22 data-ytid=\x22" + item.ytId + "\x22 onclick=\x22adminApproveChannelUpdateVideo(this.getAttribute(\x27data-ytid\x27))\x22 class=\x22bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg text-[11px] font-extrabold cursor-pointer\x22>✅ منظور کریں</button>" +
-            "<button type=\x22button\x22 data-ytid=\x22" + item.ytId + "\x22 onclick=\x22adminRejectChannelUpdateVideo(this.getAttribute(\x27data-ytid\x27))\x22 class=\x22bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1.5 rounded-lg text-[11px] font-extrabold cursor-pointer\x22>🗑️ ڈیلیٹ</button>" +
-          "</div>" +
-        "</div>";
-      });
-    }
-    box.innerHTML =
-      "<div class=\x22flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5\x22>" +
-        "<div>" +
-          "<h4 class=\x22text-xs sm:text-sm font-extrabold text-emerald-300 flex items-center gap-2\x22><span>🔔</span> <span>منظور شدہ چینلز کی نئی ویڈیوز (Daily Channel Updates)</span> <span class=\x22bg-emerald-500 text-black px-2 py-0.5 rounded-full text-[10px] font-extrabold\x22>" + q.length + "</span></h4>" +
-          "<p class=\x22text-[11px] text-slate-400 mt-0.5\x22>منظور شدہ چینلز میں آنے والی نئی ویڈیوز یہاں خودکار جمع ہوتی ہیں تاکہ آپ چیک کر کے منظور یا ڈیلیٹ کر سکیں۔</p>" +
-        "</div>" +
-        "<div class=\x22flex items-center gap-1.5\x22>" +
-          (q.length > 0 ? "<button type=\x22button\x22 onclick=\x22adminApproveAllChannelUpdates()\x22 class=\x22bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-xl text-[11px] font-extrabold shadow cursor-pointer\x22>✅ تمام منظور کریں</button>" : "") +
-          "<button type=\x22button\x22 onclick=\x22scanApprovedChannelsForNewVideos(true)\x22 class=\x22bg-amber-500 hover:bg-amber-400 text-black px-3 py-1.5 rounded-xl text-[11px] font-extrabold shadow cursor-pointer\x22>🔄 ابھی چینلز چیک کریں</button>" +
-        "</div>" +
-      "</div>" +
-      "<div class=\x22space-y-2 max-h-64 overflow-y-auto pr-1\x22>" + rowsHtml + "</div>";
-  }
-
-  fetch(FB_BASE + "/qaaf_channel_updates_queue.json?t=" + Date.now()).then(function(r) { return r.ok ? r.json() : null; }).then(function(d) {
-    if (d && typeof d === "object") {
-      if (Array.isArray(d.queue)) window.qaafChannelUpdatesQueue = d.queue;
-      if (Array.isArray(d.rejectedIds)) window.qaafRejectedUpdateYtIds = d.rejectedIds;
-      localStorage.setItem("qaaf_channel_updates_queue_v1", JSON.stringify(window.qaafChannelUpdatesQueue));
-      localStorage.setItem("qaaf_rejected_update_ytids_v1", JSON.stringify(window.qaafRejectedUpdateYtIds));
-      updateAdminChannelUpdatesBadge();
-      renderAdminChannelUpdatesBox();
-    }
-  }).catch(function() {});
-
-  setTimeout(function() {
-    renderAdminChannelUpdatesBox();
-    updateAdminChannelUpdatesBadge();
-    var lastScan = parseInt(localStorage.getItem("qaaf_last_channel_scan_ts") || "0", 10);
-    if (Date.now() - lastScan > 12 * 3600 * 1000) window.scanApprovedChannelsForNewVideos(false);
-  }, 5000);
-
-  if (!document.getElementById("qaafLightModeMasterCss")) {
-    var thStyle = document.createElement("style");
-    thStyle.id = "qaafLightModeMasterCss";
-    thStyle.textContent = [
-      "body.qaaf-light-mode, body.qaaf-light-mode.bg-islamic-family, body.qaaf-light-mode.bg-islamic-kids { background-color: #f8fafc !important; color: #0f172a !important; }",
-      "body.qaaf-light-mode #mainHeader { background-color: rgba(255,255,255,0.96) !important; border-bottom: 1px solid #e2e8f0 !important; }",
-      "body.qaaf-light-mode #brandMainPrefix { color: #0f172a !important; }",
-      "body.qaaf-light-mode #headerDrawerMenuBtn { background-color: #f1f5f9 !important; color: #0f172a !important; border-color: #cbd5e1 !important; }",
-      "body.qaaf-light-mode #qaafHeaderSearchToggleBtn svg circle, body.qaaf-light-mode #qaafHeaderSearchToggleBtn svg line { stroke: #0f172a !important; }",
-      "body.qaaf-light-mode #qaafHeaderSearchToggleBtn svg text { fill: #0f172a !important; }",
-      "body.qaaf-light-mode #qaafHeaderCenterSearch > div { background-color: #f1f5f9 !important; border-color: #cbd5e1 !important; }",
-      "body.qaaf-light-mode #qaafHeaderSearchInput { color: #0f172a !important; }",
-      "body.qaaf-light-mode #categoryBar { background-color: rgba(255,255,255,0.95) !important; border-bottom: 1px solid #e2e8f0 !important; }",
-      "body.qaaf-light-mode #categoryBar .cat-chip:not(.bg-emerald-500) { background-color: #e2e8f0 !important; color: #0f172a !important; }",
-      "body.qaaf-light-mode #videoGrid h3 { color: #0f172a !important; }",
-      "body.qaaf-light-mode #videoGrid .text-slate-400 { color: #475569 !important; }",
-      "body.qaaf-light-mode #qaafShortsShelf h3 { color: #0f172a !important; }",
-      "body.qaaf-light-mode #qaafChannelViewHeaderBox { background: #ffffff !important; border-color: #cbd5e1 !important; }",
-      "body.qaaf-light-mode #qaafChannelViewHeaderBox h2 { color: #0f172a !important; }",
-      "body.qaaf-light-mode #qaafMobileBottomNav { background: #ffffff !important; background-color: #ffffff !important; border-top: 1px solid #e2e8f0 !important; }",
-      "body.qaaf-light-mode #qaafMobileBottomNav button { color: #475569 !important; }",
-      "body.qaaf-light-mode #qaafMobileBottomNav button.text-white { color: #164e3a !important; }",
-      "body.qaaf-light-mode #qaafLeftSidebarDrawer { background-color: #ffffff !important; border-right: 1px solid #e2e8f0 !important; color: #0f172a !important; }",
-      "body.qaaf-light-mode #qaafLeftSidebarDrawer h3, body.qaaf-light-mode #qaafLeftSidebarDrawer button { color: #0f172a !important; }",
-      "body.qaaf-light-mode #qaafLeftSidebarDrawer .bg-\\[\\#131822\\] { background-color: #f1f5f9 !important; border-color: #cbd5e1 !important; }"
-    ].join("\n");
-    document.head.appendChild(thStyle);
-  }
-
-  window.applyQaafThemeMode = function(mode) {
-    var isLight = (mode === "light");
-    document.body.classList.toggle("qaaf-light-mode", isLight);
-    localStorage.setItem("qaaf_theme_mode", isLight ? "light" : "dark");
-    var btn = document.getElementById("qaafThemeToggleBtn");
-    if (btn) {
-      btn.innerHTML = isLight
-        ? "<span class=\x22flex items-center gap-2.5\x22><span class=\x22text-base\x22>🌙</span> <span>ڈارک موڈ (سیاہ تھیم)</span></span><span class=\x22px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-800 text-white\x22>DARK</span>"
-        : "<span class=\x22flex items-center gap-2.5\x22><span class=\x22text-base\x22>☀️</span> <span>لائٹ موڈ (سفید تھیم)</span></span><span class=\x22px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-400 text-black\x22>LIGHT</span>";
-    }
-  };
-
-  window.toggleQaafThemeMode = function() {
-    var cur = localStorage.getItem("qaaf_theme_mode") || "dark";
-    window.applyQaafThemeMode(cur === "light" ? "dark" : "light");
-  };
-
-  function injectThemeToggleButtonInDrawer() {
-    var extraBox = document.getElementById("qaafDrawerExtraMenuItems");
-    if (!extraBox || document.getElementById("qaafThemeToggleBtn")) return;
-    var btn = document.createElement("button");
-    btn.id = "qaafThemeToggleBtn";
-    btn.type = "button";
-    btn.onclick = function() { window.toggleQaafThemeMode(); };
-    btn.className = "w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-xs font-extrabold text-white transition cursor-pointer";
-    extraBox.insertBefore(btn, extraBox.firstChild);
-    window.applyQaafThemeMode(localStorage.getItem("qaaf_theme_mode") || "dark");
-  }
-
-  window.applyQaafThemeMode(localStorage.getItem("qaaf_theme_mode") || "dark");
-  setInterval(function() {
-    injectThemeToggleButtonInDrawer();
-    renderAdminChannelUpdatesBox();
-  }, 800);
-})();
-
-
-// === QAAF V92 SHORTS TOUCH SWIPE & PORTRAIT BOTTOM SETTINGS SHEET ===
-(function initQaafV92ShortsSwipeAndBottomSettings() {
-  var currentPlaybackRate = 1.0;
-  var currentQualityLabel = "Auto (720p)";
-  var captionsEnabled = false;
-  var isScreenTouchLocked = false;
+  var YT_LIKE_OUTLINE_SVG = "<svg viewBox=\x270 0 24 24\x27 width=\x2717\x27 height=\x2717\x27 fill=\x27none\x27 stroke=\x27currentColor\x27 stroke-width=\x272\x27 stroke-linecap=\x27round\x27 stroke-linejoin=\x27round\x27 style=\x27display:inline-block;vertical-align:middle;\x27><path d=\x27M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3\x27/></svg>";
+  var YT_LIKE_FILLED_SVG = "<svg viewBox=\x270 0 24 24\x27 width=\x2717\x27 height=\x2717\x27 fill=\x27#10b981\x27 stroke=\x27#10b981\x27 stroke-width=\x272\x27 stroke-linecap=\x27round\x27 stroke-linejoin=\x27round\x27 style=\x27display:inline-block;vertical-align:middle;\x27><path d=\x27M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3\x27/></svg>";
+  var YT_SHARE_SVG = "<svg viewBox=\x270 0 24 24\x27 width=\x2717\x27 height=\x2717\x27 fill=\x27currentColor\x27 style=\x27display:inline-block;vertical-align:middle;\x27><path d=\x27M15 5.63 20.66 12 15 18.37V14h-1c-3.96 0-7.14 1-9.75 3.09 1.84-4.07 5.11-6.4 9.89-7.1l.86-.13V5.63M14 3v6C6.22 10.13 3.11 15.33 2 21c2.78-3.97 6.44-6 12-6v6l8-9-8-9z\x27/></svg>";
 
   function sendYtCmd(func, args) {
     var ifr = document.getElementById("ytIframe");
@@ -4048,347 +3670,17 @@
   }
 
   // =========================================================================
-  // 1. YOUTUBE-STYLE BOTTOM SHEET FOR SETTINGS & PLAYBACK SPEED (PORTRAIT MODE)
+  // 1. MASTER CSS (Z-INDEX FOR MODALS & DRAWER, LIGHT MODE, HIDE EMPTY DURATION)
   // =========================================================================
-  function ensureYtBottomSettingsModal() {
-    if (document.getElementById("qaafYtBottomSheetModal")) return;
-    var modal = document.createElement("div");
-    modal.id = "qaafYtBottomSheetModal";
-    modal.dir = "ltr";
-    modal.className = "fixed inset-0 z-[260] bg-black/60 hidden flex-col justify-end";
-    modal.onclick = function(e) {
-      if (e.target === modal) window.closeQaafYtBottomSheet();
-    };
-    modal.innerHTML =
-      "<div id=\x22qaafYtBottomSheetContent\x22 class=\x22w-full max-w-lg mx-auto bg-[#212121] text-white rounded-t-3xl p-4 pb-7 shadow-2xl border-t border-white/10 transition-transform duration-200\x22></div>";
-    document.body.appendChild(modal);
-  }
-
-  window.closeQaafYtBottomSheet = function() {
-    var m = document.getElementById("qaafYtBottomSheetModal");
-    if (m) {
-      m.classList.add("hidden");
-      m.classList.remove("flex");
-    }
-  };
-
-  window.openQaafYtMainSettingsSheet = function(e) {
-    if (e) { e.preventDefault(); e.stopPropagation(); }
-    ensureYtBottomSettingsModal();
-    var modal = document.getElementById("qaafYtBottomSheetModal");
-    var box = document.getElementById("qaafYtBottomSheetContent");
-    if (!modal || !box) return;
-    var speedStr = (currentPlaybackRate === 1) ? "1x" : (currentPlaybackRate + "x");
-    var ccStr = captionsEnabled ? "On" : "Off";
-
-    box.innerHTML =
-      "<div class=\x22w-10 h-1 bg-white/30 rounded-full mx-auto mb-4\x22></div>" +
-      "<div class=\x22space-y-1 text-sm font-medium\x22>" +
-        "<button type=\x22button\x22 onclick=\x22openQaafYtQualitySheet()\x22 class=\x22w-full flex items-center justify-between px-3 py-3.5 rounded-2xl hover:bg-white/10 transition cursor-pointer\x22>" +
-          "<div class=\x22flex items-center gap-4\x22>" +
-            "<svg viewBox=\x220 0 24 24\x22 class=\x22w-6 h-6 text-white\x22 fill=\x22none\x22 stroke=\x22currentColor\x22 stroke-width=\x221.8\x22><line x1=\x224\x22 y1=\x227\x22 x2=\x2220\x22 y2=\x227\x22/><circle cx=\x229\x22 cy=\x227\x22 r=\x222.5\x22 fill=\x22#212121\x22/><line x1=\x224\x22 y1=\x2217\x22 x2=\x2220\x22 y2=\x2217\x22/><circle cx=\x2215\x22 cy=\x2217\x22 r=\x222.5\x22 fill=\x22#212121\x22/></svg>" +
-            "<span class=\x22text-[15px] font-semibold\x22>Quality</span>" +
-          "</div>" +
-          "<span class=\x22text-neutral-400 text-sm flex items-center gap-1\x22><span>" + currentQualityLabel + "</span><span>›</span></span>" +
-        "</button>" +
-        "<button type=\x22button\x22 onclick=\x22openQaafYtSpeedSheet()\x22 class=\x22w-full flex items-center justify-between px-3 py-3.5 rounded-2xl hover:bg-white/10 transition cursor-pointer\x22>" +
-          "<div class=\x22flex items-center gap-4\x22>" +
-            "<svg viewBox=\x220 0 24 24\x22 class=\x22w-6 h-6 text-white\x22 fill=\x22none\x22 stroke=\x22currentColor\x22 stroke-width=\x221.8\x22><circle cx=\x2212\x22 cy=\x2212\x22 r=\x229\x22 stroke-dasharray=\x224 2\x22/><polygon points=\x2210,8.5 16,12 10,15.5\x22 fill=\x22currentColor\x22/></svg>" +
-            "<span class=\x22text-[15px] font-semibold\x22>Playback speed</span>" +
-          "</div>" +
-          "<span class=\x22text-neutral-400 text-sm flex items-center gap-1\x22><span>" + speedStr + "</span><span>›</span></span>" +
-        "</button>" +
-        "<button type=\x22button\x22 onclick=\x22toggleQaafYtCaptions()\x22 class=\x22w-full flex items-center justify-between px-3 py-3.5 rounded-2xl hover:bg-white/10 transition cursor-pointer\x22>" +
-          "<div class=\x22flex items-center gap-4\x22>" +
-            "<svg viewBox=\x220 0 24 24\x22 class=\x22w-6 h-6 text-white\x22 fill=\x22none\x22 stroke=\x22currentColor\x22 stroke-width=\x221.8\x22><rect x=\x223\x22 y=\x225\x22 width=\x2218\x22 height=\x2214\x22 rx=\x222.5\x22/><path d=\x22M10 10.5a2 2 0 1 0 0 3M16 10.5a2 2 0 1 0 0 3\x22 stroke-width=\x222\x22 stroke-linecap=\x22round\x22/></svg>" +
-            "<span class=\x22text-[15px] font-semibold\x22>Captions</span>" +
-          "</div>" +
-          "<span class=\x22text-neutral-400 text-sm flex items-center gap-1\x22><span>" + ccStr + "</span><span>›</span></span>" +
-        "</button>" +
-        "<button type=\x22button\x22 onclick=\x22activateQaafScreenTouchLock()\x22 class=\x22w-full flex items-center justify-between px-3 py-3.5 rounded-2xl hover:bg-white/10 transition cursor-pointer\x22>" +
-          "<div class=\x22flex items-center gap-4\x22>" +
-            "<svg viewBox=\x220 0 24 24\x22 class=\x22w-6 h-6 text-white\x22 fill=\x22none\x22 stroke=\x22currentColor\x22 stroke-width=\x221.8\x22><rect x=\x225\x22 y=\x2211\x22 width=\x2214\x22 height=\x2210\x22 rx=\x222\x22/><path d=\x22M8 11V7a4 4 0 0 1 8 0v4\x22/></svg>" +
-            "<span class=\x22text-[15px] font-semibold\x22>Lock screen</span>" +
-          "</div>" +
-        "</button>" +
-      "</div>";
-
-    modal.classList.remove("hidden");
-    modal.classList.add("flex");
-  };
-
-  window.openQaafYtSpeedSheet = function() {
-    var box = document.getElementById("qaafYtBottomSheetContent");
-    if (!box) return;
-    var r = currentPlaybackRate;
-    var speeds = [0.5, 1.0, 1.25, 1.5, 1.75, 2.0];
-    var pillsHtml = speeds.map(function(sp) {
-      var isAct = Math.abs(r - sp) < 0.03;
-      var lbl = (sp === 1.0) ? "1x" : (sp + "x");
-      return "<div class=\x22flex flex-col items-center gap-1\x22>" +
-        "<button type=\x22button\x22 onclick=\x22applyQaafPlaybackSpeed(" + sp + ")\x22 class=\x22px-3.5 py-2 rounded-full text-xs font-bold transition cursor-pointer " + (isAct ? "bg-white text-black shadow" : "bg-[#333333] hover:bg-[#444444] text-white") + "\x22>" + lbl + "</button>" +
-        (sp === 1.0 ? "<span class=\x22text-[10px] text-neutral-400\x22>Normal</span>" : "") +
-      "</div>";
-    }).join("");
-
-    box.innerHTML =
-      "<div class=\x22w-10 h-1 bg-white/30 rounded-full mx-auto mb-3\x22></div>" +
-      "<div class=\x22text-center text-base font-extrabold text-white mb-4\x22 id=\x22qaafSpeedSheetValueLabel\x22>" + r.toFixed(2).replace(/\\.00$/, "x").replace(/(\\.\\d)0$/, "$1x") + (String(r).indexOf(".") !== -1 && !/0$/.test(r.toFixed(2)) ? "x" : "") + "</div>" +
-      "<div class=\x22flex items-center gap-3 px-2 mb-6\x22>" +
-        "<button type=\x22button\x22 onclick=\x22stepQaafPlaybackSpeed(-0.05)\x22 class=\x22w-10 h-10 rounded-full bg-[#333333] hover:bg-[#444444] text-white text-xl font-bold flex items-center justify-center shrink-0 cursor-pointer\x22>−</button>" +
-        "<input id=\x22qaafSpeedRangeInput\x22 type=\x22range\x22 min=\x220.25\x22 max=\x222.0\x22 step=\x220.05\x22 value=\x22" + r + "\x22 oninput=\x22applyQaafPlaybackSpeed(this.value, true)\x22 class=\x22w-full accent-white h-1 bg-neutral-600 rounded-lg cursor-pointer\x22 />" +
-        "<button type=\x22button\x22 onclick=\x22stepQaafPlaybackSpeed(0.05)\x22 class=\x22w-10 h-10 rounded-full bg-[#333333] hover:bg-[#444444] text-white text-xl font-bold flex items-center justify-center shrink-0 cursor-pointer\x22>+</button>" +
-      "</div>" +
-      "<div class=\x22grid grid-cols-6 gap-1.5 items-start px-1\x22>" + pillsHtml + "</div>";
-  };
-
-  window.applyQaafPlaybackSpeed = function(val, keepSheetOpen) {
-    var num = Math.max(0.25, Math.min(2.0, parseFloat(val) || 1.0));
-    currentPlaybackRate = Math.round(num * 100) / 100;
-    sendYtCmd("setPlaybackRate", [currentPlaybackRate]);
-    var lblEl = document.getElementById("qaafSpeedSheetValueLabel");
-    if (lblEl) lblEl.innerText = currentPlaybackRate + "x";
-    var rngEl = document.getElementById("qaafSpeedRangeInput");
-    if (rngEl && parseFloat(rngEl.value) !== currentPlaybackRate) rngEl.value = currentPlaybackRate;
-    if (!keepSheetOpen) {
-      window.openQaafYtSpeedSheet();
-    }
-  };
-
-  window.stepQaafPlaybackSpeed = function(delta) {
-    window.applyQaafPlaybackSpeed(currentPlaybackRate + delta, false);
-  };
-
-  window.openQaafYtQualitySheet = function() {
-    var box = document.getElementById("qaafYtBottomSheetContent");
-    if (!box) return;
-    var qualities = [
-      { label: "1080p HD", code: "hd1080" },
-      { label: "720p HD", code: "hd720" },
-      { label: "480p", code: "large" },
-      { label: "360p", code: "medium" },
-      { label: "Auto (Recommended)", code: "default" }
-    ];
-    box.innerHTML =
-      "<div class=\x22w-10 h-1 bg-white/30 rounded-full mx-auto mb-3\x22></div>" +
-      "<h4 class=\x22text-sm font-bold text-neutral-300 px-3 mb-2\x22>Quality for current video</h4>" +
-      "<div class=\x22space-y-1\x22>" +
-        qualities.map(function(q) {
-          var act = (currentQualityLabel === q.label);
-          return "<button type=\x22button\x22 onclick=\x22selectQaafYtQuality(\x27" + q.code + "\x27, \x27" + q.label + "\x27)\x22 class=\x22w-full text-left px-4 py-3 rounded-xl hover:bg-white/10 flex items-center justify-between text-sm font-semibold cursor-pointer\x22><span>" + q.label + "</span>" + (act ? "<span class=\x22text-emerald-400 font-extrabold\x22>✓</span>" : "") + "</button>";
-        }).join("") +
-      "</div>";
-  };
-
-  window.selectQaafYtQuality = function(code, label) {
-    currentQualityLabel = label;
-    sendYtCmd("setPlaybackQualityRange", [code, code]);
-    sendYtCmd("setPlaybackQuality", [code]);
-    window.closeQaafYtBottomSheet();
-    if (typeof showSyncToast === "function") showSyncToast("🎬 Quality: " + label);
-  };
-
-  window.toggleQaafYtCaptions = function() {
-    captionsEnabled = !captionsEnabled;
-    if (captionsEnabled) {
-      sendYtCmd("loadModule", ["captions"]);
-      sendYtCmd("setOption", ["captions", "track", { languageCode: preferredContentLang || "en" }]);
-    } else {
-      sendYtCmd("unloadModule", ["captions"]);
-    }
-    window.closeQaafYtBottomSheet();
-    if (typeof showSyncToast === "function") showSyncToast(captionsEnabled ? "CLOSED CAPTIONS [CC] Subtitles Turned ON" : "CLOSED CAPTIONS [CC] Subtitles Turned OFF");
-  };
-
-  window.activateQaafScreenTouchLock = function() {
-    window.closeQaafYtBottomSheet();
-    var aspect = document.getElementById("playerAspectBox");
-    if (!aspect) return;
-    var lockOv = document.getElementById("qaafScreenTouchLockOverlay");
-    if (!lockOv) {
-      lockOv = document.createElement("div");
-      lockOv.id = "qaafScreenTouchLockOverlay";
-      lockOv.style.cssText = "position:absolute; inset:0; z-index:55; background:rgba(0,0,0,0.18); display:flex; align-items:flex-end; justify-content:center; padding-bottom:18px;";
-      lockOv.innerHTML = "<button type=\x22button\x22 onclick=\x22document.getElementById(\x27qaafScreenTouchLockOverlay\x27).remove()\x22 class=\x22bg-black/85 border border-white/30 text-white px-4 py-2 rounded-full text-xs font-extrabold shadow-xl flex items-center gap-2 cursor-pointer\x22><span>🔒</span><span>Screen locked • Tap to unlock</span></button>";
-      aspect.appendChild(lockOv);
-    }
-  };
-
-  function injectPortraitSettingsTriggerOnVideo() {
-    var aspect = document.getElementById("playerAspectBox");
-    if (!aspect) return;
-    var modal = document.getElementById("playerModal");
-    var isShorts = modal && modal.classList.contains("qaaf-shorts-mode");
-    var existingGear = document.getElementById("qaafPortraitTopRightGearBtn");
-    if (isShorts) {
-      if (existingGear) existingGear.style.display = "none";
-      return;
-    }
-    if (!existingGear) {
-      existingGear = document.createElement("button");
-      existingGear.id = "qaafPortraitTopRightGearBtn";
-      existingGear.type = "button";
-      existingGear.title = "Video Settings & Speed";
-      existingGear.style.cssText = "position:absolute; top:6px; right:6px; width:42px; height:42px; z-index:42; background:transparent; border:none; color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; opacity:0.88;";
-      existingGear.innerHTML = "<div class=\x22w-8 h-8 rounded-full bg-black/55 hover:bg-black/80 flex items-center justify-center shadow\x22><svg viewBox=\x220 0 24 24\x22 class=\x22w-5 h-5 text-white\x22 fill=\x22none\x22 stroke=\x22currentColor\x22 stroke-width=\x222\x22><circle cx=\x2212\x22 cy=\x2212\x22 r=\x223\x22/><path d=\x22M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z\x22/></svg></div>";
-      existingGear.onclick = function(ev) {
-        window.openQaafYtMainSettingsSheet(ev);
-      };
-      aspect.appendChild(existingGear);
-    }
-    existingGear.style.display = document.fullscreenElement ? "none" : "flex";
-  }
-
-  // =========================================================================
-  // 2. SHORTS PLAYER: REMOVE ARROWS (▲/▼) & ENABLE TOUCH SWIPE + MOUSE WHEEL
-  // =========================================================================
-  var YT_SHARE_SVG = "<svg viewBox=\x270 0 24 24\x27 width=\x2718\x27 height=\x2718\x27 fill=\x27currentColor\x27 style=\x27display:inline-block;vertical-align:middle;\x27><path d=\x27M15 5.63 20.66 12 15 18.37V14h-1c-3.96 0-7.14 1-9.75 3.09 1.84-4.07 5.11-6.4 9.89-7.1l.86-.13V5.63M14 3v6C6.22 10.13 3.11 15.33 2 21c2.78-3.97 6.44-6 12-6v6l8-9-8-9z\x27/></svg>";
-
-  function setupShortsSwipeAndCleanButtons() {
-    var modal = document.getElementById("playerModal");
-    var box = document.getElementById("playerModalBox");
-    var aspect = document.getElementById("playerAspectBox");
-    if (!modal || modal.classList.contains("hidden") || !aspect) return;
-    var video = (videosData || []).find(function(x) { return x && x.id === currentPlayingVideoId; });
-    if (!video || !isVideoShort(video)) {
-      var swZone = document.getElementById("qaafShortsSwipeGestureZone");
-      if (swZone) swZone.style.display = "none";
-      injectPortraitSettingsTriggerOnVideo();
-      return;
-    }
-
-    injectPortraitSettingsTriggerOnVideo();
-
-    // A. Right-side action bar WITHOUT ▲ and ▼ arrows!
-    var ov = document.getElementById("qaafYtShortsMasterOverlay");
-    if (ov) {
-      var isFav = (favoriteVideoIds || []).indexOf(video.id) !== -1;
-      var vCount = (typeof window.getQaafRealViewCount === "function") ? window.getQaafRealViewCount(video) : (video.realViews || 1);
-      ov.style.cssText = "position:absolute; right:10px; bottom:110px; top:auto; left:auto; width:48px; height:auto; z-index:42; display:flex; flex-direction:column; align-items:center; gap:16px; pointer-events:auto;";
-      ov.innerHTML =
-        "<div style=\x27display:flex;flex-direction:column;align-items:center;gap:3px;\x27>" +
-          "<button type=\x27button\x27 onclick=\x27toggleFavoriteVideo(currentPlayingVideoId,event);setTimeout(window.refreshQaafShortsOverlayNow,40)\x27 style=\x27width:44px;height:44px;border-radius:999px;background:rgba(0,0,0,0.55);color:#fff;font-size:18px;border:1px solid rgba(255,255,255,0.2);cursor:pointer;\x27>" + (isFav ? "❤️" : "🤍") + "</button>" +
-          "<span style=\x27font-size:11px;font-weight:800;color:#fff;text-shadow:0 1px 3px #000;\x27>" + vCount + "</span>" +
-        "</div>" +
-        "<div style=\x27display:flex;flex-direction:column;align-items:center;gap:3px;\x27>" +
-          "<button type=\x27button\x27 onclick=\x27openShortCommentsPopup(event)\x27 style=\x27width:44px;height:44px;border-radius:999px;background:rgba(0,0,0,0.55);color:#fff;font-size:17px;border:1px solid rgba(255,255,255,0.2);cursor:pointer;\x27>💬</button>" +
-          "<span style=\x27font-size:10px;font-weight:800;color:#fff;text-shadow:0 1px 3px #000;\x27>Comment</span>" +
-        "</div>" +
-        "<div style=\x27display:flex;flex-direction:column;align-items:center;gap:3px;\x27>" +
-          "<button type=\x27button\x27 onclick=\x27shareQaafCurrentVideo(event)\x27 style=\x27width:44px;height:44px;border-radius:999px;background:rgba(0,0,0,0.55);color:#fff;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.2);cursor:pointer;\x27>" + YT_SHARE_SVG + "</button>" +
-          "<span style=\x27font-size:10px;font-weight:800;color:#fff;text-shadow:0 1px 3px #000;\x27>Share</span>" +
-        "</div>";
-    }
-
-    // B. Invisible Touch-Swipe & Mouse-Wheel Zone in the middle (leaves Top 64px & Bottom 58px uncovered for YouTube Speaker/CC/Gear/Fullscreen!)
-    var gestureZone = document.getElementById("qaafShortsSwipeGestureZone");
-    if (!gestureZone) {
-      gestureZone = document.createElement("div");
-      gestureZone.id = "qaafShortsSwipeGestureZone";
-      aspect.appendChild(gestureZone);
-
-      var tStartY = 0, tCurY = 0, tStartX = 0, isSwipingShort = false;
-      gestureZone.addEventListener("touchstart", function(e) {
-        if (!e.touches || e.touches.length !== 1) return;
-        tStartY = e.touches[0].clientY;
-        tCurY = tStartY;
-        tStartX = e.touches[0].clientX;
-        isSwipingShort = true;
-      }, { passive: true });
-
-      gestureZone.addEventListener("touchmove", function(e) {
-        if (!isSwipingShort || !e.touches || !e.touches.length) return;
-        tCurY = e.touches[0].clientY;
-        var dy = tCurY - tStartY;
-        var b = document.getElementById("playerModalBox");
-        if (b && Math.abs(dy) > 8) {
-          b.style.transition = "none";
-          b.style.transform = "translateY(" + Math.max(-120, Math.min(120, dy * 0.45)) + "px)";
-        }
-      }, { passive: true });
-
-      gestureZone.addEventListener("touchend", function(e) {
-        if (!isSwipingShort) return;
-        isSwipingShort = false;
-        var dy = tCurY - tStartY;
-        var b = document.getElementById("playerModalBox");
-        if (b) {
-          b.style.transition = "transform 0.2s ease-out";
-          b.style.transform = "none";
-        }
-        if (dy < -42) {
-          window.playAdjacentShort(1);
-        } else if (dy > 42) {
-          window.playAdjacentShort(-1);
-        } else if (Math.abs(dy) < 10) {
-          if (typeof window.toggleQaafShortPlayPause === "function") window.toggleQaafShortPlayPause(e);
-        }
-        tStartY = 0; tCurY = 0;
-      }, { passive: true });
-
-      var lastWheelTs = 0;
-      gestureZone.addEventListener("wheel", function(e) {
-        var now = Date.now();
-        if (now - lastWheelTs < 550) return;
-        if (Math.abs(e.deltaY) > 18) {
-          e.preventDefault();
-          lastWheelTs = now;
-          window.playAdjacentShort(e.deltaY > 0 ? 1 : -1);
-        }
-      }, { passive: false });
-    }
-    gestureZone.style.cssText = "position:absolute; top:64px; bottom:58px; left:0; right:62px; z-index:39; display:block; background:transparent; touch-action:none; cursor:pointer;";
-  }
-
-  window.refreshQaafShortsOverlayNow = setupShortsSwipeAndCleanButtons;
-
-  // Also allow mouse wheel anywhere on #playerModal and Up/Down arrow keys when in Shorts mode
-  var lastModalWheelTs = 0;
-  document.addEventListener("wheel", function(e) {
-    var modal = document.getElementById("playerModal");
-    if (!modal || modal.classList.contains("hidden") || !modal.classList.contains("qaaf-shorts-mode")) return;
-    var now = Date.now();
-    if (now - lastModalWheelTs < 550) return;
-    if (Math.abs(e.deltaY) > 20) {
-      lastModalWheelTs = now;
-      window.playAdjacentShort(e.deltaY > 0 ? 1 : -1);
-    }
-  }, { passive: true });
-
-  document.addEventListener("keydown", function(e) {
-    var modal = document.getElementById("playerModal");
-    if (!modal || modal.classList.contains("hidden") || !modal.classList.contains("qaaf-shorts-mode")) return;
-    if (e.key === "ArrowDown") { e.preventDefault(); window.playAdjacentShort(1); }
-    else if (e.key === "ArrowUp") { e.preventDefault(); window.playAdjacentShort(-1); }
-  });
-
-  var prevOpenV92 = window.openVideoPlayer;
-  window.openVideoPlayer = function(videoId) {
-    currentPlaybackRate = 1.0;
-    if (prevOpenV92) prevOpenV92.apply(this, arguments);
-    setTimeout(setupShortsSwipeAndCleanButtons, 80);
-    setTimeout(setupShortsSwipeAndCleanButtons, 260);
-  };
-
-  setInterval(setupShortsSwipeAndCleanButtons, 500);
-})();
-
-
-// === QAAF V93 DRAWER FIX, ENGLISH UI & LIVE ANALYTICS DASHBOARD ===
-(function initQaafV93MasterAllInOne() {
-  var FB_BASE = (localStorage.getItem("qaaf_firebase_db_url") || "https://qaaftube-6f251-default-rtdb.firebaseio.com").replace(/\/+$/, "");
-  var ANALYTICS_FB_URL = FB_BASE + "/qaaf_analytics_db.json";
-  var ANALYTICS_CACHE_KEY = "qaaf_analytics_cache_v1";
-
-  // =========================================================================
-  // A. FIX LEFT SIDEBAR DRAWER Z-INDEX (NO HEADER/FOOTER OVERLAP) & STOP FLICKER
-  // =========================================================================
-  if (!document.getElementById("qaafV93DrawerAndLightCss")) {
+  if (!document.getElementById("qaafV97MasterCss")) {
     var st = document.createElement("style");
-    st.id = "qaafV93DrawerAndLightCss";
+    st.id = "qaafV97MasterCss";
     st.textContent = [
       "#qaafLeftSidebarBackdrop { z-index: 205 !important; }",
       "#qaafLeftSidebarDrawer { z-index: 210 !important; top: 0 !important; bottom: 0 !important; height: 100dvh !important; max-height: 100dvh !important; }",
+      "#flagVideoModal, #playlistSelectorModal, #sponsorContactModal, #accountModal { z-index: 1200 !important; }",
+      "#adminDashboardModal, #userNotifModal { z-index: 1150 !important; }",
+      ".qaaf-yt-clean-card span.bottom-2.right-2:empty { display: none !important; }",
       "body.qaaf-light-mode, body.qaaf-light-mode.bg-islamic-family, body.qaaf-light-mode.bg-islamic-kids { background-color: #f8fafc !important; color: #0f172a !important; }",
       "body.qaaf-light-mode #mainHeader { background-color: rgba(255,255,255,0.97) !important; border-bottom: 1px solid #cbd5e1 !important; }",
       "body.qaaf-light-mode #brandMainPrefix { color: #0f172a !important; }",
@@ -4415,70 +3707,206 @@
     document.head.appendChild(st);
   }
 
-  var subPl = document.getElementById("drawerSub_playlists");
-  var subHi = document.getElementById("drawerSub_history");
-  if (subPl && !subPl.getAttribute("data-init-collapsed")) {
-    subPl.setAttribute("data-init-collapsed", "1");
-    subPl.classList.add("hidden");
+  // =========================================================================
+  // 2. AUTO-OPEN SHORTS TAB WHEN A CHANNEL HAS 0 REGULAR VIDEOS & HAS SHORTS
+  // =========================================================================
+  function fixTarbiahShortsAndChannelView() {
+    if (Array.isArray(videosData)) {
+      var chg = false;
+      videosData.forEach(function(v) {
+        if (!v) return;
+        if (v.duration === "12:45" || v.duration === "12:00" || v.duration === "14:20" || v.duration === "10:00") {
+          v.duration = ""; chg = true;
+        }
+        if (v.channel === "Tarbiah Islamic Centre" && !v.isShort) {
+          v.isShort = true; v.duration = ""; chg = true;
+        }
+      });
+      if (chg) {
+        try { localStorage.setItem("qaaf_videos_data", JSON.stringify(videosData)); } catch (e) {}
+      }
+    }
   }
-  if (subHi && !subHi.getAttribute("data-init-collapsed")) {
-    subHi.setAttribute("data-init-collapsed", "1");
-    subHi.classList.add("hidden");
-  }
+  fixTarbiahShortsAndChannelView();
 
-  window.applyQaafThemeMode = function(mode) {
-    var isLight = (mode === "light");
-    document.body.classList.toggle("qaaf-light-mode", isLight);
-    localStorage.setItem("qaaf_theme_mode", isLight ? "light" : "dark");
-    renderStableDrawerExtraItems(true);
+  var prevPickCh97 = window.pickChannelFromTopBar;
+  window.pickChannelFromTopBar = function(chName, ev) {
+    if (prevPickCh97) prevPickCh97(chName, ev);
+    if (chName && chName !== "ALL") {
+      var chVids = (videosData || []).filter(function(v) { return v && v.channel === chName; });
+      var regCnt = chVids.filter(function(v) { return !isVideoShort(v); }).length;
+      var shCnt = chVids.filter(function(v) { return isVideoShort(v); }).length;
+      if (regCnt === 0 && shCnt > 0) {
+        window.switchQaafChannelSubTab("shorts");
+      }
+    }
   };
 
-  window.toggleQaafThemeMode = function(ev) {
-    if (ev) { ev.preventDefault(); ev.stopPropagation(); }
-    var cur = localStorage.getItem("qaaf_theme_mode") || "dark";
-    window.applyQaafThemeMode(cur === "light" ? "dark" : "light");
-  };
+  // Also if already viewing a channel with 0 regular videos and >0 shorts, auto-switch to shorts tab
+  function checkChannelEmptyVideosTab() {
+    var selCh = window.qaafSelectedChannel || "ALL";
+    if (selCh !== "ALL" && window.qaafChannelActiveSubTab === "videos") {
+      var chVids = (videosData || []).filter(function(v) { return v && v.channel === selCh; });
+      var regCnt = chVids.filter(function(v) { return !isVideoShort(v); }).length;
+      var shCnt = chVids.filter(function(v) { return isVideoShort(v); }).length;
+      if (regCnt === 0 && shCnt > 0) {
+        window.switchQaafChannelSubTab("shorts");
+      }
+    }
+    document.querySelectorAll(".qaaf-yt-clean-card span.bottom-2.right-2, #watchUpNextGrid span.bottom-1.right-1").forEach(function(sp) {
+      var t = (sp.textContent || "").trim();
+      if (t === "12:00" || t === "12:45" || t === "14:20" || t === "10:00" || t === "") {
+        sp.textContent = ""; sp.style.display = "none";
+      }
+    });
+  }
 
-  var lastDrawerStateSignature = "";
-  function renderStableDrawerExtraItems(forceRebuild) {
-    var drawer = document.getElementById("qaafLeftSidebarDrawer");
-    if (!drawer) return;
-    var reqCount = 0;
-    try {
-      var myReqs = JSON.parse(localStorage.getItem("qaaf_my_submitted_req_ids") || "[]");
-      if (Array.isArray(myReqs)) reqCount = myReqs.length;
-    } catch (e) {}
-    var isPro = localStorage.getItem("qaaf_pro_unlocked") === "true" || !!window.isProUnlocked || (typeof isSupporterPro !== "undefined" && isSupporterPro);
-    var curTheme = localStorage.getItem("qaaf_theme_mode") || "dark";
-    var isLight = (curTheme === "light");
-    var sig = reqCount + "_" + (isPro ? "1" : "0") + "_" + curTheme;
-
-    var extraBox = document.getElementById("qaafDrawerExtraMenuItems");
-    if (!extraBox) {
-      var navArea = drawer.querySelector(".overflow-y-auto") || drawer;
-      extraBox = document.createElement("div");
-      extraBox.id = "qaafDrawerExtraMenuItems";
-      extraBox.className = "pt-2 pb-2 space-y-2 border-t border-slate-800/80";
-      navArea.appendChild(extraBox);
+  // =========================================================================
+  // 3. WATCH PLAYER (4 BUTTONS ONLY) & SHORTS PLAYER (PC CLICK PAUSE + COVER YT SHARE)
+  // =========================================================================
+  function syncWatchAndShortsPlayerUI(forceShortsRebuild) {
+    // A. Watch Action Bar: strictly 4 buttons (Like | Save | Share | Flag) — NO Speed/Quality, NO Dua
+    var hdr = document.getElementById("ytCleanWatchHeader");
+    if (hdr) {
+      var spPill = document.getElementById("qaafWatchActionSettingsPill");
+      if (spPill) spPill.remove();
+      var duaBtn = hdr.querySelector("button[onclick*=\x27triggerAdSimulation\x27]");
+      if (duaBtn) {
+        duaBtn.removeAttribute("onclick");
+        duaBtn.onclick = function(ev) { window.shareQaafCurrentVideo(ev); };
+        duaBtn.className = "bg-[#272727] hover:bg-[#383838] text-white px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition shrink-0 cursor-pointer";
+        duaBtn.innerHTML = YT_SHARE_SVG + "<span class=\x22text-[11px] text-neutral-200\x22>Share</span>";
+      }
+      var isFavW = (favoriteVideoIds || []).indexOf(currentPlayingVideoId) !== -1;
+      var likeBtn = hdr.querySelector("button[onclick*=\x27toggleFavoriteVideo\x27]");
+      if (likeBtn) {
+        var stW = isFavW ? "liked" : "unliked";
+        if (likeBtn.getAttribute("data-like-state") !== stW) {
+          likeBtn.setAttribute("data-like-state", stW);
+          likeBtn.className = "bg-[#272727] hover:bg-[#383838] text-white px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition shrink-0 cursor-pointer";
+          likeBtn.innerHTML = (isFavW ? YT_LIKE_FILLED_SVG : YT_LIKE_OUTLINE_SVG) + "<span class=\x22text-[11px] " + (isFavW ? "text-emerald-400 font-bold" : "text-neutral-200") + "\x22>" + (isFavW ? "Liked" : "Like") + "</span>";
+        }
+      }
     }
 
-    if (!extraBox._lockedInnerHtmlSetter) {
-      extraBox._lockedInnerHtmlSetter = true;
+    // B. Shorts Player UI
+    var modal = document.getElementById("playerModal");
+    var aspect = document.getElementById("playerAspectBox");
+    if (!modal || modal.classList.contains("hidden") || !aspect) return;
+    var video = (videosData || []).find(function(x) { return x && x.id === currentPlayingVideoId; });
+    var gestureZone = document.getElementById("qaafShortsSwipeGestureZone");
+    if (!video || !isVideoShort(video)) {
+      if (gestureZone) gestureZone.style.display = "none";
+      return;
+    }
+
+    // Ensure PC Click-to-Pause + Mobile Touch-Swipe + Mouse Wheel Zone is active
+    if (!gestureZone) {
+      gestureZone = document.createElement("div");
+      gestureZone.id = "qaafShortsSwipeGestureZone";
+      aspect.appendChild(gestureZone);
+
+      var tStartY = 0, tCurY = 0, isSwiping = false, touchMoved = false;
+      gestureZone.addEventListener("touchstart", function(e) {
+        if (!e.touches || e.touches.length !== 1) return;
+        tStartY = e.touches[0].clientY; tCurY = tStartY; isSwiping = true; touchMoved = false;
+      }, { passive: true });
+
+      gestureZone.addEventListener("touchmove", function(e) {
+        if (!isSwiping || !e.touches || !e.touches.length) return;
+        tCurY = e.touches[0].clientY;
+        var dy = tCurY - tStartY;
+        if (Math.abs(dy) > 10) {
+          touchMoved = true;
+          var b = document.getElementById("playerModalBox");
+          if (b) { b.style.transition = "none"; b.style.transform = "translateY(" + Math.max(-110, Math.min(110, dy * 0.45)) + "px)"; }
+        }
+      }, { passive: true });
+
+      gestureZone.addEventListener("touchend", function() {
+        if (!isSwiping) return;
+        isSwiping = false;
+        var dy = tCurY - tStartY;
+        var b = document.getElementById("playerModalBox");
+        if (b) { b.style.transition = "transform 0.2s ease-out"; b.style.transform = "none"; }
+        if (dy < -40) window.playAdjacentShort(1);
+        else if (dy > 40) window.playAdjacentShort(-1);
+        tStartY = 0; tCurY = 0;
+      }, { passive: true });
+
+      // PC Mouse Click & Mobile Tap to Pause / Play Short!
+      gestureZone.addEventListener("click", function(e) {
+        if (touchMoved) { touchMoved = false; return; }
+        if (typeof window.toggleQaafShortPlayPause === "function") {
+          window.toggleQaafShortPlayPause(e);
+        }
+      });
+
+      var lastW = 0;
+      gestureZone.addEventListener("wheel", function(e) {
+        var now = Date.now();
+        if (now - lastW < 550) return;
+        if (Math.abs(e.deltaY) > 18) {
+          e.preventDefault(); lastW = now;
+          window.playAdjacentShort(e.deltaY > 0 ? 1 : -1);
+        }
+      }, { passive: false });
+    }
+    gestureZone.style.cssText = "position:absolute; top:62px; bottom:58px; left:0; right:66px; z-index:39; display:block; background:transparent; touch-action:none; cursor:pointer;";
+
+    // Right-Side Shorts Pill: Solid dark background covering bottom-right (bottom: 8px to 215px) so YouTube internal Share/Like is 100% hidden!
+    var ov = document.getElementById("qaafYtShortsMasterOverlay");
+    if (ov) {
+      var isFavS = (favoriteVideoIds || []).indexOf(video.id) !== -1;
+      var stKey = video.id + "_" + (isFavS ? "1" : "0");
+      ov.style.cssText = "position:absolute; right:4px; bottom:8px; top:auto; left:auto; width:58px; height:auto; z-index:46; background:#0c0f14; border:1px solid rgba(255,255,255,0.14); border-radius:30px; padding:12px 4px; display:flex; flex-direction:column; align-items:center; gap:14px; pointer-events:auto; box-shadow:0 8px 28px rgba(0,0,0,0.95);";
+      if (forceShortsRebuild || ov.getAttribute("data-v97-state") !== stKey) {
+        ov.setAttribute("data-v97-state", stKey);
+        ov.innerHTML =
+          "<div style=\x27display:flex;flex-direction:column;align-items:center;gap:3px;\x27>" +
+            "<button type=\x27button\x27 onclick=\x27toggleFavoriteVideo(currentPlayingVideoId,event)\x27 style=\x27width:42px;height:42px;border-radius:999px;background:rgba(255,255,255,0.1);color:#fff;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.18);cursor:pointer;\x27>" + (isFavS ? YT_LIKE_FILLED_SVG : YT_LIKE_OUTLINE_SVG) + "</button>" +
+            "<span style=\x27font-size:10px;font-weight:700;color:#fff;\x27>" + (isFavS ? "Liked" : "Like") + "</span>" +
+          "</div>" +
+          "<div style=\x27display:flex;flex-direction:column;align-items:center;gap:3px;\x27>" +
+            "<button type=\x27button\x27 onclick=\x27openShortCommentsPopup(event)\x27 style=\x27width:42px;height:42px;border-radius:999px;background:rgba(255,255,255,0.1);color:#fff;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.18);cursor:pointer;\x27><svg viewBox=\x270 0 24 24\x27 width=\x2717\x27 height=\x2717\x27 fill=\x27none\x27 stroke=\x27currentColor\x27 stroke-width=\x272\x27 stroke-linecap=\x27round\x27 stroke-linejoin=\x27round\x27><path d=\x27M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z\x27/></svg></button>" +
+            "<span style=\x27font-size:10px;font-weight:700;color:#fff;\x27>Comment</span>" +
+          "</div>" +
+          "<div style=\x27display:flex;flex-direction:column;align-items:center;gap:3px;\x27>" +
+            "<button type=\x27button\x27 onclick=\x27shareQaafCurrentVideo(event)\x27 style=\x27width:42px;height:42px;border-radius:999px;background:rgba(255,255,255,0.1);color:#fff;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.18);cursor:pointer;\x27>" + YT_SHARE_SVG + "</button>" +
+            "<span style=\x27font-size:10px;font-weight:700;color:#fff;\x27>Share</span>" +
+          "</div>";
+      }
+    }
+  }
+
+  // =========================================================================
+  // 4. STABLE DRAWER LIGHT/DARK MODE & ADMIN LABELS
+  // =========================================================================
+  var lastDrwSig = "";
+  function syncDrawerAndAdminLabels(forceDrw) {
+    var subEl = document.querySelector("#adminDashboardModal h3 + p");
+    if (subEl && subEl.innerText.indexOf("Super Admin") !== -1) subEl.innerText = subEl.innerText.replace(/Super Admin/g, "Admin");
+
+    var extraBox = document.getElementById("qaafDrawerExtraMenuItems");
+    if (!extraBox) return;
+    if (!extraBox._lockedV97) {
+      extraBox._lockedV97 = true;
       var origDesc = Object.getOwnPropertyDescriptor(Element.prototype, "innerHTML");
       if (origDesc && origDesc.set) {
         Object.defineProperty(extraBox, "innerHTML", {
           get: function() { return origDesc.get.call(this); },
-          set: function(val) {
-            if (this._allowQaafV93Write) origDesc.set.call(this, val);
-          }
+          set: function(val) { if (this._allowV97) origDesc.set.call(this, val); }
         });
       }
     }
-
-    if (!forceRebuild && lastDrawerStateSignature === sig && document.getElementById("qaafThemeToggleBtn")) return;
-    lastDrawerStateSignature = sig;
-
-    extraBox._allowQaafV93Write = true;
+    var isLight = (localStorage.getItem("qaaf_theme_mode") === "light");
+    var isPro = localStorage.getItem("qaaf_pro_unlocked") === "true" || !!window.isProUnlocked;
+    var reqCnt = 0;
+    try { reqCnt = (JSON.parse(localStorage.getItem("qaaf_my_submitted_req_ids") || "[]") || []).length; } catch(e) {}
+    var sig = (isLight ? "L" : "D") + "_" + (isPro ? "P" : "F") + "_" + reqCnt;
+    if (!forceDrw && lastDrwSig === sig && document.getElementById("qaafThemeToggleBtn")) return;
+    lastDrwSig = sig;
+    extraBox._allowV97 = true;
     extraBox.innerHTML =
       "<button type=\x22button\x22 id=\x22qaafThemeToggleBtn\x22 onclick=\x22window.toggleQaafThemeMode(event)\x22 class=\x22w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-xs font-extrabold text-white transition cursor-pointer\x22>" +
         "<span class=\x22flex items-center gap-2.5\x22><span class=\x22text-base\x22>" + (isLight ? "🌙" : "☀️") + "</span> <span>" + (isLight ? "Dark Mode" : "Light Mode") + "</span></span>" +
@@ -4486,1096 +3914,45 @@
       "</button>" +
       "<button type=\x22button\x22 onclick=\x22window.openVideoRequestFromDrawer()\x22 class=\x22w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#11221c] hover:bg-[#16382b] border border-emerald-500/35 text-xs font-extrabold text-white transition cursor-pointer\x22>" +
         "<span class=\x22flex items-center gap-2.5\x22><span class=\x22text-base\x22>📩</span> <span>Video Request &amp; Status</span></span>" +
-        "<span id=\x22drawerVideoRequestBadge\x22 class=\x22px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500 text-black\x22>" + reqCount + "</span>" +
+        "<span id=\x22drawerVideoRequestBadge\x22 class=\x22px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500 text-black\x22>" + reqCnt + "</span>" +
       "</button>" +
-      "<button type=\x22button\x22 onclick=\x22window.openQaafProMembershipModal()\x22 class=\x22w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-gradient-to-r from-[#164e3a] to-[#0f3d2e] hover:from-[#1d634a] hover:to-[#164e3a] border border-emerald-400/50 text-xs font-extrabold text-white shadow transition cursor-pointer\x22>" +
+      "<button type=\x22button\x22 onclick=\x22window.openQaafProMembershipModal()\x22 class=\x22w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-gradient-to-r from-[#164e3a] to-[#0f3d2e] border border-emerald-400/50 text-xs font-extrabold text-white shadow transition cursor-pointer\x22>" +
         "<span class=\x22flex items-center gap-2.5\x22><span class=\x22text-base\x22>👑</span> <span>" + (isPro ? "QAAF Pro Member (Active)" : "Get Pro Membership / Code") + "</span></span>" +
         "<span class=\x22px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-white text-[#0f3d2e]\x22>" + (isPro ? "ACTIVE" : "PRO") + "</span>" +
       "</button>" +
       "<a href=\x22./apk/qaaf-tube.apk\x22 download=\x22qaaf-tube.apk\x22 class=\x22w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-xs font-bold text-emerald-300 transition cursor-pointer no-underline\x22>" +
         "<span class=\x22flex items-center gap-2.5\x22><span class=\x22text-base\x22>🤖</span> <span>Download Android App (APK)</span></span>" +
         "<span class=\x22text-[10px] font-extrabold text-white\x22>⬇ APK</span>" +
-      "</a>" +
-      "<div class=\x22bg-black/40 border border-slate-800 rounded-xl p-3 text-[11px] text-slate-300 space-y-1\x22>" +
-        "<div class=\x22font-extrabold text-emerald-300 flex items-center gap-1.5\x22><span>📢</span> <span>Sponsor &amp; Promotion</span></div>" +
-        "<p class=\x22text-[10px] text-slate-400 leading-relaxed\x22>For halal sponsorship, promotion, or support on QAAF Tube:</p>" +
-        "<a href=\x22mailto:contactqaaftube@gmail.com\x22 onclick=\x22if(window.recordAnalyticsEvent)window.recordAnalyticsEvent(\x27sponsor\x27,0,null)\x22 class=\x22inline-block text-emerald-400 hover:underline font-bold text-[11px]\x22>contactqaaftube@gmail.com</a>" +
-      "</div>";
-    extraBox._allowQaafV93Write = false;
+      "</a>";
+    extraBox._allowV97 = false;
   }
 
-  window.applyQaafThemeMode(localStorage.getItem("qaaf_theme_mode") || "dark");
-
-  // =========================================================================
-  // B. CLEAN ENGLISH UI FOR DAILY CHANNEL UPDATES SCANNER
-  // =========================================================================
-  var SKIP_CHANNEL_NAMES = new Set(["Official Hub", "Islamic Channel", "YouTube Creator", "YouTube Channel", "Requested Channel", "General"]);
-  window.qaafChannelUpdatesQueue = (window.qaafChannelUpdatesQueue || []).filter(function(item) {
-    return item && item.channel && !SKIP_CHANNEL_NAMES.has(item.channel);
-  });
-  try { localStorage.setItem("qaaf_channel_updates_queue_v1", JSON.stringify(window.qaafChannelUpdatesQueue)); } catch(e) {}
-
-  window.renderAdminChannelUpdatesBoxEng = function() {
-    var pubPane = document.getElementById("admPane_publish");
-    if (!pubPane) return;
-    var box = document.getElementById("admDailyChannelUpdatesCard");
-    if (!box) {
-      box = document.createElement("div");
-      box.id = "admDailyChannelUpdatesCard";
-      box.className = "bg-gradient-to-br from-[#0e1b24] to-[#111722] border-2 border-emerald-500/50 rounded-2xl p-4 space-y-3 text-xs mb-4 shadow-xl";
-      pubPane.insertBefore(box, pubPane.children[1] || pubPane.firstChild);
-    }
-    if (!box._lockedEngSetter) {
-      box._lockedEngSetter = true;
-      var origDesc = Object.getOwnPropertyDescriptor(Element.prototype, "innerHTML");
-      if (origDesc && origDesc.set) {
-        Object.defineProperty(box, "innerHTML", {
-          get: function() { return origDesc.get.call(this); },
-          set: function(val) {
-            if (this._allowEngWrite) origDesc.set.call(this, val);
-          }
-        });
-      }
-    }
-    var q = (window.qaafChannelUpdatesQueue || []).filter(function(item) {
-      return item && item.channel && !SKIP_CHANNEL_NAMES.has(item.channel);
-    });
-    var rowsHtml = "";
-    if (q.length === 0) {
-      rowsHtml = "<p class=\x22text-slate-400 py-2 text-center\x22>✅ All approved channels are up to date. No new videos pending review.</p>";
-    } else {
-      q.forEach(function(item) {
-        var thumb = "https://i.ytimg.com/vi/" + item.ytId + "/mqdefault.jpg";
-        rowsHtml += "<div class=\x22bg-black/70 border border-emerald-500/30 p-2.5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5\x22>" +
-          "<div class=\x22flex items-center gap-2.5 min-w-0 flex-1\x22>" +
-            "<img src=\x22" + thumb + "\x22 class=\x22w-16 h-10 object-cover rounded-lg border border-white/15 shrink-0\x22 />" +
-            "<div class=\x22min-w-0 flex-1\x22>" +
-              "<p class=\x22font-extrabold text-white truncate\x22>" + item.title + "</p>" +
-              "<p class=\x22text-[11px] text-emerald-400 font-bold\x22>📺 " + item.channel + " • " + (item.detectedAt || "New") + "</p>" +
-            "</div>" +
-          "</div>" +
-          "<div class=\x22flex flex-wrap items-center gap-1.5 shrink-0\x22>" +
-            "<button type=\x22button\x22 data-ytid=\x22" + item.ytId + "\x22 onclick=\x22playVideoInsideAdminModal(this.getAttribute(\x27data-ytid\x27), \x27Preview\x27)\x22 class=\x22bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1.5 rounded-lg text-[11px] font-extrabold cursor-pointer\x22>▶ Preview</button>" +
-            "<button type=\x22button\x22 data-ytid=\x22" + item.ytId + "\x22 onclick=\x22adminApproveChannelUpdateVideo(this.getAttribute(\x27data-ytid\x27)); window.renderAdminChannelUpdatesBoxEng();\x22 class=\x22bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg text-[11px] font-extrabold cursor-pointer\x22>✅ Approve</button>" +
-            "<button type=\x22button\x22 data-ytid=\x22" + item.ytId + "\x22 onclick=\x22adminRejectChannelUpdateVideo(this.getAttribute(\x27data-ytid\x27)); window.renderAdminChannelUpdatesBoxEng();\x22 class=\x22bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1.5 rounded-lg text-[11px] font-extrabold cursor-pointer\x22>🗑️ Delete</button>" +
-          "</div>" +
-        "</div>";
-      });
-    }
-    box._allowEngWrite = true;
-    box.innerHTML =
-      "<div class=\x22flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5\x22>" +
-        "<div>" +
-          "<h4 class=\x22text-xs sm:text-sm font-extrabold text-emerald-300 flex items-center gap-2\x22><span>🔔</span> <span>Daily Channel Updates (New Videos)</span> <span class=\x22bg-emerald-500 text-black px-2 py-0.5 rounded-full text-[10px] font-extrabold\x22>" + q.length + "</span></h4>" +
-          "<p class=\x22text-[11px] text-slate-400 mt-0.5\x22>Newly uploaded videos from your approved channels appear here for quick review &amp; approval.</p>" +
-        "</div>" +
-        "<div class=\x22flex items-center gap-1.5\x22>" +
-          (q.length > 0 ? "<button type=\x22button\x22 onclick=\x22adminApproveAllChannelUpdates(); window.renderAdminChannelUpdatesBoxEng();\x22 class=\x22bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-xl text-[11px] font-extrabold shadow cursor-pointer\x22>✅ Approve All</button>" : "") +
-          "<button type=\x22button\x22 onclick=\x22scanApprovedChannelsForNewVideos(true)\x22 class=\x22bg-amber-500 hover:bg-amber-400 text-black px-3 py-1.5 rounded-xl text-[11px] font-extrabold shadow cursor-pointer\x22>🔄 Scan Channels Now</button>" +
-        "</div>" +
-      "</div>" +
-      "<div class=\x22space-y-2 max-h-64 overflow-y-auto pr-1\x22>" + rowsHtml + "</div>";
-    box._allowEngWrite = false;
+  window.toggleQaafThemeMode = function(ev) {
+    if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+    var cur = localStorage.getItem("qaaf_theme_mode") || "dark";
+    var next = (cur === "light") ? "dark" : "light";
+    document.body.classList.toggle("qaaf-light-mode", next === "light");
+    localStorage.setItem("qaaf_theme_mode", next);
+    syncDrawerAndAdminLabels(true);
   };
+  document.body.classList.toggle("qaaf-light-mode", localStorage.getItem("qaaf_theme_mode") === "light");
 
-  // =========================================================================
-  // C. AUTO-HIDE VIDEO SETTINGS GEAR (1.5s) & ADD SETTINGS PILL BELOW VIDEO
-  // =========================================================================
-  var gearHideTimer = null;
-  function wakeGearIconTemporarily() {
-    var g = document.getElementById("qaafPortraitTopRightGearBtn");
-    if (!g) return;
-    var modal = document.getElementById("playerModal");
-    if (!modal || modal.classList.contains("hidden") || modal.classList.contains("qaaf-shorts-mode") || document.fullscreenElement) {
-      g.style.display = "none";
-      return;
-    }
-    g.style.display = "flex";
-    g.style.opacity = "0.9";
-    g.style.pointerEvents = "auto";
-    if (gearHideTimer) clearTimeout(gearHideTimer);
-    gearHideTimer = setTimeout(function() {
-      if (g) { g.style.opacity = "0"; g.style.pointerEvents = "none"; }
-    }, 1600);
-  }
-  var pAspect = document.getElementById("playerAspectBox");
-  if (pAspect) {
-    pAspect.addEventListener("touchstart", wakeGearIconTemporarily, { passive: true, capture: true });
-    pAspect.addEventListener("click", wakeGearIconTemporarily, { capture: true });
-  }
-  setTimeout(wakeGearIconTemporarily, 400);
-
-  function ensureActionRowSettingsPill() {
-    var hdr = document.getElementById("ytCleanWatchHeader");
-    if (!hdr || document.getElementById("qaafWatchActionSettingsPill")) return;
-    var flagBtn = hdr.querySelector("button[onclick*=\x27openFlagModal\x27]");
-    if (flagBtn && flagBtn.parentNode) {
-      var sPill = document.createElement("button");
-      sPill.id = "qaafWatchActionSettingsPill";
-      sPill.type = "button";
-      sPill.onclick = function(ev) { if (window.openQaafYtMainSettingsSheet) window.openQaafYtMainSettingsSheet(ev); };
-      sPill.className = "bg-[#272727] hover:bg-[#383838] text-white px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1 transition shrink-0 cursor-pointer";
-      sPill.innerHTML = "<span>⚙️</span> <span class=\x22text-[11px] text-neutral-200\x22>Speed / Quality</span>";
-      flagBtn.parentNode.insertBefore(sPill, flagBtn);
-    }
-  }
-
-  // =========================================================================
-  // D. OFFICIAL 5-SENSOR ANALYTICS ARCHITECTURE (qaaf_analytics_db.json)
-  // =========================================================================
-  function getDefaultAnalyticsState() {
-    return {
-      daily: {},
-      videoViews: {},
-      userStats: {},
-      regionStats: {},
-      langStats: {},
-      totalViews: 0,
-      totalWatchSeconds: 0,
-      totalGamePlays: 0,
-      sponsorClicks: 0,
-      updatedAt: Date.now()
-    };
-  }
-
-  window.qaafAnalyticsData = getDefaultAnalyticsState();
-  try {
-    var cachedAn = localStorage.getItem(ANALYTICS_CACHE_KEY);
-    if (cachedAn) {
-      window.qaafAnalyticsData = Object.assign(getDefaultAnalyticsState(), JSON.parse(cachedAn));
-    }
-  } catch (e) {}
-
-  function getTodayKey() {
-    var d = new Date();
-    var y = d.getFullYear();
-    var m = String(d.getMonth() + 1).padStart(2, "0");
-    var day = String(d.getDate()).padStart(2, "0");
-    return y + "-" + m + "-" + day;
-  }
-
-  window.detectQaafUserRegion = function() {
-    try {
-      var tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
-      var tzl = tz.toLowerCase();
-      if (tzl.indexOf("karachi") !== -1 || tzl.indexOf("pakistan") !== -1) return "Pakistan / South Asia";
-      if (tzl.indexOf("riyadh") !== -1 || tzl.indexOf("dubai") !== -1 || tzl.indexOf("qatar") !== -1 || tzl.indexOf("kuwait") !== -1 || tzl.indexOf("bahrain") !== -1 || tzl.indexOf("muscat") !== -1 || tzl.indexOf("aden") !== -1) return "Saudi Arabia / Gulf GCC";
-      if (tzl.indexOf("london") !== -1 || tzl.indexOf("europe") !== -1 || tzl.indexOf("paris") !== -1 || tzl.indexOf("berlin") !== -1) return "UK / Europe";
-      if (tzl.indexOf("america") !== -1 || tzl.indexOf("us/") !== -1 || tzl.indexOf("canada") !== -1 || tzl.indexOf("new_york") !== -1 || tzl.indexOf("chicago") !== -1 || tzl.indexOf("los_angeles") !== -1 || tzl.indexOf("toronto") !== -1) return "USA / North America";
-      if (tzl.indexOf("istanbul") !== -1 || tzl.indexOf("cairo") !== -1 || tzl.indexOf("amman") !== -1 || tzl.indexOf("baghdad") !== -1) return "Turkey / MENA";
-      if (tzl.indexOf("jakarta") !== -1 || tzl.indexOf("kuala_lumpur") !== -1 || tzl.indexOf("singapore") !== -1 || tzl.indexOf("makassar") !== -1) return "Malaysia / Indonesia SEA";
-      if (tzl.indexOf("dhaka") !== -1) return "Bangladesh";
-      if (tzl.indexOf("kolkata") !== -1 || tzl.indexOf("calcutta") !== -1) return "India";
-      return "Global / International";
-    } catch (e) {
-      return "Pakistan / South Asia";
-    }
-  };
-
-  window.syncAnalyticsWithFirebase = function() {
-    try {
-      window.qaafAnalyticsData.updatedAt = Date.now();
-      localStorage.setItem(ANALYTICS_CACHE_KEY, JSON.stringify(window.qaafAnalyticsData));
-    } catch (e) {}
-    fetch(ANALYTICS_FB_URL, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(window.qaafAnalyticsData)
-    }).catch(function() {});
-  };
-
-  function pullAndMergeCloudAnalytics() {
-    fetch(ANALYTICS_FB_URL + "?t=" + Date.now())
-      .then(function(r) { return r.ok ? r.json() : null; })
-      .then(function(remote) {
-        if (!remote || typeof remote !== "object") return;
-        var loc = window.qaafAnalyticsData || getDefaultAnalyticsState();
-        loc.daily = loc.daily || {};
-        Object.keys(remote.daily || {}).forEach(function(dt) {
-          var rd = remote.daily[dt] || {};
-          var ld = loc.daily[dt] || { views: 0, watchSeconds: 0, gamePlays: 0, sponsorClicks: 0 };
-          loc.daily[dt] = {
-            views: Math.max(ld.views || 0, rd.views || 0),
-            watchSeconds: Math.max(ld.watchSeconds || 0, rd.watchSeconds || 0),
-            gamePlays: Math.max(ld.gamePlays || 0, rd.gamePlays || 0),
-            sponsorClicks: Math.max(ld.sponsorClicks || 0, rd.sponsorClicks || 0)
-          };
-        });
-        loc.videoViews = loc.videoViews || {};
-        Object.keys(remote.videoViews || {}).forEach(function(vid) {
-          loc.videoViews[vid] = Math.max(loc.videoViews[vid] || 0, remote.videoViews[vid] || 0);
-        });
-        loc.userStats = loc.userStats || {};
-        Object.keys(remote.userStats || {}).forEach(function(uk) {
-          var ru = remote.userStats[uk] || {};
-          var lu = loc.userStats[uk] || { views: 0, watchSeconds: 0, region: "", lastActive: "" };
-          loc.userStats[uk] = {
-            email: lu.email || ru.email || uk,
-            views: Math.max(lu.views || 0, ru.views || 0),
-            watchSeconds: Math.max(lu.watchSeconds || 0, ru.watchSeconds || 0),
-            region: lu.region || ru.region || window.detectQaafUserRegion(),
-            lastActive: lu.lastActive || ru.lastActive || ""
-          };
-        });
-        loc.regionStats = loc.regionStats || {};
-        Object.keys(remote.regionStats || {}).forEach(function(rk) {
-          var rr = remote.regionStats[rk] || {};
-          var lr = loc.regionStats[rk] || { views: 0, watchSeconds: 0 };
-          loc.regionStats[rk] = {
-            views: Math.max(lr.views || 0, rr.views || 0),
-            watchSeconds: Math.max(lr.watchSeconds || 0, rr.watchSeconds || 0)
-          };
-        });
-        loc.langStats = loc.langStats || {};
-        Object.keys(remote.langStats || {}).forEach(function(lk) {
-          var rl = remote.langStats[lk] || {};
-          var ll = loc.langStats[lk] || { views: 0, watchSeconds: 0 };
-          loc.langStats[lk] = {
-            views: Math.max(ll.views || 0, rl.views || 0),
-            watchSeconds: Math.max(ll.watchSeconds || 0, rl.watchSeconds || 0)
-          };
-        });
-        loc.totalViews = Math.max(loc.totalViews || 0, remote.totalViews || 0);
-        loc.totalWatchSeconds = Math.max(loc.totalWatchSeconds || 0, remote.totalWatchSeconds || 0);
-        loc.totalGamePlays = Math.max(loc.totalGamePlays || 0, remote.totalGamePlays || 0);
-        loc.sponsorClicks = Math.max(loc.sponsorClicks || 0, remote.sponsorClicks || 0);
-        window.qaafAnalyticsData = loc;
-        try { localStorage.setItem(ANALYTICS_CACHE_KEY, JSON.stringify(loc)); } catch (e) {}
-        if (typeof window.renderAdminAnalyticsDashboard === "function") window.renderAdminAnalyticsDashboard();
-      }).catch(function() {});
-  }
-  pullAndMergeCloudAnalytics();
-
-  window.recordAnalyticsEvent = function(eventType, secondsAdded, videoObj) {
-    var db = window.qaafAnalyticsData || getDefaultAnalyticsState();
-    var dt = getTodayKey();
-    if (!db.daily) db.daily = {};
-    if (!db.daily[dt]) db.daily[dt] = { views: 0, watchSeconds: 0, gamePlays: 0, sponsorClicks: 0 };
-
-    var uKey = (typeof currentUserEmail !== "undefined" && currentUserEmail) ? currentUserEmail.toLowerCase().trim() : "guest_device";
-    var safeUKey = uKey.replace(/[^a-zA-Z0-9_-]+/g, "_");
-    var regName = window.detectQaafUserRegion();
-    var langCode = String((videoObj && videoObj.lang) || window.preferredContentLang || preferredContentLang || "en").toLowerCase();
-    if (langCode === "global") langCode = String(window.preferredContentLang || preferredContentLang || "ur").toLowerCase();
-
-    if (!db.userStats) db.userStats = {};
-    if (!db.userStats[safeUKey]) db.userStats[safeUKey] = { email: uKey, views: 0, watchSeconds: 0, region: regName, lastActive: "" };
-    db.userStats[safeUKey].email = uKey;
-    db.userStats[safeUKey].region = regName;
-    db.userStats[safeUKey].lastActive = new Date().toLocaleString();
-
-    if (!db.regionStats) db.regionStats = {};
-    if (!db.regionStats[regName]) db.regionStats[regName] = { views: 0, watchSeconds: 0 };
-
-    if (!db.langStats) db.langStats = {};
-    if (!db.langStats[langCode]) db.langStats[langCode] = { views: 0, watchSeconds: 0 };
-
-    if (eventType === "view") {
-      db.daily[dt].views = (db.daily[dt].views || 0) + 1;
-      db.totalViews = (db.totalViews || 0) + 1;
-      db.userStats[safeUKey].views = (db.userStats[safeUKey].views || 0) + 1;
-      db.regionStats[regName].views = (db.regionStats[regName].views || 0) + 1;
-      db.langStats[langCode].views = (db.langStats[langCode].views || 0) + 1;
-      if (videoObj && (videoObj.id || videoObj.ytId)) {
-        var vKey = videoObj.ytId || videoObj.id;
-        if (!db.videoViews) db.videoViews = {};
-        db.videoViews[vKey] = (db.videoViews[vKey] || 0) + 1;
-      }
-      window.syncAnalyticsWithFirebase();
-    } else if (eventType === "watch_heartbeat") {
-      var sec = secondsAdded || 15;
-      db.daily[dt].watchSeconds = (db.daily[dt].watchSeconds || 0) + sec;
-      db.totalWatchSeconds = (db.totalWatchSeconds || 0) + sec;
-      db.userStats[safeUKey].watchSeconds = (db.userStats[safeUKey].watchSeconds || 0) + sec;
-      db.regionStats[regName].watchSeconds = (db.regionStats[regName].watchSeconds || 0) + sec;
-      db.langStats[langCode].watchSeconds = (db.langStats[langCode].watchSeconds || 0) + sec;
-      try { localStorage.setItem(ANALYTICS_CACHE_KEY, JSON.stringify(db)); } catch (e) {}
-    } else if (eventType === "game") {
-      db.daily[dt].gamePlays = (db.daily[dt].gamePlays || 0) + 1;
-      db.totalGamePlays = (db.totalGamePlays || 0) + 1;
-      window.syncAnalyticsWithFirebase();
-    } else if (eventType === "sponsor") {
-      db.daily[dt].sponsorClicks = (db.daily[dt].sponsorClicks || 0) + 1;
-      db.sponsorClicks = (db.sponsorClicks || 0) + 1;
-      window.syncAnalyticsWithFirebase();
-    }
-  };
-
-  var prevOpenAn = window.openVideoPlayer;
-  window.openVideoPlayer = function(videoId) {
-    if (prevOpenAn) prevOpenAn.apply(this, arguments);
-    var v = (videosData || []).find(function(x) { return x && x.id === videoId; });
-    if (v) window.recordAnalyticsEvent("view", 0, v);
-  };
-
-  var heartbeatTicks = 0;
-  setInterval(function() {
-    var pModal = document.getElementById("playerModal");
-    var gModal1 = document.getElementById("qaafActiveGamePlayModal");
-    var gModal2 = document.getElementById("gamePlayModal");
-    var gModal3 = document.getElementById("qaafStandaloneGamesModal");
-    var isVideoActive = pModal && !pModal.classList.contains("hidden");
-    var isGameActive = (gModal1 && !gModal1.classList.contains("hidden")) || (gModal2 && !gModal2.classList.contains("hidden")) || (gModal3 && !gModal3.classList.contains("hidden"));
-    if (isVideoActive || isGameActive) {
-      var curV = isVideoActive ? (videosData || []).find(function(x) { return x && x.id === currentPlayingVideoId; }) : null;
-      window.recordAnalyticsEvent("watch_heartbeat", 15, curV);
-      heartbeatTicks++;
-      if (heartbeatTicks % 4 === 0) {
-        window.syncAnalyticsWithFirebase();
-      }
-    }
-  }, 15000);
-
-  var prevOpenGameModal = window.openInstalledGameModal;
-  if (typeof prevOpenGameModal === "function") {
-    window.openInstalledGameModal = function(gameId) {
-      window.recordAnalyticsEvent("game", 0, null);
-      return prevOpenGameModal.apply(this, arguments);
-    };
-  }
-  var prevInstallGame = window.installAndOpenGame;
-  if (typeof prevInstallGame === "function") {
-    window.installAndOpenGame = function(gameId) {
-      window.recordAnalyticsEvent("game", 0, null);
-      return prevInstallGame.apply(this, arguments);
-    };
-  }
-
-  var prevOpenSponsor = window.openSponsorContactModal;
-  if (typeof prevOpenSponsor === "function") {
-    window.openSponsorContactModal = function() {
-      window.recordAnalyticsEvent("sponsor", 0, null);
-      return prevOpenSponsor.apply(this, arguments);
-    };
-  }
-  ["promoTickerLink", "promoImageBannerLink"].forEach(function(id) {
-    var el = document.getElementById(id);
-    if (el && !el.getAttribute("data-spons-bound")) {
-      el.setAttribute("data-spons-bound", "1");
-      el.addEventListener("click", function() { window.recordAnalyticsEvent("sponsor", 0, null); });
-    }
-  });
-
-  window.activeAnalyticsDays = 0;
-  window.getFilteredAnalytics = function(days) {
-    var db = window.qaafAnalyticsData || getDefaultAnalyticsState();
-    var daily = db.daily || {};
-    var catalogViews = 0;
-    (videosData || []).forEach(function(v) {
-      if (!v) return;
-      catalogViews += (typeof window.getQaafRealViewCount === "function") ? window.getQaafRealViewCount(v) : (v.realViews || 0);
-    });
-
-    var views = 0, watchSeconds = 0, gamePlays = 0, sponsorClicks = 0;
-    var now = new Date();
-    Object.keys(daily).forEach(function(dtStr) {
-      var dObj = daily[dtStr] || {};
-      var include = true;
-      if (days && days > 0) {
-        var parts = dtStr.split("-");
-        if (parts.length === 3) {
-          var dtTime = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10)).getTime();
-          var diffDays = (now.getTime() - dtTime) / (1000 * 3600 * 24);
-          if (diffDays > days) include = false;
-        }
-      }
-      if (include) {
-        views += (dObj.views || 0);
-        watchSeconds += (dObj.watchSeconds || 0);
-        gamePlays += (dObj.gamePlays || 0);
-        sponsorClicks += (dObj.sponsorClicks || 0);
-      }
-    });
-
-    if (!days || days === 0) {
-      views = Math.max(views, db.totalViews || 0, catalogViews);
-      watchSeconds = Math.max(watchSeconds, db.totalWatchSeconds || 0, views * 150);
-      gamePlays = Math.max(gamePlays, db.totalGamePlays || 0);
-      sponsorClicks = Math.max(sponsorClicks, db.sponsorClicks || 0);
-    } else if (views > 0 && watchSeconds === 0) {
-      watchSeconds = views * 120;
-    }
-
-    return {
-      views: views,
-      watchSeconds: watchSeconds,
-      gamePlays: gamePlays,
-      sponsorClicks: sponsorClicks
-    };
-  };
-
-  function formatHoursAndMins(totalSecs) {
-    var s = Math.max(0, Math.round(totalSecs || 0));
-    var h = Math.floor(s / 3600);
-    var m = Math.floor((s % 3600) / 60);
-    if (h === 0 && m === 0 && s > 0) m = 1;
-    return h + " hrs " + m + " mins";
-  }
-
-  function injectAdminAnalyticsTab() {
-    var sidebar = document.getElementById("edgeAdminSidebar");
-    var rightArea = document.querySelector("#adminDashboardModal .flex-1.overflow-y-auto");
-    if (!sidebar || !rightArea || document.getElementById("admTabBtn_analytics")) return;
-
-    var btn = document.createElement("button");
-    btn.type = "button";
-    btn.id = "admTabBtn_analytics";
-    btn.onclick = function() { switchAdminTab("analytics"); window.renderAdminAnalyticsDashboard(); };
-    btn.className = "adm-tab-btn w-full text-left px-3 py-2 rounded-xl text-[11px] sm:text-xs font-bold flex items-center justify-between gap-1.5 transition text-slate-300 hover:bg-white/5";
-    btn.innerHTML =
-      "<span class=\x22flex items-center gap-1.5 truncate\x22><span>📊</span> <span class=\x22truncate\x22>Analytics &amp; Stats</span></span>" +
-      "<span id=\x22admSidebarAnalyticsBadge\x22 class=\x22bg-emerald-600 text-white px-1.5 py-0.5 rounded-full text-[10px] font-extrabold shrink-0\x22>Live</span>";
-    sidebar.appendChild(btn);
-
-    var pane = document.createElement("div");
-    pane.id = "admPane_analytics";
-    pane.className = "adm-tab-pane hidden space-y-5";
-    rightArea.appendChild(pane);
-  }
-
-  window.selectAnalyticsDaysFilter = function(days) {
-    window.activeAnalyticsDays = days;
-    window.renderAdminAnalyticsDashboard();
-  };
-
-  var TEN_LANG_LABELS = {
-    en: "🇬🇧 English (EN)",
-    ar: "🇸🇦 Arabic (AR)",
-    ur: "🇵🇰 Urdu (UR)",
-    hi: "🇮🇳 Hindi (HI)",
-    bn: "🇧🇩 Bengali (BN)",
-    tr: "🇹🇷 Turkish (TR)",
-    ms: "🇲🇾 Malay (MS)",
-    id: "🇮🇩 Indonesian (ID)",
-    fr: "🇫🇷 French (FR)",
-    ru: "🇷🇺 Russian (RU)"
-  };
-
-  var EIGHT_REGIONS_LIST = [
-    "Pakistan / South Asia",
-    "Saudi Arabia / Gulf GCC",
-    "UK / Europe",
-    "USA / North America",
-    "Turkey / MENA",
-    "Malaysia / Indonesia SEA",
-    "Bangladesh",
-    "India"
-  ];
-
-  window.renderAdminAnalyticsDashboard = function() {
-    injectAdminAnalyticsTab();
-    var pane = document.getElementById("admPane_analytics");
-    if (!pane) return;
-    var days = window.activeAnalyticsDays || 0;
-    var stats = window.getFilteredAnalytics(days);
-    var db = window.qaafAnalyticsData || getDefaultAnalyticsState();
-    var totalFamilies = Object.keys(window.registeredUsersMap || {}).length;
-
-    var sideBadge = document.getElementById("admSidebarAnalyticsBadge");
-    if (sideBadge) sideBadge.innerText = stats.views;
-
-    var filterDefs = [
-      { d: 1, lbl: "Today" },
-      { d: 7, lbl: "7 Days" },
-      { d: 10, lbl: "10 Days" },
-      { d: 30, lbl: "30 Days" },
-      { d: 365, lbl: "1 Year" },
-      { d: 0, lbl: "All-Time" }
-    ];
-    var filterBarHtml = filterDefs.map(function(f) {
-      var act = (days === f.d);
-      return "<button type=\x22button\x22 onclick=\x22window.selectAnalyticsDaysFilter(" + f.d + ")\x22 class=\x22px-3 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer " + (act ? "bg-emerald-500 text-black shadow" : "bg-[#181e29] hover:bg-slate-800 text-slate-300 border border-slate-700") + "\x22>" + f.lbl + "</button>";
-    }).join("");
-
-    var regStats = db.regionStats || {};
-    var regionRowsHtml = EIGHT_REGIONS_LIST.map(function(rName) {
-      var ro = regStats[rName] || { views: 0, watchSeconds: 0 };
-      var pct = stats.views > 0 ? Math.min(100, Math.round(((ro.views || 0) / stats.views) * 100)) : 0;
-      return "<div class=\x22bg-black/60 border border-slate-800 rounded-xl p-2.5 space-y-1\x22>" +
-        "<div class=\x22flex items-center justify-between text-xs\x22><span class=\x22font-bold text-white\x22>🌍 " + rName + "</span><span class=\x22text-emerald-400 font-extrabold\x22>" + (ro.views || 0) + " views • " + formatHoursAndMins(ro.watchSeconds || 0) + "</span></div>" +
-        "<div class=\x22w-full bg-slate-800 h-1.5 rounded-full overflow-hidden\x22><div class=\x22bg-emerald-500 h-full rounded-full\x22 style=\x22width:" + pct + "%\x22></div></div>" +
-      "</div>";
-    }).join("");
-
-    var lStats = db.langStats || {};
-    var langRowsHtml = Object.keys(TEN_LANG_LABELS).map(function(lCode) {
-      var lo = lStats[lCode] || { views: 0, watchSeconds: 0 };
-      var pct = stats.views > 0 ? Math.min(100, Math.round(((lo.views || 0) / stats.views) * 100)) : 0;
-      return "<div class=\x22bg-black/60 border border-slate-800 rounded-xl p-2.5 space-y-1\x22>" +
-        "<div class=\x22flex items-center justify-between text-xs\x22><span class=\x22font-bold text-white\x22>" + TEN_LANG_LABELS[lCode] + "</span><span class=\x22text-amber-300 font-extrabold\x22>" + (lo.views || 0) + " views • " + formatHoursAndMins(lo.watchSeconds || 0) + "</span></div>" +
-        "<div class=\x22w-full bg-slate-800 h-1.5 rounded-full overflow-hidden\x22><div class=\x22bg-amber-400 h-full rounded-full\x22 style=\x22width:" + pct + "%\x22></div></div>" +
-      "</div>";
-    }).join("");
-
-    var uStats = db.userStats || {};
-    var uKeys = Object.keys(uStats);
-    var userRowsHtml = uKeys.length === 0 ? "<p class=\x22text-slate-400 text-xs py-2\x22>No individual user watch sessions recorded yet.</p>" : uKeys.map(function(uk) {
-      var uo = uStats[uk] || {};
-      return "<div class=\x22bg-black/60 border border-slate-800 p-2.5 rounded-xl flex flex-wrap items-center justify-between gap-2 text-xs\x22>" +
-        "<div><p class=\x22font-extrabold text-white\x22>👤 " + (uo.email || uk) + "</p><p class=\x22text-[10px] text-slate-400\x22>🌍 " + (uo.region || "Global") + " • Last Active: " + (uo.lastActive || "Recent") + "</p></div>" +
-        "<span class=\x22bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 px-2.5 py-1 rounded-lg font-extrabold text-[11px]\x22>👁️ " + (uo.views || 0) + " views • ⏱️ " + formatHoursAndMins(uo.watchSeconds || 0) + "</span>" +
-      "</div>";
-    }).join("");
-
-    pane.innerHTML =
-      "<div class=\x22flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3\x22>" +
-        "<div>" +
-          "<h4 class=\x22text-sm sm:text-base font-extrabold text-white flex items-center gap-2\x22><span>📊</span> <span>QAAF Tube Live Analytics &amp; Audience Stats</span></h4>" +
-          "<p class=\x22text-xs text-slate-400 mt-0.5\x22>5-Sensor Live Tracking • Separate Cloud DB (qaaf_analytics_db.json)</p>" +
-        "</div>" +
-        "<button type=\x22button\x22 onclick=\x22window.openSponsorReportCard()\x22 class=\x22bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-black px-4 py-2 rounded-xl text-xs font-extrabold shadow-lg flex items-center gap-1.5 cursor-pointer\x22>" +
-          "<span>📄</span> <span>Open Sponsor / Client Report Card</span>" +
-        "</button>" +
-      "</div>" +
-      "<div class=\x22flex flex-wrap items-center gap-1.5\x22>" + filterBarHtml + "</div>" +
-      "<div class=\x22grid grid-cols-2 sm:grid-cols-5 gap-2.5\x22>" +
-        "<div class=\x22bg-[#141923] border border-emerald-500/40 rounded-2xl p-3\x22><span class=\x22text-[10px] text-slate-400 font-bold block\x22>👁️ Total Views</span><span class=\x22text-xl font-extrabold text-emerald-400 mt-1 block\x22>" + stats.views + "</span></div>" +
-        "<div class=\x22bg-[#141923] border border-blue-500/40 rounded-2xl p-3\x22><span class=\x22text-[10px] text-slate-400 font-bold block\x22>⏱️ Watch Time</span><span class=\x22text-sm sm:text-base font-extrabold text-blue-300 mt-1 block\x22>" + formatHoursAndMins(stats.watchSeconds) + "</span></div>" +
-        "<div class=\x22bg-[#141923] border border-amber-500/40 rounded-2xl p-3\x22><span class=\x22text-[10px] text-slate-400 font-bold block\x22>👨‍👩‍👧‍👦 Registered Families</span><span class=\x22text-xl font-extrabold text-amber-300 mt-1 block\x22>" + totalFamilies + "</span></div>" +
-        "<div class=\x22bg-[#141923] border border-teal-500/40 rounded-2xl p-3\x22><span class=\x22text-[10px] text-slate-400 font-bold block\x22>🎮 Kids Game Plays</span><span class=\x22text-xl font-extrabold text-teal-300 mt-1 block\x22>" + stats.gamePlays + "</span></div>" +
-        "<div class=\x22bg-[#141923] border border-purple-500/40 rounded-2xl p-3\x22><span class=\x22text-[10px] text-slate-400 font-bold block\x22>📢 Sponsor Clicks</span><span class=\x22text-xl font-extrabold text-purple-300 mt-1 block\x22>" + stats.sponsorClicks + "</span></div>" +
-      "</div>" +
-      "<div class=\x22grid grid-cols-1 md:grid-cols-2 gap-4\x22>" +
-        "<div class=\x22bg-[#141821] border border-slate-800 rounded-2xl p-4 space-y-2\x22><h5 class=\x22text-xs sm:text-sm font-extrabold text-emerald-300 mb-2\x22>🌍 Views &amp; Watch Hours by Region (Geo-Timezone)</h5><div class=\x22space-y-2 max-h-72 overflow-y-auto pr-1\x22>" + regionRowsHtml + "</div></div>" +
-        "<div class=\x22bg-[#141821] border border-slate-800 rounded-2xl p-4 space-y-2\x22><h5 class=\x22text-xs sm:text-sm font-extrabold text-amber-300 mb-2\x22>🗣️ Views &amp; Watch Hours by Language (10 Languages)</h5><div class=\x22space-y-2 max-h-72 overflow-y-auto pr-1\x22>" + langRowsHtml + "</div></div>" +
-      "</div>" +
-      "<div class=\x22bg-[#141821] border border-slate-800 rounded-2xl p-4 space-y-2\x22><h5 class=\x22text-xs sm:text-sm font-extrabold text-blue-300 mb-2\x22>👤 Per-User / Family Watch Time &amp; Activity</h5><div class=\x22space-y-2 max-h-60 overflow-y-auto pr-1\x22>" + userRowsHtml + "</div></div>";
-  };
-
-  window.openSponsorReportCard = function() {
-    var stats = window.getFilteredAnalytics(window.activeAnalyticsDays || 0);
-    var db = window.qaafAnalyticsData || getDefaultAnalyticsState();
-    var totalFamilies = Object.keys(window.registeredUsersMap || {}).length;
-    var m = document.getElementById("qaafSponsorReportCardModal");
-    if (!m) {
-      m = document.createElement("div");
-      m.id = "qaafSponsorReportCardModal";
-      document.body.appendChild(m);
-    }
-    m.className = "fixed inset-0 z-[340] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4";
-    var regHtml = EIGHT_REGIONS_LIST.map(function(rName) {
-      var ro = (db.regionStats && db.regionStats[rName]) || { views: 0, watchSeconds: 0 };
-      return "<div class=\x22flex justify-between py-1.5 border-b border-slate-800 text-xs\x22><span>" + rName + "</span><span class=\x22font-extrabold text-emerald-400\x22>" + (ro.views || 0) + " views • " + formatHoursAndMins(ro.watchSeconds || 0) + "</span></div>";
-    }).join("");
-    var langHtml = Object.keys(TEN_LANG_LABELS).map(function(lk) {
-      var lo = (db.langStats && db.langStats[lk]) || { views: 0, watchSeconds: 0 };
-      return "<div class=\x22flex justify-between py-1.5 border-b border-slate-800 text-xs\x22><span>" + TEN_LANG_LABELS[lk] + "</span><span class=\x22font-extrabold text-amber-300\x22>" + (lo.views || 0) + " views • " + formatHoursAndMins(lo.watchSeconds || 0) + "</span></div>";
-    }).join("");
-
-    m.innerHTML =
-      "<div class=\x22bg-[#0f141d] border-2 border-emerald-500/60 rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4 text-white max-h-[92vh] overflow-y-auto\x22>" +
-        "<div class=\x22flex items-center justify-between border-b border-slate-800 pb-3\x22>" +
-          "<div><span class=\x22text-[10px] font-extrabold text-emerald-400 uppercase tracking-wider\x22>OFFICIAL MEDIA KIT &amp; SPONSORSHIP REPORT CARD</span><h3 class=\x22text-lg font-extrabold text-white\x22>QAAF Tube — Muslim Family &amp; Kids Hub</h3><p class=\x22text-[11px] text-slate-400\x22>https://qaaftube.com • Verified Audience Metrics • " + new Date().toLocaleDateString() + "</p></div>" +
-          "<button type=\x22button\x22 onclick=\x22document.getElementById(\x27qaafSponsorReportCardModal\x27).classList.add(\x27hidden\x27)\x22 class=\x22bg-slate-800 hover:bg-rose-600 text-white px-3 py-1.5 rounded-xl text-xs font-extrabold cursor-pointer\x22>✕ Close</button>" +
-        "</div>" +
-        "<div class=\x22grid grid-cols-2 sm:grid-cols-5 gap-2 text-center\x22>" +
-          "<div class=\x22bg-black/60 border border-slate-800 rounded-xl p-2.5\x22><span class=\x22text-[10px] text-slate-400 block\x22>Total Views</span><span class=\x22text-base font-extrabold text-emerald-400\x22>" + stats.views + "</span></div>" +
-          "<div class=\x22bg-black/60 border border-slate-800 rounded-xl p-2.5\x22><span class=\x22text-[10px] text-slate-400 block\x22>Watch Time</span><span class=\x22text-xs font-extrabold text-blue-300\x22>" + formatHoursAndMins(stats.watchSeconds) + "</span></div>" +
-          "<div class=\x22bg-black/60 border border-slate-800 rounded-xl p-2.5\x22><span class=\x22text-[10px] text-slate-400 block\x22>Families</span><span class=\x22text-base font-extrabold text-amber-300\x22>" + totalFamilies + "</span></div>" +
-          "<div class=\x22bg-black/60 border border-slate-800 rounded-xl p-2.5\x22><span class=\x22text-[10px] text-slate-400 block\x22>Game Plays</span><span class=\x22text-base font-extrabold text-teal-300\x22>" + stats.gamePlays + "</span></div>" +
-          "<div class=\x22bg-black/60 border border-slate-800 rounded-xl p-2.5\x22><span class=\x22text-[10px] text-slate-400 block\x22>Sponsor Leads</span><span class=\x22text-base font-extrabold text-purple-300\x22>" + stats.sponsorClicks + "</span></div>" +
-        "</div>" +
-        "<div class=\x22grid grid-cols-1 sm:grid-cols-2 gap-4\x22>" +
-          "<div class=\x22bg-black/40 border border-slate-800 rounded-2xl p-3.5\x22><h5 class=\x22text-xs font-extrabold text-emerald-400 mb-2\x22>🌍 Audience by Region</h5>" + regHtml + "</div>" +
-          "<div class=\x22bg-black/40 border border-slate-800 rounded-2xl p-3.5\x22><h5 class=\x22text-xs font-extrabold text-amber-300 mb-2\x22>🗣️ Audience by Language</h5>" + langHtml + "</div>" +
-        "</div>" +
-        "<div class=\x22flex items-center justify-between pt-2 border-t border-slate-800\x22>" +
-          "<span class=\x22text-[11px] text-slate-400\x22>Official Sponsorship Contact: contactqaaftube@gmail.com</span>" +
-          "<button type=\x22button\x22 onclick=\x22window.print()\x22 class=\x22bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-extrabold shadow cursor-pointer\x22>🖨️ Print / Save PDF Report</button>" +
-        "</div>" +
-      "</div>";
-    m.classList.remove("hidden");
-  };
-  window.openQaafSponsorReportCardModal = window.openSponsorReportCard;
-
-  var prevOpenAdmV93 = window.openAdminModal;
-  window.openAdminModal = function() {
-    if (prevOpenAdmV93) prevOpenAdmV93.apply(this, arguments);
-    injectAdminAnalyticsTab();
-    window.renderAdminChannelUpdatesBoxEng();
-    window.renderAdminAnalyticsDashboard();
-  };
-
-  setInterval(function() {
-    renderStableDrawerExtraItems(false);
-    ensureActionRowSettingsPill();
-    injectAdminAnalyticsTab();
-    window.renderAdminChannelUpdatesBoxEng();
-  }, 900);
-})();
-
-
-// === QAAF V94 FLAG Z-INDEX, ADMIN LABEL & GHOST REQUEST FIX ===
-(function initQaafV94FlagZIndexAdminLabelAndRequestFix() {
-  var FB_BASE = (localStorage.getItem("qaaf_firebase_db_url") || "https://qaaftube-6f251-default-rtdb.firebaseio.com").replace(/\/+$/, "");
-
-  // =========================================================================
-  // 1. FIX FLAG MODAL & PLAYLIST MODAL Z-INDEX SO THEY OPEN ABOVE VIDEO PLAYER
-  // =========================================================================
-  if (!document.getElementById("qaafV94ModalZIndexCss")) {
-    var st = document.createElement("style");
-    st.id = "qaafV94ModalZIndexCss";
-    st.textContent = [
-      "#flagVideoModal, #playlistSelectorModal, #sponsorContactModal, #accountModal { z-index: 1200 !important; }",
-      "#adminDashboardModal, #userNotifModal { z-index: 1150 !important; }"
-    ].join("\n");
-    document.head.appendChild(st);
-  }
-
-  // Override submitVideoFlag to give clear toast feedback and close cleanly
-  window.submitVideoFlag = function() {
-    var v = (videosData || []).find(function(x) { return x && x.id === pendingFlagVideoId; });
-    var reasonEl = document.getElementById("flagReasonSelect");
-    var reason = reasonEl ? reasonEl.value : "Reported by User";
-    if (v) {
-      if (!Array.isArray(flaggedVideosQueue)) flaggedVideosQueue = [];
-      var alreadyFlagged = flaggedVideosQueue.some(function(f) { return f && f.videoId === v.id; });
-      if (!alreadyFlagged) {
-        flaggedVideosQueue.unshift({ videoId: v.id, ytId: v.ytId || "", title: v.title, channel: v.channel, reason: reason });
-        localStorage.setItem("qaaf_flagged_queue", JSON.stringify(flaggedVideosQueue));
-      }
-      if (window.qaafCloudSync) window.qaafCloudSync.pushState("User Video Flag Submitted");
-    }
-    closeFlagModal();
-    if (typeof syncAccountUI === "function") syncAccountUI();
-    if (typeof showSyncToast === "function") {
-      showSyncToast("🚩 Report submitted to QAAF Admin!");
-    } else {
-      alert("🚩 Report submitted to QAAF Admin.");
-    }
-  };
-
-  // =========================================================================
-  // 2. REPLACE "SUPER ADMIN" WITH "ADMIN" EVERYWHERE IN UI
-  // =========================================================================
-  function replaceSuperAdminLabels() {
-    var subEl = document.querySelector("#adminDashboardModal h3 + p");
-    if (subEl && subEl.innerText.indexOf("Super Admin") !== -1) {
-      subEl.innerText = subEl.innerText.replace(/Super Admin/g, "Admin");
-    }
-    var roleBadge = document.getElementById("activeAccountRoleBadge");
-    if (roleBadge && roleBadge.innerText.indexOf("Super Admin") !== -1) {
-      roleBadge.innerText = roleBadge.innerText.replace(/Super Admin/g, "Admin");
-    }
-    var drwName = document.getElementById("drawerProfileName");
-    if (drwName && drwName.innerText.indexOf("Super Admin") !== -1) {
-      drwName.innerText = drwName.innerText.replace(/Super Admin/g, "Admin");
-    }
-    var admSecLabel = document.querySelector("#admPane_security label");
-    if (admSecLabel && admSecLabel.innerText.indexOf("Super Admin") !== -1) {
-      admSecLabel.innerText = admSecLabel.innerText.replace(/Super Admin/g, "Admin");
-    }
-  }
-  replaceSuperAdminLabels();
-
-  // =========================================================================
-  // 3. PERMANENTLY FIX GHOST / RETURNING PARENT REQUESTS AFTER APPROVAL
-  // =========================================================================
-  window.qaafHandledRequestIds = JSON.parse(localStorage.getItem("qaaf_handled_request_ids_v1") || "[]");
-
-  function markRequestAsHandled(reqObj) {
-    if (!reqObj) return;
-    if (reqObj.reqId && window.qaafHandledRequestIds.indexOf(reqObj.reqId) === -1) {
-      window.qaafHandledRequestIds.push(reqObj.reqId);
-    }
-    if (reqObj.ytId && window.qaafHandledRequestIds.indexOf(reqObj.ytId) === -1) {
-      window.qaafHandledRequestIds.push(reqObj.ytId);
-    }
-    try { localStorage.setItem("qaaf_handled_request_ids_v1", JSON.stringify(window.qaafHandledRequestIds)); } catch (e) {}
-  }
-
-  window.scrubHandledParentRequestsNow = function() {
-    var existingYtSet = new Set((videosData || []).map(function(v) { return v && v.ytId; }).filter(Boolean));
-    var blockedSet = new Set(blockedVideoIds || []);
-    var handledSet = new Set(window.qaafHandledRequestIds || []);
-
-    var rawQ = window.parentRequestsQueue || parentRequestsQueue || [];
-    if (!Array.isArray(rawQ)) rawQ = [];
-
-    var cleanedQ = rawQ.filter(function(r) {
-      if (!r) return false;
-      if (r.reqId && handledSet.has(r.reqId)) return false;
-      if (r.ytId && (handledSet.has(r.ytId) || existingYtSet.has(r.ytId) || blockedSet.has(r.ytId))) return false;
-      return true;
-    });
-
-    if (cleanedQ.length !== rawQ.length) {
-      parentRequestsQueue = cleanedQ;
-      window.parentRequestsQueue = cleanedQ;
-      try { localStorage.setItem("qaaf_parent_requests", JSON.stringify(cleanedQ)); } catch (e) {}
-    } else {
-      parentRequestsQueue = cleanedQ;
-      window.parentRequestsQueue = cleanedQ;
-    }
-  };
-
-  window.scrubHandledParentRequestsNow();
-
-  // Override adminHandleParentRequest so approved/rejected requests NEVER return
-  window.adminHandleParentRequest = function(index, decision) {
-    window.scrubHandledParentRequestsNow();
-    var q = window.parentRequestsQueue || parentRequestsQueue || [];
-    var req = q[index];
-    if (!req) return;
-    markRequestAsHandled(req);
-
-    if (decision === "approve") {
-      if (!videosData.some(function(v) { return v && v.ytId === req.ytId; })) {
-        videosData.unshift({
-          id: "v_" + req.ytId,
-          title: req.title,
-          channel: req.channel,
-          lang: req.lang || "global",
-          region: (req.lang || "global").toUpperCase(),
-          category: req.category || "kids_cartoon",
-          kidsSafe: (req.category !== "bayan"),
-          ytId: req.ytId,
-          isCustomAdded: true,
-          duration: "12:00",
-          views: 0,
-          createdAt: Math.floor(Date.now() / 1000)
-        });
-        localStorage.setItem("qaaf_videos_data", JSON.stringify(videosData));
-      }
-    } else {
-      if (req.ytId && blockedVideoIds.indexOf(req.ytId) === -1) {
-        blockedVideoIds.push(req.ytId);
-        localStorage.setItem("qaaf_blocked_videos", JSON.stringify(blockedVideoIds));
-      }
-    }
-
-    q.splice(index, 1);
-    parentRequestsQueue = q;
-    window.parentRequestsQueue = q;
-    localStorage.setItem("qaaf_parent_requests", JSON.stringify(q));
-
-    fetch(FB_BASE + "/qaaf_global_state/parentRequestsQueue.json", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(q)
-    }).catch(function() {});
-
-    fetch(FB_BASE + "/qaaf_global_state/handledRequestIdsJson.json", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(JSON.stringify(window.qaafHandledRequestIds))
-    }).catch(function() {});
-
-    if (typeof window.renderAdminParentRequests === "function") window.renderAdminParentRequests();
-    if (typeof window.renderVideosNow === "function") window.renderVideosNow();
-    if (window.qaafCloudSync) window.qaafCloudSync.pushState(decision === "approve" ? "Approved Parent Video Request" : "Rejected Parent Video Request");
-    if (typeof showSyncToast === "function") {
-      showSyncToast(decision === "approve" ? "✅ Request Approved & Published Live!" : "🚫 Request Rejected & Removed.");
-    }
-  };
-
-  var origBatchGreen = window.adminBatchApproveAllGreen;
-  window.adminBatchApproveAllGreen = function() {
-    (window.parentRequestsQueue || parentRequestsQueue || []).forEach(function(r) {
-      var ev = window.evaluateRequestColorCategory ? window.evaluateRequestColorCategory(r) : { color: "GREEN" };
-      if (ev.color === "GREEN") markRequestAsHandled(r);
-    });
-    if (origBatchGreen) origBatchGreen();
-    window.scrubHandledParentRequestsNow();
-    fetch(FB_BASE + "/qaaf_global_state/parentRequestsQueue.json", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(window.parentRequestsQueue || [])
-    }).catch(function() {});
-  };
-
-  // Pull handledRequestIdsJson from Cloud and scrub any returning ghost requests
-  fetch(FB_BASE + "/qaaf_global_state/handledRequestIdsJson.json?t=" + Date.now())
-    .then(function(r) { return r.ok ? r.json() : null; })
-    .then(function(str) {
-      if (typeof str === "string" && str.indexOf("[") === 0) {
-        try {
-          var arr = JSON.parse(str);
-          if (Array.isArray(arr)) {
-            arr.forEach(function(id) {
-              if (id && window.qaafHandledRequestIds.indexOf(id) === -1) window.qaafHandledRequestIds.push(id);
-            });
-            localStorage.setItem("qaaf_handled_request_ids_v1", JSON.stringify(window.qaafHandledRequestIds));
-          }
-        } catch (e) {}
-      }
-      window.scrubHandledParentRequestsNow();
-      if (typeof window.renderAdminParentRequests === "function") window.renderAdminParentRequests();
-    }).catch(function() {});
-
-  setInterval(function() {
-    replaceSuperAdminLabels();
-    window.scrubHandledParentRequestsNow();
-  }, 1000);
-})();
-
-
-// === QAAF V95 SHORTS AUTO-DETECT & OUTLINE LIKE BUTTON ===
-(function initQaafV95ShortsAutoDetectAndOutlineLike() {
-  var FB_BASE = (localStorage.getItem("qaaf_firebase_db_url") || "https://qaaftube-6f251-default-rtdb.firebaseio.com").replace(/\/+$/, "");
-
-  // Clean SVG Icons (YouTube-style thin outline)
-  var YT_LIKE_OUTLINE_SVG = "<svg viewBox=\x270 0 24 24\x27 width=\x2718\x27 height=\x2718\x27 fill=\x27none\x27 stroke=\x27currentColor\x27 stroke-width=\x271.9\x27 stroke-linecap=\x27round\x27 stroke-linejoin=\x27round\x27 style=\x27display:inline-block;vertical-align:middle;\x27><path d=\x27M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3\x27/></svg>";
-  var YT_LIKE_FILLED_SVG = "<svg viewBox=\x270 0 24 24\x27 width=\x2718\x27 height=\x2718\x27 fill=\x27#10b981\x27 stroke=\x27#10b981\x27 stroke-width=\x271.9\x27 stroke-linecap=\x27round\x27 stroke-linejoin=\x27round\x27 style=\x27display:inline-block;vertical-align:middle;\x27><path d=\x27M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3\x27/></svg>";
-
-  // 1. Fix existing Tarbiah Islamic Centre videos (mark as Shorts & remove fake 12:45 duration)
-  function fixExistingShortsAndFakeDurations() {
-    if (!Array.isArray(videosData)) return;
-    var changed = false;
-    videosData.forEach(function(v) {
-      if (!v) return;
-      if (v.duration === "12:45" || v.duration === "12:00" || v.duration === "14:20" || v.duration === "10:00") {
-        v.duration = "";
-        changed = true;
-      }
-      if (v.channel === "Tarbiah Islamic Centre" && !v.isShort) {
-        v.isShort = true;
-        v.duration = "";
-        changed = true;
-      }
-    });
-    if (changed) {
-      try { localStorage.setItem("qaaf_videos_data", JSON.stringify(videosData)); } catch (e) {}
-      if (typeof window.renderVideosNow === "function") window.renderVideosNow();
-      if (window.qaafCloudSync) window.qaafCloudSync.pushState("Fixed Tarbiah Islamic Centre Shorts & Durations");
-    }
-  }
-  fixExistingShortsAndFakeDurations();
-
-  // 2. Auto-detect Shorts vs Regular Videos when importing any Channel
-  window.qaafChannelShortsSet = new Set();
-  async function detectChannelShortsIds(rawChannelUrl) {
-    var base = String(rawChannelUrl || "").trim().replace(/\/(videos|shorts|featured|streams|playlists)?\/?$/, "");
-    if (!base) return;
-    try {
-      var r = await fetch("https://r.jina.ai/" + base + "/shorts");
-      if (r.ok) {
-        var txt = await r.text();
-        for (var m of txt.matchAll(/(?:watch\?v=|\/shorts\/|"videoId"\s*:\s*")([a-zA-Z0-9_-]{11})/g)) {
-          window.qaafChannelShortsSet.add(m[1]);
-        }
-      }
-    } catch (e) {}
-  }
-
-  var prevAutoFetch95 = window.adminAutoFetchYouTubeInfo;
-  window.adminAutoFetchYouTubeInfo = async function() {
-    var urlInp = document.getElementById("adminYtUrlInput");
-    var raw = (urlInp ? urlInp.value : "").trim();
-    if (raw && (raw.indexOf("/@") !== -1 || raw.indexOf("@") === 0 || raw.indexOf("/channel/") !== -1)) {
-      await detectChannelShortsIds(raw);
-    }
-    if (prevAutoFetch95) await prevAutoFetch95.apply(this, arguments);
-    setTimeout(function() {
-      if (Array.isArray(videosData)) {
-        videosData.forEach(function(v) {
-          if (v && v.ytId && window.qaafChannelShortsSet.has(v.ytId)) {
-            v.isShort = true;
-            v.duration = "";
-          }
-        });
-      }
-    }, 400);
-  };
-
-  var prevAddGlobal95 = window.adminAddGlobalVideo;
-  window.adminAddGlobalVideo = async function() {
-    if (prevAddGlobal95) await prevAddGlobal95.apply(this, arguments);
-    setTimeout(function() {
-      var updated = false;
-      (videosData || []).forEach(function(v) {
-        if (!v) return;
-        if (v.ytId && window.qaafChannelShortsSet.has(v.ytId) && !v.isShort) {
-          v.isShort = true;
-          updated = true;
-        }
-        if (v.duration === "12:45" || v.duration === "12:00" || v.duration === "14:20") {
-          v.duration = "";
-          updated = true;
-        }
-      });
-      if (updated) {
-        localStorage.setItem("qaaf_videos_data", JSON.stringify(videosData));
-        if (typeof window.renderVideosNow === "function") window.renderVideosNow();
-      }
-    }, 800);
-  };
-
-  // 3. Hide empty duration badge on video cards so fake 12:00 / 12:45 never shows
-  if (!document.getElementById("qaafHideEmptyDurationCss")) {
-    var dCss = document.createElement("style");
-    dCss.id = "qaafHideEmptyDurationCss";
-    dCss.textContent = ".qaaf-yt-clean-card span.bottom-2.right-2:empty { display: none !important; }";
-    document.head.appendChild(dCss);
-  }
-
-  function cleanFakeDurationBadgesInDom() {
-    document.querySelectorAll(".qaaf-yt-clean-card span.bottom-2.right-2, #watchUpNextGrid span.bottom-1.right-1").forEach(function(sp) {
-      var t = (sp.textContent || "").trim();
-      if (t === "12:00" || t === "12:45" || t === "14:20" || t === "10:00" || t === "") {
-        sp.textContent = "";
-        sp.style.display = "none";
-      }
-    });
-  }
-
-  // 4. Upgrade Watch Bar & Shorts Like Button to YouTube Outline SVG & Make It Work Immediately
-  window.updateWatchAndShortsLikeUI = function() {
-    var vidId = currentPlayingVideoId;
-    if (!vidId) return;
-    var isFav = (favoriteVideoIds || []).indexOf(vidId) !== -1;
-    var video = (videosData || []).find(function(x) { return x && x.id === vidId; });
-    var vCount = video ? ((typeof window.getQaafRealViewCount === "function") ? window.getQaafRealViewCount(video) : (video.realViews || 0)) : 0;
-    var likeCount = isFav ? Math.max(1, vCount) : 0;
-
-    // Update Watch Page Like Button
-    var hdr = document.getElementById("ytCleanWatchHeader");
-    if (hdr) {
-      var likeBtn = hdr.querySelector("button[onclick*=\x27toggleFavoriteVideo\x27]");
-      if (likeBtn) {
-        likeBtn.onclick = function(ev) {
-          toggleFavoriteVideo(currentPlayingVideoId, ev);
-          window.updateWatchAndShortsLikeUI();
-        };
-        likeBtn.className = "bg-[#272727] hover:bg-[#383838] text-white px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition shrink-0 cursor-pointer";
-        likeBtn.innerHTML = (isFav ? YT_LIKE_FILLED_SVG : YT_LIKE_OUTLINE_SVG) + "<span class=\x22text-[11px] " + (isFav ? "text-emerald-400 font-bold" : "text-neutral-200") + "\x22>" + (isFav ? "Liked" : "Like") + "</span>";
-      }
-    }
-
-    // Update Shorts Right-Side Like Button to Outline SVG
-    var shOv = document.getElementById("qaafYtShortsMasterOverlay");
-    if (shOv) {
-      var shLikeBtn = shOv.querySelector("button[onclick*=\x27toggleFavoriteVideo\x27]");
-      if (shLikeBtn) {
-        shLikeBtn.innerHTML = isFav ? YT_LIKE_FILLED_SVG : YT_LIKE_OUTLINE_SVG;
-        var countSpan = shLikeBtn.nextElementSibling;
-        if (countSpan) countSpan.textContent = isFav ? "Liked" : "Like";
-      }
-    }
-  };
-
-  var origToggleFav = window.toggleFavoriteVideo;
+  var prevToggleFav97 = window.toggleFavoriteVideo;
   window.toggleFavoriteVideo = function(videoId, ev) {
-    if (origToggleFav) origToggleFav(videoId, ev);
-    setTimeout(window.updateWatchAndShortsLikeUI, 20);
+    if (prevToggleFav97) prevToggleFav97(videoId, ev);
+    syncWatchAndShortsPlayerUI(true);
   };
 
-  setInterval(function() {
-    cleanFakeDurationBadgesInDom();
-    window.updateWatchAndShortsLikeUI();
-  }, 600);
-})();
-
-
-// === QAAF V96 CLEAN 4 WATCH BUTTONS & STABLE SHORTS LIKE ===
-(function initQaafV96CleanFourButtonsAndNoFlickerLike() {
-  var YT_LIKE_OUTLINE_SVG = "<svg viewBox=\x270 0 24 24\x27 width=\x2717\x27 height=\x2717\x27 fill=\x27none\x27 stroke=\x27currentColor\x27 stroke-width=\x272\x27 stroke-linecap=\x27round\x27 stroke-linejoin=\x27round\x27 style=\x27display:inline-block;vertical-align:middle;\x27><path d=\x27M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3\x27/></svg>";
-  var YT_LIKE_FILLED_SVG = "<svg viewBox=\x270 0 24 24\x27 width=\x2717\x27 height=\x2717\x27 fill=\x27#10b981\x27 stroke=\x27#10b981\x27 stroke-width=\x272\x27 stroke-linecap=\x27round\x27 stroke-linejoin=\x27round\x27 style=\x27display:inline-block;vertical-align:middle;\x27><path d=\x27M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3\x27/></svg>";
-  var YT_SHARE_SVG = "<svg viewBox=\x270 0 24 24\x27 width=\x2717\x27 height=\x2717\x27 fill=\x27currentColor\x27 style=\x27display:inline-block;vertical-align:middle;\x27><path d=\x27M15 5.63 20.66 12 15 18.37V14h-1c-3.96 0-7.14 1-9.75 3.09 1.84-4.07 5.11-6.4 9.89-7.1l.86-.13V5.63M14 3v6C6.22 10.13 3.11 15.33 2 21c2.78-3.97 6.44-6 12-6v6l8-9-8-9z\x27/></svg>";
-
-  // 1. Clean Watch Action Row: ONLY 4 Buttons (Like | Save | Share | Flag)
-  function enforceCleanFourWatchButtons() {
-    var hdr = document.getElementById("ytCleanWatchHeader");
-    if (!hdr) return;
-
-    // Remove Speed/Quality pill from bottom row
-    var spPill = document.getElementById("qaafWatchActionSettingsPill");
-    if (spPill) spPill.remove();
-
-    // Replace Dua button inside #ytCleanWatchHeader with Share button
-    var duaBtn = hdr.querySelector("button[onclick*=\x27triggerAdSimulation\x27]");
-    if (duaBtn) {
-      duaBtn.removeAttribute("onclick");
-      duaBtn.onclick = function(ev) { window.shareQaafCurrentVideo(ev); };
-      duaBtn.className = "bg-[#272727] hover:bg-[#383838] text-white px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition shrink-0 cursor-pointer";
-      duaBtn.title = "Share";
-      duaBtn.innerHTML = YT_SHARE_SVG + "<span class=\x22text-[11px] text-neutral-200\x22>Share</span>";
-    }
-
-    // Ensure Like button uses outline Thumbs-Up SVG without flickering
-    var isFav = (favoriteVideoIds || []).indexOf(currentPlayingVideoId) !== -1;
-    var likeBtn = hdr.querySelector("button[onclick*=\x27toggleFavoriteVideo\x27]");
-    if (likeBtn) {
-      var wantState = isFav ? "liked" : "unliked";
-      if (likeBtn.getAttribute("data-like-state") !== wantState) {
-        likeBtn.setAttribute("data-like-state", wantState);
-        likeBtn.className = "bg-[#272727] hover:bg-[#383838] text-white px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition shrink-0 cursor-pointer";
-        likeBtn.innerHTML = (isFav ? YT_LIKE_FILLED_SVG : YT_LIKE_OUTLINE_SVG) + "<span class=\x22text-[11px] " + (isFav ? "text-emerald-400 font-bold" : "text-neutral-200") + "\x22>" + (isFav ? "Liked" : "Like") + "</span>";
-      }
-    }
-  }
-
-  // 2. Lock Shorts Right-Side Overlay so it NEVER flickers to Heart and covers YouTube bottom-right 13/Share
-  function enforceStableShortsOutlineOverlay(forceUpdate) {
-    var modal = document.getElementById("playerModal");
-    if (!modal || modal.classList.contains("hidden")) return;
-    var video = (videosData || []).find(function(x) { return x && x.id === currentPlayingVideoId; });
-    if (!video || !isVideoShort(video)) return;
-
-    var ov = document.getElementById("qaafYtShortsMasterOverlay");
-    if (!ov) return;
-
-    // Lock innerHTML setter so older intervals (v90/v92) can NEVER overwrite it with Heart icon!
-    if (!ov._lockedV96ShortsSetter) {
-      ov._lockedV96ShortsSetter = true;
-      var origDesc = Object.getOwnPropertyDescriptor(Element.prototype, "innerHTML");
-      if (origDesc && origDesc.set) {
-        Object.defineProperty(ov, "innerHTML", {
-          get: function() { return origDesc.get.call(this); },
-          set: function(val) {
-            if (this._allowV96ShortsWrite) origDesc.set.call(this, val);
-          }
-        });
-      }
-    }
-
-    var isFav = (favoriteVideoIds || []).indexOf(video.id) !== -1;
-    var stateKey = video.id + "_" + (isFav ? "1" : "0");
-    if (!forceUpdate && ov.getAttribute("data-v96-state") === stateKey) return;
-    ov.setAttribute("data-v96-state", stateKey);
-
-    // Positioned at bottom-right (bottom: 14px; right: 4px) with solid dark pill background to cover YouTube internal 13/Share!
-    ov.style.cssText = "position:absolute; right:4px; bottom:14px; top:auto; left:auto; width:56px; height:auto; z-index:45; background:rgba(12,15,20,0.92); border:1px solid rgba(255,255,255,0.12); border-radius:28px; padding:10px 4px; display:flex; flex-direction:column; align-items:center; gap:14px; pointer-events:auto; box-shadow:0 8px 24px rgba(0,0,0,0.85);";
-
-    ov._allowV96ShortsWrite = true;
-    ov.innerHTML =
-      "<div style=\x27display:flex;flex-direction:column;align-items:center;gap:3px;\x27>" +
-        "<button type=\x27button\x27 onclick=\x27toggleFavoriteVideo(currentPlayingVideoId,event)\x27 style=\x27width:42px;height:42px;border-radius:999px;background:rgba(255,255,255,0.1);color:#fff;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.18);cursor:pointer;\x27>" + (isFav ? YT_LIKE_FILLED_SVG : YT_LIKE_OUTLINE_SVG) + "</button>" +
-        "<span style=\x27font-size:10px;font-weight:700;color:#fff;\x27>" + (isFav ? "Liked" : "Like") + "</span>" +
-      "</div>" +
-      "<div style=\x27display:flex;flex-direction:column;align-items:center;gap:3px;\x27>" +
-        "<button type=\x27button\x27 onclick=\x27openShortCommentsPopup(event)\x27 style=\x27width:42px;height:42px;border-radius:999px;background:rgba(255,255,255,0.1);color:#fff;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.18);cursor:pointer;\x27><svg viewBox=\x270 0 24 24\x27 width=\x2717\x27 height=\x2717\x27 fill=\x27none\x27 stroke=\x27currentColor\x27 stroke-width=\x272\x27 stroke-linecap=\x27round\x27 stroke-linejoin=\x27round\x27><path d=\x27M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z\x27/></svg></button>" +
-        "<span style=\x27font-size:10px;font-weight:700;color:#fff;\x27>Comment</span>" +
-      "</div>" +
-      "<div style=\x27display:flex;flex-direction:column;align-items:center;gap:3px;\x27>" +
-        "<button type=\x27button\x27 onclick=\x27shareQaafCurrentVideo(event)\x27 style=\x27width:42px;height:42px;border-radius:999px;background:rgba(255,255,255,0.1);color:#fff;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.18);cursor:pointer;\x27>" + YT_SHARE_SVG + "</button>" +
-        "<span style=\x27font-size:10px;font-weight:700;color:#fff;\x27>Share</span>" +
-      "</div>";
-    ov._allowV96ShortsWrite = false;
-  }
-
-  var prevToggleFav96 = window.toggleFavoriteVideo;
-  window.toggleFavoriteVideo = function(videoId, ev) {
-    if (prevToggleFav96) prevToggleFav96(videoId, ev);
-    enforceCleanFourWatchButtons();
-    enforceStableShortsOutlineOverlay(true);
-  };
-
-  var prevOpenV96 = window.openVideoPlayer;
+  var prevOpenV97 = window.openVideoPlayer;
   window.openVideoPlayer = function(videoId) {
-    if (prevOpenV96) prevOpenV96.apply(this, arguments);
-    setTimeout(function() {
-      enforceCleanFourWatchButtons();
-      enforceStableShortsOutlineOverlay(true);
-    }, 60);
-    setTimeout(function() {
-      enforceCleanFourWatchButtons();
-      enforceStableShortsOutlineOverlay(true);
-    }, 220);
+    if (prevOpenV97) prevOpenV97.apply(this, arguments);
+    setTimeout(function() { syncWatchAndShortsPlayerUI(true); }, 70);
+    setTimeout(function() { syncWatchAndShortsPlayerUI(true); }, 250);
   };
 
   setInterval(function() {
-    enforceCleanFourWatchButtons();
-    enforceStableShortsOutlineOverlay(false);
-  }, 400);
+    checkChannelEmptyVideosTab();
+    syncWatchAndShortsPlayerUI(false);
+    syncDrawerAndAdminLabels(false);
+  }, 500);
 })();
