@@ -469,10 +469,7 @@
       urlsToTry.push(baseChannel + "/playlists");
       urlsToTry.push(baseChannel);
     }
-    if (channelName) {
-      var cleanChQuery = channelName.split("|")[0].trim();
-      urlsToTry.push("https://www.youtube.com/results?search_query=" + encodeURIComponent(cleanChQuery + " playlist") + "&sp=EgIQAw%253D%253D");
-    }
+    /* Removed global search playlist fallback so fake 20 playlists never appear */
 
     for (var uIdx = 0; uIdx < urlsToTry.length; uIdx++) {
       var uUrl = urlsToTry[uIdx];
@@ -3736,22 +3733,149 @@
   };
 })();
 
-
-// === QAAF V99 TRANSPARENT AUTO-HIDE SHORTS & SAFE SHARE ===
-(function initQaafV99TransparentAutoHideShortsAndSafeShare() {
+// === QAAF V100 SIMPLE SHARE & TARBIAH SHORTS FIX ===
+(function initQaafV100SimpleShareAndChannelShortsFix() {
   var YT_LIKE_OUTLINE_SVG = "<svg viewBox=\x270 0 24 24\x27 width=\x2718\x27 height=\x2718\x27 fill=\x27none\x27 stroke=\x27currentColor\x27 stroke-width=\x272\x27 stroke-linecap=\x27round\x27 stroke-linejoin=\x27round\x27 style=\x27display:inline-block;vertical-align:middle;\x27><path d=\x27M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3\x27/></svg>";
   var YT_LIKE_FILLED_SVG = "<svg viewBox=\x270 0 24 24\x27 width=\x2718\x27 height=\x2718\x27 fill=\x27#10b981\x27 stroke=\x27#10b981\x27 stroke-width=\x272\x27 stroke-linecap=\x27round\x27 stroke-linejoin=\x27round\x27 style=\x27display:inline-block;vertical-align:middle;\x27><path d=\x27M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3\x27/></svg>";
   var YT_SHARE_SVG = "<svg viewBox=\x270 0 24 24\x27 width=\x2718\x27 height=\x2718\x27 fill=\x27currentColor\x27 style=\x27display:inline-block;vertical-align:middle;\x27><path d=\x27M15 5.63 20.66 12 15 18.37V14h-1c-3.96 0-7.14 1-9.75 3.09 1.84-4.07 5.11-6.4 9.89-7.1l.86-.13V5.63M14 3v6C6.22 10.13 3.11 15.33 2 21c2.78-3.97 6.44-6 12-6v6l8-9-8-9z\x27/></svg>";
 
   // =========================================================================
-  // 1. SAFE IN-APP SHARE MODAL (NEVER FREEZES WINDOWS BROWSER!)
+  // 1. FIX TARBIAH ISLAMIC CENTRE (12 SHORTS, NO 12:45, NO FAKE 20 PLAYLISTS)
   // =========================================================================
+  function cleanTarbiahPlaylistsAndConvertShorts() {
+    var plChanged = false;
+    if (window.qaafRealChannelPlaylistsMap && window.qaafRealChannelPlaylistsMap["Tarbiah Islamic Centre"]) {
+      delete window.qaafRealChannelPlaylistsMap["Tarbiah Islamic Centre"];
+      plChanged = true;
+    }
+    if (plChanged) {
+      try { localStorage.setItem("qaaf_real_channel_playlists_v1", JSON.stringify(window.qaafRealChannelPlaylistsMap)); } catch (e) {}
+      if (typeof window.savePlaylistsToLocalAndCloudDb === "function") window.savePlaylistsToLocalAndCloudDb();
+    }
+
+    if (Array.isArray(videosData)) {
+      var vidChanged = false;
+      videosData.forEach(function(v) {
+        if (!v) return;
+        if (v.duration === "12:45" || v.duration === "12:00" || v.duration === "14:20" || v.duration === "10:00") {
+          v.duration = "";
+          vidChanged = true;
+        }
+        if (v.channel === "Tarbiah Islamic Centre" && !v.isShort) {
+          v.isShort = true;
+          v.duration = "";
+          vidChanged = true;
+        }
+        if (v.title && /^New Video \([a-zA-Z0-9_-]{11}\)$/i.test(v.title.trim()) && v.ytId) {
+          fetch("https://noembed.com/embed?url=https://www.youtube.com/watch?v=" + v.ytId)
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(d) {
+              if (d && d.title) {
+                v.title = d.title;
+                try { localStorage.setItem("qaaf_videos_data", JSON.stringify(videosData)); } catch (e) {}
+              }
+            }).catch(function() {});
+        }
+      });
+      if (vidChanged) {
+        try { localStorage.setItem("qaaf_videos_data", JSON.stringify(videosData)); } catch (e) {}
+        if (window.qaafCloudSync) window.qaafCloudSync.pushState("Converted Tarbiah Islamic Centre 12 videos to Shorts");
+      }
+    }
+  }
+  cleanTarbiahPlaylistsAndConvertShorts();
+
+  // Auto-detect Shorts when importing any channel in Admin Panel
+  window.qaafDetectedChannelShortsSet = new Set();
+  var prevAutoFetch100 = window.adminAutoFetchYouTubeInfo;
+  window.adminAutoFetchYouTubeInfo = async function() {
+    var urlInp = document.getElementById("adminYtUrlInput");
+    var raw = (urlInp ? urlInp.value : "").trim();
+    var base = raw.replace(/\/(videos|shorts|featured|streams|playlists)?\/?$/, "");
+    if (base && (base.indexOf("/@") !== -1 || base.indexOf("/channel/") !== -1)) {
+      try {
+        var rs = await fetch("https://r.jina.ai/" + base + "/shorts");
+        if (rs.ok) {
+          var stxt = await rs.text();
+          for (var m of stxt.matchAll(/(?:watch\?v=|\/shorts\/|"videoId"\s*:\s*")([a-zA-Z0-9_-]{11})/g)) {
+            window.qaafDetectedChannelShortsSet.add(m[1]);
+          }
+        }
+      } catch (e) {}
+    }
+    if (prevAutoFetch100) await prevAutoFetch100.apply(this, arguments);
+    if (window.adminPendingBatchChannel && Array.isArray(window.adminPendingBatchChannel.videos)) {
+      window.adminPendingBatchChannel.videos.forEach(function(item) {
+        if (item && item.ytId && window.qaafDetectedChannelShortsSet.has(item.ytId)) {
+          item.isShort = true;
+          item.duration = "";
+        }
+      });
+    }
+  };
+
+  var prevAddGlobal100 = window.adminAddGlobalVideo;
+  window.adminAddGlobalVideo = async function() {
+    if (prevAddGlobal100) await prevAddGlobal100.apply(this, arguments);
+    setTimeout(function() {
+      var chg = false;
+      (videosData || []).forEach(function(v) {
+        if (!v) return;
+        if (v.ytId && window.qaafDetectedChannelShortsSet.has(v.ytId) && !v.isShort) {
+          v.isShort = true; v.duration = ""; chg = true;
+        }
+        if (v.channel === "Tarbiah Islamic Centre" && !v.isShort) {
+          v.isShort = true; v.duration = ""; chg = true;
+        }
+        if (v.duration === "12:45" || v.duration === "12:00") {
+          v.duration = ""; chg = true;
+        }
+      });
+      if (chg) {
+        try { localStorage.setItem("qaaf_videos_data", JSON.stringify(videosData)); } catch (e) {}
+        if (typeof window.renderVideosNow === "function") window.renderVideosNow();
+        if (window.qaafCloudSync) window.qaafCloudSync.pushState("Auto-marked Channel Shorts");
+      }
+    }, 900);
+  };
+
+  // When viewing a channel that only has Shorts (0 regular videos), always show its Shorts tab automatically!
+  var prevRender100 = window.renderVideosNow;
+  window.renderVideosNow = function() {
+    var selCh = window.qaafSelectedChannel || "ALL";
+    if (selCh !== "ALL" && window.qaafChannelActiveSubTab === "videos") {
+      var chVids = (videosData || []).filter(function(v) { return v && v.channel === selCh; });
+      var regCnt = chVids.filter(function(v) { return !isVideoShort(v); }).length;
+      var shCnt = chVids.filter(function(v) { return isVideoShort(v); }).length;
+      if (regCnt === 0 && shCnt > 0) {
+        window.qaafChannelActiveSubTab = "shorts";
+      }
+    }
+    if (prevRender100) prevRender100.apply(this, arguments);
+    document.querySelectorAll(".qaaf-yt-clean-card span.bottom-2.right-2, #watchUpNextGrid span.bottom-1.right-1").forEach(function(sp) {
+      var t = (sp.textContent || "").trim();
+      if (t === "12:00" || t === "12:45" || t === "14:20" || t === "10:00" || t === "") {
+        sp.textContent = ""; sp.style.display = "none";
+      }
+    });
+  };
+  setTimeout(function() { if (typeof window.renderVideosNow === "function") window.renderVideosNow(); }, 150);
+
+  // =========================================================================
+  // 2. SIMPLE, FLAT, CLEAR SHARE MODAL (CLEAN SQUARE BRAND LOGOS, ZERO GLOW)
+  // =========================================================================
+  var WA_ICON_SVG = "<svg viewBox=\x270 0 24 24\x27 width=\x2722\x27 height=\x2722\x27 fill=\x27#ffffff\x27><path d=\x27M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91C21.95 6.45 17.5 2 12.04 2zm5.82 14.01c-.24.68-1.41 1.3-1.97 1.38-.51.08-1.15.11-1.86-.12-.43-.14-.98-.32-1.69-.63-2.97-1.28-4.91-4.27-5.06-4.47-.15-.2-1.21-1.61-1.21-3.07 0-1.46.76-2.18 1.03-2.48.27-.3.59-.37.79-.37.2 0 .4 0 .57.01.18.01.43-.07.67.51.24.59.83 2.03.9 2.18.07.15.12.32.02.52-.1.2-.15.32-.3.49-.15.17-.31.38-.44.51-.15.15-.3.31-.13.61.17.3.76 1.25 1.63 2.03 1.12 1 2.06 1.31 2.36 1.46.3.15.47.12.64-.07.17-.2.74-.86.94-1.16.2-.3.4-.25.67-.15.27.1 1.73.82 2.03.97.3.15.49.22.57.35.07.12.07.72-.17 1.4z\x27/></svg>";
+  var TG_ICON_SVG = "<svg viewBox=\x270 0 24 24\x27 width=\x2720\x27 height=\x2720\x27 fill=\x27#ffffff\x27><path d=\x27M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z\x27/></svg>";
+  var FB_ICON_SVG = "<svg viewBox=\x270 0 24 24\x27 width=\x2720\x27 height=\x2720\x27 fill=\x27#ffffff\x27><path d=\x27M14 13.5h2.5l1-4H14v-2c0-1.03 0-2 2-2h1.5V2.14c-.326-.043-1.557-.14-2.857-.14C11.928 2 10 3.657 10 6.7v2.8H7v4h3V22h4v-8.5z\x27/></svg>";
+  var EM_ICON_SVG = "<svg viewBox=\x270 0 24 24\x27 width=\x2720\x27 height=\x2720\x27 fill=\x27none\x27 stroke=\x27#ffffff\x27 stroke-width=\x272\x27 stroke-linecap=\x27round\x27 stroke-linejoin=\x27round\x27><rect x=\x272\x27 y=\x274\x27 width=\x2720\x27 height=\x2716\x27 rx=\x272\x27/><path d=\x27m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7\x27/></svg>";
+
   window.shareQaafCurrentVideo = function(e) {
     if (e) { e.preventDefault(); e.stopPropagation(); }
     var v = (videosData || []).find(function(x) { return x && x.id === currentPlayingVideoId; });
     var isSh = v && isVideoShort(v);
     var shareUrl = window.location.origin + window.location.pathname + "?" + (isSh ? "shorts" : "watch") + "=" + encodeURIComponent((v && v.id) || currentPlayingVideoId || "");
-    var titleTxt = (v && v.title) ? v.title : "QAAF Tube — Safe Islamic Video";
+    var rawTitle = (v && v.title) ? v.title : "QAAF Tube Video";
+    var titleTxt = /^New Video \([a-zA-Z0-9_-]{11}\)$/i.test(rawTitle.trim()) ? ((v && v.channel) ? (v.channel + " — QAAF Tube") : "QAAF Tube Islamic Video") : rawTitle;
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(shareUrl).catch(function() {});
@@ -3766,24 +3890,35 @@
     var encUrl = encodeURIComponent(shareUrl);
     var encText = encodeURIComponent(titleTxt + " — " + shareUrl);
 
-    m.className = "fixed inset-0 z-[1300] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4";
+    m.className = "fixed inset-0 z-[1300] bg-black/70 flex items-center justify-center p-4";
     m.onclick = function(ev) { if (ev.target === m) m.classList.add("hidden"); };
     m.innerHTML =
-      "<div class=\x22bg-[#121722] border border-emerald-500/50 rounded-3xl max-w-sm w-full p-5 shadow-2xl space-y-4 text-white\x22>" +
-        "<div class=\x22flex items-center justify-between border-b border-slate-800 pb-2.5\x22>" +
-          "<h4 class=\x22text-sm font-extrabold text-white flex items-center gap-2\x22>" + YT_SHARE_SVG + " <span>Share QAAF Tube Video</span></h4>" +
-          "<button type=\x22button\x22 onclick=\x22document.getElementById(\x27qaafFastInAppShareModal\x27).classList.add(\x27hidden\x27)\x22 class=\x22w-7 h-7 rounded-full bg-white/10 hover:bg-rose-600 text-white text-xs font-extrabold cursor-pointer\x22>✕</button>" +
+      "<div class=\x22bg-[#161920] border border-slate-700 rounded-2xl max-w-xs w-full p-4 shadow-xl space-y-3.5 text-white\x22>" +
+        "<div class=\x22flex items-center justify-between border-b border-slate-800 pb-2\x22>" +
+          "<span class=\x22text-xs font-extrabold text-white flex items-center gap-1.5\x22>" + YT_SHARE_SVG + " <span>Share Video</span></span>" +
+          "<button type=\x22button\x22 onclick=\x22document.getElementById(\x27qaafFastInAppShareModal\x27).classList.add(\x27hidden\x27)\x22 class=\x22w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold cursor-pointer\x22>✕</button>" +
         "</div>" +
-        "<p class=\x22text-xs font-bold text-emerald-300 truncate\x22>" + titleTxt + "</p>" +
-        "<div class=\x22grid grid-cols-4 gap-2 text-center text-[11px] font-bold\x22>" +
-          "<a href=\x22https://api.whatsapp.com/send?text=" + encText + "\x22 target=\x22_blank\x22 rel=\x22noopener\x22 class=\x22bg-[#1a2e24] hover:bg-emerald-700 border border-emerald-500/40 rounded-2xl py-2.5 flex flex-col items-center gap-1 text-white no-underline\x22><span class=\x22text-lg\x22>🟢</span><span>WhatsApp</span></a>" +
-          "<a href=\x22https://t.me/share/url?url=" + encUrl + "&text=" + encodeURIComponent(titleTxt) + "\x22 target=\x22_blank\x22 rel=\x22noopener\x22 class=\x22bg-[#162736] hover:bg-sky-700 border border-sky-500/40 rounded-2xl py-2.5 flex flex-col items-center gap-1 text-white no-underline\x22><span class=\x22text-lg\x22>✈️</span><span>Telegram</span></a>" +
-          "<a href=\x22https://www.facebook.com/sharer/sharer.php?u=" + encUrl + "\x22 target=\x22_blank\x22 rel=\x22noopener\x22 class=\x22bg-[#17223b] hover:bg-blue-700 border border-blue-500/40 rounded-2xl py-2.5 flex flex-col items-center gap-1 text-white no-underline\x22><span class=\x22text-lg\x22>🔵</span><span>Facebook</span></a>" +
-          "<a href=\x22mailto:?subject=" + encodeURIComponent(titleTxt) + "&body=" + encText + "\x22 class=\x22bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-2xl py-2.5 flex flex-col items-center gap-1 text-white no-underline\x22><span class=\x22text-lg\x22>✉️</span><span>Email</span></a>" +
+        "<div class=\x22flex items-center justify-around pt-1\x22>" +
+          "<a href=\x22https://api.whatsapp.com/send?text=" + encText + "\x22 target=\x22_blank\x22 rel=\x22noopener\x22 class=\x22flex flex-col items-center gap-1.5 text-slate-200 hover:text-white no-underline group\x22>" +
+            "<div class=\x22w-11 h-11 rounded-xl bg-[#25D366] flex items-center justify-center transition group-hover:opacity-90\x22>" + WA_ICON_SVG + "</div>" +
+            "<span class=\x22text-[10px] font-semibold\x22>WhatsApp</span>" +
+          "</a>" +
+          "<a href=\x22https://t.me/share/url?url=" + encUrl + "&text=" + encodeURIComponent(titleTxt) + "\x22 target=\x22_blank\x22 rel=\x22noopener\x22 class=\x22flex flex-col items-center gap-1.5 text-slate-200 hover:text-white no-underline group\x22>" +
+            "<div class=\x22w-11 h-11 rounded-xl bg-[#229ED9] flex items-center justify-center transition group-hover:opacity-90\x22>" + TG_ICON_SVG + "</div>" +
+            "<span class=\x22text-[10px] font-semibold\x22>Telegram</span>" +
+          "</a>" +
+          "<a href=\x22https://www.facebook.com/sharer/sharer.php?u=" + encUrl + "\x22 target=\x22_blank\x22 rel=\x22noopener\x22 class=\x22flex flex-col items-center gap-1.5 text-slate-200 hover:text-white no-underline group\x22>" +
+            "<div class=\x22w-11 h-11 rounded-xl bg-[#1877F2] flex items-center justify-center transition group-hover:opacity-90\x22>" + FB_ICON_SVG + "</div>" +
+            "<span class=\x22text-[10px] font-semibold\x22>Facebook</span>" +
+          "</a>" +
+          "<a href=\x22mailto:?subject=" + encodeURIComponent(titleTxt) + "&body=" + encText + "\x22 class=\x22flex flex-col items-center gap-1.5 text-slate-200 hover:text-white no-underline group\x22>" +
+            "<div class=\x22w-11 h-11 rounded-xl bg-slate-700 flex items-center justify-center transition group-hover:opacity-90\x22>" + EM_ICON_SVG + "</div>" +
+            "<span class=\x22text-[10px] font-semibold\x22>Email</span>" +
+          "</a>" +
         "</div>" +
-        "<div class=\x22flex items-center gap-2 bg-black/70 border border-slate-700 rounded-xl p-1.5\x22>" +
+        "<div class=\x22flex items-center gap-1.5 bg-[#0d1015] border border-slate-700 rounded-xl p-1.5\x22>" +
           "<input id=\x22qaafShareUrlBoxInput\x22 type=\x22text\x22 readonly value=\x22" + shareUrl + "\x22 class=\x22w-full bg-transparent text-[11px] text-slate-300 px-2 focus:outline-none\x22 />" +
-          "<button type=\x22button\x22 onclick=\x22navigator.clipboard.writeText(document.getElementById(\x27qaafShareUrlBoxInput\x27).value);this.innerText=\x27✅ Copied!\x27;\x22 class=\x22bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-extrabold shrink-0 cursor-pointer\x22>📋 Copy</button>" +
+          "<button type=\x22button\x22 onclick=\x22navigator.clipboard.writeText(document.getElementById(\x27qaafShareUrlBoxInput\x27).value);this.innerText=\x27Copied!\x27;\x22 class=\x22bg-[#164e3a] hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-[11px] font-bold shrink-0 cursor-pointer\x22>Copy</button>" +
         "</div>" +
       "</div>";
     m.classList.remove("hidden");
@@ -3791,10 +3926,9 @@
   window.shareCurrentShort = window.shareQaafCurrentVideo;
 
   // =========================================================================
-  // 2. TRANSPARENT SHORTS BUTTONS + AUTO-HIDE IN SYNC WITH VIDEO CONTROLS
+  // 3. TRANSPARENT SHORTS BUTTONS + AUTO-HIDE IN SYNC WITH VIDEO CONTROLS
   // =========================================================================
   var shortsOverlayHideTimer = null;
-
   window.wakeQaafShortsButtonsNow = function() {
     var ov = document.getElementById("qaafYtShortsMasterOverlay");
     var modal = document.getElementById("playerModal");
@@ -3816,14 +3950,11 @@
     var aspect = document.getElementById("playerAspectBox");
     var ov = document.getElementById("qaafYtShortsMasterOverlay");
     if (!modal || modal.classList.contains("hidden") || !modal.classList.contains("qaaf-shorts-mode") || !ov) return;
-
     var video = (videosData || []).find(function(x) { return x && x.id === currentPlayingVideoId; });
     if (!video || !isVideoShort(video)) return;
 
     var isFav = (favoriteVideoIds || []).indexOf(video.id) !== -1;
-    var stKey = "v99_" + video.id + "_" + (isFav ? "1" : "0");
-
-    // Make outer container 100% transparent (NO solid black box!) and position buttons right over YT buttons
+    var stKey = "v100_" + video.id + "_" + (isFav ? "1" : "0");
     ov.style.background = "transparent";
     ov.style.border = "none";
     ov.style.boxShadow = "none";
@@ -3834,11 +3965,11 @@
     ov.style.gap = "14px";
     ov.style.transition = "opacity 0.2s ease";
 
-    if (forceRebuild || ov.getAttribute("data-v99-state") !== stKey) {
-      ov.setAttribute("data-v99-state", stKey);
+    if (forceRebuild || ov.getAttribute("data-v100-state") !== stKey) {
+      ov.setAttribute("data-v100-state", stKey);
       ov.setAttribute("data-v98-state", stKey);
-      var btnCircleStyle = "width:44px;height:44px;border-radius:999px;background:rgba(15,18,24,0.78);backdrop-filter:blur(4px);color:#fff;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.18);cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.55);";
-      var lblStyle = "font-size:10px;font-weight:800;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.95);";
+      var btnCircleStyle = "width:44px;height:44px;border-radius:999px;background:rgba(15,18,24,0.78);color:#fff;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.18);cursor:pointer;";
+      var lblStyle = "font-size:10px;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.9);";
       ov.innerHTML =
         "<div style=\x27display:flex;flex-direction:column;align-items:center;gap:3px;\x27>" +
           "<button type=\x27button\x27 onclick=\x27toggleFavoriteVideo(currentPlayingVideoId,event);window.wakeQaafShortsButtonsNow();\x27 style=\x27" + btnCircleStyle + "\x27>" + (isFav ? YT_LIKE_FILLED_SVG : YT_LIKE_OUTLINE_SVG) + "</button>" +
@@ -3855,25 +3986,22 @@
       window.wakeQaafShortsButtonsNow();
     }
 
-    if (aspect && !aspect.getAttribute("data-v99-wake-bound")) {
-      aspect.setAttribute("data-v99-wake-bound", "1");
+    if (aspect && !aspect.getAttribute("data-v100-wake-bound")) {
+      aspect.setAttribute("data-v100-wake-bound", "1");
       ["touchstart", "mousemove", "mousedown", "click"].forEach(function(evName) {
-        aspect.addEventListener(evName, function() {
-          window.wakeQaafShortsButtonsNow();
-        }, { passive: true, capture: true });
+        aspect.addEventListener(evName, function() { window.wakeQaafShortsButtonsNow(); }, { passive: true, capture: true });
       });
     }
   }
 
-  var prevOpenV99 = window.openVideoPlayer;
+  var prevOpenV100 = window.openVideoPlayer;
   window.openVideoPlayer = function(videoId) {
-    if (prevOpenV99) prevOpenV99.apply(this, arguments);
+    if (prevOpenV100) prevOpenV100.apply(this, arguments);
     setTimeout(function() { styleTransparentShortsButtons(true); }, 45);
   };
-
-  var prevFav99 = window.toggleFavoriteVideo;
+  var prevFav100 = window.toggleFavoriteVideo;
   window.toggleFavoriteVideo = function(videoId, ev) {
-    if (prevFav99) prevFav99(videoId, ev);
+    if (prevFav100) prevFav100(videoId, ev);
     setTimeout(function() { styleTransparentShortsButtons(true); }, 25);
   };
 })();
