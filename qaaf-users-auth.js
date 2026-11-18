@@ -3735,3 +3735,145 @@
     }
   };
 })();
+
+
+// === QAAF V99 TRANSPARENT AUTO-HIDE SHORTS & SAFE SHARE ===
+(function initQaafV99TransparentAutoHideShortsAndSafeShare() {
+  var YT_LIKE_OUTLINE_SVG = "<svg viewBox=\x270 0 24 24\x27 width=\x2718\x27 height=\x2718\x27 fill=\x27none\x27 stroke=\x27currentColor\x27 stroke-width=\x272\x27 stroke-linecap=\x27round\x27 stroke-linejoin=\x27round\x27 style=\x27display:inline-block;vertical-align:middle;\x27><path d=\x27M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3\x27/></svg>";
+  var YT_LIKE_FILLED_SVG = "<svg viewBox=\x270 0 24 24\x27 width=\x2718\x27 height=\x2718\x27 fill=\x27#10b981\x27 stroke=\x27#10b981\x27 stroke-width=\x272\x27 stroke-linecap=\x27round\x27 stroke-linejoin=\x27round\x27 style=\x27display:inline-block;vertical-align:middle;\x27><path d=\x27M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3\x27/></svg>";
+  var YT_SHARE_SVG = "<svg viewBox=\x270 0 24 24\x27 width=\x2718\x27 height=\x2718\x27 fill=\x27currentColor\x27 style=\x27display:inline-block;vertical-align:middle;\x27><path d=\x27M15 5.63 20.66 12 15 18.37V14h-1c-3.96 0-7.14 1-9.75 3.09 1.84-4.07 5.11-6.4 9.89-7.1l.86-.13V5.63M14 3v6C6.22 10.13 3.11 15.33 2 21c2.78-3.97 6.44-6 12-6v6l8-9-8-9z\x27/></svg>";
+
+  // =========================================================================
+  // 1. SAFE IN-APP SHARE MODAL (NEVER FREEZES WINDOWS BROWSER!)
+  // =========================================================================
+  window.shareQaafCurrentVideo = function(e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    var v = (videosData || []).find(function(x) { return x && x.id === currentPlayingVideoId; });
+    var isSh = v && isVideoShort(v);
+    var shareUrl = window.location.origin + window.location.pathname + "?" + (isSh ? "shorts" : "watch") + "=" + encodeURIComponent((v && v.id) || currentPlayingVideoId || "");
+    var titleTxt = (v && v.title) ? v.title : "QAAF Tube — Safe Islamic Video";
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(shareUrl).catch(function() {});
+    }
+
+    var m = document.getElementById("qaafFastInAppShareModal");
+    if (!m) {
+      m = document.createElement("div");
+      m.id = "qaafFastInAppShareModal";
+      document.body.appendChild(m);
+    }
+    var encUrl = encodeURIComponent(shareUrl);
+    var encText = encodeURIComponent(titleTxt + " — " + shareUrl);
+
+    m.className = "fixed inset-0 z-[1300] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4";
+    m.onclick = function(ev) { if (ev.target === m) m.classList.add("hidden"); };
+    m.innerHTML =
+      "<div class=\x22bg-[#121722] border border-emerald-500/50 rounded-3xl max-w-sm w-full p-5 shadow-2xl space-y-4 text-white\x22>" +
+        "<div class=\x22flex items-center justify-between border-b border-slate-800 pb-2.5\x22>" +
+          "<h4 class=\x22text-sm font-extrabold text-white flex items-center gap-2\x22>" + YT_SHARE_SVG + " <span>Share QAAF Tube Video</span></h4>" +
+          "<button type=\x22button\x22 onclick=\x22document.getElementById(\x27qaafFastInAppShareModal\x27).classList.add(\x27hidden\x27)\x22 class=\x22w-7 h-7 rounded-full bg-white/10 hover:bg-rose-600 text-white text-xs font-extrabold cursor-pointer\x22>✕</button>" +
+        "</div>" +
+        "<p class=\x22text-xs font-bold text-emerald-300 truncate\x22>" + titleTxt + "</p>" +
+        "<div class=\x22grid grid-cols-4 gap-2 text-center text-[11px] font-bold\x22>" +
+          "<a href=\x22https://api.whatsapp.com/send?text=" + encText + "\x22 target=\x22_blank\x22 rel=\x22noopener\x22 class=\x22bg-[#1a2e24] hover:bg-emerald-700 border border-emerald-500/40 rounded-2xl py-2.5 flex flex-col items-center gap-1 text-white no-underline\x22><span class=\x22text-lg\x22>🟢</span><span>WhatsApp</span></a>" +
+          "<a href=\x22https://t.me/share/url?url=" + encUrl + "&text=" + encodeURIComponent(titleTxt) + "\x22 target=\x22_blank\x22 rel=\x22noopener\x22 class=\x22bg-[#162736] hover:bg-sky-700 border border-sky-500/40 rounded-2xl py-2.5 flex flex-col items-center gap-1 text-white no-underline\x22><span class=\x22text-lg\x22>✈️</span><span>Telegram</span></a>" +
+          "<a href=\x22https://www.facebook.com/sharer/sharer.php?u=" + encUrl + "\x22 target=\x22_blank\x22 rel=\x22noopener\x22 class=\x22bg-[#17223b] hover:bg-blue-700 border border-blue-500/40 rounded-2xl py-2.5 flex flex-col items-center gap-1 text-white no-underline\x22><span class=\x22text-lg\x22>🔵</span><span>Facebook</span></a>" +
+          "<a href=\x22mailto:?subject=" + encodeURIComponent(titleTxt) + "&body=" + encText + "\x22 class=\x22bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-2xl py-2.5 flex flex-col items-center gap-1 text-white no-underline\x22><span class=\x22text-lg\x22>✉️</span><span>Email</span></a>" +
+        "</div>" +
+        "<div class=\x22flex items-center gap-2 bg-black/70 border border-slate-700 rounded-xl p-1.5\x22>" +
+          "<input id=\x22qaafShareUrlBoxInput\x22 type=\x22text\x22 readonly value=\x22" + shareUrl + "\x22 class=\x22w-full bg-transparent text-[11px] text-slate-300 px-2 focus:outline-none\x22 />" +
+          "<button type=\x22button\x22 onclick=\x22navigator.clipboard.writeText(document.getElementById(\x27qaafShareUrlBoxInput\x27).value);this.innerText=\x27✅ Copied!\x27;\x22 class=\x22bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-extrabold shrink-0 cursor-pointer\x22>📋 Copy</button>" +
+        "</div>" +
+      "</div>";
+    m.classList.remove("hidden");
+  };
+  window.shareCurrentShort = window.shareQaafCurrentVideo;
+
+  // =========================================================================
+  // 2. TRANSPARENT SHORTS BUTTONS + AUTO-HIDE IN SYNC WITH VIDEO CONTROLS
+  // =========================================================================
+  var shortsOverlayHideTimer = null;
+
+  window.wakeQaafShortsButtonsNow = function() {
+    var ov = document.getElementById("qaafYtShortsMasterOverlay");
+    var modal = document.getElementById("playerModal");
+    if (!ov || !modal || modal.classList.contains("hidden") || !modal.classList.contains("qaaf-shorts-mode")) return;
+    ov.style.opacity = "1";
+    ov.style.pointerEvents = "auto";
+    if (shortsOverlayHideTimer) clearTimeout(shortsOverlayHideTimer);
+    shortsOverlayHideTimer = setTimeout(function() {
+      var curOv = document.getElementById("qaafYtShortsMasterOverlay");
+      if (curOv) {
+        curOv.style.opacity = "0";
+        curOv.style.pointerEvents = "none";
+      }
+    }, 2400);
+  };
+
+  function styleTransparentShortsButtons(forceRebuild) {
+    var modal = document.getElementById("playerModal");
+    var aspect = document.getElementById("playerAspectBox");
+    var ov = document.getElementById("qaafYtShortsMasterOverlay");
+    if (!modal || modal.classList.contains("hidden") || !modal.classList.contains("qaaf-shorts-mode") || !ov) return;
+
+    var video = (videosData || []).find(function(x) { return x && x.id === currentPlayingVideoId; });
+    if (!video || !isVideoShort(video)) return;
+
+    var isFav = (favoriteVideoIds || []).indexOf(video.id) !== -1;
+    var stKey = "v99_" + video.id + "_" + (isFav ? "1" : "0");
+
+    // Make outer container 100% transparent (NO solid black box!) and position buttons right over YT buttons
+    ov.style.background = "transparent";
+    ov.style.border = "none";
+    ov.style.boxShadow = "none";
+    ov.style.right = "8px";
+    ov.style.bottom = "14px";
+    ov.style.width = "50px";
+    ov.style.padding = "0";
+    ov.style.gap = "14px";
+    ov.style.transition = "opacity 0.2s ease";
+
+    if (forceRebuild || ov.getAttribute("data-v99-state") !== stKey) {
+      ov.setAttribute("data-v99-state", stKey);
+      ov.setAttribute("data-v98-state", stKey);
+      var btnCircleStyle = "width:44px;height:44px;border-radius:999px;background:rgba(15,18,24,0.78);backdrop-filter:blur(4px);color:#fff;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.18);cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.55);";
+      var lblStyle = "font-size:10px;font-weight:800;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.95);";
+      ov.innerHTML =
+        "<div style=\x27display:flex;flex-direction:column;align-items:center;gap:3px;\x27>" +
+          "<button type=\x27button\x27 onclick=\x27toggleFavoriteVideo(currentPlayingVideoId,event);window.wakeQaafShortsButtonsNow();\x27 style=\x27" + btnCircleStyle + "\x27>" + (isFav ? YT_LIKE_FILLED_SVG : YT_LIKE_OUTLINE_SVG) + "</button>" +
+          "<span style=\x27" + lblStyle + "\x27>" + (isFav ? "Liked" : "Like") + "</span>" +
+        "</div>" +
+        "<div style=\x27display:flex;flex-direction:column;align-items:center;gap:3px;\x27>" +
+          "<button type=\x27button\x27 onclick=\x27openShortCommentsPopup(event);window.wakeQaafShortsButtonsNow();\x27 style=\x27" + btnCircleStyle + "\x27><svg viewBox=\x270 0 24 24\x27 width=\x2718\x27 height=\x2718\x27 fill=\x27none\x27 stroke=\x27currentColor\x27 stroke-width=\x272\x27 stroke-linecap=\x27round\x27 stroke-linejoin=\x27round\x27><path d=\x27M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z\x27/></svg></button>" +
+          "<span style=\x27" + lblStyle + "\x27>Comment</span>" +
+        "</div>" +
+        "<div style=\x27display:flex;flex-direction:column;align-items:center;gap:3px;\x27>" +
+          "<button type=\x27button\x27 onclick=\x27shareQaafCurrentVideo(event);window.wakeQaafShortsButtonsNow();\x27 style=\x27" + btnCircleStyle + "\x27>" + YT_SHARE_SVG + "</button>" +
+          "<span style=\x27" + lblStyle + "\x27>Share</span>" +
+        "</div>";
+      window.wakeQaafShortsButtonsNow();
+    }
+
+    if (aspect && !aspect.getAttribute("data-v99-wake-bound")) {
+      aspect.setAttribute("data-v99-wake-bound", "1");
+      ["touchstart", "mousemove", "mousedown", "click"].forEach(function(evName) {
+        aspect.addEventListener(evName, function() {
+          window.wakeQaafShortsButtonsNow();
+        }, { passive: true, capture: true });
+      });
+    }
+  }
+
+  var prevOpenV99 = window.openVideoPlayer;
+  window.openVideoPlayer = function(videoId) {
+    if (prevOpenV99) prevOpenV99.apply(this, arguments);
+    setTimeout(function() { styleTransparentShortsButtons(true); }, 45);
+  };
+
+  var prevFav99 = window.toggleFavoriteVideo;
+  window.toggleFavoriteVideo = function(videoId, ev) {
+    if (prevFav99) prevFav99(videoId, ev);
+    setTimeout(function() { styleTransparentShortsButtons(true); }, 25);
+  };
+})();
