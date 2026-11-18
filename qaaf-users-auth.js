@@ -216,11 +216,7 @@
     window.renderVideosNow();
   }
 
-  setInterval(function() {
-    if (typeof window.translateAllQaafWebsiteText === "function") {
-      window.translateAllQaafWebsiteText(window.currentAppUILang || "en");
-    }
-  }, 700);
+  setTimeout(function() { if (typeof window.translateAllQaafWebsiteText === 'function') window.translateAllQaafWebsiteText(window.currentAppUILang || 'en'); }, 500);
 
   injectUsersDatabaseBackupBar();
   window.syncQaafUsersWithCloudNow(false);
@@ -2572,7 +2568,7 @@
 
       /* Smooth Auto-Hide for Category Bar & Bottom Nav */
       "#categoryBar { transition: transform 0.25s ease, opacity 0.25s ease, max-height 0.25s ease !important; }",
-      "#categoryBar.qaaf-bar-autohidden { transform: translateY(-100%) !important; opacity: 0 !important; max-height: 0 !important; padding-top: 0 !important; padding-bottom: 0 !important; margin: 0 !important; overflow: hidden !important; pointer-events: none !important; }",
+      "#categoryBar.qaaf-bar-autohidden { opacity: 0 !important; pointer-events: none !important; }",
       "#qaafMobileBottomNav { background-color: #090d14 !important; transition: transform 0.22s ease, opacity 0.22s ease !important; }",
       "#qaafMobileBottomNav.qaaf-nav-autohidden { transform: translateY(100%) !important; opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; }",
       "#regionalPromoBar { transition: transform 0.22s ease, opacity 0.22s ease !important; }",
@@ -3090,7 +3086,7 @@
 
   pullPromoCodesFromCloud();
   setTimeout(runAllV55Enhancements, 60);
-  setInterval(runAllV55Enhancements, 600);
+  setTimeout(runAllV55Enhancements, 400);
 })();
 
 // === SECTION 7: STRICT FOOTER & PROMO BAR MUTUAL EXCLUSIVITY ===
@@ -3338,322 +3334,8 @@
   }, 300);
 })();
 
-// === QAAF STEP 2 AUTH & CLOUD SYNC ===
-(function() {
-  var FB_BASE = "https://qaaftube-6f251-default-rtdb.firebaseio.com";
-  var YT_SHARE_SVG = "<svg viewBox='0 0 24 24' width='16' height='16' fill='currentColor' style='display:inline-block;vertical-align:middle;'><path d='M15 5.63 20.66 12 15 18.37V14h-1c-3.96 0-7.14 1-9.75 3.09 1.84-4.07 5.11-6.4 9.89-7.1l.86-.13V5.63M14 3v6C6.22 10.13 3.11 15.33 2 21c2.78-3.97 6.44-6 12-6v6l8-9-8-9z'/></svg>";
-  var stClean = document.createElement("style");
-  stClean.textContent = "#shortsSideNav, #qaafMinimalTopLeftClose, #qaafCenterRedVolOverlay { display: none !important; } header { z-index: 65 !important; } body.qaaf-player-open { overflow: hidden !important; touch-action: pan-y; }";
-  document.head.appendChild(stClean);
-  // A. USER CLOUD SYNC & LOGIN FIXES
-  window.saveUserPersonalDataToCloud = function() {
-    if (!currentUserEmail) return;
-    var k = currentUserEmail.toLowerCase().trim();
-    window.registeredUsersMap = window.registeredUsersMap || {};
-    var uObj = window.registeredUsersMap[k]; if (!uObj) return;
-    uObj.favorites = favoriteVideoIds || []; uObj.parentHistory = window.parentHistoryIds || []; uObj.kidsHistory = window.kidsHistoryIds || []; uObj.pin = parentPin || "123456";
-    localStorage.setItem("qaaf_registered_users", JSON.stringify(window.registeredUsersMap));
-    if (typeof window.syncQaafUsersWithCloudNow === "function") window.syncQaafUsersWithCloudNow(false);
-  };
-  window.restoreUserPersonalDataFromCloud = function(emailStr) {
-    if (!emailStr || !window.registeredUsersMap) return;
-    var uObj = window.registeredUsersMap[emailStr.toLowerCase().trim()]; if (!uObj) return;
-    if (Array.isArray(uObj.favorites) && uObj.favorites.length) { favoriteVideoIds = uObj.favorites; localStorage.setItem("qaaf_favorites", JSON.stringify(favoriteVideoIds)); }
-    if (Array.isArray(uObj.parentHistory) && uObj.parentHistory.length) { window.parentHistoryIds = uObj.parentHistory; localStorage.setItem("qaaf_parent_history", JSON.stringify(window.parentHistoryIds)); }
-    if (Array.isArray(uObj.kidsHistory) && uObj.kidsHistory.length) { window.kidsHistoryIds = uObj.kidsHistory; localStorage.setItem("qaaf_kids_history", JSON.stringify(window.kidsHistoryIds)); }
-    if (uObj.pin && String(uObj.pin).length === 6) { parentPin = String(uObj.pin); localStorage.setItem("qaaf_parent_pin_6", parentPin); }
-    if (typeof window.renderVideosNow === "function") window.renderVideosNow();
-  };
-  var origOpenKids = window.openKidsLockOrTimer;
-  window.openKidsLockOrTimer = function() {
-    if (!isKidsLocked && !currentUserEmail) { openAccountModal("Please Sign In or Continue with Gmail to use Kids Mode & PIN!"); return; }
-    if (origOpenKids) return origOpenKids.apply(this, arguments);
-  };
-  window.toggleKidsMode = function() { window.openKidsLockOrTimer(); };
-  window.completeGoogleQuickSignIn = function(directEmail) {
-    var inp = document.getElementById("googleQuickEmailInput"); var mainInp = document.getElementById("userEmailInput");
-    var em = String(directEmail || (inp && inp.value) || (mainInp && mainInp.value) || "").trim().toLowerCase();
-    if (!em || em.indexOf("@") === -1) { alert("Please enter your Gmail address."); return; }
-    if (em === "qaaftube@gmail.com" || em === "adminqaaftube") { alert("Super Admin must sign in using Admin Password below."); return; }
-    localStorage.setItem("qaaf_last_gmail_email", em);
-    window.registeredUsersMap = window.registeredUsersMap || {};
-    if (!window.registeredUsersMap[em]) window.registeredUsersMap[em] = { name: em.split("@")[0], userKey: em, email: em, pass: "GoogleAuth_" + em.split("@")[0], recWord: "makkah", pin: parentPin || "123456", authProvider: "Google", isPro: false, createdAt: new Date().toLocaleDateString() };
-    parentPin = window.registeredUsersMap[em].pin || parentPin || "123456";
-    localStorage.setItem("qaaf_parent_pin_6", parentPin); localStorage.setItem("qaaf_registered_users", JSON.stringify(window.registeredUsersMap));
-    localStorage.removeItem("qaaf_admin_verified_v3"); currentUserEmail = em; localStorage.setItem("qaaf_user_email", currentUserEmail);
-    window.restoreUserPersonalDataFromCloud(em); window.saveUserPersonalDataToCloud(); syncAccountUI(); closeAccountModal();
-    if (typeof showSyncToast === "function") showSyncToast("🎉 Signed in as " + em);
-  };
-  window.signInWithGoogleAccount = function() {
-    var oldPin = document.getElementById("googleQuickPinInput"); if (oldPin) oldPin.remove();
-    var gBox = document.getElementById("googleQuickAuthBox");
-    if (!gBox) { gBox = document.createElement("div"); gBox.id = "googleQuickAuthBox"; var btn = document.getElementById("googleSignInBtn"); if (btn && btn.parentNode) btn.parentNode.insertBefore(gBox, btn.nextSibling); }
-    gBox.className = "bg-[#141822] border-2 border-blue-500/60 rounded-2xl p-3.5 mb-3 space-y-2.5 text-left shadow-2xl";
-    var knownEmails = []; var lastGm = localStorage.getItem("qaaf_last_gmail_email"); if (lastGm) knownEmails.push(lastGm);
-    Object.keys(window.registeredUsersMap || {}).forEach(function(k){ if (k.indexOf("@gmail.com") !== -1 && knownEmails.indexOf(k) === -1) knownEmails.push(k); });
-    var accButtons = knownEmails.slice(0, 3).map(function(em) {
-      var nm = em.split("@")[0];
-      return "<button type=button onclick=window.completeGoogleQuickSignIn('" + em + "') class='w-full bg-black/80 hover:bg-blue-950/70 border border-slate-700 rounded-xl p-2 flex items-center justify-between cursor-pointer'><span class='text-xs font-bold text-white truncate'>🔵 " + em + "</span><span class='text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded font-extrabold shrink-0'>1-Tap ➔</span></button>";
-    }).join("");
-    gBox.innerHTML = (accButtons ? ("<div class='space-y-1.5'>" + accButtons + "</div>") : "") + "<div class='flex gap-1.5'><input id='googleQuickEmailInput' type='email' placeholder='yourname@gmail.com' class='flex-1 bg-black border border-slate-700 rounded-xl px-3 py-2 text-xs text-white' onkeydown='if(event.key===\"Enter\")window.completeGoogleQuickSignIn()' /><button type=button onclick=window.completeGoogleQuickSignIn() class='bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 rounded-xl text-xs font-extrabold shrink-0 cursor-pointer'>Continue</button></div>";
-    gBox.classList.remove("hidden");
-  };
-  // B. SHARE LINK & URL ROUTER
-  window.setQaafUrlTag = function(paramsObj, pageTitle) {
-    try {
-      var url = new URL(window.location.href);
-      ["watch", "shorts", "game", "category", "channel", "tab"].forEach(function(k){ url.searchParams.delete(k); });
-      if (paramsObj) Object.keys(paramsObj).forEach(function(k){ if (paramsObj[k]) url.searchParams.set(k, paramsObj[k]); });
-      window.history.replaceState({}, pageTitle || document.title, url.pathname + url.search);
-    } catch(e) {}
-  };
-  window.shareQaafCurrentVideo = function(e) {
-    if (e) e.stopPropagation();
-    var v = (videosData || []).find(function(x){ return x && x.id === currentPlayingVideoId; });
-    var isSh = v && isVideoShort(v);
-    var shareUrl = window.location.origin + window.location.pathname + "?" + (isSh ? "shorts" : "watch") + "=" + encodeURIComponent((v && v.id) || currentPlayingVideoId || "");
-    if (navigator.share) navigator.share({ title: (v && v.title) || "QAAF Tube", url: shareUrl }).catch(function(){});
-    if (navigator.clipboard) navigator.clipboard.writeText(shareUrl).catch(function(){});
-    if (typeof showSyncToast === "function") showSyncToast("🔗 Link Copied!");
-  };
-  window.shareCurrentShort = window.shareQaafCurrentVideo;
-  // C. SMART RELATED VIDEOS & UP NEXT FILTER PILLS
-  window.getSmartRelatedVideos = function(currentVidId, wantShortsOnly) {
-    var cur = (videosData || []).find(function(v){ return v && v.id === currentVidId; });
-    var histIds = (typeof getActiveHistory === "function") ? (getActiveHistory() || []) : [];
-    var blockedSet = new Set(blockedVideoIds || []), bannedSet = new Set(bannedChannels || []);
-    var chFreq = {}, catFreq = {};
-    histIds.forEach(function(id, idx) { var hv = (videosData || []).find(function(x){ return x && x.id === id; }); if (hv) { if (hv.channel) chFreq[hv.channel] = (chFreq[hv.channel]||0) + (idx<8?3:1); if (hv.category) catFreq[hv.category] = (catFreq[hv.category]||0) + 1; } });
-    var candidates = (videosData || []).filter(function(v) {
-      if (!v || v.id === currentVidId || blockedSet.has(v.id) || bannedSet.has(v.channel)) return false;
-      if (isKidsLocked && !v.kidsSafe) return false;
-      var isSh = isVideoShort(v); return wantShortsOnly ? isSh : !isSh;
-    });
-    var scored = candidates.map(function(v) {
-      var s = 0;
-      if (cur) { if (v.channel === cur.channel) s += 120; if (v.category === cur.category) s += 95; if (v.lang === cur.lang) s += 55; }
-      if (chFreq[v.channel]) s += Math.min(50, chFreq[v.channel] * 10);
-      if (catFreq[v.category]) s += Math.min(35, catFreq[v.category] * 7);
-      return { video: v, score: s };
-    });
-    scored.sort(function(a, b){ return b.score - a.score; });
-    var out = [], chC = {};
-    scored.forEach(function(it){ var c = it.video.channel||"G"; chC[c]=(chC[c]||0)+1; if (chC[c]<=4) out.push(it.video); });
-    return out.length ? out : scored.map(function(x){ return x.video; });
-  };
-  window.filterUpNextByMode = function(mode) {
-    var cur = (videosData || []).find(function(x){ return x && x.id === currentPlayingVideoId; });
-    var upNextGrid = document.getElementById("watchUpNextGrid"); if (!upNextGrid || !cur) return;
-    var list = (mode === "channel") ? (videosData || []).filter(function(v){ return v && v.id !== cur.id && v.channel === cur.channel && !isVideoShort(v); }) : window.getSmartRelatedVideos(cur.id, false);
-    upNextGrid.innerHTML = "";
-    list.slice(0, 14).forEach(function(v) {
-      var thumb = v.customThumb || ("https://i.ytimg.com/vi/" + v.ytId + "/hqdefault.jpg");
-      var vStr = (typeof window.formatQaafRealViews === "function") ? window.formatQaafRealViews(v) : ((v.realViews || 0) + " views");
-      var a = document.createElement("a"); if (!isKidsLocked) a.href = "?watch=" + encodeURIComponent(v.id);
-      a.onclick = function(e){ return handleQaafVideoLinkClick(e, v.id); };
-      a.className = "bg-[#181818] hover:bg-[#222] rounded-xl overflow-hidden border border-white/10 flex sm:flex-col gap-2.5 p-2 sm:p-0 cursor-pointer transition group no-underline text-inherit";
-      a.innerHTML = "<div class='relative w-36 sm:w-full aspect-video bg-slate-900 rounded-lg sm:rounded-none overflow-hidden shrink-0 pointer-events-none'><img src='" + thumb + "' alt='' class='absolute inset-0 w-full h-full object-cover' loading='lazy' /><span class='absolute bottom-1 right-1 bg-black/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded'>" + (v.duration || "12:00") + "</span></div><div class='p-1 sm:p-2.5 min-w-0 flex-1'><h5 class='text-xs font-bold text-white line-clamp-2 leading-snug'>" + v.title + "</h5><p class='text-[10px] text-slate-400 mt-1 truncate'>✅ " + v.channel + " • " + vStr + "</p></div>";
-      upNextGrid.appendChild(a);
-    });
-  };
-  // D. PERFECT STICKY 16:9 WATCH LAYOUT (ZERO GAP, NO BACKGROUND SCROLL, COMPACT SHARE/LIKE ROW) & SHORTS LAYOUT
-  window.qaafShortsQueue = []; window.qaafShortsIdx = 0; window.qaafShortPlaying = true; window.qaafShortMuted = false;
-  function sendYtCmd(f, a) { var ifr = document.getElementById("ytIframe"); if (ifr && ifr.contentWindow) ifr.contentWindow.postMessage(JSON.stringify({ event: "command", func: f, args: a || [] }), "*"); }
-  window.toggleQaafShortPlayPause = function(e) { if(e)e.stopPropagation(); window.qaafShortPlaying=!window.qaafShortPlaying; sendYtCmd(window.qaafShortPlaying?"playVideo":"pauseVideo"); var b=document.getElementById("qaafShPlayBtn"); if(b)b.innerHTML=window.qaafShortPlaying?"⏸":"▶"; };
-  window.toggleQaafShortMute = function(e) { if(e)e.stopPropagation(); window.qaafShortMuted=!window.qaafShortMuted; sendYtCmd(window.qaafShortMuted?"mute":"unMute"); var b=document.getElementById("qaafShMuteBtn"); if(b)b.innerHTML=window.qaafShortMuted?"🔇":"🔊"; };
-  window.toggleQaafShortFullscreen = function(e) { if(e)e.stopPropagation(); var m=document.getElementById("playerModal"); if(!m)return; if(!document.fullscreenElement){if(m.requestFullscreen)m.requestFullscreen().catch(function(){});}else{if(document.exitFullscreen)document.exitFullscreen().catch(function(){});} };
-  window.toggleQaafShortMenu = function(e) { if(e)e.stopPropagation(); var m=document.getElementById("qaafShThreeDotMenu"); if(m)m.classList.toggle("hidden"); };
-  window.setQaafShortSpeed = function(r) { sendYtCmd("setPlaybackRate",[r]); var m=document.getElementById("qaafShThreeDotMenu"); if(m)m.classList.add("hidden"); };
-  window.openShortCommentsPopup = function(e) { if(e)e.stopPropagation(); var sw=document.getElementById("ytWatchScrollContainer"); if(sw){sw.classList.toggle("hidden"); sw.style.cssText="position:absolute;inset:auto 0 0 0;max-height:55%;background:#12161f;z-index:60;overflow-y:auto;padding:12px;border-radius:20px 20px 0 0;";} };
-  window.playAdjacentShort = function(dir) {
-    if (!window.qaafShortsQueue.length) { var rel = window.getSmartRelatedVideos(currentPlayingVideoId, true); window.qaafShortsQueue = [currentPlayingVideoId].concat(rel.map(function(v){return v.id;})); window.qaafShortsIdx = 0; }
-    if (window.qaafShortsQueue.length <= 1) return;
-    window.qaafShortsIdx = (window.qaafShortsIdx + (dir >= 0 ? 1 : -1) + window.qaafShortsQueue.length) % window.qaafShortsQueue.length;
-    openVideoPlayer(window.qaafShortsQueue[window.qaafShortsIdx]);
-  };
-  function applyUnifiedPlayerLayout(video) {
-    var modal = document.getElementById("playerModal"), box = document.getElementById("playerModalBox"), aspect = document.getElementById("playerAspectBox"), scrollWrap = document.getElementById("ytWatchScrollContainer");
-    if (!modal || !box || !aspect || !video || modal.classList.contains("qaaf-mini-player")) return;
-    document.body.classList.add("qaaf-player-open");
-    var hdr = document.querySelector("header"); var hdrH = (hdr && hdr.offsetHeight) ? hdr.offsetHeight : 48;
-    var isSh = isVideoShort(video);
-    var ov = document.getElementById("qaafYtShortsMasterOverlay"), peek = document.getElementById("qaafNextShortPeekCard");
-    if (!isSh) {
-      // REGULAR 16:9 VIDEO: Flush under header (0px gap!), video fixed at top, ONLY bottom list scrolls!
-      modal.classList.remove("qaaf-shorts-mode");
-      if (ov) ov.style.display = "none"; if (peek) peek.style.display = "none";
-      modal.style.cssText = "position:fixed; top:" + hdrH + "px; left:0; right:0; bottom:0; height:calc(100dvh - " + hdrH + "px); z-index:55; background:#0f0f0f; display:flex; flex-direction:column; overflow:hidden; padding:0; margin:0;";
-      box.style.cssText = "width:100%; max-width:960px; height:100%; margin:0 auto; background:#0f0f0f; display:flex; flex-direction:column; overflow:hidden; border-radius:0;";
-      aspect.style.cssText = "position:relative; width:100%; aspect-ratio:16/9; max-height:42vh; background:#000; flex:0 0 auto; overflow:hidden; display:block;";
-      if (scrollWrap) { scrollWrap.classList.remove("hidden"); scrollWrap.style.cssText = "flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:12px 14px 90px 14px; background:#0f0f0f;"; }
-      // Replace Dua with Share SVG & make button row fit mobile cleanly
-      var details = document.getElementById("ytCleanWatchDetails");
-      if (details) {
-        details.querySelectorAll("button").forEach(function(b){
-          var t = (b.textContent||"").trim();
-          if (t.indexOf("Dua") !== -1 || b.getAttribute("onclick") === "triggerAdCoverNow()") {
-            b.onclick = function(ev){ window.shareQaafCurrentVideo(ev); };
-            b.className = "bg-white/10 hover:bg-white/20 text-white px-2.5 py-1.5 rounded-full text-[11px] font-bold flex items-center gap-1 transition shrink-0 cursor-pointer";
-            b.innerHTML = YT_SHARE_SVG + "<span>Share</span>";
-          }
-        });
-      }
-      window.filterUpNextByMode("all");
-      return;
-    }
-    // SHORTS MODE: Flush under header, vertical 9:16 card + 34px bottom peek
-    if (window.qaafShortsQueue.indexOf(video.id) === -1) { var rel = window.getSmartRelatedVideos(video.id, true); window.qaafShortsQueue = [video.id].concat(rel.map(function(v){return v.id;})); window.qaafShortsIdx = 0; }
-    modal.classList.add("qaaf-shorts-mode");
-    modal.style.cssText = "position:fixed; top:" + hdrH + "px; left:0; right:0; bottom:0; height:calc(100dvh - " + hdrH + "px); z-index:55; background:rgba(10,12,16,0.98); display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding-top:6px; overflow:hidden;";
-    modal.onclick = function(ev){ if (ev.target === modal) closeVideoPlayer(); };
-    if (scrollWrap) scrollWrap.classList.add("hidden");
-    box.style.cssText = "width:auto; height:calc(100dvh - " + (hdrH + 54) + "px); flex:0 0 calc(100dvh - " + (hdrH + 54) + "px); aspect-ratio:9/16; max-width:94vw; background:#000; border-radius:16px; overflow:hidden; position:relative; display:flex; flex-direction:column;";
-    aspect.style.cssText = "position:relative; width:100%; height:100%; flex:1 1 auto; background:#000; overflow:hidden; display:block;";
-    var ifr = document.getElementById("ytIframe"); if (ifr && ifr.src && ifr.src.indexOf("controls=1") !== -1) ifr.src = ifr.src.replace("controls=1", "controls=0");
-    if (!ov) { ov = document.createElement("div"); ov.id = "qaafYtShortsMasterOverlay"; aspect.appendChild(ov); }
-    ov.style.cssText = "position:absolute; inset:0; z-index:38; display:block; user-select:none;";
-    var lastW = 0; ov.onwheel = function(e){ if (Date.now()-lastW < 600) return; if (Math.abs(e.deltaY)>22) { e.preventDefault(); lastW=Date.now(); window.playAdjacentShort(e.deltaY>0?1:-1); } };
-    var isFav = (favoriteVideoIds || []).indexOf(video.id) !== -1;
-    var vCount = (typeof window.getQaafRealViewCount === "function") ? window.getQaafRealViewCount(video) : (video.realViews || 1);
-    var chHandle = "@" + String(video.channel || "qaaftube").toLowerCase().replace(/[^a-z0-9_]/g, "");
-    var thumb = video.customThumb || ("https://i.ytimg.com/vi/" + video.ytId + "/hqdefault.jpg");
-    ov.innerHTML = "<div onclick=toggleQaafShortPlayPause(event) style='position:absolute;inset:0;z-index:1;cursor:pointer;'></div>" +
-      "<div style='position:absolute;top:14px;left:14px;z-index:5;display:flex;align-items:center;gap:8px;'><button id='qaafShPlayBtn' type=button onclick=toggleQaafShortPlayPause(event) style='width:40px;height:40px;border-radius:999px;background:rgba(0,0,0,0.52);color:#fff;font-size:15px;border:none;cursor:pointer;'>⏸</button><button id='qaafShMuteBtn' type=button onclick=toggleQaafShortMute(event) style='width:40px;height:40px;border-radius:999px;background:rgba(0,0,0,0.52);color:#fff;font-size:15px;border:none;cursor:pointer;'>🔊</button></div>" +
-      "<div style='position:absolute;top:14px;right:14px;z-index:6;'><div style='background:rgba(0,0,0,0.52);border-radius:999px;padding:4px 8px;display:flex;gap:6px;'><button type=button onclick=toggleQaafShortMenu(event) style='width:32px;height:32px;color:#fff;font-size:18px;background:transparent;border:none;cursor:pointer;'>⋮</button><button type=button onclick=toggleQaafShortFullscreen(event) style='width:32px;height:32px;color:#fff;font-size:16px;background:transparent;border:none;cursor:pointer;'>⤢</button></div>" +
-      "<div id='qaafShThreeDotMenu' class='hidden' style='position:absolute;right:0;top:46px;width:200px;background:#181c24;border:1px solid rgba(255,255,255,0.15);border-radius:16px;padding:8px;color:#fff;font-size:12px;'><button type=button onclick=toggleVideoInPlaylist(currentPlayingVideoId,event) class='w-full text-left px-3 py-2 rounded-xl hover:bg-white/10 font-bold flex items-center gap-2'><span>➕</span><span>Save to Playlist</span></button><div class='px-3 py-1 text-[10px] text-slate-400 font-bold border-t border-white/10 mt-1'>⏩ Playback Speed</div><div class='flex justify-between gap-1 px-2 pb-1.5'><button type=button onclick=setQaafShortSpeed(0.75) class='px-2 py-1 rounded bg-white/10 text-[10px] font-bold'>0.75x</button><button type=button onclick=setQaafShortSpeed(1) class='px-2 py-1 rounded bg-emerald-600 text-[10px] font-bold'>1x</button><button type=button onclick=setQaafShortSpeed(1.5) class='px-2 py-1 rounded bg-white/10 text-[10px] font-bold'>1.5x</button><button type=button onclick=setQaafShortSpeed(2) class='px-2 py-1 rounded bg-white/10 text-[10px] font-bold'>2x</button></div><button type=button onclick=openFlagModal(currentPlayingVideoId) class='w-full text-left px-3 py-2 rounded-xl hover:bg-rose-900/40 text-rose-300 font-bold flex items-center gap-2'><span>🚩</span><span>Report Short</span></button></div></div>" +
-      "<div style='position:absolute;right:12px;bottom:20px;z-index:5;display:flex;flex-direction:column;align-items:center;gap:14px;'>" +
-        "<div style='display:flex;flex-direction:column;align-items:center;gap:2px;'><button type=button onclick=toggleFavoriteVideo(currentPlayingVideoId,event);setTimeout(function(){openVideoPlayer(currentPlayingVideoId);},50) style='width:42px;height:42px;border-radius:999px;background:rgba(0,0,0,0.52);color:#fff;font-size:18px;border:none;cursor:pointer;'>" + (isFav ? "❤️" : "🤍") + "</button><span style='font-size:11px;font-weight:700;color:#fff;'>" + vCount + "</span></div>" +
-        "<div style='display:flex;flex-direction:column;align-items:center;gap:2px;'><button type=button onclick=openShortCommentsPopup(event) style='width:42px;height:42px;border-radius:999px;background:rgba(0,0,0,0.52);color:#fff;font-size:17px;border:none;cursor:pointer;'>💬</button><span style='font-size:10px;font-weight:700;color:#fff;'>Comment</span></div>" +
-        "<div style='display:flex;flex-direction:column;align-items:center;gap:2px;'><button type=button onclick=shareQaafCurrentVideo(event) style='width:42px;height:42px;border-radius:999px;background:rgba(0,0,0,0.52);color:#fff;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;'>" + YT_SHARE_SVG + "</button><span style='font-size:10px;font-weight:700;color:#fff;'>Share</span></div>" +
-        "<img src='" + thumb + "' style='width:36px;height:36px;border-radius:8px;object-fit:cover;border:2px solid #fff;' />" +
-      "</div>" +
-      "<div style='position:absolute;left:14px;right:68px;bottom:16px;z-index:5;pointer-events:none;text-shadow:0 1px 4px #000;'><div style='display:flex;align-items:center;gap:8px;margin-bottom:4px;'><img src='" + thumb + "' style='width:30px;height:30px;border-radius:999px;object-fit:cover;border:1.5px solid #fff;' /><span style='font-size:12px;font-weight:800;color:#fff;'>" + chHandle + "</span></div><div style='font-size:12px;font-weight:600;color:#fff;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;'>" + video.title + "</div></div>";
-    var nextId = window.qaafShortsQueue[(window.qaafShortsIdx + 1) % window.qaafShortsQueue.length];
-    var nextVid = (videosData || []).find(function(x){ return x && x.id === nextId && x.id !== video.id; });
-    if (!peek) { peek = document.createElement("div"); peek.id = "qaafNextShortPeekCard"; modal.appendChild(peek); }
-    if (nextVid) {
-      var nThumb = nextVid.customThumb || ("https://i.ytimg.com/vi/" + nextVid.ytId + "/hqdefault.jpg");
-      var boxW = box.getBoundingClientRect().width || 340;
-      peek.style.cssText = "width:" + Math.round(boxW) + "px; height:32px; flex:0 0 32px; margin-top:8px; border-radius:14px 14px 0 0; overflow:hidden; position:relative; cursor:pointer; opacity:0.85; border-top:1px solid rgba(255,255,255,0.25);";
-      peek.onclick = function(e){ e.stopPropagation(); window.playAdjacentShort(1); };
-      peek.innerHTML = "<img src='" + nThumb + "' style='width:100%;height:200px;object-fit:cover;object-position:top;' />";
-      peek.style.display = "block";
-    } else { peek.style.display = "none"; }
-  }
-  var origOpenV = window.openVideoPlayer;
-  window.openVideoPlayer = function(videoId) {
-    if (origOpenV) origOpenV.apply(this, arguments);
-    var v = (videosData || []).find(function(x){ return x && x.id === videoId; });
-    if (v) {
-      var p = {}; p[isVideoShort(v) ? "shorts" : "watch"] = v.id;
-      window.setQaafUrlTag(p, v.title + " — QAAF Tube");
-      setTimeout(function(){ applyUnifiedPlayerLayout(v); }, 25);
-    }
-  };
-  var origCloseV = window.closeVideoPlayer;
-  window.closeVideoPlayer = function() {
-    document.body.classList.remove("qaaf-player-open");
-    if (origCloseV) origCloseV.apply(this, arguments);
-    window.setQaafUrlTag(null, "QAAF Tube — Muslim Family & Kids Hub");
-  };
-  var origMinV = window.minimizeToMiniPlayer;
-  window.minimizeToMiniPlayer = function() {
-    document.body.classList.remove("qaaf-player-open");
-    if (origMinV) origMinV.apply(this, arguments);
-  };
-  var origResetH = window.resetToHomeFeed;
-  window.resetToHomeFeed = function() {
-    var modal = document.getElementById("playerModal");
-    if (modal && !modal.classList.contains("hidden")) window.closeVideoPlayer();
-    if (origResetH) origResetH.apply(this, arguments);
-  };
-})();
-
-// === QAAF V90 CLEAN NATIVE YOUTUBE SHORTS & WATCH UI ===
-(function() {
-  var YT_SHARE_SVG = "<svg viewBox='0 0 24 24' width='17' height='17' fill='currentColor' style='display:inline-block;vertical-align:middle;'><path d='M15 5.63 20.66 12 15 18.37V14h-1c-3.96 0-7.14 1-9.75 3.09 1.84-4.07 5.11-6.4 9.89-7.1l.86-.13V5.63M14 3v6C6.22 10.13 3.11 15.33 2 21c2.78-3.97 6.44-6 12-6v6l8-9-8-9z'/></svg>";
-  // 1. Browser Cache Installer for 3D Game (3.8 MB)
-  var origInstall = window.installAndOpenGame;
-  window.installAndOpenGame = function(gameId) {
-    if (window.caches && gameId === "game_3d_01_desk_racer") {
-      caches.open("qaaf-3d-games-v1").then(function(cache) {
-        cache.addAll(["Qaaf 3d games/01-Desk racer Pro/desk_racer_pro.html", "Qaaf 3d games/01-Desk racer Pro/stage_panoramas.js"]).catch(function(){});
-      }).catch(function(){});
-    }
-    if (origInstall) return origInstall.apply(this, arguments);
-  };
-  // 2. Override buildCleanWatchDetailsLayout so 16:9 Videos show Official Share Button instead of Dua, and never cut off on mobile
-  var origBuildWatch = window.buildCleanWatchDetailsLayout;
-  window.buildCleanWatchDetailsLayout = function(video) {
-    if (origBuildWatch) origBuildWatch.apply(this, arguments);
-    var details = document.getElementById("ytCleanWatchDetails"); if (!details || !video) return;
-    details.querySelectorAll("button").forEach(function(b) {
-      var txt = (b.textContent || "").trim();
-      if (txt.indexOf("Dua") !== -1 || b.getAttribute("onclick") === "triggerAdCoverNow()") {
-        b.onclick = function(ev) { window.shareQaafCurrentVideo(ev); };
-        b.setAttribute("onclick", "window.shareQaafCurrentVideo(event)");
-        b.className = "bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-full text-[11px] font-bold flex items-center gap-1 transition shrink-0 cursor-pointer";
-        b.innerHTML = YT_SHARE_SVG + "<span>Share</span>";
-      }
-    });
-    // Make the channel + action buttons row wrap cleanly on narrow mobile screens so nothing cuts off
-    var rows = details.querySelectorAll("div.flex.items-center.justify-between");
-    rows.forEach(function(r) { r.className = "flex flex-wrap items-center justify-between gap-2 pt-1"; });
-  };
-  // 3. Override renderWatchPageExtras so Up Next always shows All | From Channel | Related + Smart Related Videos + Real Views
-  var origExtras = window.renderWatchPageExtras;
-  window.renderWatchPageExtras = function(videoId) {
-    if (origExtras) origExtras.apply(this, arguments);
-    var cur = (videosData || []).find(function(x){ return x && x.id === videoId; });
-    var upNextGrid = document.getElementById("watchUpNextGrid"); if (!upNextGrid || !cur) return;
-    var bar = document.getElementById("qaafUpNextFilterPillsBar");
-    if (!bar && upNextGrid.parentNode) {
-      bar = document.createElement("div"); bar.id = "qaafUpNextFilterPillsBar";
-      bar.className = "flex items-center gap-2 overflow-x-auto pb-2 mb-2 no-scrollbar";
-      upNextGrid.parentNode.insertBefore(bar, upNextGrid);
-    }
-    if (bar) {
-      bar.innerHTML = "<button id='qaafUpNextPill_all' type=button onclick=filterUpNextByMode('all') class='px-3 py-1 rounded-lg text-xs font-extrabold bg-white text-black cursor-pointer shrink-0'>All</button>" +
-        "<button id='qaafUpNextPill_channel' type=button onclick=filterUpNextByMode('channel') class='px-3 py-1 rounded-lg text-xs font-bold bg-white/10 hover:bg-white/20 text-white cursor-pointer shrink-0'>From " + (cur.channel || "Channel") + "</button>" +
-        "<button id='qaafUpNextPill_related' type=button onclick=filterUpNextByMode('related') class='px-3 py-1 rounded-lg text-xs font-bold bg-white/10 hover:bg-white/20 text-white cursor-pointer shrink-0'>Related</button>";
-    }
-    if (typeof window.filterUpNextByMode === "function") window.filterUpNextByMode("all");
-  };
-  // 4. CLEAN NATIVE YOUTUBE SHORTS: Keep YouTube native top-right (Speaker, CC, Settings) & bottom-right (Enlarge/Minimize) 100% uncovered and working!
-  function applyCleanNativeShortsUI() {
-    var modal = document.getElementById("playerModal");
-    if (!modal || modal.classList.contains("hidden")) return;
-    var video = (videosData || []).find(function(x){ return x && x.id === currentPlayingVideoId; });
-    if (!video || !isVideoShort(video)) return;
-    // Ensure YouTube native controls=1 stays ON in Shorts so YouTube Speaker, CC, Settings, Seekbar & Fullscreen work directly!
-    var ifr = document.getElementById("ytIframe");
-    if (ifr) {
-      ifr.style.pointerEvents = "auto";
-      if (ifr.src && ifr.src.indexOf("controls=0") !== -1) ifr.src = ifr.src.replace("controls=0", "controls=1");
-    }
-    // Replace the full-screen blocking overlay with ONLY a small floating right-side bar positioned HIGHER UP (bottom: 130px) so YouTube bottom-right Fullscreen (Enlarge/Minimize) and top-right (Speaker/CC/Gear) are 100% uncovered!
-    var ov = document.getElementById("qaafYtShortsMasterOverlay");
-    if (ov) {
-      var isFav = (favoriteVideoIds || []).indexOf(video.id) !== -1;
-      var vCount = (typeof window.getQaafRealViewCount === "function") ? window.getQaafRealViewCount(video) : (video.realViews || 1);
-      ov.style.cssText = "position:absolute; right:10px; bottom:128px; top:auto; left:auto; width:46px; height:auto; z-index:38; display:flex; flex-direction:column; align-items:center; gap:12px; pointer-events:auto;";
-      ov.innerHTML = "<button type=button onclick=playAdjacentShort(-1) style='width:38px;height:38px;border-radius:999px;background:rgba(0,0,0,0.55);color:#fff;font-size:14px;border:1px solid rgba(255,255,255,0.2);cursor:pointer;' title='Previous Short'>▲</button>" +
-        "<div style='display:flex;flex-direction:column;align-items:center;gap:2px;'><button type=button onclick=toggleFavoriteVideo(currentPlayingVideoId,event);setTimeout(applyCleanNativeShortsUI,50) style='width:42px;height:42px;border-radius:999px;background:rgba(0,0,0,0.55);color:#fff;font-size:17px;border:1px solid rgba(255,255,255,0.2);cursor:pointer;'>" + (isFav ? "❤️" : "🤍") + "</button><span style='font-size:10px;font-weight:800;color:#fff;text-shadow:0 1px 3px #000;'>" + vCount + "</span></div>" +
-        "<div style='display:flex;flex-direction:column;align-items:center;gap:2px;'><button type=button onclick=openShortCommentsPopup(event) style='width:42px;height:42px;border-radius:999px;background:rgba(0,0,0,0.55);color:#fff;font-size:16px;border:1px solid rgba(255,255,255,0.2);cursor:pointer;'>💬</button><span style='font-size:9px;font-weight:800;color:#fff;text-shadow:0 1px 3px #000;'>Comment</span></div>" +
-        "<div style='display:flex;flex-direction:column;align-items:center;gap:2px;'><button type=button onclick=shareQaafCurrentVideo(event) style='width:42px;height:42px;border-radius:999px;background:rgba(0,0,0,0.55);color:#fff;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.2);cursor:pointer;'>" + YT_SHARE_SVG + "</button><span style='font-size:9px;font-weight:800;color:#fff;text-shadow:0 1px 3px #000;'>Share</span></div>" +
-        "<button type=button onclick=playAdjacentShort(1) style='width:38px;height:38px;border-radius:999px;background:rgba(0,0,0,0.55);color:#fff;font-size:14px;border:1px solid rgba(255,255,255,0.2);cursor:pointer;' title='Next Short'>▼</button>";
-    }
-  }
-  var prevOpen90 = window.openVideoPlayer;
-  window.openVideoPlayer = function(videoId) {
-    if (prevOpen90) prevOpen90.apply(this, arguments);
-    setTimeout(applyCleanNativeShortsUI, 45);
-    setTimeout(function(){ var v = (videosData||[]).find(function(x){return x&&x.id===videoId;}); if (v && !isVideoShort(v)) { window.buildCleanWatchDetailsLayout(v); window.renderWatchPageExtras(videoId); } }, 60);
-  };
-})();
-
-// === QAAF V97 UNIFIED ZERO-FLICKER MASTER ===
-(function initQaafV97UnifiedZeroFlickerMaster() {
+// === QAAF V98 UNIFIED CLEAN MASTER (ZERO FLICKER) ===
+(function initQaafV98UnifiedCleanMaster() {
   var FB_BASE = (localStorage.getItem("qaaf_firebase_db_url") || "https://qaaftube-6f251-default-rtdb.firebaseio.com").replace(/\/+$/, "");
   var ANALYTICS_FB_URL = FB_BASE + "/qaaf_analytics_db.json";
   var ANALYTICS_CACHE_KEY = "qaaf_analytics_cache_v1";
@@ -3662,20 +3344,13 @@
   var YT_LIKE_FILLED_SVG = "<svg viewBox=\x270 0 24 24\x27 width=\x2717\x27 height=\x2717\x27 fill=\x27#10b981\x27 stroke=\x27#10b981\x27 stroke-width=\x272\x27 stroke-linecap=\x27round\x27 stroke-linejoin=\x27round\x27 style=\x27display:inline-block;vertical-align:middle;\x27><path d=\x27M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3\x27/></svg>";
   var YT_SHARE_SVG = "<svg viewBox=\x270 0 24 24\x27 width=\x2717\x27 height=\x2717\x27 fill=\x27currentColor\x27 style=\x27display:inline-block;vertical-align:middle;\x27><path d=\x27M15 5.63 20.66 12 15 18.37V14h-1c-3.96 0-7.14 1-9.75 3.09 1.84-4.07 5.11-6.4 9.89-7.1l.86-.13V5.63M14 3v6C6.22 10.13 3.11 15.33 2 21c2.78-3.97 6.44-6 12-6v6l8-9-8-9z\x27/></svg>";
 
-  function sendYtCmd(func, args) {
-    var ifr = document.getElementById("ytIframe");
-    if (ifr && ifr.contentWindow) {
-      ifr.contentWindow.postMessage(JSON.stringify({ event: "command", func: func, args: args || [] }), "*");
-    }
-  }
-
-  // =========================================================================
-  // 1. MASTER CSS (Z-INDEX FOR MODALS & DRAWER, LIGHT MODE, HIDE EMPTY DURATION)
-  // =========================================================================
-  if (!document.getElementById("qaafV97MasterCss")) {
+  if (!document.getElementById("qaafV98MasterCss")) {
     var st = document.createElement("style");
-    st.id = "qaafV97MasterCss";
+    st.id = "qaafV98MasterCss";
     st.textContent = [
+      "#shortsSideNav, #qaafMinimalTopLeftClose, #qaafCenterRedVolOverlay { display: none !important; }",
+      "header { z-index: 65 !important; }",
+      "body.qaaf-player-open { overflow: hidden !important; touch-action: pan-y; }",
       "#qaafLeftSidebarBackdrop { z-index: 205 !important; }",
       "#qaafLeftSidebarDrawer { z-index: 210 !important; top: 0 !important; bottom: 0 !important; height: 100dvh !important; max-height: 100dvh !important; }",
       "#flagVideoModal, #playlistSelectorModal, #sponsorContactModal, #accountModal { z-index: 1200 !important; }",
@@ -3701,71 +3376,137 @@
       "body.qaaf-light-mode #qaafMobileBottomNav button.text-white { color: #164e3a !important; }",
       "body.qaaf-light-mode #qaafLeftSidebarDrawer { background-color: #ffffff !important; border-right: 1px solid #cbd5e1 !important; color: #0f172a !important; }",
       "body.qaaf-light-mode #qaafLeftSidebarDrawer > div:first-child { background: #f1f5f9 !important; border-bottom: 1px solid #cbd5e1 !important; }",
-      "body.qaaf-light-mode #qaafLeftSidebarDrawer h3, body.qaaf-light-mode #qaafLeftSidebarDrawer button { color: #0f172a !important; }",
-      "body.qaaf-light-mode #qaafLeftSidebarDrawer .bg-\\[\\#131822\\], body.qaaf-light-mode #qaafLeftSidebarDrawer .bg-\\[\\#0a0d13\\] { background-color: #f8fafc !important; border-color: #cbd5e1 !important; }"
+      "body.qaaf-light-mode #qaafLeftSidebarDrawer h3, body.qaaf-light-mode #qaafLeftSidebarDrawer button { color: #0f172a !important; }"
     ].join("\n");
     document.head.appendChild(st);
   }
 
-  // =========================================================================
-  // 2. AUTO-OPEN SHORTS TAB WHEN A CHANNEL HAS 0 REGULAR VIDEOS & HAS SHORTS
-  // =========================================================================
-  function fixTarbiahShortsAndChannelView() {
-    if (Array.isArray(videosData)) {
-      var chg = false;
-      videosData.forEach(function(v) {
-        if (!v) return;
-        if (v.duration === "12:45" || v.duration === "12:00" || v.duration === "14:20" || v.duration === "10:00") {
-          v.duration = ""; chg = true;
-        }
-        if (v.channel === "Tarbiah Islamic Centre" && !v.isShort) {
-          v.isShort = true; v.duration = ""; chg = true;
-        }
-      });
-      if (chg) {
-        try { localStorage.setItem("qaaf_videos_data", JSON.stringify(videosData)); } catch (e) {}
-      }
-    }
-  }
-  fixTarbiahShortsAndChannelView();
+  window.saveUserPersonalDataToCloud = function() {
+    if (!currentUserEmail) return;
+    var k = currentUserEmail.toLowerCase().trim();
+    window.registeredUsersMap = window.registeredUsersMap || {};
+    var uObj = window.registeredUsersMap[k]; if (!uObj) return;
+    uObj.favorites = favoriteVideoIds || []; uObj.parentHistory = window.parentHistoryIds || []; uObj.kidsHistory = window.kidsHistoryIds || []; uObj.pin = parentPin || "123456";
+    localStorage.setItem("qaaf_registered_users", JSON.stringify(window.registeredUsersMap));
+    if (typeof window.syncQaafUsersWithCloudNow === "function") window.syncQaafUsersWithCloudNow(false);
+  };
+  window.restoreUserPersonalDataFromCloud = function(emailStr) {
+    if (!emailStr || !window.registeredUsersMap) return;
+    var uObj = window.registeredUsersMap[emailStr.toLowerCase().trim()]; if (!uObj) return;
+    if (Array.isArray(uObj.favorites) && uObj.favorites.length) { favoriteVideoIds = uObj.favorites; localStorage.setItem("qaaf_favorites", JSON.stringify(favoriteVideoIds)); }
+    if (Array.isArray(uObj.parentHistory) && uObj.parentHistory.length) { window.parentHistoryIds = uObj.parentHistory; localStorage.setItem("qaaf_parent_history", JSON.stringify(window.parentHistoryIds)); }
+    if (Array.isArray(uObj.kidsHistory) && uObj.kidsHistory.length) { window.kidsHistoryIds = uObj.kidsHistory; localStorage.setItem("qaaf_kids_history", JSON.stringify(window.kidsHistoryIds)); }
+    if (uObj.pin && String(uObj.pin).length === 6) { parentPin = String(uObj.pin); localStorage.setItem("qaaf_parent_pin_6", parentPin); }
+    if (typeof window.renderVideosNow === "function") window.renderVideosNow();
+  };
+  var origOpenKids = window.openKidsLockOrTimer;
+  window.openKidsLockOrTimer = function() {
+    if (!isKidsLocked && !currentUserEmail) { openAccountModal("Please Sign In or Continue with Gmail to use Kids Mode & PIN!"); return; }
+    if (origOpenKids) return origOpenKids.apply(this, arguments);
+  };
+  window.toggleKidsMode = function() { window.openKidsLockOrTimer(); };
 
-  var prevPickCh97 = window.pickChannelFromTopBar;
-  window.pickChannelFromTopBar = function(chName, ev) {
-    if (prevPickCh97) prevPickCh97(chName, ev);
-    if (chName && chName !== "ALL") {
-      var chVids = (videosData || []).filter(function(v) { return v && v.channel === chName; });
-      var regCnt = chVids.filter(function(v) { return !isVideoShort(v); }).length;
-      var shCnt = chVids.filter(function(v) { return isVideoShort(v); }).length;
-      if (regCnt === 0 && shCnt > 0) {
-        window.switchQaafChannelSubTab("shorts");
-      }
-    }
+  window.completeGoogleQuickSignIn = function(directEmail) {
+    var inp = document.getElementById("googleQuickEmailInput"); var mainInp = document.getElementById("userEmailInput");
+    var em = String(directEmail || (inp && inp.value) || (mainInp && mainInp.value) || "").trim().toLowerCase();
+    if (!em || em.indexOf("@") === -1) { alert("Please enter your Gmail address."); return; }
+    if (em === "qaaftube@gmail.com" || em === "adminqaaftube") { alert("Admin must sign in using Admin Password below."); return; }
+    localStorage.setItem("qaaf_last_gmail_email", em);
+    window.registeredUsersMap = window.registeredUsersMap || {};
+    if (!window.registeredUsersMap[em]) window.registeredUsersMap[em] = { name: em.split("@")[0], userKey: em, email: em, pass: "GoogleAuth_" + em.split("@")[0], recWord: "makkah", pin: parentPin || "123456", authProvider: "Google", isPro: false, createdAt: new Date().toLocaleDateString() };
+    parentPin = window.registeredUsersMap[em].pin || parentPin || "123456";
+    localStorage.setItem("qaaf_parent_pin_6", parentPin); localStorage.setItem("qaaf_registered_users", JSON.stringify(window.registeredUsersMap));
+    localStorage.removeItem("qaaf_admin_verified_v3"); currentUserEmail = em; localStorage.setItem("qaaf_user_email", currentUserEmail);
+    window.restoreUserPersonalDataFromCloud(em); window.saveUserPersonalDataToCloud(); syncAccountUI(); closeAccountModal();
+    if (typeof showSyncToast === "function") showSyncToast("🎉 Signed in as " + em);
   };
 
-  // Also if already viewing a channel with 0 regular videos and >0 shorts, auto-switch to shorts tab
-  function checkChannelEmptyVideosTab() {
-    var selCh = window.qaafSelectedChannel || "ALL";
-    if (selCh !== "ALL" && window.qaafChannelActiveSubTab === "videos") {
-      var chVids = (videosData || []).filter(function(v) { return v && v.channel === selCh; });
-      var regCnt = chVids.filter(function(v) { return !isVideoShort(v); }).length;
-      var shCnt = chVids.filter(function(v) { return isVideoShort(v); }).length;
-      if (regCnt === 0 && shCnt > 0) {
-        window.switchQaafChannelSubTab("shorts");
-      }
-    }
-    document.querySelectorAll(".qaaf-yt-clean-card span.bottom-2.right-2, #watchUpNextGrid span.bottom-1.right-1").forEach(function(sp) {
-      var t = (sp.textContent || "").trim();
-      if (t === "12:00" || t === "12:45" || t === "14:20" || t === "10:00" || t === "") {
-        sp.textContent = ""; sp.style.display = "none";
-      }
-    });
-  }
+  window.signInWithGoogleAccount = function() {
+    var oldPin = document.getElementById("googleQuickPinInput"); if (oldPin) oldPin.remove();
+    var gBox = document.getElementById("googleQuickAuthBox");
+    if (!gBox) { gBox = document.createElement("div"); gBox.id = "googleQuickAuthBox"; var btn = document.getElementById("googleSignInBtn"); if (btn && btn.parentNode) btn.parentNode.insertBefore(gBox, btn.nextSibling); }
+    gBox.className = "bg-[#141822] border-2 border-blue-500/60 rounded-2xl p-3.5 mb-3 space-y-2.5 text-left shadow-2xl";
+    var knownEmails = []; var lastGm = localStorage.getItem("qaaf_last_gmail_email"); if (lastGm) knownEmails.push(lastGm);
+    Object.keys(window.registeredUsersMap || {}).forEach(function(k){ if (k.indexOf("@gmail.com") !== -1 && knownEmails.indexOf(k) === -1) knownEmails.push(k); });
+    var accButtons = knownEmails.slice(0, 3).map(function(em) {
+      return "<button type=\x27button\x27 data-em=\x27" + em + "\x27 onclick=\x27window.completeGoogleQuickSignIn(this.getAttribute(\x22data-em\x22))\x27 class=\x27w-full bg-black/80 hover:bg-blue-950/70 border border-slate-700 rounded-xl p-2 flex items-center justify-between cursor-pointer\x27><span class=\x27text-xs font-bold text-white truncate\x27>🔵 " + em + "</span><span class=\x27text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded font-extrabold shrink-0\x27>1-Tap ➔</span></button>";
+    }).join("");
+    gBox.innerHTML = (accButtons ? ("<div class=\x27space-y-1.5\x27>" + accButtons + "</div>") : "") + "<div class=\x27flex gap-1.5\x27><input id=\x27googleQuickEmailInput\x27 type=\x27email\x27 placeholder=\x27yourname@gmail.com\x27 class=\x27flex-1 bg-black border border-slate-700 rounded-xl px-3 py-2 text-xs text-white\x27 /><button type=\x27button\x27 onclick=\x27window.completeGoogleQuickSignIn()\x27 class=\x27bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 rounded-xl text-xs font-extrabold shrink-0 cursor-pointer\x27>Continue</button></div>";
+    gBox.classList.remove("hidden");
+  };
 
-  // =========================================================================
-  // 3. WATCH PLAYER (4 BUTTONS ONLY) & SHORTS PLAYER (PC CLICK PAUSE + COVER YT SHARE)
-  // =========================================================================
-  function syncWatchAndShortsPlayerUI(forceShortsRebuild) {
-    // A. Watch Action Bar: strictly 4 buttons (Like | Save | Share | Flag) — NO Speed/Quality, NO Dua
+  window.setQaafUrlTag = function(paramsObj, pageTitle) {
+    try {
+      var url = new URL(window.location.href);
+      ["watch", "shorts", "game", "category", "channel", "tab"].forEach(function(k){ url.searchParams.delete(k); });
+      if (paramsObj) Object.keys(paramsObj).forEach(function(k){ if (paramsObj[k]) url.searchParams.set(k, paramsObj[k]); });
+      window.history.replaceState({}, pageTitle || document.title, url.pathname + url.search);
+    } catch(e) {}
+  };
+  window.shareQaafCurrentVideo = function(e) {
+    if (e) e.stopPropagation();
+    var v = (videosData || []).find(function(x){ return x && x.id === currentPlayingVideoId; });
+    var isSh = v && isVideoShort(v);
+    var shareUrl = window.location.origin + window.location.pathname + "?" + (isSh ? "shorts" : "watch") + "=" + encodeURIComponent((v && v.id) || currentPlayingVideoId || "");
+    if (navigator.share) navigator.share({ title: (v && v.title) || "QAAF Tube", url: shareUrl }).catch(function(){});
+    if (navigator.clipboard) navigator.clipboard.writeText(shareUrl).catch(function(){});
+    if (typeof showSyncToast === "function") showSyncToast("🔗 Link Copied!");
+  };
+  window.shareCurrentShort = window.shareQaafCurrentVideo;
+
+  window.getSmartRelatedVideos = function(currentVidId, wantShortsOnly) {
+    var cur = (videosData || []).find(function(v){ return v && v.id === currentVidId; });
+    var histIds = (typeof getActiveHistory === "function") ? (getActiveHistory() || []) : [];
+    var blockedSet = new Set(blockedVideoIds || []), bannedSet = new Set(bannedChannels || []);
+    var chFreq = {}, catFreq = {};
+    histIds.forEach(function(id, idx) { var hv = (videosData || []).find(function(x){ return x && x.id === id; }); if (hv) { if (hv.channel) chFreq[hv.channel] = (chFreq[hv.channel]||0) + (idx<8?3:1); if (hv.category) catFreq[hv.category] = (catFreq[hv.category]||0) + 1; } });
+    var candidates = (videosData || []).filter(function(v) {
+      if (!v || v.id === currentVidId || blockedSet.has(v.id) || bannedSet.has(v.channel)) return false;
+      if (isKidsLocked && !v.kidsSafe) return false;
+      var isSh = isVideoShort(v); return wantShortsOnly ? isSh : !isSh;
+    });
+    var scored = candidates.map(function(v) {
+      var s = 0;
+      if (cur) { if (v.channel === cur.channel) s += 120; if (v.category === cur.category) s += 95; if (v.lang === cur.lang) s += 55; }
+      if (chFreq[v.channel]) s += Math.min(50, chFreq[v.channel] * 10);
+      if (catFreq[v.category]) s += Math.min(35, catFreq[v.category] * 7);
+      return { video: v, score: s };
+    });
+    scored.sort(function(a, b){ return b.score - a.score; });
+    var out = [], chC = {};
+    scored.forEach(function(it){ var c = it.video.channel||"G"; chC[c]=(chC[c]||0)+1; if (chC[c]<=4) out.push(it.video); });
+    return out.length ? out : scored.map(function(x){ return x.video; });
+  };
+
+  window.filterUpNextByMode = function(mode) {
+    var cur = (videosData || []).find(function(x){ return x && x.id === currentPlayingVideoId; });
+    var upNextGrid = document.getElementById("watchUpNextGrid"); if (!upNextGrid || !cur) return;
+    var list = (mode === "channel") ? (videosData || []).filter(function(v){ return v && v.id !== cur.id && v.channel === cur.channel && !isVideoShort(v); }) : window.getSmartRelatedVideos(cur.id, false);
+    upNextGrid.innerHTML = "";
+    list.slice(0, 14).forEach(function(v) {
+      var thumb = v.customThumb || ("https://i.ytimg.com/vi/" + v.ytId + "/hqdefault.jpg");
+      var vStr = (typeof window.formatQaafRealViews === "function") ? window.formatQaafRealViews(v) : ((v.realViews || 0) + " views");
+      var durStr = (v.duration && v.duration !== "12:00" && v.duration !== "12:45" && v.duration !== "14:20" && v.duration !== "10:00") ? v.duration : "";
+      var a = document.createElement("a"); if (!isKidsLocked) a.href = "?watch=" + encodeURIComponent(v.id);
+      a.onclick = function(e){ return handleQaafVideoLinkClick(e, v.id); };
+      a.className = "bg-[#181818] hover:bg-[#222] rounded-xl overflow-hidden border border-white/10 flex sm:flex-col gap-2.5 p-2 sm:p-0 cursor-pointer transition group no-underline text-inherit";
+      a.innerHTML = "<div class=\x27relative w-36 sm:w-full aspect-video bg-slate-900 rounded-lg sm:rounded-none overflow-hidden shrink-0 pointer-events-none\x27><img src=\x27" + thumb + "\x27 alt=\x27\x27 class=\x27absolute inset-0 w-full h-full object-cover\x27 loading=\x27lazy\x27 />" + (durStr ? "<span class=\x27absolute bottom-1 right-1 bg-black/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded\x27>" + durStr + "</span>" : "") + "</div><div class=\x27p-1 sm:p-2.5 min-w-0 flex-1\x27><h5 class=\x27text-xs font-bold text-white line-clamp-2 leading-snug\x27>" + v.title + "</h5><p class=\x27text-[10px] text-slate-400 mt-1 truncate\x27>✅ " + v.channel + " • " + vStr + "</p></div>";
+      upNextGrid.appendChild(a);
+    });
+  };
+
+  window.qaafShortsQueue = []; window.qaafShortsIdx = 0; window.qaafShortPlaying = true; window.qaafShortMuted = false;
+  function sendYtCmd(f, a) { var ifr = document.getElementById("ytIframe"); if (ifr && ifr.contentWindow) ifr.contentWindow.postMessage(JSON.stringify({ event: "command", func: f, args: a || [] }), "*"); }
+  window.toggleQaafShortPlayPause = function(e) { if(e)e.stopPropagation(); window.qaafShortPlaying=!window.qaafShortPlaying; sendYtCmd(window.qaafShortPlaying?"playVideo":"pauseVideo"); };
+  window.openShortCommentsPopup = function(e) { if(e)e.stopPropagation(); var sw=document.getElementById("ytWatchScrollContainer"); if(sw){sw.classList.toggle("hidden"); sw.style.cssText="position:absolute;inset:auto 0 0 0;max-height:55%;background:#12161f;z-index:60;overflow-y:auto;padding:12px;border-radius:20px 20px 0 0;";} };
+  window.playAdjacentShort = function(dir) {
+    if (!window.qaafShortsQueue.length) { var rel = window.getSmartRelatedVideos(currentPlayingVideoId, true); window.qaafShortsQueue = [currentPlayingVideoId].concat(rel.map(function(v){return v.id;})); window.qaafShortsIdx = 0; }
+    if (window.qaafShortsQueue.length <= 1) return;
+    window.qaafShortsIdx = (window.qaafShortsIdx + (dir >= 0 ? 1 : -1) + window.qaafShortsQueue.length) % window.qaafShortsQueue.length;
+    openVideoPlayer(window.qaafShortsQueue[window.qaafShortsIdx]);
+  };
+
+  function renderFourWatchButtonsAndShortsPill() {
     var hdr = document.getElementById("ytCleanWatchHeader");
     if (hdr) {
       var spPill = document.getElementById("qaafWatchActionSettingsPill");
@@ -3789,79 +3530,16 @@
       }
     }
 
-    // B. Shorts Player UI
     var modal = document.getElementById("playerModal");
-    var aspect = document.getElementById("playerAspectBox");
-    if (!modal || modal.classList.contains("hidden") || !aspect) return;
+    if (!modal || modal.classList.contains("hidden")) return;
     var video = (videosData || []).find(function(x) { return x && x.id === currentPlayingVideoId; });
-    var gestureZone = document.getElementById("qaafShortsSwipeGestureZone");
-    if (!video || !isVideoShort(video)) {
-      if (gestureZone) gestureZone.style.display = "none";
-      return;
-    }
-
-    // Ensure PC Click-to-Pause + Mobile Touch-Swipe + Mouse Wheel Zone is active
-    if (!gestureZone) {
-      gestureZone = document.createElement("div");
-      gestureZone.id = "qaafShortsSwipeGestureZone";
-      aspect.appendChild(gestureZone);
-
-      var tStartY = 0, tCurY = 0, isSwiping = false, touchMoved = false;
-      gestureZone.addEventListener("touchstart", function(e) {
-        if (!e.touches || e.touches.length !== 1) return;
-        tStartY = e.touches[0].clientY; tCurY = tStartY; isSwiping = true; touchMoved = false;
-      }, { passive: true });
-
-      gestureZone.addEventListener("touchmove", function(e) {
-        if (!isSwiping || !e.touches || !e.touches.length) return;
-        tCurY = e.touches[0].clientY;
-        var dy = tCurY - tStartY;
-        if (Math.abs(dy) > 10) {
-          touchMoved = true;
-          var b = document.getElementById("playerModalBox");
-          if (b) { b.style.transition = "none"; b.style.transform = "translateY(" + Math.max(-110, Math.min(110, dy * 0.45)) + "px)"; }
-        }
-      }, { passive: true });
-
-      gestureZone.addEventListener("touchend", function() {
-        if (!isSwiping) return;
-        isSwiping = false;
-        var dy = tCurY - tStartY;
-        var b = document.getElementById("playerModalBox");
-        if (b) { b.style.transition = "transform 0.2s ease-out"; b.style.transform = "none"; }
-        if (dy < -40) window.playAdjacentShort(1);
-        else if (dy > 40) window.playAdjacentShort(-1);
-        tStartY = 0; tCurY = 0;
-      }, { passive: true });
-
-      // PC Mouse Click & Mobile Tap to Pause / Play Short!
-      gestureZone.addEventListener("click", function(e) {
-        if (touchMoved) { touchMoved = false; return; }
-        if (typeof window.toggleQaafShortPlayPause === "function") {
-          window.toggleQaafShortPlayPause(e);
-        }
-      });
-
-      var lastW = 0;
-      gestureZone.addEventListener("wheel", function(e) {
-        var now = Date.now();
-        if (now - lastW < 550) return;
-        if (Math.abs(e.deltaY) > 18) {
-          e.preventDefault(); lastW = now;
-          window.playAdjacentShort(e.deltaY > 0 ? 1 : -1);
-        }
-      }, { passive: false });
-    }
-    gestureZone.style.cssText = "position:absolute; top:62px; bottom:58px; left:0; right:66px; z-index:39; display:block; background:transparent; touch-action:none; cursor:pointer;";
-
-    // Right-Side Shorts Pill: Solid dark background covering bottom-right (bottom: 8px to 215px) so YouTube internal Share/Like is 100% hidden!
     var ov = document.getElementById("qaafYtShortsMasterOverlay");
-    if (ov) {
+    if (video && isVideoShort(video) && ov) {
       var isFavS = (favoriteVideoIds || []).indexOf(video.id) !== -1;
       var stKey = video.id + "_" + (isFavS ? "1" : "0");
-      ov.style.cssText = "position:absolute; right:4px; bottom:8px; top:auto; left:auto; width:58px; height:auto; z-index:46; background:#0c0f14; border:1px solid rgba(255,255,255,0.14); border-radius:30px; padding:12px 4px; display:flex; flex-direction:column; align-items:center; gap:14px; pointer-events:auto; box-shadow:0 8px 28px rgba(0,0,0,0.95);";
-      if (forceShortsRebuild || ov.getAttribute("data-v97-state") !== stKey) {
-        ov.setAttribute("data-v97-state", stKey);
+      if (ov.getAttribute("data-v98-state") !== stKey) {
+        ov.setAttribute("data-v98-state", stKey);
+        ov.style.cssText = "position:absolute; right:4px; bottom:8px; top:auto; left:auto; width:58px; height:auto; z-index:46; background:#0c0f14; border:1px solid rgba(255,255,255,0.14); border-radius:30px; padding:12px 4px; display:flex; flex-direction:column; align-items:center; gap:14px; pointer-events:auto; box-shadow:0 8px 28px rgba(0,0,0,0.95);";
         ov.innerHTML =
           "<div style=\x27display:flex;flex-direction:column;align-items:center;gap:3px;\x27>" +
             "<button type=\x27button\x27 onclick=\x27toggleFavoriteVideo(currentPlayingVideoId,event)\x27 style=\x27width:42px;height:42px;border-radius:999px;background:rgba(255,255,255,0.1);color:#fff;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.18);cursor:pointer;\x27>" + (isFavS ? YT_LIKE_FILLED_SVG : YT_LIKE_OUTLINE_SVG) + "</button>" +
@@ -3879,80 +3557,181 @@
     }
   }
 
-  // =========================================================================
-  // 4. STABLE DRAWER LIGHT/DARK MODE & ADMIN LABELS
-  // =========================================================================
-  var lastDrwSig = "";
-  function syncDrawerAndAdminLabels(forceDrw) {
-    var subEl = document.querySelector("#adminDashboardModal h3 + p");
-    if (subEl && subEl.innerText.indexOf("Super Admin") !== -1) subEl.innerText = subEl.innerText.replace(/Super Admin/g, "Admin");
+  function applySingleUnifiedPlayerLayout(video) {
+    var modal = document.getElementById("playerModal"), box = document.getElementById("playerModalBox"), aspect = document.getElementById("playerAspectBox"), scrollWrap = document.getElementById("ytWatchScrollContainer");
+    if (!modal || !box || !aspect || !video || modal.classList.contains("qaaf-mini-player")) return;
+    document.body.classList.add("qaaf-player-open");
+    var hdr = document.querySelector("header"); var hdrH = (hdr && hdr.offsetHeight) ? hdr.offsetHeight : 48;
+    var isSh = isVideoShort(video);
+    var ov = document.getElementById("qaafYtShortsMasterOverlay"), peek = document.getElementById("qaafNextShortPeekCard"), gestureZone = document.getElementById("qaafShortsSwipeGestureZone");
 
-    var extraBox = document.getElementById("qaafDrawerExtraMenuItems");
-    if (!extraBox) return;
-    if (!extraBox._lockedV97) {
-      extraBox._lockedV97 = true;
-      var origDesc = Object.getOwnPropertyDescriptor(Element.prototype, "innerHTML");
-      if (origDesc && origDesc.set) {
-        Object.defineProperty(extraBox, "innerHTML", {
-          get: function() { return origDesc.get.call(this); },
-          set: function(val) { if (this._allowV97) origDesc.set.call(this, val); }
-        });
+    if (!isSh) {
+      modal.classList.remove("qaaf-shorts-mode");
+      if (ov) ov.style.display = "none";
+      if (peek) peek.style.display = "none";
+      if (gestureZone) gestureZone.style.display = "none";
+      modal.style.cssText = "position:fixed; top:" + hdrH + "px; left:0; right:0; bottom:0; height:calc(100dvh - " + hdrH + "px); z-index:55; background:#0f0f0f; display:flex; flex-direction:column; overflow:hidden; padding:0; margin:0;";
+      box.style.cssText = "width:100%; max-width:960px; height:100%; margin:0 auto; background:#0f0f0f; display:flex; flex-direction:column; overflow:hidden; border-radius:0;";
+      aspect.style.cssText = "position:relative; width:100%; aspect-ratio:16/9; max-height:42vh; background:#000; flex:0 0 auto; overflow:hidden; display:block;";
+      if (scrollWrap) { scrollWrap.classList.remove("hidden"); scrollWrap.style.cssText = "flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:12px 14px 90px 14px; background:#0f0f0f;"; }
+      renderFourWatchButtonsAndShortsPill();
+      var upNextGrid = document.getElementById("watchUpNextGrid");
+      if (upNextGrid && upNextGrid.parentNode) {
+        var bar = document.getElementById("qaafUpNextFilterPillsBar");
+        if (!bar) {
+          bar = document.createElement("div"); bar.id = "qaafUpNextFilterPillsBar";
+          bar.className = "flex items-center gap-2 overflow-x-auto pb-2 mb-2 no-scrollbar";
+          upNextGrid.parentNode.insertBefore(bar, upNextGrid);
+        }
+        bar.innerHTML = "<button id=\x27qaafUpNextPill_all\x27 type=\x27button\x27 onclick=\x27filterUpNextByMode(\x22all\x22)\x27 class=\x27px-3 py-1 rounded-lg text-xs font-extrabold bg-white text-black cursor-pointer shrink-0\x27>All</button>" +
+          "<button id=\x27qaafUpNextPill_channel\x27 type=\x27button\x27 onclick=\x27filterUpNextByMode(\x22channel\x22)\x27 class=\x27px-3 py-1 rounded-lg text-xs font-bold bg-white/10 hover:bg-white/20 text-white cursor-pointer shrink-0\x27>From " + (video.channel || "Channel") + "</button>" +
+          "<button id=\x27qaafUpNextPill_related\x27 type=\x27button\x27 onclick=\x27filterUpNextByMode(\x22related\x22)\x27 class=\x27px-3 py-1 rounded-lg text-xs font-bold bg-white/10 hover:bg-white/20 text-white cursor-pointer shrink-0\x27>Related</button>";
       }
+      window.filterUpNextByMode("all");
+      return;
     }
-    var isLight = (localStorage.getItem("qaaf_theme_mode") === "light");
-    var isPro = localStorage.getItem("qaaf_pro_unlocked") === "true" || !!window.isProUnlocked;
-    var reqCnt = 0;
-    try { reqCnt = (JSON.parse(localStorage.getItem("qaaf_my_submitted_req_ids") || "[]") || []).length; } catch(e) {}
-    var sig = (isLight ? "L" : "D") + "_" + (isPro ? "P" : "F") + "_" + reqCnt;
-    if (!forceDrw && lastDrwSig === sig && document.getElementById("qaafThemeToggleBtn")) return;
-    lastDrwSig = sig;
-    extraBox._allowV97 = true;
-    extraBox.innerHTML =
-      "<button type=\x22button\x22 id=\x22qaafThemeToggleBtn\x22 onclick=\x22window.toggleQaafThemeMode(event)\x22 class=\x22w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-xs font-extrabold text-white transition cursor-pointer\x22>" +
-        "<span class=\x22flex items-center gap-2.5\x22><span class=\x22text-base\x22>" + (isLight ? "🌙" : "☀️") + "</span> <span>" + (isLight ? "Dark Mode" : "Light Mode") + "</span></span>" +
-        "<span class=\x22px-2.5 py-0.5 rounded-full text-[10px] font-extrabold " + (isLight ? "bg-slate-800 text-white" : "bg-amber-400 text-black") + "\x22>" + (isLight ? "DARK" : "LIGHT") + "</span>" +
-      "</button>" +
-      "<button type=\x22button\x22 onclick=\x22window.openVideoRequestFromDrawer()\x22 class=\x22w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#11221c] hover:bg-[#16382b] border border-emerald-500/35 text-xs font-extrabold text-white transition cursor-pointer\x22>" +
-        "<span class=\x22flex items-center gap-2.5\x22><span class=\x22text-base\x22>📩</span> <span>Video Request &amp; Status</span></span>" +
-        "<span id=\x22drawerVideoRequestBadge\x22 class=\x22px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500 text-black\x22>" + reqCnt + "</span>" +
-      "</button>" +
-      "<button type=\x22button\x22 onclick=\x22window.openQaafProMembershipModal()\x22 class=\x22w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-gradient-to-r from-[#164e3a] to-[#0f3d2e] border border-emerald-400/50 text-xs font-extrabold text-white shadow transition cursor-pointer\x22>" +
-        "<span class=\x22flex items-center gap-2.5\x22><span class=\x22text-base\x22>👑</span> <span>" + (isPro ? "QAAF Pro Member (Active)" : "Get Pro Membership / Code") + "</span></span>" +
-        "<span class=\x22px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-white text-[#0f3d2e]\x22>" + (isPro ? "ACTIVE" : "PRO") + "</span>" +
-      "</button>" +
-      "<a href=\x22./apk/qaaf-tube.apk\x22 download=\x22qaaf-tube.apk\x22 class=\x22w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-xs font-bold text-emerald-300 transition cursor-pointer no-underline\x22>" +
-        "<span class=\x22flex items-center gap-2.5\x22><span class=\x22text-base\x22>🤖</span> <span>Download Android App (APK)</span></span>" +
-        "<span class=\x22text-[10px] font-extrabold text-white\x22>⬇ APK</span>" +
-      "</a>";
-    extraBox._allowV97 = false;
+
+    window.qaafShortPlaying = true;
+    if (window.qaafShortsQueue.indexOf(video.id) === -1) {
+      var rel = window.getSmartRelatedVideos(video.id, true);
+      window.qaafShortsQueue = [video.id].concat(rel.map(function(v){ return v.id; }));
+      window.qaafShortsIdx = 0;
+    }
+    modal.classList.add("qaaf-shorts-mode");
+    modal.style.cssText = "position:fixed; top:" + hdrH + "px; left:0; right:0; bottom:0; height:calc(100dvh - " + hdrH + "px); z-index:55; background:rgba(10,12,16,0.98); display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding-top:6px; overflow:hidden;";
+    modal.onclick = function(ev){ if (ev.target === modal) closeVideoPlayer(); };
+    if (scrollWrap) scrollWrap.classList.add("hidden");
+    box.style.cssText = "width:auto; height:calc(100dvh - " + (hdrH + 54) + "px); flex:0 0 calc(100dvh - " + (hdrH + 54) + "px); aspect-ratio:9/16; max-width:94vw; background:#000; border-radius:16px; overflow:hidden; position:relative; display:flex; flex-direction:column;";
+    aspect.style.cssText = "position:relative; width:100%; height:100%; flex:1 1 auto; background:#000; overflow:hidden; display:block;";
+
+    if (!ov) { ov = document.createElement("div"); ov.id = "qaafYtShortsMasterOverlay"; aspect.appendChild(ov); }
+    ov.removeAttribute("data-v98-state");
+    renderFourWatchButtonsAndShortsPill();
+
+    if (!gestureZone) {
+      gestureZone = document.createElement("div");
+      gestureZone.id = "qaafShortsSwipeGestureZone";
+      aspect.appendChild(gestureZone);
+      var tStartY = 0, tCurY = 0, isSwiping = false, touchMoved = false;
+      gestureZone.addEventListener("touchstart", function(e) {
+        if (!e.touches || e.touches.length !== 1) return;
+        tStartY = e.touches[0].clientY; tCurY = tStartY; isSwiping = true; touchMoved = false;
+      }, { passive: true });
+      gestureZone.addEventListener("touchmove", function(e) {
+        if (!isSwiping || !e.touches || !e.touches.length) return;
+        tCurY = e.touches[0].clientY;
+        var dy = tCurY - tStartY;
+        if (Math.abs(dy) > 10) {
+          touchMoved = true;
+          var b = document.getElementById("playerModalBox");
+          if (b) { b.style.transition = "none"; b.style.transform = "translateY(" + Math.max(-110, Math.min(110, dy * 0.45)) + "px)"; }
+        }
+      }, { passive: true });
+      gestureZone.addEventListener("touchend", function() {
+        if (!isSwiping) return;
+        isSwiping = false;
+        var dy = tCurY - tStartY;
+        var b = document.getElementById("playerModalBox");
+        if (b) { b.style.transition = "transform 0.2s ease-out"; b.style.transform = "none"; }
+        if (dy < -40) window.playAdjacentShort(1);
+        else if (dy > 40) window.playAdjacentShort(-1);
+        tStartY = 0; tCurY = 0;
+      }, { passive: true });
+      gestureZone.addEventListener("click", function(e) {
+        if (touchMoved) { touchMoved = false; return; }
+        window.toggleQaafShortPlayPause(e);
+      });
+      var lastW = 0;
+      gestureZone.addEventListener("wheel", function(e) {
+        var now = Date.now();
+        if (now - lastW < 550) return;
+        if (Math.abs(e.deltaY) > 18) { e.preventDefault(); lastW = now; window.playAdjacentShort(e.deltaY > 0 ? 1 : -1); }
+      }, { passive: false });
+    }
+    gestureZone.style.cssText = "position:absolute; top:62px; bottom:58px; left:0; right:66px; z-index:39; display:block; background:transparent; touch-action:none; cursor:pointer;";
+
+    var nextId = window.qaafShortsQueue[(window.qaafShortsIdx + 1) % window.qaafShortsQueue.length];
+    var nextVid = (videosData || []).find(function(x){ return x && x.id === nextId && x.id !== video.id; });
+    if (!peek) { peek = document.createElement("div"); peek.id = "qaafNextShortPeekCard"; modal.appendChild(peek); }
+    if (nextVid) {
+      var nThumb = nextVid.customThumb || ("https://i.ytimg.com/vi/" + nextVid.ytId + "/hqdefault.jpg");
+      var boxW = box.getBoundingClientRect().width || 340;
+      peek.style.cssText = "width:" + Math.round(boxW) + "px; height:32px; flex:0 0 32px; margin-top:8px; border-radius:14px 14px 0 0; overflow:hidden; position:relative; cursor:pointer; opacity:0.85; border-top:1px solid rgba(255,255,255,0.25);";
+      peek.onclick = function(e){ e.stopPropagation(); window.playAdjacentShort(1); };
+      peek.innerHTML = "<img src=\x27" + nThumb + "\x27 style=\x27width:100%;height:200px;object-fit:cover;object-position:top;\x27 />";
+      peek.style.display = "block";
+    } else { peek.style.display = "none"; }
   }
 
+  var origOpenV = window.openVideoPlayer;
+  window.openVideoPlayer = function(videoId) {
+    if (origOpenV) origOpenV.apply(this, arguments);
+    var v = (videosData || []).find(function(x){ return x && x.id === videoId; });
+    if (v) {
+      var p = {}; p[isVideoShort(v) ? "shorts" : "watch"] = v.id;
+      window.setQaafUrlTag(p, v.title + " — QAAF Tube");
+      setTimeout(function(){ applySingleUnifiedPlayerLayout(v); }, 30);
+    }
+  };
+  var origCloseV = window.closeVideoPlayer;
+  window.closeVideoPlayer = function() {
+    document.body.classList.remove("qaaf-player-open");
+    if (origCloseV) origCloseV.apply(this, arguments);
+    window.setQaafUrlTag(null, "QAAF Tube — Muslim Family & Kids Hub");
+  };
+  var origMinV = window.minimizeToMiniPlayer;
+  window.minimizeToMiniPlayer = function() {
+    document.body.classList.remove("qaaf-player-open");
+    if (origMinV) origMinV.apply(this, arguments);
+  };
+  var origResetH = window.resetToHomeFeed;
+  window.resetToHomeFeed = function() {
+    var modal = document.getElementById("playerModal");
+    if (modal && !modal.classList.contains("hidden")) window.closeVideoPlayer();
+    if (origResetH) origResetH.apply(this, arguments);
+  };
+  var origToggleFav = window.toggleFavoriteVideo;
+  window.toggleFavoriteVideo = function(videoId, ev) {
+    if (origToggleFav) origToggleFav(videoId, ev);
+    var ov = document.getElementById("qaafYtShortsMasterOverlay");
+    if (ov) ov.removeAttribute("data-v98-state");
+    renderFourWatchButtonsAndShortsPill();
+  };
+
+  function renderDrawerLightDarkBtn() {
+    var extraBox = document.getElementById("qaafDrawerExtraMenuItems");
+    if (!extraBox) return;
+    var isLight = (localStorage.getItem("qaaf_theme_mode") === "light");
+    var btn = document.getElementById("qaafThemeToggleBtn");
+    if (!btn) {
+      btn = document.createElement("button");
+      btn.type = "button";
+      btn.id = "qaafThemeToggleBtn";
+      btn.onclick = function(ev) { window.toggleQaafThemeMode(ev); };
+      btn.className = "w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-xs font-extrabold text-white transition cursor-pointer";
+      extraBox.insertBefore(btn, extraBox.firstChild);
+    }
+    btn.innerHTML = "<span class=\x22flex items-center gap-2.5\x22><span class=\x22text-base\x22>" + (isLight ? "🌙" : "☀️") + "</span> <span>" + (isLight ? "Dark Mode" : "Light Mode") + "</span></span><span class=\x22px-2.5 py-0.5 rounded-full text-[10px] font-extrabold " + (isLight ? "bg-slate-800 text-white" : "bg-amber-400 text-black") + "\x22>" + (isLight ? "DARK" : "LIGHT") + "</span>";
+  }
   window.toggleQaafThemeMode = function(ev) {
     if (ev) { ev.preventDefault(); ev.stopPropagation(); }
     var cur = localStorage.getItem("qaaf_theme_mode") || "dark";
     var next = (cur === "light") ? "dark" : "light";
     document.body.classList.toggle("qaaf-light-mode", next === "light");
     localStorage.setItem("qaaf_theme_mode", next);
-    syncDrawerAndAdminLabels(true);
+    renderDrawerLightDarkBtn();
   };
   document.body.classList.toggle("qaaf-light-mode", localStorage.getItem("qaaf_theme_mode") === "light");
+  setTimeout(renderDrawerLightDarkBtn, 500);
 
-  var prevToggleFav97 = window.toggleFavoriteVideo;
-  window.toggleFavoriteVideo = function(videoId, ev) {
-    if (prevToggleFav97) prevToggleFav97(videoId, ev);
-    syncWatchAndShortsPlayerUI(true);
+  var prevPickCh98 = window.pickChannelFromTopBar;
+  window.pickChannelFromTopBar = function(chName, ev) {
+    if (prevPickCh98) prevPickCh98(chName, ev);
+    if (chName && chName !== "ALL") {
+      var chVids = (videosData || []).filter(function(v) { return v && v.channel === chName; });
+      var regCnt = chVids.filter(function(v) { return !isVideoShort(v); }).length;
+      var shCnt = chVids.filter(function(v) { return isVideoShort(v); }).length;
+      if (regCnt === 0 && shCnt > 0) window.switchQaafChannelSubTab("shorts");
+    }
   };
-
-  var prevOpenV97 = window.openVideoPlayer;
-  window.openVideoPlayer = function(videoId) {
-    if (prevOpenV97) prevOpenV97.apply(this, arguments);
-    setTimeout(function() { syncWatchAndShortsPlayerUI(true); }, 70);
-    setTimeout(function() { syncWatchAndShortsPlayerUI(true); }, 250);
-  };
-
-  setInterval(function() {
-    checkChannelEmptyVideosTab();
-    syncWatchAndShortsPlayerUI(false);
-    syncDrawerAndAdminLabels(false);
-  }, 500);
 })();

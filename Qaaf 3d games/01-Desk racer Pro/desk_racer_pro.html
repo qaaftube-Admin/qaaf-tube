@@ -255,22 +255,22 @@
       </div>
     </div>
 
-    <!-- Floating Dua Toast (Appears briefly under top bar) -->
-    <div class="fixed top-24 left-1/2 -translate-x-1/2 pointer-events-none z-30">
-      <div id="duaPopup" class="hidden px-4 py-1.5 rounded-2xl bg-gradient-to-r from-emerald-600/95 to-teal-700/95 border-2 border-amber-300 text-white text-base sm:text-xl font-black shadow-2xl text-center" dir="rtl">
-        <span class="font-arabic">✨ سُبْحَانَ اللّٰهِ!</span>
+    <!-- Floating Dua Toast (Glass Pill Badge under top HUD) -->
+    <div class="fixed top-20 sm:top-24 left-1/2 -translate-x-1/2 pointer-events-none z-30">
+      <div id="duaPopup" class="hidden px-5 py-2 rounded-full bg-slate-950/80 backdrop-blur-md border border-emerald-400/40 text-emerald-200 text-sm sm:text-base font-bold shadow-[0_8px_32px_rgba(0,0,0,0.65)] text-center flex items-center justify-center gap-2" dir="rtl">
+        <span class="font-arabic text-emerald-300">✨ سُبْحَانَ اللّٰهِ!</span>
       </div>
     </div>
 
-    <!-- Center Countdown Toast -->
-    <div class="flex items-center justify-center my-auto pointer-events-none">
-      <div id="centerBanner" class="hidden bg-[#070d17]/90 border-2 border-amber-400 text-amber-300 px-8 py-4 rounded-3xl text-3xl sm:text-5xl font-black shadow-2xl text-center" dir="rtl">
+    <!-- Center Countdown / Stage Start Toast (Floating Glowing Typography, No Heavy Black Card) -->
+    <div class="flex items-center justify-center my-auto pointer-events-none select-none z-30">
+      <div id="centerBanner" class="hidden text-center text-5xl sm:text-7xl font-black tracking-wider transition-all duration-300 transform scale-100" style="filter: drop-shadow(0 4px 18px rgba(0,0,0,0.95)) drop-shadow(0 0 26px rgba(245,158,11,0.65)); text-shadow: 0 4px 14px rgba(0,0,0,0.95);">
         3
       </div>
     </div>
 
     <!-- Bottom Controls: Left Thumb Virtual Joystick + Right Thumb Action Buttons -->
-    <div class="w-full max-w-6xl mx-auto pb-2.5 sm:pb-3 px-2 sm:px-6 flex items-end justify-between gap-2 sm:gap-4 pointer-auto select-none" dir="ltr">
+    <div id="controlsLayer" class="w-full max-w-6xl mx-auto pb-2.5 sm:pb-3 px-2 sm:px-6 flex items-end justify-between gap-2 sm:gap-4 pointer-events-auto select-none touch-none" dir="ltr" style="touch-action: none; -webkit-touch-callout: none;">
       <!-- LEFT HAND: Touch Virtual Joystick -->
       <div class="flex flex-col items-center gap-0.5">
         <div id="joystickZone" class="relative w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-[#070d17]/90 border-2 border-white/25 shadow-2xl flex items-center justify-center touch-none">
@@ -836,11 +836,14 @@
     }
 
     // ==========================================
-    // 3. SYNTHESIZED WEB AUDIO
+    // 3. SYNTHESIZED & REALISTIC AUTOMOTIVE AUDIO
     // ==========================================
     let audioCtx = null;
     let engineOsc = null;
     let engineGain = null;
+    let engineAudio = null;
+    let engineAudioLoaded = false;
+    let turboAudio = null;
 
     function initAudio() {
       warmLibraryAudioCache();
@@ -848,11 +851,33 @@
       try {
         if (!audioCtx) {
           const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-          audioCtx = new AudioContextClass();
+          if (AudioContextClass) audioCtx = new AudioContextClass();
         }
-        if (audioCtx.state === 'suspended') {
+        if (audioCtx && audioCtx.state === 'suspended') {
           audioCtx.resume();
         }
+
+        // 1. Realistic Car Engine Sound Loop
+        if (!engineAudio) {
+          engineAudio = new Audio('audio/car_engine_loop.mp3');
+          engineAudio.loop = true;
+          engineAudio.volume = 0.0;
+          engineAudio.playbackRate = 0.85;
+          engineAudio.addEventListener('canplaythrough', () => {
+            engineAudioLoaded = true;
+          }, { once: true });
+          engineAudio.addEventListener('error', () => {
+            engineAudioLoaded = false;
+          }, { once: true });
+        }
+
+        // 2. Preload Turbo Boost SFX ("چھوں" Whoosh)
+        if (!turboAudio) {
+          turboAudio = new Audio('audio/turbo_boost.mp3');
+          turboAudio.preload = 'auto';
+        }
+
+        // 3. Fallback synth engine (if real audio is blocked / unavailable)
         if (!engineOsc && audioCtx) {
           engineOsc = audioCtx.createOscillator();
           engineGain = audioCtx.createGain();
@@ -1013,15 +1038,42 @@
     }
 
     function updateEngineSound(speedRatio, isAirborne) {
-      if (!engineOsc || !engineGain || !audioCtx) return;
-      if (!state.soundEnabled || !state.isPlaying) {
-        engineGain.gain.setTargetAtTime(0.0001, audioCtx.currentTime, 0.05);
-        return;
+      const absSpeed = Math.abs(speedRatio);
+
+      // 1. Play & modulate authentic car engine loop
+      if (engineAudio) {
+        if (!state.soundEnabled || !state.isPlaying) {
+          if (!engineAudio.paused) {
+            try { engineAudio.pause(); } catch(e){}
+          }
+        } else {
+          if (engineAudio.paused) {
+            try {
+              const playPromise = engineAudio.play();
+              if (playPromise && playPromise.catch) playPromise.catch(() => {});
+            } catch(e){}
+          }
+          // Dynamic pitch revving: idle 0.72x up to 1.72x at top speed
+          const targetRate = 0.72 + absSpeed * 0.92 + (isAirborne ? 0.20 : 0) + (state.isDrifting ? 0.12 : 0);
+          engineAudio.playbackRate = Math.min(1.85, Math.max(0.65, targetRate));
+
+          // Dynamic volume scaling: subtle rumble at rest, powerful growl at speed
+          const targetVol = absSpeed > 0.03 ? Math.min(0.85, 0.22 + absSpeed * 0.58) : 0.16;
+          engineAudio.volume = targetVol;
+        }
       }
-      const baseFreq = 46 + Math.abs(speedRatio) * 135 + (isAirborne ? 35 : 0) + (state.isDrifting ? 25 : 0);
-      const targetVol = Math.abs(speedRatio) > 0.02 ? 0.035 : 0.006;
-      engineOsc.frequency.setTargetAtTime(baseFreq, audioCtx.currentTime, 0.06);
-      engineGain.gain.setTargetAtTime(targetVol, audioCtx.currentTime, 0.08);
+
+      // 2. Fallback synth engine (only active if engineAudio is not loaded/playing)
+      if (engineOsc && engineGain && audioCtx) {
+        if (!state.soundEnabled || !state.isPlaying || (engineAudio && !engineAudio.paused)) {
+          engineGain.gain.setTargetAtTime(0.0001, audioCtx.currentTime, 0.05);
+          return;
+        }
+        const baseFreq = 46 + absSpeed * 135 + (isAirborne ? 35 : 0) + (state.isDrifting ? 25 : 0);
+        const targetVol = absSpeed > 0.02 ? 0.035 : 0.006;
+        engineOsc.frequency.setTargetAtTime(baseFreq, audioCtx.currentTime, 0.06);
+        engineGain.gain.setTargetAtTime(targetVol, audioCtx.currentTime, 0.08);
+      }
     }
 
     function playSynthEffect(type) {
@@ -1446,21 +1498,76 @@
 
     function createTrackRoadTexture() {
       const c = document.createElement('canvas');
-      c.width = 512; c.height = 512;
+      c.width = 512;
+      c.height = 512;
       const ctx = c.getContext('2d');
-      ctx.fillStyle = '#1e293b';
+
+      // 1. Rich dark tarmac asphalt base
+      ctx.fillStyle = '#181f2a';
       ctx.fillRect(0, 0, 512, 512);
 
-      ctx.fillStyle = '#f8fafc';
-      ctx.fillRect(16, 0, 8, 512);
-      ctx.fillRect(488, 0, 8, 512);
-
-      for (let y = 0; y < 512; y += 64) {
-        ctx.fillRect(252, y + 12, 8, 40);
+      // 2. Realistic Procedural Asphalt Aggregate Grain Noise
+      const imgData = ctx.getImageData(0, 0, 512, 512);
+      const data = imgData.data;
+      let seed = 1234567;
+      function rnd() {
+        seed = (seed * 1664525 + 1013904223) >>> 0;
+        return (seed >>> 0) / 4294967296;
       }
+      for (let i = 0; i < data.length; i += 4) {
+        const noise = (rnd() - 0.5) * 28;
+        data[i]     = Math.max(16, Math.min(65, data[i] + noise));
+        data[i + 1] = Math.max(20, Math.min(75, data[i + 1] + noise * 1.05));
+        data[i + 2] = Math.max(26, Math.min(90, data[i + 2] + noise * 1.15));
+      }
+      ctx.putImageData(imgData, 0, 0);
+
+      // 3. Subtle Tarmac Aggregate Flecks (crushed stones)
+      for (let n = 0; n < 320; n++) {
+        const x = Math.floor(rnd() * 512);
+        const y = Math.floor(rnd() * 512);
+        const sz = rnd() < 0.2 ? 2 : 1;
+        const tone = rnd() > 0.5 ? 'rgba(148, 163, 184, 0.22)' : 'rgba(15, 23, 42, 0.45)';
+        ctx.fillStyle = tone;
+        ctx.fillRect(x, y, sz, sz);
+      }
+
+      // 4. Authentic Dual Tire Track Wear Grooves (dark rubber racing lines)
+      const leftWear = ctx.createLinearGradient(95, 0, 205, 0);
+      leftWear.addColorStop(0, 'rgba(10, 15, 22, 0)');
+      leftWear.addColorStop(0.3, 'rgba(10, 15, 22, 0.36)');
+      leftWear.addColorStop(0.7, 'rgba(10, 15, 22, 0.36)');
+      leftWear.addColorStop(1, 'rgba(10, 15, 22, 0)');
+      ctx.fillStyle = leftWear;
+      ctx.fillRect(95, 0, 110, 512);
+
+      const rightWear = ctx.createLinearGradient(307, 0, 417, 0);
+      rightWear.addColorStop(0, 'rgba(10, 15, 22, 0)');
+      rightWear.addColorStop(0.3, 'rgba(10, 15, 22, 0.36)');
+      rightWear.addColorStop(0.7, 'rgba(10, 15, 22, 0.36)');
+      rightWear.addColorStop(1, 'rgba(10, 15, 22, 0)');
+      ctx.fillStyle = rightWear;
+      ctx.fillRect(307, 0, 110, 512);
+
+      // 5. White Road Markings (Solid outer edges with bevel + center dashes)
+      ctx.fillStyle = 'rgba(241, 245, 249, 0.95)';
+      ctx.fillRect(16, 0, 10, 512);
+      ctx.fillRect(486, 0, 10, 512);
+
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.35)';
+      ctx.fillRect(26, 0, 2, 512);
+      ctx.fillRect(484, 0, 2, 512);
+
+      ctx.fillStyle = 'rgba(248, 250, 252, 0.96)';
+      for (let y = 0; y < 512; y += 64) {
+        ctx.fillRect(251, y + 12, 10, 40);
+      }
+
       const tex = new THREE.CanvasTexture(c);
-      tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
       tex.repeat.set(1, 1);
+      tex.anisotropy = 4;
       return tex;
     }
 
@@ -2573,10 +2680,10 @@
       const t = LANG_TEXT[state.lang] || LANG_TEXT.en;
       if (typeof duaOrMsg === 'object' && duaOrMsg.text) {
         toast.dir = 'rtl';
-        toast.innerHTML = `<span class="font-arabic text-lg sm:text-2xl">${duaOrMsg.text}</span> <span class="${t.fontClass} text-xs sm:text-base text-amber-300 mx-2 font-bold">(${t.turboBonus})</span>`;
+        toast.innerHTML = `<span class="text-amber-300 text-base sm:text-lg">✨</span> <span class="font-arabic text-base sm:text-xl text-emerald-300 font-extrabold">${duaOrMsg.text}</span> <span class="${t.fontClass} text-[11px] sm:text-xs text-amber-300/90 font-bold px-2 py-0.5 rounded-full bg-amber-400/15 border border-amber-400/30">(${t.turboBonus})</span>`;
       } else {
         toast.dir = t.dir;
-        toast.innerHTML = `<span class="${t.fontClass} text-sm sm:text-lg">${duaOrMsg}</span>`;
+        toast.innerHTML = `<span class="${t.fontClass} text-xs sm:text-sm text-emerald-200 font-semibold">${duaOrMsg}</span>`;
       }
       toast.classList.remove('hidden', 'dua-toast-top');
       void toast.offsetWidth;
@@ -3645,13 +3752,27 @@
       }
     }
 
+    function playTurboSound() {
+      if (!state.soundEnabled) return;
+      try {
+        const sfx = new Audio('audio/turbo_boost.mp3');
+        sfx.volume = 0.95;
+        const p = sfx.play();
+        if (p && p.catch) {
+          p.catch(() => playSynthEffect('boost'));
+        }
+      } catch (e) {
+        playSynthEffect('boost');
+      }
+    }
+
     function consumeTurbo() {
       if (!state.isPlaying) return;
       const t = LANG_TEXT[state.lang] || LANG_TEXT.en;
       if (state.turboStock > 0) {
         state.turboStock--;
         state.boostTimer = 1.85;
-        playSynthEffect('boost');
+        playTurboSound();
         triggerHaptic('boost');
         updateTurboUI();
         showDuaToast(t.turboFired);
@@ -3668,10 +3789,12 @@
       if (boostTextEl) boostTextEl.textContent = `${t.turboWord} (${state.turboStock})`;
     }
 
-    // Touch Virtual Joystick on Left Hand
+    // Rock-Solid Virtual Joystick on Left Hand (Guaranteed No-Freeze Mobile Tracking)
     const joyZone = document.getElementById('joystickZone');
     const joyKnob = document.getElementById('joystickKnob');
     let joyActive = false;
+    let joyPointerId = null;
+    let joyTouchId = null;
     let joyCenter = { x: 0, y: 0 };
 
     function handleJoyMove(cx, cy) {
@@ -3719,9 +3842,20 @@
 
     function handleJoyRelease(e) {
       if (!joyActive) return;
+      if (e && e.pointerId !== undefined && joyPointerId !== null && e.pointerId !== joyPointerId) {
+        return; // Ignore other finger lifting (e.g. right thumb lifting from action button)
+      }
+      forceResetJoystick();
+    }
+
+    function forceResetJoystick() {
       joyActive = false;
-      try { joyZone.releasePointerCapture(e.pointerId); } catch(err){}
-      joyKnob.style.transform = 'translate(0px, 0px)';
+      if (joyPointerId !== null) {
+        try { joyZone.releasePointerCapture(joyPointerId); } catch(err){}
+        joyPointerId = null;
+      }
+      joyTouchId = null;
+      if (joyKnob) joyKnob.style.transform = 'translate(0px, 0px)';
       input.up = false;
       input.down = false;
       input.left = false;
@@ -3730,8 +3864,11 @@
       input.steer = 0;
     }
 
+    // Pointer Events with Global Window Tracking
     joyZone.addEventListener('pointerdown', (e) => {
       e.preventDefault();
+      if (joyPointerId !== null) return;
+      joyPointerId = e.pointerId;
       try { joyZone.setPointerCapture(e.pointerId); } catch(err){}
       const rect = joyZone.getBoundingClientRect();
       joyCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
@@ -3740,14 +3877,59 @@
       handleJoyMove(e.clientX, e.clientY);
     });
 
-    joyZone.addEventListener('pointermove', (e) => {
-      if (!joyActive) return;
+    window.addEventListener('pointermove', (e) => {
+      if (!joyActive || e.pointerId !== joyPointerId) return;
       e.preventDefault();
       handleJoyMove(e.clientX, e.clientY);
-    });
+    }, { passive: false });
 
-    joyZone.addEventListener('pointerup', handleJoyRelease);
-    joyZone.addEventListener('pointercancel', handleJoyRelease);
+    window.addEventListener('pointerup', handleJoyRelease);
+    window.addEventListener('pointercancel', handleJoyRelease);
+    joyZone.addEventListener('lostpointercapture', () => forceResetJoystick());
+
+    // Native Touch Fallback for Android WebViews & Embedded Wrappers
+    joyZone.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      if (joyTouchId !== null) return;
+      const t = e.changedTouches && e.changedTouches[0];
+      if (!t) return;
+      joyTouchId = t.identifier;
+      joyActive = true;
+      const rect = joyZone.getBoundingClientRect();
+      joyCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+      initAudio();
+      handleJoyMove(t.clientX, t.clientY);
+    }, { passive: false });
+
+    window.addEventListener('touchmove', (e) => {
+      if (!joyActive || joyTouchId === null) return;
+      if (!e.changedTouches) return;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const t = e.changedTouches[i];
+        if (t.identifier === joyTouchId) {
+          e.preventDefault();
+          handleJoyMove(t.clientX, t.clientY);
+          break;
+        }
+      }
+    }, { passive: false });
+
+    function handleTouchEndEvent(e) {
+      if (!joyActive || joyTouchId === null) return;
+      if (!e.changedTouches) return;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === joyTouchId) {
+          forceResetJoystick();
+          break;
+        }
+      }
+    }
+    window.addEventListener('touchend', handleTouchEndEvent);
+    window.addEventListener('touchcancel', () => forceResetJoystick());
+    window.addEventListener('blur', () => forceResetJoystick());
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) forceResetJoystick();
+    });
 
     // Right Action Buttons
     function bindActionButton(btnId, onDown, onUp) {
@@ -4228,7 +4410,7 @@
 
       const banner = document.getElementById('centerBanner');
       banner.classList.remove('hidden');
-      banner.innerHTML = '<span class="num-font">3</span>';
+      banner.innerHTML = '<span class="num-font text-amber-300 text-6xl sm:text-8xl">3</span>';
       playSynthEffect('beep');
 
       if (countdownTimerId) clearInterval(countdownTimerId);
@@ -4236,11 +4418,11 @@
       countdownTimerId = setInterval(() => {
         count--;
         if (count > 0) {
-          banner.innerHTML = `<span class="num-font">${count}</span>`;
+          banner.innerHTML = `<span class="num-font text-amber-300 text-6xl sm:text-8xl">${count}</span>`;
           playSynthEffect('beep');
         } else if (count === 0) {
           const curT = LANG_TEXT[state.lang] || LANG_TEXT.en;
-          banner.innerHTML = `<span class="font-arabic inline-block text-2xl sm:text-4xl text-emerald-300" dir="rtl">بِسْمِ اللّٰهِ</span><br><span class="${curT.fontClass} inline-block text-xl sm:text-2xl text-amber-300" dir="${curT.dir}">${curT.raceStartGo}</span>`;
+          banner.innerHTML = `<div class="flex flex-col items-center gap-1"><span class="font-arabic inline-block text-3xl sm:text-5xl text-emerald-300 font-black" style="filter: drop-shadow(0 0 20px rgba(16,185,129,0.75));" dir="rtl">بِسْمِ اللّٰهِ</span><span class="${curT.fontClass} inline-block text-2xl sm:text-4xl text-amber-300 font-extrabold" style="filter: drop-shadow(0 0 18px rgba(245,158,11,0.75));" dir="${curT.dir}">${curT.raceStartGo}</span></div>`;
           playSynthEffect('boost');
           playLibraryAudio('shared_bismillah.mp3', { interrupt: true, volume: 0.95 });
           state.isCountdown = false;
