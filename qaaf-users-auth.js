@@ -4270,3 +4270,309 @@
   };
   setTimeout(injectAnalyticsTabUI, 900);
 })();
+
+
+// === QAAF V102 DAILY CHANNEL SCANNER, SHORTS FLAG & ADMIN LABEL FIX ===
+(function initQaafV102DailyScannerShortsFlagAndAdminFix() {
+  var FB_BASE = (localStorage.getItem("qaaf_firebase_db_url") || "https://qaaftube-6f251-default-rtdb.firebaseio.com").replace(/\/+$/, "");
+  var SKIP_CH = new Set(["Official Hub", "Islamic Channel", "YouTube Creator", "YouTube Channel", "Requested Channel", "General"]);
+
+  // =========================================================================
+  // 1. CHANGE "Super Admin" -> "Admin" EVERYWHERE
+  // =========================================================================
+  function replaceSuperAdminLabels() {
+    var admSub = document.querySelector("#adminDashboardModal p.text-xs.text-slate-400");
+    if (admSub && admSub.textContent.indexOf("Super Admin") !== -1) {
+      admSub.textContent = admSub.textContent.replace(/Super Admin/g, "Admin");
+    }
+    var roleSel = document.getElementById("headerRoleBadge") || document.getElementById("userRoleBadge");
+    if (roleSel && roleSel.textContent.indexOf("Super Admin") !== -1) {
+      roleSel.textContent = roleSel.textContent.replace(/Super Admin/g, "Admin");
+    }
+    document.querySelectorAll("button, span, p, div, h1, h2, h3, h4").forEach(function(el) {
+      if (el.children.length === 0 && el.textContent && el.textContent.indexOf("Super Admin") !== -1) {
+        el.textContent = el.textContent.replace(/Super Admin/g, "Admin");
+      }
+    });
+  }
+  setTimeout(replaceSuperAdminLabels, 600);
+
+  // =========================================================================
+  // 2. ADD 🚩 FLAG BUTTON IN SHORTS & FIX OVERLAP WITH YOUTUBE FULLSCREEN ICON
+  // =========================================================================
+  function addFlagButtonToShortsOverlay() {
+    var ov = document.getElementById("qaafYtShortsMasterOverlay");
+    if (!ov) return;
+    ov.style.bottom = "56px";
+    ov.style.right = "6px";
+    ov.style.gap = "10px";
+    if (!document.getElementById("qaafShortFlagBtnWrap")) {
+      var wrap = document.createElement("div");
+      wrap.id = "qaafShortFlagBtnWrap";
+      wrap.style.cssText = "display:flex;flex-direction:column;align-items:center;gap:2px;";
+      wrap.innerHTML =
+        "<button type=\x27button\x27 onclick=\x27openFlagModal(currentPlayingVideoId);if(window.wakeQaafShortsButtonsNow)window.wakeQaafShortsButtonsNow();\x27 style=\x27width:42px;height:42px;border-radius:999px;background:rgba(15,18,24,0.8);color:#fca5a5;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.2);cursor:pointer;\x27>" +
+          "<svg viewBox=\x270 0 24 24\x27 width=\x2717\x27 height=\x2717\x27 fill=\x27none\x27 stroke=\x27currentColor\x27 stroke-width=\x272\x27 stroke-linecap=\x27round\x27 stroke-linejoin=\x27round\x27><path d=\x27M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z\x27/><line x1=\x274\x27 y1=\x2722\x27 x2=\x274\x27 y2=\x2715\x27/></svg>" +
+        "</button>" +
+        "<span style=\x27font-size:10px;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.9);\x27>Flag</span>";
+      ov.appendChild(wrap);
+    }
+  }
+
+  var prevOpenV102 = window.openVideoPlayer;
+  window.openVideoPlayer = function(videoId) {
+    if (prevOpenV102) prevOpenV102.apply(this, arguments);
+    setTimeout(addFlagButtonToShortsOverlay, 80);
+  };
+  var prevFav102 = window.toggleFavoriteVideo;
+  window.toggleFavoriteVideo = function(videoId, ev) {
+    if (prevFav102) prevFav102(videoId, ev);
+    setTimeout(addFlagButtonToShortsOverlay, 60);
+  };
+
+  // =========================================================================
+  // 3. DAILY APPROVED CHANNEL NEW VIDEO SCANNER & NOTIFICATION BOX IN ADMIN
+  // =========================================================================
+  window.qaafChannelUpdatesQueue = (JSON.parse(localStorage.getItem("qaaf_channel_updates_queue_v1") || "[]") || []).filter(function(u) {
+    return u && u.channel && !SKIP_CH.has(u.channel);
+  });
+  window.qaafRejectedUpdateYtIds = JSON.parse(localStorage.getItem("qaaf_rejected_update_ytids_v1") || "[]");
+  var isScanningChNow = false;
+
+  function saveUpdatesQueueAndRefreshUI() {
+    try {
+      localStorage.setItem("qaaf_channel_updates_queue_v1", JSON.stringify(window.qaafChannelUpdatesQueue));
+      localStorage.setItem("qaaf_rejected_update_ytids_v1", JSON.stringify(window.qaafRejectedUpdateYtIds));
+    } catch (e) {}
+    fetch(FB_BASE + "/qaaf_channel_updates_queue.json", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ queue: window.qaafChannelUpdatesQueue, rejectedIds: window.qaafRejectedUpdateYtIds, updatedAt: Date.now() })
+    }).catch(function() {});
+    var qCount = (window.qaafChannelUpdatesQueue || []).length;
+    var fCount = (typeof flaggedVideosQueue !== "undefined" && Array.isArray(flaggedVideosQueue)) ? flaggedVideosQueue.length : 0;
+    var rCount = (window.parentRequestsQueue && Array.isArray(window.parentRequestsQueue)) ? window.parentRequestsQueue.length : 0;
+    var hdrBadge = document.getElementById("adminFlagCountBadge");
+    if (hdrBadge) hdrBadge.innerText = fCount + rCount + qCount;
+    window.renderAdminDailyChannelUpdatesBox();
+  }
+
+  window.scanApprovedChannelsForNewVideos = async function(isManual) {
+    if (isScanningChNow) return;
+    isScanningChNow = true;
+    var scanBtn = document.getElementById("qaafScanChannelsNowBtn");
+    if (scanBtn) scanBtn.innerText = "⏳ Scanning...";
+    if (isManual && typeof showSyncToast === "function") showSyncToast("⏳ Checking approved channels for newly uploaded videos...");
+
+    var chCounts = {};
+    var approvedSet = new Set(window.verifiedChannelsList || []);
+    (videosData || []).forEach(function(v) {
+      if (!v || !v.channel || SKIP_CH.has(v.channel)) return;
+      chCounts[v.channel] = (chCounts[v.channel] || 0) + 1;
+      if (v.channelVerified) approvedSet.add(v.channel);
+    });
+    Object.keys(chCounts).forEach(function(ch) {
+      if (chCounts[ch] >= 3) approvedSet.add(ch);
+    });
+
+    var approvedList = Array.from(approvedSet).filter(function(c) { return c && !SKIP_CH.has(c); });
+    var chUrlCache = JSON.parse(localStorage.getItem("qaaf_channel_urls_map_v1") || "{}");
+    var existingYtIds = new Set((videosData || []).map(function(v) { return v && v.ytId; }).filter(Boolean));
+    var blockedSet = new Set((typeof blockedVideoIds !== "undefined" ? blockedVideoIds : []).concat(window.qaafRejectedUpdateYtIds || []));
+    var queuedSet = new Set((window.qaafChannelUpdatesQueue || []).map(function(u) { return u && u.ytId; }).filter(Boolean));
+    var newlyFound = 0;
+
+    for (var i = 0; i < approvedList.length; i++) {
+      var chName = approvedList[i];
+      var chVids = (videosData || []).filter(function(v) { return v && v.channel === chName && v.ytId; });
+      if (!chVids.length) continue;
+      var chKnownSet = new Set(chVids.map(function(v) { return v.ytId; }));
+      var baseUrl = chUrlCache[chName] || "";
+      if (!baseUrl) {
+        try {
+          var oe = await fetch("https://noembed.com/embed?url=https://www.youtube.com/watch?v=" + chVids[0].ytId);
+          var oeD = await oe.json();
+          if (oeD && oeD.author_url) {
+            baseUrl = oeD.author_url.replace(/\/+$/, "");
+            chUrlCache[chName] = baseUrl;
+            localStorage.setItem("qaaf_channel_urls_map_v1", JSON.stringify(chUrlCache));
+          }
+        } catch (e) {}
+      }
+      if (!baseUrl) continue;
+
+      var tabPath = (chVids.every(function(v) { return isVideoShort(v); })) ? "/shorts" : "/videos";
+      var pageText = "";
+      try {
+        var r = await fetch("https://r.jina.ai/" + baseUrl + tabPath);
+        if (r.ok) pageText = await r.text();
+      } catch (e) {}
+      if (!pageText) continue;
+
+      var topIds = [];
+      for (var m of pageText.matchAll(/(?:watch\?v=|\/shorts\/|"videoId"\s*:\s*")([a-zA-Z0-9_-]{11})/g)) {
+        if (topIds.indexOf(m[1]) === -1) topIds.push(m[1]);
+        if (topIds.length >= 10) break;
+      }
+
+      var candidates = [];
+      for (var k = 0; k < topIds.length; k++) {
+        var vidId = topIds[k];
+        if (chKnownSet.has(vidId)) break;
+        if (!existingYtIds.has(vidId) && !blockedSet.has(vidId) && !queuedSet.has(vidId)) candidates.push(vidId);
+        if (candidates.length >= 5) break;
+      }
+
+      for (var n = 0; n < candidates.length; n++) {
+        var newYtId = candidates[n];
+        try {
+          var nr = await fetch("https://noembed.com/embed?url=https://www.youtube.com/watch?v=" + newYtId);
+          var nd = await nr.json();
+          if (nd && nd.title) {
+            window.qaafChannelUpdatesQueue.unshift({
+              id: "upd_" + newYtId,
+              ytId: newYtId,
+              title: nd.title,
+              channel: chName,
+              category: chVids[0].category || "bayan",
+              lang: chVids[0].lang || "ur",
+              audienceMode: chVids[0].audienceMode || "both_family_kids",
+              isShort: (tabPath === "/shorts" || /#short/i.test(nd.title)),
+              detectedAt: new Date().toLocaleDateString()
+            });
+            queuedSet.add(newYtId);
+            newlyFound++;
+          }
+        } catch (e) {}
+      }
+    }
+
+    localStorage.setItem("qaaf_last_channel_scan_ts", String(Date.now()));
+    isScanningChNow = false;
+    saveUpdatesQueueAndRefreshUI();
+    if (newlyFound > 0 && typeof showSyncToast === "function") showSyncToast("🔔 " + newlyFound + " new videos found in approved channels!");
+    else if (isManual && typeof showSyncToast === "function") showSyncToast("✅ All approved channels checked. No new videos pending.");
+  };
+
+  window.adminApproveChannelUpdateVideo = function(ytId) {
+    var item = (window.qaafChannelUpdatesQueue || []).find(function(x) { return x && x.ytId === ytId; });
+    if (!item) return;
+    if (!videosData.some(function(v) { return v && v.ytId === item.ytId; })) {
+      videosData.unshift({
+        id: "v_" + item.ytId, ytId: item.ytId, title: item.title, channel: item.channel,
+        lang: item.lang || "ur", region: (item.lang || "ur").toUpperCase(), category: item.category || "bayan",
+        audienceMode: item.audienceMode || "both_family_kids", kidsSafe: (item.category !== "bayan" && item.audienceMode !== "family_only"),
+        channelVerified: true, isShort: !!item.isShort, isCustomAdded: true, duration: "", views: 0, createdAt: Math.floor(Date.now() / 1000)
+      });
+      localStorage.setItem("qaaf_videos_data", JSON.stringify(videosData));
+    }
+    window.qaafChannelUpdatesQueue = (window.qaafChannelUpdatesQueue || []).filter(function(x) { return x && x.ytId !== ytId; });
+    saveUpdatesQueueAndRefreshUI();
+    if (typeof window.renderVideosNow === "function") window.renderVideosNow();
+    if (window.qaafCloudSync) window.qaafCloudSync.pushState("Approved New Channel Video: " + item.title);
+  };
+
+  window.adminRejectChannelUpdateVideo = function(ytId) {
+    if (window.qaafRejectedUpdateYtIds.indexOf(ytId) === -1) window.qaafRejectedUpdateYtIds.push(ytId);
+    if (Array.isArray(blockedVideoIds) && blockedVideoIds.indexOf(ytId) === -1) {
+      blockedVideoIds.push(ytId);
+      localStorage.setItem("qaaf_blocked_videos", JSON.stringify(blockedVideoIds));
+    }
+    window.qaafChannelUpdatesQueue = (window.qaafChannelUpdatesQueue || []).filter(function(x) { return x && x.ytId !== ytId; });
+    saveUpdatesQueueAndRefreshUI();
+    if (window.qaafCloudSync) window.qaafCloudSync.pushState("Rejected Channel Update Video: " + ytId);
+  };
+
+  window.adminApproveAllChannelUpdates = function() {
+    var list = (window.qaafChannelUpdatesQueue || []).slice();
+    if (!list.length) return;
+    list.forEach(function(item) {
+      if (!videosData.some(function(v) { return v && v.ytId === item.ytId; })) {
+        videosData.unshift({
+          id: "v_" + item.ytId, ytId: item.ytId, title: item.title, channel: item.channel,
+          lang: item.lang || "ur", region: (item.lang || "ur").toUpperCase(), category: item.category || "bayan",
+          audienceMode: item.audienceMode || "both_family_kids", kidsSafe: (item.category !== "bayan" && item.audienceMode !== "family_only"),
+          channelVerified: true, isShort: !!item.isShort, isCustomAdded: true, duration: "", views: 0, createdAt: Math.floor(Date.now() / 1000)
+        });
+      }
+    });
+    localStorage.setItem("qaaf_videos_data", JSON.stringify(videosData));
+    window.qaafChannelUpdatesQueue = [];
+    saveUpdatesQueueAndRefreshUI();
+    if (typeof window.renderVideosNow === "function") window.renderVideosNow();
+    if (window.qaafCloudSync) window.qaafCloudSync.pushState("Approved All New Channel Videos");
+  };
+
+  window.renderAdminDailyChannelUpdatesBox = function() {
+    var pubPane = document.getElementById("admPane_publish");
+    if (!pubPane) return;
+    var box = document.getElementById("admDailyChannelUpdatesCard");
+    if (!box) {
+      box = document.createElement("div");
+      box.id = "admDailyChannelUpdatesCard";
+      box.className = "bg-[#0e1520] border border-emerald-500/45 rounded-2xl p-4 space-y-3 text-xs shadow-lg";
+      var targetCard = pubPane.children[1] || pubPane.firstChild;
+      pubPane.insertBefore(box, targetCard);
+    }
+    var q = (window.qaafChannelUpdatesQueue || []).filter(function(item) { return item && item.channel && !SKIP_CH.has(item.channel); });
+    var rowsHtml = !q.length
+      ? "<p class=\x22text-slate-400 py-1.5 text-center\x22>✅ All approved channels are up to date. No new videos pending review.</p>"
+      : q.map(function(item) {
+          var thumb = "https://i.ytimg.com/vi/" + item.ytId + "/mqdefault.jpg";
+          return "<div class=\x22bg-black/70 border border-emerald-500/30 p-2.5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5\x22>" +
+            "<div class=\x22flex items-center gap-2.5 min-w-0 flex-1\x22><img src=\x22" + thumb + "\x22 class=\x22w-16 h-10 object-cover rounded-lg border border-white/15 shrink-0\x22 /><div class=\x22min-w-0 flex-1\x22><p class=\x22font-extrabold text-white truncate\x22>" + item.title + "</p><p class=\x22text-[11px] text-emerald-400 font-bold\x22>📺 " + item.channel + " • " + (item.isShort ? "Short" : "Video") + " • " + (item.detectedAt || "New") + "</p></div></div>" +
+            "<div class=\x22flex flex-wrap items-center gap-1.5 shrink-0\x22><button type=\x22button\x22 data-ytid=\x22" + item.ytId + "\x22 onclick=\x22playVideoInsideAdminModal(this.getAttribute(\x27data-ytid\x27), \x27Preview\x27)\x22 class=\x22bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1.5 rounded-lg text-[11px] font-extrabold cursor-pointer\x22>▶ Preview</button><button type=\x22button\x22 data-ytid=\x22" + item.ytId + "\x22 onclick=\x22adminApproveChannelUpdateVideo(this.getAttribute(\x27data-ytid\x27))\x22 class=\x22bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg text-[11px] font-extrabold cursor-pointer\x22>✅ Approve</button><button type=\x22button\x22 data-ytid=\x22" + item.ytId + "\x22 onclick=\x22adminRejectChannelUpdateVideo(this.getAttribute(\x27data-ytid\x27))\x22 class=\x22bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1.5 rounded-lg text-[11px] font-extrabold cursor-pointer\x22>🗑️ Delete</button></div>" +
+          "</div>";
+        }).join("");
+    box.innerHTML =
+      "<div class=\x22flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5\x22>" +
+        "<div><h4 class=\x22text-xs sm:text-sm font-extrabold text-emerald-300 flex items-center gap-2\x22><span>🔔</span> <span>Daily Channel Updates (New Videos)</span> <span class=\x22bg-emerald-500 text-black px-2 py-0.5 rounded-full text-[10px] font-extrabold\x22>" + q.length + "</span></h4><p class=\x22text-[11px] text-slate-400 mt-0.5\x22>Daily scanner checks your approved channels for new uploads so you can preview, approve, or delete them.</p></div>" +
+        "<div class=\x22flex items-center gap-1.5\x22>" + (q.length ? "<button type=\x22button\x22 onclick=\x22adminApproveAllChannelUpdates()\x22 class=\x22bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-xl text-[11px] font-extrabold shadow cursor-pointer\x22>✅ Approve All</button>" : "") + "<button id=\x22qaafScanChannelsNowBtn\x22 type=\x22button\x22 onclick=\x22scanApprovedChannelsForNewVideos(true)\x22 class=\x22bg-amber-500 hover:bg-amber-400 text-black px-3 py-1.5 rounded-xl text-[11px] font-extrabold shadow cursor-pointer\x22>🔄 Scan Channels Now</button></div>" +
+      "</div>" +
+      "<div class=\x22space-y-2 max-h-64 overflow-y-auto pr-1\x22>" + rowsHtml + "</div>";
+  };
+
+  // =========================================================================
+  // 4. PERSISTENT DISMISSAL FOR FLAGS & REQUESTS (NEVER COME BACK ON REFRESH)
+  // =========================================================================
+  window.qaafHandledFlagsOrReqIds = new Set(JSON.parse(localStorage.getItem("qaaf_handled_flags_reqs_v1") || "[]"));
+  function markIdHandledPermanently(id) {
+    if (!id) return;
+    window.qaafHandledFlagsOrReqIds.add(String(id));
+    try { localStorage.setItem("qaaf_handled_flags_reqs_v1", JSON.stringify(Array.from(window.qaafHandledFlagsOrReqIds).slice(-500))); } catch (e) {}
+  }
+  ["adminDismissFlag", "adminDeleteFlaggedVideo", "adminApproveRequest", "adminRejectRequest"].forEach(function(fnName) {
+    var origFn = window[fnName];
+    if (typeof origFn === "function") {
+      window[fnName] = function(argId) {
+        markIdHandledPermanently(argId);
+        var res = origFn.apply(this, arguments);
+        if (window.qaafCloudSync) window.qaafCloudSync.pushState("Handled " + fnName + ": " + argId);
+        return res;
+      };
+    }
+  });
+
+  var prevAdm102 = window.openAdminModal;
+  window.openAdminModal = function() {
+    if (prevAdm102) prevAdm102.apply(this, arguments);
+    replaceSuperAdminLabels();
+    window.renderAdminDailyChannelUpdatesBox();
+  };
+
+  fetch(FB_BASE + "/qaaf_channel_updates_queue.json?t=" + Date.now()).then(function(r) { return r.ok ? r.json() : null; }).then(function(d) {
+    if (d && typeof d === "object") {
+      if (Array.isArray(d.queue)) window.qaafChannelUpdatesQueue = d.queue.filter(function(u) { return u && u.channel && !SKIP_CH.has(u.channel); });
+      if (Array.isArray(d.rejectedIds)) window.qaafRejectedUpdateYtIds = d.rejectedIds;
+      localStorage.setItem("qaaf_channel_updates_queue_v1", JSON.stringify(window.qaafChannelUpdatesQueue));
+      localStorage.setItem("qaaf_rejected_update_ytids_v1", JSON.stringify(window.qaafRejectedUpdateYtIds));
+      window.renderAdminDailyChannelUpdatesBox();
+    }
+  }).catch(function() {});
+
+  setTimeout(function() {
+    window.renderAdminDailyChannelUpdatesBox();
+    var lastTs = parseInt(localStorage.getItem("qaaf_last_channel_scan_ts") || "0", 10);
+    if (Date.now() - lastTs > 12 * 3600 * 1000) window.scanApprovedChannelsForNewVideos(false);
+  }, 4000);
+})();
