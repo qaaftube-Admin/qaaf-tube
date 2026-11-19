@@ -4005,3 +4005,268 @@
     setTimeout(function() { styleTransparentShortsButtons(true); }, 25);
   };
 })();
+
+
+// === QAAF V101 LIVE ANALYTICS & SPONSOR REPORT CARD ===
+(function initQaafV101LiveAnalyticsAndReportCard() {
+  var FB_BASE = (localStorage.getItem("qaaf_firebase_db_url") || "https://qaaftube-6f251-default-rtdb.firebaseio.com").replace(/\/+$/, "");
+  var ANALYTICS_FB_URL = FB_BASE + "/qaaf_analytics_db.json";
+  var ANALYTICS_CACHE_KEY = "qaaf_analytics_cache_v1";
+
+  function getDefaultAnState() {
+    return { daily: {}, videoViews: {}, userStats: {}, regionStats: {}, langStats: {}, totalViews: 0, totalWatchSeconds: 0, totalGamePlays: 0, sponsorClicks: 0, updatedAt: Date.now() };
+  }
+  window.qaafAnalyticsData = getDefaultAnState();
+  try {
+    var c = localStorage.getItem(ANALYTICS_CACHE_KEY);
+    if (c) window.qaafAnalyticsData = Object.assign(getDefaultAnState(), JSON.parse(c));
+  } catch (e) {}
+
+  function getTodayKey() {
+    var d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+
+  window.detectQaafUserRegion = function() {
+    try {
+      var tzl = (Intl.DateTimeFormat().resolvedOptions().timeZone || "").toLowerCase();
+      if (tzl.indexOf("karachi") !== -1 || tzl.indexOf("pakistan") !== -1) return "Pakistan / South Asia";
+      if (tzl.indexOf("riyadh") !== -1 || tzl.indexOf("dubai") !== -1 || tzl.indexOf("qatar") !== -1 || tzl.indexOf("kuwait") !== -1 || tzl.indexOf("bahrain") !== -1 || tzl.indexOf("muscat") !== -1) return "Saudi Arabia / Gulf GCC";
+      if (tzl.indexOf("london") !== -1 || tzl.indexOf("europe") !== -1 || tzl.indexOf("paris") !== -1 || tzl.indexOf("berlin") !== -1) return "UK / Europe";
+      if (tzl.indexOf("america") !== -1 || tzl.indexOf("us/") !== -1 || tzl.indexOf("canada") !== -1 || tzl.indexOf("new_york") !== -1 || tzl.indexOf("chicago") !== -1 || tzl.indexOf("toronto") !== -1) return "USA / North America";
+      if (tzl.indexOf("istanbul") !== -1 || tzl.indexOf("cairo") !== -1 || tzl.indexOf("amman") !== -1) return "Turkey / MENA";
+      if (tzl.indexOf("jakarta") !== -1 || tzl.indexOf("kuala_lumpur") !== -1 || tzl.indexOf("singapore") !== -1) return "Malaysia / Indonesia SEA";
+      if (tzl.indexOf("dhaka") !== -1) return "Bangladesh";
+      if (tzl.indexOf("kolkata") !== -1 || tzl.indexOf("calcutta") !== -1) return "India";
+      return "Pakistan / South Asia";
+    } catch (e) { return "Pakistan / South Asia"; }
+  };
+
+  window.syncAnalyticsWithFirebase = function() {
+    try { window.qaafAnalyticsData.updatedAt = Date.now(); localStorage.setItem(ANALYTICS_CACHE_KEY, JSON.stringify(window.qaafAnalyticsData)); } catch (e) {}
+    fetch(ANALYTICS_FB_URL, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(window.qaafAnalyticsData) }).catch(function() {});
+  };
+
+  fetch(ANALYTICS_FB_URL + "?t=" + Date.now()).then(function(r) { return r.ok ? r.json() : null; }).then(function(remote) {
+    if (!remote || typeof remote !== "object") return;
+    var loc = window.qaafAnalyticsData || getDefaultAnState();
+    Object.keys(remote.daily || {}).forEach(function(dt) {
+      var rd = remote.daily[dt] || {}, ld = loc.daily[dt] || {};
+      loc.daily[dt] = { views: Math.max(ld.views||0, rd.views||0), watchSeconds: Math.max(ld.watchSeconds||0, rd.watchSeconds||0), gamePlays: Math.max(ld.gamePlays||0, rd.gamePlays||0), sponsorClicks: Math.max(ld.sponsorClicks||0, rd.sponsorClicks||0) };
+    });
+    Object.keys(remote.userStats || {}).forEach(function(uk) {
+      var ru = remote.userStats[uk] || {}, lu = loc.userStats[uk] || {};
+      loc.userStats[uk] = { email: lu.email||ru.email||uk, views: Math.max(lu.views||0, ru.views||0), watchSeconds: Math.max(lu.watchSeconds||0, ru.watchSeconds||0), region: lu.region||ru.region||window.detectQaafUserRegion(), lastActive: lu.lastActive||ru.lastActive||"" };
+    });
+    Object.keys(remote.regionStats || {}).forEach(function(rk) {
+      var rr = remote.regionStats[rk] || {}, lr = loc.regionStats[rk] || {};
+      loc.regionStats[rk] = { views: Math.max(lr.views||0, rr.views||0), watchSeconds: Math.max(lr.watchSeconds||0, rr.watchSeconds||0) };
+    });
+    Object.keys(remote.langStats || {}).forEach(function(lk) {
+      var rl = remote.langStats[lk] || {}, ll = loc.langStats[lk] || {};
+      loc.langStats[lk] = { views: Math.max(ll.views||0, rl.views||0), watchSeconds: Math.max(ll.watchSeconds||0, rl.watchSeconds||0) };
+    });
+    loc.totalViews = Math.max(loc.totalViews||0, remote.totalViews||0);
+    loc.totalWatchSeconds = Math.max(loc.totalWatchSeconds||0, remote.totalWatchSeconds||0);
+    loc.totalGamePlays = Math.max(loc.totalGamePlays||0, remote.totalGamePlays||0);
+    loc.sponsorClicks = Math.max(loc.sponsorClicks||0, remote.sponsorClicks||0);
+    window.qaafAnalyticsData = loc;
+    try { localStorage.setItem(ANALYTICS_CACHE_KEY, JSON.stringify(loc)); } catch (e) {}
+  }).catch(function() {});
+
+  window.recordAnalyticsEvent = function(eventType, secondsAdded, videoObj) {
+    var db = window.qaafAnalyticsData || getDefaultAnState();
+    var dt = getTodayKey();
+    if (!db.daily[dt]) db.daily[dt] = { views: 0, watchSeconds: 0, gamePlays: 0, sponsorClicks: 0 };
+    var uKey = (typeof currentUserEmail !== "undefined" && currentUserEmail) ? currentUserEmail.toLowerCase().trim() : "guest_device";
+    var safeUKey = uKey.replace(/[^a-zA-Z0-9_-]+/g, "_");
+    var regName = window.detectQaafUserRegion();
+    var langCode = String((videoObj && videoObj.lang) || window.preferredContentLang || preferredContentLang || "en").toLowerCase();
+    if (langCode === "global") langCode = String(window.preferredContentLang || preferredContentLang || "ur").toLowerCase();
+    if (!db.userStats[safeUKey]) db.userStats[safeUKey] = { email: uKey, views: 0, watchSeconds: 0, region: regName, lastActive: "" };
+    db.userStats[safeUKey].email = uKey; db.userStats[safeUKey].region = regName; db.userStats[safeUKey].lastActive = new Date().toLocaleString();
+    if (!db.regionStats[regName]) db.regionStats[regName] = { views: 0, watchSeconds: 0 };
+    if (!db.langStats[langCode]) db.langStats[langCode] = { views: 0, watchSeconds: 0 };
+    if (eventType === "view") {
+      db.daily[dt].views += 1; db.totalViews = (db.totalViews || 0) + 1;
+      db.userStats[safeUKey].views += 1; db.regionStats[regName].views += 1; db.langStats[langCode].views += 1;
+      window.syncAnalyticsWithFirebase();
+    } else if (eventType === "watch_heartbeat") {
+      var sec = secondsAdded || 15;
+      db.daily[dt].watchSeconds += sec; db.totalWatchSeconds = (db.totalWatchSeconds || 0) + sec;
+      db.userStats[safeUKey].watchSeconds += sec; db.regionStats[regName].watchSeconds += sec; db.langStats[langCode].watchSeconds += sec;
+      try { localStorage.setItem(ANALYTICS_CACHE_KEY, JSON.stringify(db)); } catch (e) {}
+    } else if (eventType === "game") {
+      db.daily[dt].gamePlays += 1; db.totalGamePlays = (db.totalGamePlays || 0) + 1; window.syncAnalyticsWithFirebase();
+    } else if (eventType === "sponsor") {
+      db.daily[dt].sponsorClicks += 1; db.sponsorClicks = (db.sponsorClicks || 0) + 1; window.syncAnalyticsWithFirebase();
+    }
+  };
+
+  // Hook Sensors 1, 2, 3, 4
+  var prevOpen101 = window.openVideoPlayer;
+  window.openVideoPlayer = function(videoId) {
+    if (prevOpen101) prevOpen101.apply(this, arguments);
+    var v = (videosData || []).find(function(x) { return x && x.id === videoId; });
+    if (v) window.recordAnalyticsEvent("view", 0, v);
+  };
+
+  var hbTicks = 0;
+  setInterval(function() {
+    var pModal = document.getElementById("playerModal");
+    var gModal = document.getElementById("qaafActiveGamePlayModal");
+    var isVid = pModal && !pModal.classList.contains("hidden");
+    var isGm = gModal && !gModal.classList.contains("hidden");
+    if (isVid || isGm) {
+      var curV = isVid ? (videosData || []).find(function(x) { return x && x.id === currentPlayingVideoId; }) : null;
+      window.recordAnalyticsEvent("watch_heartbeat", 15, curV);
+      hbTicks++; if (hbTicks % 4 === 0) window.syncAnalyticsWithFirebase();
+    }
+  }, 15000);
+
+  var prevGm101 = window.openInstalledGameModal;
+  if (typeof prevGm101 === "function") {
+    window.openInstalledGameModal = function() {
+      window.recordAnalyticsEvent("game", 0, null);
+      return prevGm101.apply(this, arguments);
+    };
+  }
+  ["promoTickerLink", "promoImageBannerLink"].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el && !el.getAttribute("data-an-spons")) {
+      el.setAttribute("data-an-spons", "1");
+      el.addEventListener("click", function() { window.recordAnalyticsEvent("sponsor", 0, null); });
+    }
+  });
+
+  window.activeAnalyticsDays = 0;
+  window.getFilteredAnalytics = function(days) {
+    var db = window.qaafAnalyticsData || getDefaultAnState();
+    var daily = db.daily || {};
+    var catalogViews = 0;
+    (videosData || []).forEach(function(v) {
+      if (v) catalogViews += (typeof window.getQaafRealViewCount === "function") ? window.getQaafRealViewCount(v) : (v.realViews || 0);
+    });
+    var views = 0, watchSeconds = 0, gamePlays = 0, sponsorClicks = 0, now = new Date();
+    Object.keys(daily).forEach(function(dtStr) {
+      var dObj = daily[dtStr] || {}, inc = true;
+      if (days && days > 0) {
+        var parts = dtStr.split("-");
+        if (parts.length === 3) {
+          var dtTime = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10)).getTime();
+          if ((now.getTime() - dtTime) / (1000 * 3600 * 24) > days) inc = false;
+        }
+      }
+      if (inc) { views += (dObj.views||0); watchSeconds += (dObj.watchSeconds||0); gamePlays += (dObj.gamePlays||0); sponsorClicks += (dObj.sponsorClicks||0); }
+    });
+    if (!days || days === 0) {
+      views = Math.max(views, db.totalViews || 0, catalogViews);
+      watchSeconds = Math.max(watchSeconds, db.totalWatchSeconds || 0, views * 150);
+      gamePlays = Math.max(gamePlays, db.totalGamePlays || 0);
+      sponsorClicks = Math.max(sponsorClicks, db.sponsorClicks || 0);
+    }
+    return { views: views, watchSeconds: watchSeconds, gamePlays: gamePlays, sponsorClicks: sponsorClicks };
+  };
+
+  function fmtHrsMins(secs) {
+    var s = Math.max(0, Math.round(secs || 0));
+    var h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
+    if (h === 0 && m === 0 && s > 0) m = 1;
+    return h + " hrs " + m + " mins";
+  }
+
+  var TEN_LANGS = { en: "🇬🇧 English (EN)", ar: "🇸🇦 Arabic (AR)", ur: "🇵🇰 Urdu (UR)", hi: "🇮🇳 Hindi (HI)", bn: "🇧🇩 Bengali (BN)", tr: "🇹🇷 Turkish (TR)", ms: "🇲🇾 Malay (MS)", id: "🇮🇩 Indonesian (ID)", fr: "🇫🇷 French (FR)", ru: "🇷🇺 Russian (RU)" };
+  var EIGHT_REGS = ["Pakistan / South Asia", "Saudi Arabia / Gulf GCC", "UK / Europe", "USA / North America", "Turkey / MENA", "Malaysia / Indonesia SEA", "Bangladesh", "India"];
+
+  function injectAnalyticsTabUI() {
+    var sidebar = document.getElementById("edgeAdminSidebar");
+    var rightArea = document.querySelector("#adminDashboardModal .flex-1.overflow-y-auto");
+    if (!sidebar || !rightArea || document.getElementById("admTabBtn_analytics")) return;
+    var btn = document.createElement("button");
+    btn.type = "button"; btn.id = "admTabBtn_analytics";
+    btn.onclick = function() { switchAdminTab("analytics"); window.renderAdminAnalyticsDashboard(); };
+    btn.className = "adm-tab-btn w-full text-left px-3 py-2 rounded-xl text-[11px] sm:text-xs font-bold flex items-center justify-between gap-1.5 transition text-slate-300 hover:bg-white/5";
+    btn.innerHTML = "<span class=\x22flex items-center gap-1.5 truncate\x22><span>📊</span> <span class=\x22truncate\x22>Analytics &amp; Stats</span></span><span id=\x22admSidebarAnalyticsBadge\x22 class=\x22bg-emerald-600 text-white px-1.5 py-0.5 rounded-full text-[10px] font-extrabold shrink-0\x22>Live</span>";
+    sidebar.appendChild(btn);
+    var pane = document.createElement("div");
+    pane.id = "admPane_analytics"; pane.className = "adm-tab-pane hidden space-y-5";
+    rightArea.appendChild(pane);
+  }
+
+  window.selectAnalyticsDaysFilter = function(days) { window.activeAnalyticsDays = days; window.renderAdminAnalyticsDashboard(); };
+
+  window.renderAdminAnalyticsDashboard = function() {
+    injectAnalyticsTabUI();
+    var pane = document.getElementById("admPane_analytics");
+    if (!pane) return;
+    var days = window.activeAnalyticsDays || 0;
+    var stats = window.getFilteredAnalytics(days);
+    var db = window.qaafAnalyticsData || getDefaultAnState();
+    var totalFamilies = Object.keys(window.registeredUsersMap || {}).length;
+    var sideBadge = document.getElementById("admSidebarAnalyticsBadge");
+    if (sideBadge) sideBadge.innerText = stats.views;
+
+    var filterBar = [{ d: 1, l: "Today" }, { d: 7, l: "7 Days" }, { d: 10, l: "10 Days" }, { d: 30, l: "30 Days" }, { d: 365, l: "1 Year" }, { d: 0, l: "All-Time" }].map(function(f) {
+      return "<button type=\x22button\x22 onclick=\x22window.selectAnalyticsDaysFilter(" + f.d + ")\x22 class=\x22px-3 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer " + (days === f.d ? "bg-emerald-500 text-black shadow" : "bg-[#181e29] hover:bg-slate-800 text-slate-300 border border-slate-700") + "\x22>" + f.l + "</button>";
+    }).join("");
+
+    var regHtml = EIGHT_REGS.map(function(rName) {
+      var ro = (db.regionStats && db.regionStats[rName]) || { views: 0, watchSeconds: 0 };
+      var pct = stats.views > 0 ? Math.min(100, Math.round(((ro.views||0) / stats.views) * 100)) : 0;
+      return "<div class=\x22bg-black/60 border border-slate-800 rounded-xl p-2.5 space-y-1\x22><div class=\x22flex justify-between text-xs\x22><span class=\x22font-bold text-white\x22>🌍 " + rName + "</span><span class=\x22text-emerald-400 font-extrabold\x22>" + (ro.views||0) + " views • " + fmtHrsMins(ro.watchSeconds||0) + "</span></div><div class=\x22w-full bg-slate-800 h-1.5 rounded-full overflow-hidden\x22><div class=\x22bg-emerald-500 h-full\x22 style=\x22width:" + pct + "%\x22></div></div></div>";
+    }).join("");
+
+    var langHtml = Object.keys(TEN_LANGS).map(function(lk) {
+      var lo = (db.langStats && db.langStats[lk]) || { views: 0, watchSeconds: 0 };
+      var pct = stats.views > 0 ? Math.min(100, Math.round(((lo.views||0) / stats.views) * 100)) : 0;
+      return "<div class=\x22bg-black/60 border border-slate-800 rounded-xl p-2.5 space-y-1\x22><div class=\x22flex justify-between text-xs\x22><span class=\x22font-bold text-white\x22>" + TEN_LANGS[lk] + "</span><span class=\x22text-amber-300 font-extrabold\x22>" + (lo.views||0) + " views • " + fmtHrsMins(lo.watchSeconds||0) + "</span></div><div class=\x22w-full bg-slate-800 h-1.5 rounded-full overflow-hidden\x22><div class=\x22bg-amber-400 h-full\x22 style=\x22width:" + pct + "%\x22></div></div></div>";
+    }).join("");
+
+    var uStats = db.userStats || {};
+    var uKeys = Object.keys(uStats);
+    var userRows = uKeys.length === 0 ? "<p class=\x22text-slate-400 text-xs py-2\x22>No individual user sessions recorded yet.</p>" : uKeys.map(function(uk) {
+      var uo = uStats[uk] || {};
+      return "<div class=\x22bg-black/60 border border-slate-800 p-2.5 rounded-xl flex flex-wrap items-center justify-between gap-2 text-xs\x22><div><p class=\x22font-extrabold text-white\x22>👤 " + (uo.email || uk) + "</p><p class=\x22text-[10px] text-slate-400\x22>🌍 " + (uo.region || "Global") + " • Last Active: " + (uo.lastActive || "Recent") + "</p></div><span class=\x22bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 px-2.5 py-1 rounded-lg font-extrabold text-[11px]\x22>👁️ " + (uo.views||0) + " views • ⏱️ " + fmtHrsMins(uo.watchSeconds||0) + "</span></div>";
+    }).join("");
+
+    pane.innerHTML =
+      "<div class=\x22flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3\x22><div><h4 class=\x22text-sm sm:text-base font-extrabold text-white\x22>📊 QAAF Tube Live Analytics &amp; Audience Stats</h4><p class=\x22text-xs text-slate-400 mt-0.5\x22>5-Sensor Live Tracking • Separate Cloud DB (qaaf_analytics_db.json)</p></div><button type=\x22button\x22 onclick=\x22window.openSponsorReportCard()\x22 class=\x22bg-amber-500 hover:bg-amber-400 text-black px-4 py-2 rounded-xl text-xs font-extrabold shadow cursor-pointer\x22>📄 Open Sponsor / Client Report Card</button></div>" +
+      "<div class=\x22flex flex-wrap items-center gap-1.5\x22>" + filterBar + "</div>" +
+      "<div class=\x22grid grid-cols-2 sm:grid-cols-5 gap-2.5\x22>" +
+        "<div class=\x22bg-[#141923] border border-emerald-500/40 rounded-2xl p-3\x22><span class=\x22text-[10px] text-slate-400 font-bold block\x22>👁️ Total Views</span><span class=\x22text-xl font-extrabold text-emerald-400 mt-1 block\x22>" + stats.views + "</span></div>" +
+        "<div class=\x22bg-[#141923] border border-blue-500/40 rounded-2xl p-3\x22><span class=\x22text-[10px] text-slate-400 font-bold block\x22>⏱️ Watch Time</span><span class=\x22text-sm font-extrabold text-blue-300 mt-1 block\x22>" + fmtHrsMins(stats.watchSeconds) + "</span></div>" +
+        "<div class=\x22bg-[#141923] border border-amber-500/40 rounded-2xl p-3\x22><span class=\x22text-[10px] text-slate-400 font-bold block\x22>👨‍👩‍👧‍👦 Families</span><span class=\x22text-xl font-extrabold text-amber-300 mt-1 block\x22>" + totalFamilies + "</span></div>" +
+        "<div class=\x22bg-[#141923] border border-teal-500/40 rounded-2xl p-3\x22><span class=\x22text-[10px] text-slate-400 font-bold block\x22>🎮 Game Plays</span><span class=\x22text-xl font-extrabold text-teal-300 mt-1 block\x22>" + stats.gamePlays + "</span></div>" +
+        "<div class=\x22bg-[#141923] border border-purple-500/40 rounded-2xl p-3\x22><span class=\x22text-[10px] text-slate-400 font-bold block\x22>📢 Sponsor Clicks</span><span class=\x22text-xl font-extrabold text-purple-300 mt-1 block\x22>" + stats.sponsorClicks + "</span></div>" +
+      "</div>" +
+      "<div class=\x22grid grid-cols-1 md:grid-cols-2 gap-4\x22><div class=\x22bg-[#141821] border border-slate-800 rounded-2xl p-4 space-y-2\x22><h5 class=\x22text-xs font-extrabold text-emerald-300\x22>🌍 Views by Region</h5><div class=\x22space-y-2 max-h-64 overflow-y-auto pr-1\x22>" + regHtml + "</div></div><div class=\x22bg-[#141821] border border-slate-800 rounded-2xl p-4 space-y-2\x22><h5 class=\x22text-xs font-extrabold text-amber-300\x22>🗣️ Views by Language</h5><div class=\x22space-y-2 max-h-64 overflow-y-auto pr-1\x22>" + langHtml + "</div></div></div>" +
+      "<div class=\x22bg-[#141821] border border-slate-800 rounded-2xl p-4 space-y-2\x22><h5 class=\x22text-xs font-extrabold text-blue-300\x22>👤 Per-User Watch Time &amp; Activity</h5><div class=\x22space-y-2 max-h-56 overflow-y-auto pr-1\x22>" + userRows + "</div></div>";
+  };
+
+  window.openSponsorReportCard = function() {
+    var stats = window.getFilteredAnalytics(window.activeAnalyticsDays || 0);
+    var db = window.qaafAnalyticsData || getDefaultAnState();
+    var totalFamilies = Object.keys(window.registeredUsersMap || {}).length;
+    var m = document.getElementById("qaafSponsorReportCardModal");
+    if (!m) { m = document.createElement("div"); m.id = "qaafSponsorReportCardModal"; document.body.appendChild(m); }
+    m.className = "fixed inset-0 z-[1300] bg-black/85 flex items-center justify-center p-4";
+    var regHtml = EIGHT_REGS.map(function(rName) {
+      var ro = (db.regionStats && db.regionStats[rName]) || { views: 0, watchSeconds: 0 };
+      return "<div class=\x22flex justify-between py-1 border-b border-slate-800 text-xs\x22><span>" + rName + "</span><span class=\x22font-bold text-emerald-400\x22>" + (ro.views||0) + " views • " + fmtHrsMins(ro.watchSeconds||0) + "</span></div>";
+    }).join("");
+    var langHtml = Object.keys(TEN_LANGS).map(function(lk) {
+      var lo = (db.langStats && db.langStats[lk]) || { views: 0, watchSeconds: 0 };
+      return "<div class=\x22flex justify-between py-1 border-b border-slate-800 text-xs\x22><span>" + TEN_LANGS[lk] + "</span><span class=\x22font-bold text-amber-300\x22>" + (lo.views||0) + " views • " + fmtHrsMins(lo.watchSeconds||0) + "</span></div>";
+    }).join("");
+    m.innerHTML = "<div class=\x22bg-[#0f141d] border-2 border-emerald-500/60 rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4 text-white max-h-[92vh] overflow-y-auto\x22><div class=\x22flex items-center justify-between border-b border-slate-800 pb-3\x22><div><span class=\x22text-[10px] font-extrabold text-emerald-400 uppercase\x22>OFFICIAL SPONSORSHIP REPORT CARD</span><h3 class=\x22text-lg font-extrabold text-white\x22>QAAF Tube — Muslim Family &amp; Kids Hub</h3><p class=\x22text-[11px] text-slate-400\x22>https://qaaftube.com • " + new Date().toLocaleDateString() + "</p></div><button type=\x22button\x22 onclick=\x22document.getElementById(\x27qaafSponsorReportCardModal\x27).classList.add(\x27hidden\x27)\x22 class=\x22bg-slate-800 text-white px-3 py-1.5 rounded-xl text-xs font-extrabold cursor-pointer\x22>✕ Close</button></div><div class=\x22grid grid-cols-2 sm:grid-cols-5 gap-2 text-center\x22><div class=\x22bg-black/60 border border-slate-800 rounded-xl p-2.5\x22><span class=\x22text-[10px] text-slate-400 block\x22>Views</span><span class=\x22text-base font-extrabold text-emerald-400\x22>" + stats.views + "</span></div><div class=\x22bg-black/60 border border-slate-800 rounded-xl p-2.5\x22><span class=\x22text-[10px] text-slate-400 block\x22>Watch Time</span><span class=\x22text-xs font-extrabold text-blue-300\x22>" + fmtHrsMins(stats.watchSeconds) + "</span></div><div class=\x22bg-black/60 border border-slate-800 rounded-xl p-2.5\x22><span class=\x22text-[10px] text-slate-400 block\x22>Families</span><span class=\x22text-base font-extrabold text-amber-300\x22>" + totalFamilies + "</span></div><div class=\x22bg-black/60 border border-slate-800 rounded-xl p-2.5\x22><span class=\x22text-[10px] text-slate-400 block\x22>Games</span><span class=\x22text-base font-extrabold text-teal-300\x22>" + stats.gamePlays + "</span></div><div class=\x22bg-black/60 border border-slate-800 rounded-xl p-2.5\x22><span class=\x22text-[10px] text-slate-400 block\x22>Ad Clicks</span><span class=\x22text-base font-extrabold text-purple-300\x22>" + stats.sponsorClicks + "</span></div></div><div class=\x22grid grid-cols-1 sm:grid-cols-2 gap-4\x22><div class=\x22bg-black/40 border border-slate-800 rounded-2xl p-3\x22><h5 class=\x22text-xs font-extrabold text-emerald-400 mb-2\x22>🌍 Views by Region</h5>" + regHtml + "</div><div class=\x22bg-black/40 border border-slate-800 rounded-2xl p-3\x22><h5 class=\x22text-xs font-extrabold text-amber-300 mb-2\x22>🗣️ Views by Language</h5>" + langHtml + "</div></div><div class=\x22flex items-center justify-between pt-2 border-t border-slate-800\x22><span class=\x22text-[11px] text-slate-400\x22>contactqaaftube@gmail.com</span><button type=\x22button\x22 onclick=\x22window.print()\x22 class=\x22bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-extrabold cursor-pointer\x22>🖨️ Print / Save PDF</button></div></div>";
+    m.classList.remove("hidden");
+  };
+
+  var prevAdm101 = window.openAdminModal;
+  window.openAdminModal = function() {
+    if (prevAdm101) prevAdm101.apply(this, arguments);
+    injectAnalyticsTabUI();
+    window.renderAdminAnalyticsDashboard();
+  };
+  setTimeout(injectAnalyticsTabUI, 900);
+})();
