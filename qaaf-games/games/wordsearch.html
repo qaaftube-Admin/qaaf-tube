@@ -5207,5 +5207,177 @@
   setInterval(applyQaafAutoTheme, 1000);
 })();
 </script>
+<!-- QAAF MODERN SLEEK WORDSEARCH UI v64.0 -->
+<style id="qaafModernWsStyle">
+  /* Hide cluttered 10-stage scroll bar in Word Search (auto-advances on stage complete) */
+  #wsStagesRow { display: none !important; }
+
+  /* Clean minimal header bar for Word Search */
+  #gameSection-wordsearch .ws-top-bar-card {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 2px 4px !important;
+  }
+
+  /* Minimal borderless word list (no heavy box around each fruit) */
+  #wsTopIconsBar {
+    gap: 4px !important;
+    padding: 4px 2px !important;
+  }
+  #wsTopIconsBar button {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    padding: 3px 2px !important;
+    border-radius: 0.6rem !important;
+  }
+  #wsTopIconsBar button.ws-word-active {
+    background: rgba(16, 185, 129, 0.14) !important;
+  }
+  #wsTopIconsBar button.ws-word-found {
+    opacity: 0.45 !important;
+  }
+
+  /* Single Seamless White Puzzle Board (No individual boxes around letters!) */
+  #wsGridBoardCard {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 1.25rem !important;
+    box-shadow: 0 6px 22px rgba(15, 23, 42, 0.08) !important;
+    padding: 10px !important;
+  }
+  body.theme-dark #wsGridBoardCard {
+    background: #0f1b2e !important;
+    border: 1px solid #1e293b !important;
+  }
+  #wsGridWrapper {
+    gap: 2px !important;
+    max-width: 360px !important;
+  }
+  #wsGridWrapper .ws-cell {
+    background: transparent !important;
+    border: none !important;
+    border-bottom: none !important;
+    box-shadow: none !important;
+    border-radius: 9999px !important;
+    font-weight: 800 !important;
+    font-size: 1.12rem !important;
+    color: #0f172a !important;
+    transition: transform 0.1s ease, background-color 0.12s ease !important;
+  }
+  body.theme-dark #wsGridWrapper .ws-cell {
+    color: #f8fafc !important;
+  }
+  #wsGridWrapper .ws-cell.ws-cell-hint {
+    background: #fef3c7 !important;
+    color: #b45309 !important;
+    animation: none !important;
+  }
+  #wsGridWrapper .ws-cell.ws-cell-extra-hint {
+    background: #d1fae5 !important;
+    color: #047857 !important;
+  }
+  #wsGridWrapper .ws-cell.ws-cell-selecting {
+    background: #fbbf24 !important;
+    color: #0f172a !important;
+    transform: scale(1.06) !important;
+  }
+  #wsGridWrapper .ws-cell.ws-cell-found-0 { background: #34d399 !important; color: #022c22 !important; }
+  #wsGridWrapper .ws-cell.ws-cell-found-1 { background: #38bdf8 !important; color: #082f49 !important; }
+  #wsGridWrapper .ws-cell.ws-cell-found-2 { background: #c084fc !important; color: #ffffff !important; }
+  #wsGridWrapper .ws-cell.ws-cell-found-3 { background: #fb7185 !important; color: #ffffff !important; }
+  #wsGridWrapper .ws-cell.ws-cell-found-4 { background: #facc15 !important; color: #1c1917 !important; }
+
+  /* Spacious Clean Active Target Banner */
+  #wsSpotlightCard {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 1rem !important;
+    box-shadow: 0 3px 12px rgba(15, 23, 42, 0.06) !important;
+    padding: 8px 14px !important;
+  }
+  body.theme-dark #wsSpotlightCard {
+    background: #132238 !important;
+    border-color: #1e293b !important;
+  }
+</style>
+<script id="qaafModernWsScript">
+(function() {
+  function enhanceWordSearchLayout() {
+    var wsSec = document.getElementById('gameSection-wordsearch');
+    if (!wsSec) return;
+
+    /* Move Hint button into the top stage row next to Shuffle */
+    var shuffleBtn = wsSec.querySelector('button[onclick="rebuildWordSearchStage()"]');
+    if (shuffleBtn && !document.getElementById('wsTopHintBtn')) {
+      var hintBtn = document.createElement('button');
+      hintBtn.id = 'wsTopHintBtn';
+      hintBtn.className = 'btn-3d-sky px-2 py-0.5 text-[11px] rounded-lg';
+      hintBtn.title = 'Hint';
+      hintBtn.innerHTML = '<i class="fa-solid fa-lightbulb"></i>';
+      hintBtn.onclick = function() { if (typeof triggerWordSearchExtraHint === 'function') triggerWordSearchExtraHint(); };
+      shuffleBtn.parentElement.insertBefore(hintBtn, shuffleBtn);
+    }
+
+    /* Tag grid board container for seamless white sheet styling */
+    var gridWrap = document.getElementById('wsGridWrapper');
+    if (gridWrap && gridWrap.parentElement) {
+      gridWrap.parentElement.id = 'wsGridBoardCard';
+    }
+
+    /* Wrap updateWordSearchUI to render spacious big target word + borderless word list */
+    if (typeof window.updateWordSearchUI === 'function' && !window.__qaafWsUiWrapped) {
+      window.__qaafWsUiWrapped = true;
+      var origUpdateWs = window.updateWordSearchUI;
+      window.updateWordSearchUI = function() {
+        origUpdateWs();
+
+        /* Simplify top icons bar classes */
+        var iconsBar = document.getElementById('wsTopIconsBar');
+        if (iconsBar) {
+          var stageData = typeof getCurrentWordSearchStageData === 'function' ? getCurrentWordSearchStageData() : null;
+          var btns = iconsBar.querySelectorAll('button');
+          btns.forEach(function(b, idx) {
+            var pw = appState.wsPlacedWords.find(function(w) { return w.index === idx; });
+            b.classList.toggle('ws-word-found', Boolean(pw && pw.found));
+            b.classList.toggle('ws-word-active', appState.wsActiveItemIdx === idx && !(pw && pw.found));
+          });
+        }
+
+        /* Render big, wide, crystal-clear target spotlight (No duplicate speaker or Next button) */
+        var spotCard = document.getElementById('wsSpotlightCard');
+        var stageData = typeof getCurrentWordSearchStageData === 'function' ? getCurrentWordSearchStageData() : null;
+        if (spotCard && stageData) {
+          var item = stageData.items[appState.wsActiveItemIdx] || stageData.items[0];
+          var lang = appState.wsLang || 'en';
+          var mainWord = lang === 'ur' ? item.ur : (lang === 'ar' ? item.ar : item.en);
+          var mainFont = lang === 'ur' ? 'font-urdu' : (lang === 'ar' ? 'font-arabic' : 'font-english');
+          var sideLeft = lang === 'en' ? item.ar : (lang === 'ar' ? item.en : item.ar);
+          var sideLeftFont = lang === 'en' ? 'font-arabic' : (lang === 'ar' ? 'font-english' : 'font-arabic');
+          var sideRight = lang === 'en' ? item.ur : (lang === 'ar' ? item.ur : item.en);
+          var sideRightFont = lang === 'en' ? 'font-urdu' : (lang === 'ar' ? 'font-urdu' : 'font-english');
+
+          spotCard.innerHTML =
+            '<div onclick="speakActiveWordSearchItem()" class="cursor-pointer flex items-center justify-between gap-2 w-full">' +
+              '<span class="' + sideLeftFont + ' text-xs sm:text-sm font-semibold text-slate-400 shrink-0">' + sideLeft + '</span>' +
+              '<div class="flex items-center justify-center gap-2.5 min-w-0">' +
+                '<span class="text-4xl sm:text-5xl leading-none">' + item.emoji + '</span>' +
+                '<span class="' + mainFont + ' text-xl sm:text-2xl font-extrabold tracking-wide text-slate-900 dark:text-white truncate">' + mainWord + '</span>' +
+              '</div>' +
+              '<span class="' + sideRightFont + ' text-xs sm:text-sm font-semibold text-slate-400 shrink-0">' + sideRight + '</span>' +
+            '</div>';
+        }
+      };
+      try { window.updateWordSearchUI(); } catch (e) {}
+    }
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', enhanceWordSearchLayout);
+  else enhanceWordSearchLayout();
+  setTimeout(enhanceWordSearchLayout, 150);
+})();
+</script>
 </body>
 </html>
