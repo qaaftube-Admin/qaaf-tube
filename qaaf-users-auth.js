@@ -1859,7 +1859,7 @@
       mainCat: "qaaf_2d",
       title: "QAAF Games",
       icon: "\ud83c\udfae",
-      path: "qaaf-games/qaaf-games.html?v=62.0"
+      path: "qaaf-games/qaaf-games.html?v=63.0"
     },
     {
       id: "quran_game_01_birr",
