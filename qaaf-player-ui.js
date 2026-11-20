@@ -5026,7 +5026,7 @@
       '<div class="relative aspect-video bg-slate-900 overflow-hidden sm:rounded-xl">' +
         '<a ' + (isKidsLocked ? '' : 'href="?watch=' + encodeURIComponent(video.id) + '"') + ' onclick="return handleQaafVideoLinkClick(event, \'' + video.id + '\')" class="block w-full h-full cursor-pointer no-underline text-inherit">' +
           '<img src="' + cardThumb + '" alt="" class="w-full h-full object-cover pointer-events-none select-none group-hover:scale-[1.02] transition duration-300" loading="lazy" decoding="async" onerror="if(!this.dataset.retried){this.dataset.retried=\'1\';this.src=\'' + thumbMq + '\';}else{this.onerror=null;this.src=\'' + categoryArtwork + '\';}" />' +
-          '<span class="absolute bottom-2 right-2 bg-black/85 text-white text-[11px] font-bold px-1.5 py-0.5 rounded z-10 pointer-events-none">' + (video.duration || "12:00") + '</span>' +
+          '<span class="absolute bottom-2 right-2 bg-black/85 text-white text-[11px] font-bold px-1.5 py-0.5 rounded z-10 pointer-events-none">' + (video.duration && video.duration !== '12:00' && video.duration !== '12:45' ? video.duration : '') + '</span>' +
         '</a>' +
         '<div id="cardActionMenu_' + video.id + '" class="hidden absolute top-2 right-2 z-30 bg-[#111620]/95 backdrop-blur-md border border-emerald-500/40 rounded-xl p-1.5 flex items-center gap-1.5 shadow-2xl">' +
           '<button type="button" onclick="toggleVideoInPlaylist(\'' + video.id + '\', event)" class="w-8 h-8 rounded-lg ' + (inPl ? 'bg-emerald-500 text-black' : 'bg-slate-800 hover:bg-[#164e3a] text-emerald-300 hover:text-white') + ' flex items-center justify-center text-xs font-extrabold shadow" title="Save to Playlist">' + (inPl ? '&#10004;' : '&#10133;') + '</button>' +
@@ -5446,7 +5446,7 @@
 (function initBottomCenterAutoHideVolume() {
   var volHideTimer = null;
 
-  function ensureBottomVolBar() {
+  function ensureBottomVolBar() { return;
     var aspect = document.getElementById("playerAspectBox");
     if (!aspect || document.getElementById("qaafBottomSeekVolBar")) return;
 
@@ -6175,7 +6175,7 @@
   removeMetadataRowButtons();
 
   // 3. CREATE TOP-LEFT MINIMAL RED CROSS (NO CIRCLE, NO BACKGROUND) & TRANSPARENT RED VOLUME BAR
-  function setupMinimalRedControls() {
+  function setupMinimalRedControls() { return;
     var aspect = document.getElementById("playerAspectBox");
     if (!aspect) return;
 

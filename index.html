@@ -13,9 +13,9 @@
   <link rel="canonical" href="https://qaaftube.com/" />
 
   <!-- OFFICIAL QAAF TUBE LOGO FAVICON (TAB ICON, GOOGLE SEARCH ICON & APPLE TOUCH ICON) -->
-  <link id="qaafDynamicFavicon" rel="icon" type="image/svg+xml" href="favicon.svg?v=105.0" />
-  <link rel="shortcut icon" type="image/svg+xml" href="./favicon.svg?v=105.0" />
-  <link rel="apple-touch-icon" href="./favicon.svg?v=105.0" />
+  <link id="qaafDynamicFavicon" rel="icon" type="image/svg+xml" href="favicon.svg?v=106.0" />
+  <link rel="shortcut icon" type="image/svg+xml" href="./favicon.svg?v=106.0" />
+  <link rel="apple-touch-icon" href="./favicon.svg?v=106.0" />
 
   <!-- OPEN GRAPH & SOCIAL / WHATSAPP / GOOGLE PREVIEW TAGS -->
   <meta property="og:type" content="website" />
@@ -72,7 +72,7 @@
 
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./qaaf-styles.css?v=105.0" />
+    <link rel="stylesheet" href="./qaaf-styles.css?v=106.0" />
 </head>
 <body id="appBody" class="bg-islamic-family min-h-screen flex flex-col justify-between pb-28 transition-colors duration-500">
 
@@ -1173,242 +1173,10 @@
 <!-- QAAF V11.6 THREE-CATEGORY GAMES HUB (1. QAAF GAMES, 2. QAAF QURANIC GAMES, 3. QAAF 3D GAMES) -->
 
   <!-- QAAF TUBE MODULAR JS ENGINES -->
-  <script src="./qaaf-data.js?v=105.0"></script>
-  <script src="./qaaf-admin.js?v=105.0"></script>
-  <script src="./qaaf-player-ui.js?v=105.0"></script>
-<!-- QAAF V12.6 NATIVE MASTER PATCH START -->
-<style>
-  #ytTopControlBar, #qaafFloatingPlayerHud, #qaafHudWakeZoneTop, #qaafQuickTopRightBox {
-    display: none !important;
-  }
-  .yt-single-line-gradient-title {
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    display: block !important;
-    -webkit-mask-image: linear-gradient(to right, #000000 80%, transparent 98%);
-    mask-image: linear-gradient(to right, #000000 80%, transparent 98%);
-  }
-</style>
-<script>
-(function initQaafV126MasterNativePatch() {
-  var hudFadeTimer = null;
-
-  // A. REMOVE BLACK BARS ON MOBILE 16:9 PLAYER & LOCK PULL-TO-REFRESH WHEN PLAYER IS OPEN
-  var pAspect = document.getElementById("playerAspectBox");
-  if (pAspect) pAspect.classList.remove("min-h-[260px]", "sm:min-h-[380px]");
-
-  setInterval(function() {
-    var modal = document.getElementById("playerModal");
-    var isPlayerOpen = modal && !modal.classList.contains("hidden");
-    if (isPlayerOpen || isKidsLocked) {
-      document.documentElement.style.overscrollBehaviorY = "none";
-      document.body.style.overscrollBehaviorY = "none";
-    } else {
-      document.documentElement.style.overscrollBehaviorY = "auto";
-      document.body.style.overscrollBehaviorY = "auto";
-    }
-  }, 300);
-
-  // B. HEADER LOGO = INSTANT HOME BUTTON
-  function bindLogoHome() {
-    var headerLeft = document.querySelector("#mainHeader > div:first-child");
-    if (!headerLeft) return;
-    headerLeft.style.cursor = "pointer";
-    headerLeft.onclick = function(e) {
-      if (e.target && e.target.closest("#headerDrawerMenuBtn")) return;
-      e.preventDefault();
-      e.stopPropagation();
-      if (window.isKidsTimeExpiredLock) return;
-      if (isKidsLocked) { openParentalGate("unlock"); return; }
-      if (typeof closeVideoPlayer === "function") closeVideoPlayer();
-      if (typeof closeQaafProfileDrawer === "function") closeQaafProfileDrawer();
-      window.qaafSelectedChannel = "ALL";
-      window.qaafActiveSearchQuery = "";
-      currentCategory = "all";
-      currentSortFilter = "default";
-      window.qaafGridPageLimit = 24;
-      var sInp = document.getElementById("qaafSearchInput");
-      if (sInp) sInp.value = "";
-      if (typeof window.renderVideosNow === "function") window.renderVideosNow();
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    };
-  }
-  bindLogoHome();
-
-  // C. TOP-LEFT MINIMAL RED CROSS (NO CIRCLE) & TRANSPARENT RED VOLUME BAR (AUTO-HIDES IN 1.5s)
-  function cleanupOldButtons() {
-    var tr = document.getElementById("qaafQuickTopRightBox");
-    if (tr) tr.remove();
-    var hdr = document.getElementById("ytCleanWatchHeader");
-    if (hdr) {
-      var minB = hdr.querySelector('button[onclick*="minimizeToMiniPlayer"]');
-      var clsB = hdr.querySelector('button[onclick*="closeVideoPlayer"]');
-      if (minB) minB.remove();
-      if (clsB) clsB.remove();
-    }
-  }
-
-  function ensureMinimalRedControls() {
-    cleanupOldButtons();
-    var aspect = document.getElementById("playerAspectBox");
-    if (!aspect) return;
-
-    var topLeftX = document.getElementById("qaafMinimalTopLeftClose");
-    if (!topLeftX) {
-      topLeftX = document.createElement("button");
-      topLeftX.id = "qaafMinimalTopLeftClose";
-      topLeftX.type = "button";
-      topLeftX.style.cssText = "position:absolute; top:8px; left:10px; z-index:38; background:transparent !important; border:none !important; box-shadow:none !important; color:#ff1e38; font-size:22px; font-weight:800; line-height:1; padding:4px 8px; cursor:pointer; opacity:0; pointer-events:none; transition:opacity 0.2s ease; filter:drop-shadow(0 1px 3px rgba(0,0,0,0.85));";
-      topLeftX.innerHTML = "✕";
-      topLeftX.onclick = function(e) { e.stopPropagation(); closeVideoPlayer(); };
-      aspect.appendChild(topLeftX);
-    }
-
-    var volBar = document.getElementById("qaafBottomSeekVolBar");
-    if (volBar && !volBar.dataset.redUpgraded) {
-      volBar.dataset.redUpgraded = "1";
-      volBar.className = "";
-      volBar.style.cssText = "position:absolute; bottom:4px; left:50%; transform:translateX(-50%); z-index:35; background:transparent !important; border:none !important; box-shadow:none !important; backdrop-filter:none !important; padding:2px 6px; display:flex; align-items:center; gap:6px; opacity:0; pointer-events:none; transition:opacity 0.2s ease;";
-      var curV = parseInt(localStorage.getItem("qaaf_player_volume") || "100", 10);
-      volBar.innerHTML =
-        '<button type="button" id="seekVolMuteBtn" onclick="toggleSeekBottomMute(event)" style="color:#ff1e38; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.9));" class="text-xs font-extrabold leading-none select-none">' + (curV === 0 ? '🔇' : '🔊') + '</button>' +
-        '<input id="seekVolSlider" type="range" min="0" max="100" value="' + curV + '" oninput="changeSeekBottomVolume(this.value, event)" style="accent-color:#ff1e38; height:3px; background:rgba(255,30,56,0.35);" class="w-24 sm:w-28 rounded-lg cursor-pointer" />' +
-        '<span id="seekVolPctText" style="color:#ff1e38; text-shadow:0 1px 3px rgba(0,0,0,0.95);" class="text-[11px] font-extrabold w-8 text-left">' + curV + '%</span>';
-    }
-  }
-
-  window.hideRedOverlayNow = function() {
-    var topLeftX = document.getElementById("qaafMinimalTopLeftClose");
-    var volBar = document.getElementById("qaafBottomSeekVolBar");
-    if (topLeftX) {
-      topLeftX.style.setProperty("opacity", "0", "important");
-      topLeftX.style.setProperty("pointer-events", "none", "important");
-    }
-    if (volBar) {
-      volBar.className = "";
-      volBar.style.setProperty("opacity", "0", "important");
-      volBar.style.setProperty("pointer-events", "none", "important");
-    }
-  };
-
-  window.wakeRedOverlay1500 = function() {
-    ensureMinimalRedControls();
-    var topLeftX = document.getElementById("qaafMinimalTopLeftClose");
-    var volBar = document.getElementById("qaafBottomSeekVolBar");
-    var scrollWrap = document.getElementById("ytWatchScrollContainer");
-    var isMini = scrollWrap && scrollWrap.classList.contains("hidden");
-
-    if (isMini) {
-      window.hideRedOverlayNow();
-      return;
-    }
-
-    if (topLeftX) {
-      topLeftX.style.display = "block";
-      topLeftX.style.setProperty("opacity", "1", "important");
-      topLeftX.style.setProperty("pointer-events", "auto", "important");
-    }
-    if (volBar) {
-      volBar.className = "";
-      volBar.style.display = "flex";
-      volBar.style.setProperty("opacity", "1", "important");
-      volBar.style.setProperty("pointer-events", "auto", "important");
-    }
-
-    if (hudFadeTimer) clearTimeout(hudFadeTimer);
-    hudFadeTimer = setTimeout(function() {
-      window.hideRedOverlayNow();
-    }, 1500);
-  };
-
-  window.wakeBottomSeekVolume = window.wakeRedOverlay1500;
-  window.wakeAllVideoControls1800 = window.wakeRedOverlay1500;
-  window.wakeMinimalRedControls1500 = window.wakeRedOverlay1500;
-
-  if (pAspect) {
-    pAspect.addEventListener("touchstart", function() { window.wakeRedOverlay1500(); }, { passive: true, capture: true });
-    pAspect.addEventListener("click", function() { window.wakeRedOverlay1500(); }, { capture: true });
-  }
-  document.addEventListener("input", function(e) {
-    if (e.target && e.target.id === "seekVolSlider") window.wakeRedOverlay1500();
-  });
-
-  // D. SMOOTH YOUTUBE-STYLE SWIPE-DOWN TO MINIMIZE
-  function ensureTopSwipeStrip() {
-    var aspect = document.getElementById("playerAspectBox");
-    if (!aspect || document.getElementById("qaafTopSwipeStrip")) return;
-    var strip = document.createElement("div");
-    strip.id = "qaafTopSwipeStrip";
-    strip.style.cssText = "position:absolute; top:0; left:48px; right:145px; height:44px; z-index:32; background:transparent; touch-action:none;";
-    aspect.appendChild(strip);
-  }
-
-  var sY0 = 0, sY1 = 0, dragging = false;
-  document.addEventListener("touchstart", function(e) {
-    var modal = document.getElementById("playerModal");
-    var scrollWrap = document.getElementById("ytWatchScrollContainer");
-    if (!modal || modal.classList.contains("hidden") || !scrollWrap || scrollWrap.classList.contains("hidden")) return;
-    if (!e.touches || e.touches.length !== 1) return;
-    var t = e.target;
-    if (t && (t.tagName === "INPUT" || t.tagName === "BUTTON")) return;
-    var y = e.touches[0].clientY;
-    if (scrollWrap.scrollTop <= 2 && y < 380) {
-      sY0 = y; sY1 = y; dragging = true;
-    }
-  }, { passive: true });
-
-  document.addEventListener("touchmove", function(e) {
-    if (!dragging || !e.touches || !e.touches.length) return;
-    sY1 = e.touches[0].clientY;
-    var dy = sY1 - sY0;
-    if (dy <= 6) return;
-    var modal = document.getElementById("playerModal");
-    var box = document.getElementById("playerModalBox");
-    var scrollWrap = document.getElementById("ytWatchScrollContainer");
-    var prog = Math.min(1, dy / 220);
-    var sc = 1 - (prog * 0.24);
-    if (modal) modal.style.background = "rgba(0,0,0," + (0.94 - prog * 0.65).toFixed(2) + ")";
-    if (scrollWrap) scrollWrap.style.opacity = String(Math.max(0, 1 - prog * 2.4));
-    if (box) {
-      box.style.transition = "none";
-      box.style.transform = "translateY(" + Math.min(dy * 0.85, 260) + "px) scale(" + sc.toFixed(3) + ")";
-      box.style.borderRadius = Math.round(prog * 16) + "px";
-    }
-  }, { passive: true });
-
-  document.addEventListener("touchend", function() {
-    if (!dragging) return;
-    dragging = false;
-    var dy = sY1 - sY0;
-    var modal = document.getElementById("playerModal");
-    var box = document.getElementById("playerModalBox");
-    var scrollWrap = document.getElementById("ytWatchScrollContainer");
-    if (box) box.style.transition = "all 0.22s cubic-bezier(0.22, 1, 0.36, 1)";
-    if (dy > 32) {
-      if (scrollWrap) scrollWrap.style.opacity = "1";
-      window.minimizeToMiniPlayer();
-    } else {
-      if (modal) modal.style.background = "#0f0f0f";
-      if (scrollWrap) scrollWrap.style.opacity = "1";
-      if (box) { box.style.transform = "none"; box.style.borderRadius = "0px"; }
-    }
-    sY0 = 0; sY1 = 0;
-  }, { passive: true });
-
-  var prevOpen = window.openVideoPlayer;
-  window.openVideoPlayer = function(videoId) {
-    if (prevOpen) prevOpen(videoId);
-    ensureTopSwipeStrip();
-    ensureMinimalRedControls();
-    window.wakeRedOverlay1500();
-  };
-
-  ensureTopSwipeStrip();
-  ensureMinimalRedControls();
-})();
-</script>
-<!-- QAAF V12.6 NATIVE MASTER PATCH END -->
-  <script src="./qaaf-users-auth.js?v=105.0"></script>
+  <script src="./qaaf-data.js?v=106.0"></script>
+  <script src="./qaaf-admin.js?v=106.0"></script>
+  <script src="./qaaf-player-ui.js?v=106.0"></script>
+<script src="./qaaf-users-auth.js?v=106.0"></script>
 </body>
 
 </html>
