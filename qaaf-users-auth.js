@@ -5031,3 +5031,138 @@
     };
   }
 })();
+
+
+// === QAAF V108 COMPLETE LIGHT THEME & PASSWORD EYE TOGGLES ===
+(function initQaafV108FullLightThemeAndPasswordEyes() {
+  // =========================================================================
+  // 1. COMPLETE LIGHT MODE (TOTAL WHITE FLIP) + MOBILE HEADER FIT + SHORTS FLAG CLEARANCE
+  // =========================================================================
+  if (!document.getElementById("qaafV108CompleteLightCss")) {
+    var st = document.createElement("style");
+    st.id = "qaafV108CompleteLightCss";
+    st.textContent = [
+      "/* Move Shorts 4 buttons cleanly above YouTube fullscreen arrow */",
+      "#qaafYtShortsMasterOverlay { bottom: 112px !important; right: 8px !important; gap: 10px !important; }",
+      "/* Keep mobile header compact so Kids Lock button never clips on right edge */",
+      "@media (max-width: 440px) { #mainHeader { padding-left: 4px !important; padding-right: 4px !important; gap: 2px !important; } #headerRightControls { gap: 3px !important; } #kidsLockBtn { padding-left: 6px !important; padding-right: 7px !important; } }",
+
+      "/* COMPLETE LIGHT MODE: Flip ALL dark surfaces to crisp White / Light Slate */",
+      "body.qaaf-light-mode, body.qaaf-light-mode.bg-islamic-family, body.qaaf-light-mode.bg-islamic-kids { background: #ffffff !important; background-color: #ffffff !important; color: #0f172a !important; }",
+      "body.qaaf-light-mode #mainHeader { background: rgba(255,255,255,0.98) !important; border-bottom: 1px solid #e2e8f0 !important; }",
+      "body.qaaf-light-mode #brandMainPrefix { color: #0f172a !important; }",
+      "body.qaaf-light-mode #headerDrawerMenuBtn, body.qaaf-light-mode #accountBtn, body.qaaf-light-mode #parentPanelBtn, body.qaaf-light-mode #langDropdownContainer > button { background: #f1f5f9 !important; color: #0f172a !important; border: 1px solid #cbd5e1 !important; }",
+      "body.qaaf-light-mode #qaafHeaderSearchToggleBtn svg circle, body.qaaf-light-mode #qaafHeaderSearchToggleBtn svg line { stroke: #0f172a !important; }",
+      "body.qaaf-light-mode #qaafHeaderSearchToggleBtn svg text { fill: #0f172a !important; }",
+      "body.qaaf-light-mode #categoryBar { background: rgba(255,255,255,0.98) !important; border-bottom: 1px solid #e2e8f0 !important; }",
+      "body.qaaf-light-mode #categoryBar .cat-chip:not(.bg-emerald-500), body.qaaf-light-mode #categoryBar .sort-chip:not(.bg-emerald-600) { background: #f1f5f9 !important; color: #0f172a !important; border: 1px solid #e2e8f0 !important; }",
+
+      "/* Bottom Mobile Nav Bar -> Pure White in Light Mode */",
+      "body.qaaf-light-mode #qaafMobileBottomNav, body.qaaf-light-mode #qaafMobileBottomNav > div { background: #ffffff !important; background-color: #ffffff !important; border-top: 1px solid #cbd5e1 !important; }",
+      "body.qaaf-light-mode #qaafMobileBottomNav button { color: #475569 !important; }",
+      "body.qaaf-light-mode #qaafMobileBottomNav button.text-white, body.qaaf-light-mode #qaafMobileBottomNav button.text-emerald-400 { color: #164e3a !important; font-weight: 800 !important; }",
+
+      "/* Left Sidebar Drawer -> Every single dark card/button flipped cleanly */",
+      "body.qaaf-light-mode #qaafLeftSidebarDrawer { background: #ffffff !important; color: #0f172a !important; border-right: 1px solid #cbd5e1 !important; }",
+      "body.qaaf-light-mode #qaafLeftSidebarDrawer > div:first-child { background: #f8fafc !important; border-bottom: 1px solid #e2e8f0 !important; }",
+      "body.qaaf-light-mode #drawerCloseBtn { background: #e2e8f0 !important; color: #0f172a !important; }",
+      "body.qaaf-light-mode #qaafLeftSidebarDrawer .rounded-xl, body.qaaf-light-mode #qaafLeftSidebarDrawer .bg-slate-900\\/90, body.qaaf-light-mode #qaafLeftSidebarDrawer .bg-black\\/40, body.qaaf-light-mode #qaafDrawerExtraMenuItems > button, body.qaaf-light-mode #qaafDrawerExtraMenuItems > a, body.qaaf-light-mode #qaafDrawerExtraMenuItems > div { background: #f1f5f9 !important; background-image: none !important; border: 1px solid #cbd5e1 !important; color: #0f172a !important; }",
+      "body.qaaf-light-mode #qaafLeftSidebarDrawer #drawerSub_playlists, body.qaaf-light-mode #qaafLeftSidebarDrawer #drawerSub_history { background: #ffffff !important; border-top: 1px solid #e2e8f0 !important; }",
+      "body.qaaf-light-mode #qaafLeftSidebarDrawer #drawerSub_playlists *, body.qaaf-light-mode #qaafLeftSidebarDrawer #drawerSub_history * { color: #0f172a !important; }",
+      "body.qaaf-light-mode #qaafLeftSidebarDrawer #drawerBottomAuthArea { background: #f8fafc !important; border-top: 1px solid #e2e8f0 !important; }",
+      "body.qaaf-light-mode #qaafLeftSidebarDrawer #drawerAuthModalBtn { background: #164e3a !important; color: #ffffff !important; }",
+      "body.qaaf-light-mode #qaafLeftSidebarDrawer #drawerAuthModalBtn span { color: #ffffff !important; }",
+      "body.qaaf-light-mode #qaafLeftSidebarDrawer #qaafThemeToggleBtn { background: #0f172a !important; color: #ffffff !important; border-color: #0f172a !important; }",
+      "body.qaaf-light-mode #qaafLeftSidebarDrawer #qaafThemeToggleBtn span { color: #ffffff !important; }",
+
+      "/* Video Watch Screen & Up Next -> White in Light Mode */",
+      "body.qaaf-light-mode #playerModal:not(.qaaf-shorts-mode), body.qaaf-light-mode #playerModal:not(.qaaf-shorts-mode) #playerModalBox, body.qaaf-light-mode #ytWatchScrollContainer { background: #ffffff !important; color: #0f172a !important; }",
+      "body.qaaf-light-mode #playingTitle, body.qaaf-light-mode #playingChannelName, body.qaaf-light-mode #ytWatchScrollContainer h4, body.qaaf-light-mode #ytWatchScrollContainer h5 { color: #0f172a !important; }",
+      "body.qaaf-light-mode #ytCleanWatchHeader button { background: #f1f5f9 !important; color: #0f172a !important; border: 1px solid #cbd5e1 !important; }",
+      "body.qaaf-light-mode #ytCleanWatchHeader button span { color: #0f172a !important; }",
+      "body.qaaf-light-mode #ytCleanWatchHeader .bg-\\[\\#1e1e1e\\], body.qaaf-light-mode #expandedCommentsDrawer, body.qaaf-light-mode #watchUpNextGrid > a { background: #f8fafc !important; border: 1px solid #e2e8f0 !important; color: #0f172a !important; }",
+      "body.qaaf-light-mode #latestCommentPreviewText, body.qaaf-light-mode #playingViewsText { color: #475569 !important; }",
+      "body.qaaf-light-mode #qaafUpNextFilterPillsBar button { background: #e2e8f0 !important; color: #0f172a !important; }",
+      "body.qaaf-light-mode #qaafUpNextFilterPillsBar button.bg-white { background: #0f172a !important; color: #ffffff !important; }",
+
+      "/* Login, Parent Settings & Kids Timer Modals -> Clean White in Light Mode */",
+      "body.qaaf-light-mode #accountModal > div, body.qaaf-light-mode #parentModal > div, body.qaaf-light-mode #kidsTimerSetupModal > div, body.qaaf-light-mode #flagVideoModal > div, body.qaaf-light-mode #playlistSelectorModal > div, body.qaaf-light-mode #langDropdownMenu, body.qaaf-light-mode #allChannelsDropdownPopup { background: #ffffff !important; color: #0f172a !important; border-color: #cbd5e1 !important; }",
+      "body.qaaf-light-mode #accountModal h3, body.qaaf-light-mode #accountModal label, body.qaaf-light-mode #parentModal h3, body.qaaf-light-mode #parentModal h4, body.qaaf-light-mode #kidsTimerSetupModal h3 { color: #0f172a !important; }",
+      "body.qaaf-light-mode #accountModal input, body.qaaf-light-mode #parentModal input, body.qaaf-light-mode #kidsTimerSetupModal input, body.qaaf-light-mode #langDropdownMenu select { background: #f8fafc !important; color: #0f172a !important; border-color: #cbd5e1 !important; }",
+      "body.qaaf-light-mode #regionalPromoBar { background: #f1f5f9 !important; border-top: 1px solid #cbd5e1 !important; color: #0f172a !important; }",
+      "body.qaaf-light-mode #promoTickerLink { color: #0f172a !important; }"
+    ].join("\n");
+    document.head.appendChild(st);
+  }
+
+  // =========================================================================
+  // 2. UNIVERSAL SHOW / HIDE EYE ICON ON ALL PASSWORD & KIDS PIN INPUTS
+  // =========================================================================
+  var EYE_SHOW_SVG = "<svg viewBox=\x270 0 24 24\x27 width=\x2717\x27 height=\x2717\x27 fill=\x27none\x27 stroke=\x27currentColor\x27 stroke-width=\x272\x27 stroke-linecap=\x27round\x27 stroke-linejoin=\x27round\x27><path d=\x27M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z\x27/><circle cx=\x2712\x27 cy=\x2712\x27 r=\x273\x27/></svg>";
+  var EYE_HIDE_SVG = "<svg viewBox=\x270 0 24 24\x27 width=\x2717\x27 height=\x2717\x27 fill=\x27none\x27 stroke=\x27currentColor\x27 stroke-width=\x272\x27 stroke-linecap=\x27round\x27 stroke-linejoin=\x27round\x27><path d=\x27M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24\x27/><line x1=\x271\x27 y1=\x271\x27 x2=\x2723\x27 y2=\x2723\x27/></svg>";
+
+  function attachEyeToggleToInput(inp) {
+    if (!inp || inp.getAttribute("data-eye-attached") === "1") return;
+    inp.setAttribute("data-eye-attached", "1");
+
+    var isDiscMasked = (inp.style.webkitTextSecurity === "disc" || (inp.getAttribute("style") || "").indexOf("text-security") !== -1);
+    var isPassType = (inp.type === "password");
+    if (!isDiscMasked && !isPassType) return;
+
+    var wrap = document.createElement("div");
+    wrap.style.cssText = "position:relative; display:inline-flex; align-items:center; width:" + (inp.classList.contains("w-full") ? "100%" : (inp.classList.contains("w-48") ? "12rem" : (inp.classList.contains("w-44") ? "11rem" : "100%"))) + "; margin:0 auto;";
+    if (inp.classList.contains("flex-1")) wrap.classList.add("flex-1");
+
+    inp.parentNode.insertBefore(wrap, inp);
+    wrap.appendChild(inp);
+    inp.style.paddingRight = "38px";
+    inp.style.width = "100%";
+
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.title = "Show / Hide";
+    btn.setAttribute("aria-label", "Toggle Password Visibility");
+    btn.style.cssText = "position:absolute; right:8px; top:50%; transform:translateY(-50%); background:transparent; border:none; color:#94a3b8; cursor:pointer; padding:4px; display:flex; align-items:center; justify-content:center; z-index:5;";
+    btn.innerHTML = EYE_SHOW_SVG;
+
+    var revealed = false;
+    btn.onclick = function(ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      revealed = !revealed;
+      if (isPassType) {
+        inp.type = revealed ? "text" : "password";
+      }
+      if (isDiscMasked || inp.style.webkitTextSecurity) {
+        inp.style.webkitTextSecurity = revealed ? "none" : "disc";
+        inp.style.textSecurity = revealed ? "none" : "disc";
+      }
+      btn.innerHTML = revealed ? EYE_HIDE_SVG : EYE_SHOW_SVG;
+      btn.style.color = revealed ? "#10b981" : "#94a3b8";
+    };
+    wrap.appendChild(btn);
+  }
+
+  function scanAndAttachPasswordEyes() {
+    var targetIds = ["userPasswordInput", "signupPassInput", "signupPinInput", "resetNewPassDirectInput", "pinInput", "newPinInput", "confirmPinInput", "timeUpParentPinInput", "googleQuickPinInput"];
+    targetIds.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) attachEyeToggleToInput(el);
+    });
+    document.querySelectorAll("input[type=\x27password\x27], input[style*=\x27text-security\x27]").forEach(function(el) {
+      attachEyeToggleToInput(el);
+    });
+  }
+
+  scanAndAttachPasswordEyes();
+  ["openAccountModal", "openParentalGate", "openKidsLockOrTimer", "openInAppPasswordRecovery", "switchAuthModalTab"].forEach(function(fn) {
+    var orig = window[fn];
+    if (typeof orig === "function") {
+      window[fn] = function() {
+        var res = orig.apply(this, arguments);
+        setTimeout(scanAndAttachPasswordEyes, 60);
+        return res;
+      };
+    }
+  });
+})();
