@@ -4935,3 +4935,99 @@
   var oldVol = document.getElementById("qaafBottomSeekVolBar");
   if (oldVol) oldVol.remove();
 })();
+
+
+// === QAAF V107 FIX KIDS LOCK & PIN MODAL Z-INDEX ===
+(function initQaafV107FixKidsLockAndPinModal() {
+  if (!document.getElementById("qaafV107KidsZIndexCss")) {
+    var st = document.createElement("style");
+    st.id = "qaafV107KidsZIndexCss";
+    st.textContent = "#kidsTimerSetupModal, #parentModal, #kidsTimeUpLockOverlay, #accountModal { z-index: 1350 !important; }";
+    document.head.appendChild(st);
+  }
+
+  window.openKidsLockOrTimer = function(ev) {
+    if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+    if (!isKidsLocked) {
+      if (!currentUserEmail) {
+        if (typeof closeVideoPlayer === "function") closeVideoPlayer();
+        if (typeof openAccountModal === "function") openAccountModal("Please Sign In or Continue with Gmail to use Kids Mode & PIN!");
+        var am = document.getElementById("accountModal");
+        if (am) { am.classList.remove("hidden"); am.style.display = "flex"; }
+        return;
+      }
+      if (typeof closeVideoPlayer === "function") closeVideoPlayer();
+      var now = new Date();
+      var later = new Date(now.getTime() + 15 * 60000);
+      var stInp = document.getElementById("kidsClockStartInput");
+      var enInp = document.getElementById("kidsClockEndInput");
+      if (stInp) stInp.value = String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
+      if (enInp) enInp.value = String(later.getHours()).padStart(2, "0") + ":" + String(later.getMinutes()).padStart(2, "0");
+      var km = document.getElementById("kidsTimerSetupModal");
+      if (km) {
+        km.classList.remove("hidden");
+        km.style.display = "flex";
+      }
+    } else {
+      if (typeof openParentalGate === "function") openParentalGate("unlock");
+      var pm = document.getElementById("parentModal");
+      if (pm) {
+        pm.classList.remove("hidden");
+        pm.style.display = "flex";
+      }
+    }
+  };
+
+  window.toggleKidsMode = function(ev) {
+    window.openKidsLockOrTimer(ev);
+  };
+
+  var origStartK = window.startKidsModeWithTimer;
+  window.startKidsModeWithTimer = function(minutes, isRestoring) {
+    var km = document.getElementById("kidsTimerSetupModal");
+    if (km) { km.classList.add("hidden"); km.style.display = "none"; }
+    if (origStartK) origStartK.apply(this, arguments);
+  };
+
+  var closeKmBtn = document.getElementById("closeKidsTimerModalBtn");
+  if (closeKmBtn) {
+    closeKmBtn.onclick = function() {
+      var km = document.getElementById("kidsTimerSetupModal");
+      if (km) { km.classList.add("hidden"); km.style.display = "none"; }
+    };
+  }
+
+  var origClosePm = window.closeParentModal;
+  window.closeParentModal = function() {
+    var pm = document.getElementById("parentModal");
+    if (pm) { pm.classList.add("hidden"); pm.style.display = "none"; }
+    if (origClosePm) origClosePm.apply(this, arguments);
+  };
+
+  var origOpenPg = window.openParentalGate;
+  window.openParentalGate = function(purpose) {
+    if (origOpenPg) origOpenPg.apply(this, arguments);
+    var pm = document.getElementById("parentModal");
+    if (pm) { pm.classList.remove("hidden"); pm.style.display = "flex"; }
+  };
+
+  var origCloseAcc = window.closeAccountModal;
+  window.closeAccountModal = function() {
+    var am = document.getElementById("accountModal");
+    if (am) { am.classList.add("hidden"); am.style.display = "none"; }
+    if (origCloseAcc) origCloseAcc.apply(this, arguments);
+  };
+
+  var kBtn = document.getElementById("kidsLockBtn");
+  if (kBtn) {
+    kBtn.removeAttribute("onclick");
+    kBtn.onclick = function(ev) { window.toggleKidsMode(ev); };
+  }
+  var drwKBtn = document.getElementById("drawerKidsTimerBtn");
+  if (drwKBtn) {
+    drwKBtn.onclick = function(ev) {
+      if (typeof closeQaafProfileDrawer === "function") closeQaafProfileDrawer();
+      window.openKidsLockOrTimer(ev);
+    };
+  }
+})();
