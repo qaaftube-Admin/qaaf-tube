@@ -416,3 +416,10 @@ img.qaaf-custom-emoji {
   -webkit-text-security: disc !important;
   text-security: disc !important;
 }
+
+
+/* Allow Eye Icon to reveal masked Password & PIN inputs */
+input.qaaf-pass-revealed {
+  -webkit-text-security: none !important;
+  text-security: none !important;
+}

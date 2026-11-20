@@ -5166,3 +5166,248 @@
     }
   });
 })();
+
+
+// === QAAF V109 SPONSOR OPTIONAL BOXES, FOOTER SWAP & REAL PASS EYES ===
+(function initQaafV109SponsorBoxesFooterSwapAndRealPassEyes() {
+  // =========================================================================
+  // 1. CSS FOR SHORTS FLAG CLEARANCE & FOOTER/SPONSOR SWAP
+  // =========================================================================
+  if (!document.getElementById("qaafV109FooterAndSponsorCss")) {
+    var st = document.createElement("style");
+    st.id = "qaafV109FooterAndSponsorCss";
+    st.textContent = [
+      "#qaafYtShortsMasterOverlay { bottom: 128px !important; right: 8px !important; gap: 10px !important; }",
+      "#regionalPromoBar { display: flex !important; position: fixed !important; left: 0 !important; right: 0 !important; bottom: 0 !important; z-index: 155 !important; transition: transform 0.25s ease, opacity 0.25s ease !important; }",
+      "#regionalPromoBar.qaaf-promo-hidden { transform: translateY(115%) !important; opacity: 0 !important; pointer-events: none !important; }",
+      "body.qaaf-player-open #regionalPromoBar, body.qaaf-player-open #qaafMobileBottomNav, body.bg-islamic-kids #regionalPromoBar { transform: translateY(115%) !important; opacity: 0 !important; pointer-events: none !important; }",
+      "#qaafMobileBottomNav { z-index: 165 !important; transition: transform 0.25s ease, opacity 0.25s ease !important; }",
+      "#qaafMobileBottomNav.qaaf-nav-hidden { transform: translateY(115%) !important; opacity: 0 !important; pointer-events: none !important; }"
+    ].join("\n");
+    document.head.appendChild(st);
+  }
+
+  // =========================================================================
+  // 2. OPTIONAL LEFT & RIGHT FIXED BOXES IN SPONSOR BAR + ADMIN CONTROLS
+  // =========================================================================
+  function getSponsorBoxConfig() {
+    var def = { leftEnabled: false, leftText: "", leftUrl: "", rightEnabled: true, rightText: "📩 Contact", rightUrl: "" };
+    try {
+      var saved = JSON.parse(localStorage.getItem("qaaf_sponsor_boxes_cfg_v1") || "null");
+      if (saved && typeof saved === "object") return Object.assign(def, saved);
+    } catch (e) {}
+    if (typeof regionalPromos !== "undefined" && regionalPromos && regionalPromos._boxConfig) {
+      return Object.assign(def, regionalPromos._boxConfig);
+    }
+    return def;
+  }
+
+  window.applySponsorFixedBoxesUI = function() {
+    var bar = document.getElementById("regionalPromoBar");
+    if (!bar) return;
+    if (isKidsLocked || !isPromoBarEnabled) {
+      bar.classList.add("qaaf-promo-hidden");
+      return;
+    }
+    var cfg = getSponsorBoxConfig();
+
+    // Left Fixed Box (Optional)
+    var leftTag = document.getElementById("promoRegionTag");
+    if (leftTag) {
+      if (cfg.leftEnabled && cfg.leftText && cfg.leftText.trim()) {
+        leftTag.style.display = "inline-flex";
+        leftTag.style.cursor = cfg.leftUrl ? "pointer" : "default";
+        leftTag.innerText = cfg.leftText.trim();
+        leftTag.onclick = cfg.leftUrl ? function() { window.open(cfg.leftUrl, "_blank", "noopener"); } : null;
+      } else {
+        leftTag.style.display = "none";
+      }
+    }
+
+    // Right Fixed Box / Contact Button (Optional)
+    var rightBtn = bar.querySelector("button[onclick*=\x27openSponsorContactModal\x27], #qaafPromoRightFixedBtn");
+    if (rightBtn) {
+      rightBtn.id = "qaafPromoRightFixedBtn";
+      if (cfg.rightEnabled && cfg.rightText && cfg.rightText.trim()) {
+        rightBtn.style.display = "inline-flex";
+        rightBtn.innerText = cfg.rightText.trim();
+        rightBtn.removeAttribute("onclick");
+        rightBtn.onclick = function() {
+          if (cfg.rightUrl && cfg.rightUrl.trim()) window.open(cfg.rightUrl.trim(), "_blank", "noopener");
+          else if (typeof openSponsorContactModal === "function") openSponsorContactModal();
+        };
+      } else {
+        rightBtn.style.display = "none";
+      }
+    }
+  };
+
+  window.adminSaveSponsorFixedBoxes = function() {
+    var cfg = {
+      leftEnabled: !!(document.getElementById("admLeftBoxToggle") && document.getElementById("admLeftBoxToggle").checked),
+      leftText: (document.getElementById("admLeftBoxText") ? document.getElementById("admLeftBoxText").value : "").trim(),
+      leftUrl: (document.getElementById("admLeftBoxUrl") ? document.getElementById("admLeftBoxUrl").value : "").trim(),
+      rightEnabled: !!(document.getElementById("admRightBoxToggle") && document.getElementById("admRightBoxToggle").checked),
+      rightText: (document.getElementById("admRightBoxText") ? document.getElementById("admRightBoxText").value : "").trim(),
+      rightUrl: (document.getElementById("admRightBoxUrl") ? document.getElementById("admRightBoxUrl").value : "").trim()
+    };
+    localStorage.setItem("qaaf_sponsor_boxes_cfg_v1", JSON.stringify(cfg));
+    if (typeof regionalPromos !== "undefined" && regionalPromos) {
+      regionalPromos._boxConfig = cfg;
+      localStorage.setItem("qaaf_regional_promos_v7", JSON.stringify(regionalPromos));
+    }
+    window.applySponsorFixedBoxesUI();
+    if (window.qaafCloudSync) window.qaafCloudSync.pushState("Updated Sponsor Left/Right Fixed Boxes");
+    if (typeof showSyncToast === "function") showSyncToast("✅ Sponsor Fixed Boxes updated live!");
+  };
+
+  function injectSponsorBoxControlsInAdmin() {
+    var spPane = document.getElementById("admPane_sponsors");
+    if (!spPane || document.getElementById("admSponsorFixedBoxesCard")) return;
+    var cfg = getSponsorBoxConfig();
+    var card = document.createElement("div");
+    card.id = "admSponsorFixedBoxesCard";
+    card.className = "bg-[#141923] border border-emerald-500/40 rounded-2xl p-4 space-y-3 text-xs mt-3";
+    card.innerHTML =
+      "<div class=\x22border-b border-slate-800 pb-2\x22><h5 class=\x22font-extrabold text-emerald-300\x22>🎛️ Optional Left &amp; Right Fixed Boxes on Sponsor Bar</h5><p class=\x22text-[11px] text-slate-400 mt-0.5\x22>Turn Left or Right fixed boxes ON/OFF anytime. Leave OFF for a clean full-width moving ticker.</p></div>" +
+      "<div class=\x22grid grid-cols-1 sm:grid-cols-2 gap-3\x22>" +
+        "<div class=\x22bg-black/60 border border-slate-800 rounded-xl p-3 space-y-2\x22>" +
+          "<label class=\x22flex items-center justify-between font-extrabold text-amber-300 cursor-pointer\x22><span>⬅️ Left Fixed Box</span><input id=\x22admLeftBoxToggle\x22 type=\x22checkbox\x22 " + (cfg.leftEnabled ? "checked" : "") + " class=\x22accent-emerald-500 w-4 h-4\x22 /></label>" +
+          "<input id=\x22admLeftBoxText\x22 type=\x22text\x22 value=\x22" + (cfg.leftText || "") + "\x22 placeholder=\x22Left box text (optional)\x22 class=\x22w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white\x22 />" +
+          "<input id=\x22admLeftBoxUrl\x22 type=\x22text\x22 value=\x22" + (cfg.leftUrl || "") + "\x22 placeholder=\x22Optional click URL (https://...)\x22 class=\x22w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white\x22 />" +
+        "</div>" +
+        "<div class=\x22bg-black/60 border border-slate-800 rounded-xl p-3 space-y-2\x22>" +
+          "<label class=\x22flex items-center justify-between font-extrabold text-emerald-300 cursor-pointer\x22><span>➡️ Right Fixed Box / Contact</span><input id=\x22admRightBoxToggle\x22 type=\x22checkbox\x22 " + (cfg.rightEnabled ? "checked" : "") + " class=\x22accent-emerald-500 w-4 h-4\x22 /></label>" +
+          "<input id=\x22admRightBoxText\x22 type=\x22text\x22 value=\x22" + (cfg.rightText || "") + "\x22 placeholder=\x22e.g. 📩 Contact\x22 class=\x22w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white\x22 />" +
+          "<input id=\x22admRightBoxUrl\x22 type=\x22text\x22 value=\x22" + (cfg.rightUrl || "") + "\x22 placeholder=\x22Leave blank to open Contact form\x22 class=\x22w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white\x22 />" +
+        "</div>" +
+      "</div>" +
+      "<button type=\x22button\x22 onclick=\x22window.adminSaveSponsorFixedBoxes()\x22 class=\x22w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-xl font-extrabold shadow cursor-pointer\x22>💾 Save Sponsor Fixed Boxes</button>";
+    spPane.appendChild(card);
+  }
+
+  // =========================================================================
+  // 3. SMOOTH FOOTER SWAP: MOBILE TOP -> BOTTOM NAV; SCROLL DOWN -> SPONSOR BAR
+  // =========================================================================
+  var lastSwapY = 0;
+  var swapLockUntil = 0;
+  function syncBottomNavAndSponsorSwap(forceState) {
+    var nav = document.getElementById("qaafMobileBottomNav");
+    var promo = document.getElementById("regionalPromoBar");
+    var isMobile = window.innerWidth < 768;
+    var modal = document.getElementById("playerModal");
+    var isPlayerOpen = modal && !modal.classList.contains("hidden");
+    if (promo) promo.classList.remove("hidden");
+    window.applySponsorFixedBoxesUI();
+
+    if (isPlayerOpen) {
+      if (nav) nav.classList.add("qaaf-nav-hidden");
+      if (promo) promo.classList.add("qaaf-promo-hidden");
+      return;
+    }
+
+    if (!isMobile) {
+      if (nav) nav.classList.add("qaaf-nav-hidden");
+      if (promo) {
+        if (!isKidsLocked && isPromoBarEnabled) promo.classList.remove("qaaf-promo-hidden");
+        else promo.classList.add("qaaf-promo-hidden");
+      }
+      return;
+    }
+
+    // Mobile: Stage 1 (Top / Scroll Up) = Bottom Nav visible, Sponsor hidden. Scroll Down = Bottom Nav hides, Sponsor shows!
+    var showSponsorNow = (forceState === "sponsor");
+    if (forceState === "auto") {
+      var curY = window.scrollY || document.documentElement.scrollTop || 0;
+      if (curY < 40) showSponsorNow = false;
+      else if (curY > lastSwapY + 14) showSponsorNow = true;
+      else if (curY < lastSwapY - 14) showSponsorNow = false;
+      else return;
+      lastSwapY = curY;
+      if (Date.now() < swapLockUntil) return;
+      swapLockUntil = Date.now() + 260;
+    }
+
+    if (showSponsorNow && !isKidsLocked && isPromoBarEnabled) {
+      if (nav) nav.classList.add("qaaf-nav-hidden");
+      if (promo) promo.classList.remove("qaaf-promo-hidden");
+    } else {
+      if (nav) nav.classList.remove("qaaf-nav-hidden");
+      if (promo) promo.classList.add("qaaf-promo-hidden");
+    }
+  }
+
+  window.addEventListener("scroll", function() { syncBottomNavAndSponsorSwap("auto"); }, { passive: true });
+  window.addEventListener("resize", function() { syncBottomNavAndSponsorSwap("nav"); }, { passive: true });
+  var prevCloseV109 = window.closeVideoPlayer;
+  window.closeVideoPlayer = function() {
+    if (prevCloseV109) prevCloseV109.apply(this, arguments);
+    setTimeout(function() { syncBottomNavAndSponsorSwap("nav"); }, 60);
+  };
+  var prevSyncPromo109 = window.syncRegionalPromoBar;
+  window.syncRegionalPromoBar = function() {
+    if (prevSyncPromo109) prevSyncPromo109.apply(this, arguments);
+    window.applySponsorFixedBoxesUI();
+    syncBottomNavAndSponsorSwap("nav");
+  };
+  setTimeout(function() { syncBottomNavAndSponsorSwap("nav"); }, 450);
+
+  // =========================================================================
+  // 4. ATTACH WORKING SHOW/HIDE EYE TO ALL REAL PASSWORD & PIN INPUT IDs
+  // =========================================================================
+  var EYE_OPEN = "<svg viewBox=\x270 0 24 24\x27 width=\x2717\x27 height=\x2717\x27 fill=\x27none\x27 stroke=\x27currentColor\x27 stroke-width=\x272\x27 stroke-linecap=\x27round\x27 stroke-linejoin=\x27round\x27><path d=\x27M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z\x27/><circle cx=\x2712\x27 cy=\x2712\x27 r=\x273\x27/></svg>";
+  var EYE_OFF = "<svg viewBox=\x270 0 24 24\x27 width=\x2717\x27 height=\x2717\x27 fill=\x27none\x27 stroke=\x27currentColor\x27 stroke-width=\x272\x27 stroke-linecap=\x27round\x27 stroke-linejoin=\x27round\x27><path d=\x27M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24\x27/><line x1=\x271\x27 y1=\x271\x27 x2=\x2723\x27 y2=\x2723\x27/></svg>";
+
+  function bindAllRealPasswordAndPinEyes() {
+    var realIds = ["userPassInput", "regPassInput", "regPinInput", "pinInput", "newPinInput", "confirmPinInput", "timeUpParentPinInput", "resetNewPassDirectInput", "googleQuickPinInput"];
+    realIds.forEach(function(id) {
+      var inp = document.getElementById(id);
+      if (!inp || inp.getAttribute("data-v109-eye") === "1") return;
+      inp.setAttribute("data-v109-eye", "1");
+      var existingWrap = inp.parentNode;
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.title = "Show / Hide";
+      btn.style.cssText = "position:absolute; right:8px; top:50%; transform:translateY(-50%); background:transparent; border:none; color:#94a3b8; cursor:pointer; padding:4px; display:flex; align-items:center; justify-content:center; z-index:10;";
+      btn.innerHTML = EYE_OPEN;
+
+      if (!existingWrap || getComputedStyle(existingWrap).position !== "relative" || existingWrap.children.length > 2) {
+        var wrap = document.createElement("div");
+        wrap.style.cssText = "position:relative; display:inline-flex; align-items:center; width:" + (inp.classList.contains("w-48") ? "12rem" : (inp.classList.contains("w-44") ? "11rem" : "100%")) + "; margin:0 auto;";
+        if (inp.classList.contains("flex-1")) wrap.classList.add("flex-1");
+        inp.parentNode.insertBefore(wrap, inp);
+        wrap.appendChild(inp);
+        existingWrap = wrap;
+      }
+      inp.style.paddingRight = "38px";
+      inp.style.width = "100%";
+      existingWrap.appendChild(btn);
+
+      btn.onclick = function(ev) {
+        ev.preventDefault(); ev.stopPropagation();
+        var nowRevealed = inp.classList.toggle("qaaf-pass-revealed");
+        if (inp.type === "password" && nowRevealed) { inp.dataset.wasPwd = "1"; inp.type = "text"; }
+        else if (inp.dataset.wasPwd === "1" && !nowRevealed) { inp.type = "password"; }
+        btn.innerHTML = nowRevealed ? EYE_OFF : EYE_OPEN;
+        btn.style.color = nowRevealed ? "#10b981" : "#94a3b8";
+      };
+    });
+  }
+
+  bindAllRealPasswordAndPinEyes();
+  var prevAdm109 = window.openAdminModal;
+  window.openAdminModal = function() {
+    if (prevAdm109) prevAdm109.apply(this, arguments);
+    setTimeout(injectSponsorBoxControlsInAdmin, 80);
+  };
+  ["openAccountModal", "openParentalGate", "openKidsLockOrTimer", "switchAuthModalTab"].forEach(function(fn) {
+    var orig = window[fn];
+    if (typeof orig === "function") {
+      window[fn] = function() {
+        var r = orig.apply(this, arguments);
+        setTimeout(bindAllRealPasswordAndPinEyes, 60);
+        return r;
+      };
+    }
+  });
+})();
