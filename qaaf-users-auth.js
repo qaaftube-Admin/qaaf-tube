@@ -4576,3 +4576,148 @@
     if (Date.now() - lastTs > 12 * 3600 * 1000) window.scanApprovedChannelsForNewVideos(false);
   }, 4000);
 })();
+
+
+// === QAAF V103 SHORTS COMMENTS SHEET & CLICKABLE CHANNELS ===
+(function initQaafV103ShortsCommentsAndClickableChannels() {
+  function sendYtPlayerCmd(funcName) {
+    var ifr = document.getElementById("ytIframe");
+    if (ifr && ifr.contentWindow) {
+      ifr.contentWindow.postMessage(JSON.stringify({ event: "command", func: funcName, args: [] }), "*");
+    }
+  }
+
+  // =========================================================================
+  // 1. YOUTUBE-STYLE DEDICATED SHORTS COMMENTS SHEET (PAUSES VIDEO & CLOSES CLEANLY)
+  // =========================================================================
+  function getCommentsListForVideo(vidId) {
+    var key = "qaaf_comments_" + vidId;
+    try {
+      var arr = JSON.parse(localStorage.getItem(key) || "[]");
+      if (Array.isArray(arr) && arr.length) return arr;
+    } catch (e) {}
+    return [{ author: "QAAF Family", text: "MashaAllah, very beneficial and 100% safe for our kids! JazakAllah Khair.", time: "Featured" }];
+  }
+
+  window.submitQaafShortComment = function() {
+    var inp = document.getElementById("qaafShortCommentInput");
+    if (!inp || !currentPlayingVideoId) return;
+    var txt = inp.value.trim();
+    if (!txt) return;
+    var key = "qaaf_comments_" + currentPlayingVideoId;
+    var list = getCommentsListForVideo(currentPlayingVideoId);
+    var authorName = (typeof currentUserEmail !== "undefined" && currentUserEmail) ? currentUserEmail.split("@")[0] : "Guest Family";
+    list.unshift({ author: authorName, text: txt, time: "Just now" });
+    try { localStorage.setItem(key, JSON.stringify(list)); } catch (e) {}
+    inp.value = "";
+    window.renderQaafShortCommentsList();
+  };
+
+  window.renderQaafShortCommentsList = function() {
+    var listBox = document.getElementById("qaafShortCommentsBody");
+    var cntEl = document.getElementById("qaafShortCommentsCount");
+    if (!listBox || !currentPlayingVideoId) return;
+    var list = getCommentsListForVideo(currentPlayingVideoId);
+    if (cntEl) cntEl.innerText = String(list.length);
+    listBox.innerHTML = list.map(function(c) {
+      var initCh = String(c.author || "Q").charAt(0).toUpperCase();
+      return "<div class=\x22flex items-start gap-2.5 py-2.5 border-b border-slate-800/80\x22>" +
+        "<div class=\x22w-8 h-8 rounded-full bg-[#164e3a] text-white font-extrabold text-xs flex items-center justify-center shrink-0\x22>" + initCh + "</div>" +
+        "<div class=\x22min-w-0 flex-1\x22>" +
+          "<div class=\x22flex items-center gap-2\x22><span class=\x22text-xs font-extrabold text-white\x22>@" + c.author + "</span><span class=\x22text-[10px] text-slate-400\x22>" + (c.time || "") + "</span></div>" +
+          "<p class=\x22text-xs text-slate-200 mt-0.5 leading-relaxed break-words\x22>" + c.text + "</p>" +
+        "</div>" +
+      "</div>";
+    }).join("");
+  };
+
+  window.closeShortCommentsSheet = function(e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    var backdrop = document.getElementById("qaafShortCommentsBackdrop");
+    if (backdrop) backdrop.classList.add("hidden");
+    window.qaafShortPlaying = true;
+    sendYtPlayerCmd("playVideo");
+  };
+
+  window.openShortCommentsPopup = function(e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    var box = document.getElementById("playerModalBox");
+    if (!box) return;
+    var oldScroll = document.getElementById("ytWatchScrollContainer");
+    if (oldScroll) oldScroll.classList.add("hidden");
+
+    var backdrop = document.getElementById("qaafShortCommentsBackdrop");
+    if (!backdrop) {
+      backdrop = document.createElement("div");
+      backdrop.id = "qaafShortCommentsBackdrop";
+      backdrop.className = "hidden";
+      box.appendChild(backdrop);
+    }
+
+    var isOpen = !backdrop.classList.contains("hidden");
+    if (isOpen) {
+      window.closeShortCommentsSheet();
+      return;
+    }
+
+    // Pause video like YouTube Shorts when Comments open
+    window.qaafShortPlaying = false;
+    sendYtPlayerCmd("pauseVideo");
+
+    backdrop.style.cssText = "position:absolute; inset:0; z-index:95; background:rgba(0,0,0,0.45); display:flex; flex-direction:column; justify-content:flex-end;";
+    backdrop.onclick = function(ev) { if (ev.target === backdrop) window.closeShortCommentsSheet(ev); };
+    backdrop.innerHTML =
+      "<div onclick=\x27event.stopPropagation()\x27 style=\x27background:#161920; border-top:1px solid rgba(255,255,255,0.14); border-radius:20px 20px 0 0; height:64%; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 -10px 30px rgba(0,0,0,0.8);\x27>" +
+        "<div style=\x27display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid rgba(255,255,255,0.1); shrink:0;\x27>" +
+          "<div style=\x27display:flex; align-items:center; gap:8px;\x27><span style=\x27font-size:14px; font-weight:800; color:#fff;\x27>Comments</span><span id=\x27qaafShortCommentsCount\x27 style=\x27font-size:12px; color:#94a3b8; font-weight:700;\x27>1</span></div>" +
+          "<button type=\x27button\x27 onclick=\x27window.closeShortCommentsSheet(event)\x27 style=\x27width:30px; height:30px; border-radius:999px; background:rgba(255,255,255,0.1); color:#fff; border:none; font-size:14px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center;\x27>✕</button>" +
+        "</div>" +
+        "<div id=\x27qaafShortCommentsBody\x27 style=\x27flex:1 1 auto; overflow-y:auto; padding:8px 16px;\x27></div>" +
+        "<div style=\x27padding:10px 12px; border-top:1px solid rgba(255,255,255,0.1); background:#0f1218; display:flex; align-items:center; gap:8px;\x27>" +
+          "<input id=\x27qaafShortCommentInput\x27 type=\x27text\x27 placeholder=\x27Add a comment...\x27 onkeydown=\x27if(event.key===\x22Enter\x22)window.submitQaafShortComment()\x27 style=\x27flex:1; background:#1c212b; border:1px solid #334155; border-radius:999px; padding:8px 14px; font-size:12px; color:#fff; outline:none;\x27 />" +
+          "<button type=\x27button\x27 onclick=\x27window.submitQaafShortComment()\x27 style=\x27background:#164e3a; color:#fff; border:none; border-radius:999px; padding:8px 14px; font-size:12px; font-weight:800; cursor:pointer;\x27>Post</button>" +
+        "</div>" +
+      "</div>";
+    backdrop.classList.remove("hidden");
+    window.renderQaafShortCommentsList();
+  };
+
+  // =========================================================================
+  // 2. CLICKABLE CHANNEL NAME & AVATAR IN VIDEO WATCH HEADER (OPENS CHANNEL PAGE)
+  // =========================================================================
+  window.openChannelFromPlayer = function(channelName, ev) {
+    if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+    if (!channelName) return;
+    if (typeof window.closeVideoPlayer === "function") window.closeVideoPlayer();
+    if (typeof window.pickChannelFromTopBar === "function") window.pickChannelFromTopBar(channelName);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  function makeWatchHeaderChannelClickable() {
+    var hdr = document.getElementById("ytCleanWatchHeader");
+    var video = (videosData || []).find(function(x) { return x && x.id === currentPlayingVideoId; });
+    if (!hdr || !video || !video.channel) return;
+    var chName = video.channel;
+    var chSpan = hdr.querySelector("span.font-bold, .text-white.font-bold, #playerChannelName");
+    var chContainer = chSpan ? chSpan.parentElement : null;
+    if (chContainer) {
+      chContainer.style.cursor = "pointer";
+      chContainer.title = "Open " + chName + " channel";
+      chContainer.onclick = function(ev) { window.openChannelFromPlayer(chName, ev); };
+    }
+    hdr.querySelectorAll("p, span, div").forEach(function(el) {
+      if (el.children.length === 0 && el.textContent && el.textContent.trim().indexOf(chName) === 0 && el.textContent.trim().length <= chName.length + 4) {
+        el.style.cursor = "pointer";
+        el.onclick = function(ev) { window.openChannelFromPlayer(chName, ev); };
+      }
+    });
+  }
+
+  var prevOpenV103 = window.openVideoPlayer;
+  window.openVideoPlayer = function(videoId) {
+    var oldBd = document.getElementById("qaafShortCommentsBackdrop");
+    if (oldBd) oldBd.classList.add("hidden");
+    if (prevOpenV103) prevOpenV103.apply(this, arguments);
+    setTimeout(makeWatchHeaderChannelClickable, 100);
+  };
+})();
