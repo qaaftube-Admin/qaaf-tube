@@ -4721,3 +4721,201 @@
     setTimeout(makeWatchHeaderChannelClickable, 100);
   };
 })();
+
+
+// === QAAF V104 COMMENTS CLOSE & STRONG DIVERSITY ALGORITHM ===
+(function initQaafV104CommentsCloseAndStrongAlgorithm() {
+  // =========================================================================
+  // 1. FIX SHORTS COMMENTS CLOSE BUTTON (INLINE display:none OVERRIDES flex!)
+  // =========================================================================
+  function sendYtCmd104(fn) {
+    var ifr = document.getElementById("ytIframe");
+    if (ifr && ifr.contentWindow) ifr.contentWindow.postMessage(JSON.stringify({ event: "command", func: fn, args: [] }), "*");
+  }
+
+  window.closeShortCommentsSheet = function(e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    var bd = document.getElementById("qaafShortCommentsBackdrop");
+    if (bd) {
+      bd.style.display = "none";
+      bd.classList.add("hidden");
+    }
+    window.qaafShortPlaying = true;
+    sendYtCmd104("playVideo");
+  };
+
+  var prevOpenComm104 = window.openShortCommentsPopup;
+  window.openShortCommentsPopup = function(e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    var bd = document.getElementById("qaafShortCommentsBackdrop");
+    if (bd && bd.style.display === "flex") {
+      window.closeShortCommentsSheet(e);
+      return;
+    }
+    if (prevOpenComm104) prevOpenComm104(e);
+    bd = document.getElementById("qaafShortCommentsBackdrop");
+    if (bd) {
+      bd.classList.remove("hidden");
+      bd.style.display = "flex";
+    }
+  };
+
+  var prevOpenVid104 = window.openVideoPlayer;
+  window.openVideoPlayer = function(videoId) {
+    var bd = document.getElementById("qaafShortCommentsBackdrop");
+    if (bd) { bd.style.display = "none"; bd.classList.add("hidden"); }
+    if (prevOpenVid104) prevOpenVid104.apply(this, arguments);
+    setTimeout(function() {
+      window.filterUpNextByMode("all");
+    }, 180);
+  };
+
+  // =========================================================================
+  // 2. CLEAN WATCH BAR (NO CUT-OFF FLAG BUTTON) & HIDE OVERLAPPING RED VOL BAR
+  // =========================================================================
+  if (!document.getElementById("qaafV104WatchCleanCss")) {
+    var st = document.createElement("style");
+    st.id = "qaafV104WatchCleanCss";
+    st.textContent = [
+      "#qaafCenterRedVolOverlay, #qaafBottomRedVolBar, #qaafRedVolumeSliderWrap { display: none !important; }",
+      "#ytCleanWatchHeader > div { flex-wrap: wrap !important; row-gap: 8px !important; }",
+      "#ytCleanWatchHeader button { white-space: nowrap !important; }"
+    ].join("\n");
+    document.head.appendChild(st);
+  }
+
+  // =========================================================================
+  // 3. STRONG TOPIC & INTEREST ALGORITHM (MAX 1 VIDEO PER NEW/OTHER CHANNEL)
+  // =========================================================================
+  function getTopicWords(titleStr) {
+    return String(titleStr || "").toLowerCase().replace(/[^a-z0-9\u0600-\u06ff\s]/g, " ").split(/\s+/).filter(function(w) { return w.length >= 4; });
+  }
+
+  window.getSmartRelatedVideos = function(currentVidId, wantShortsOnly) {
+    var cur = (videosData || []).find(function(v) { return v && v.id === currentVidId; });
+    var histIds = (typeof getActiveHistory === "function") ? (getActiveHistory() || []) : [];
+    var blockedSet = new Set(blockedVideoIds || []);
+    var bannedSet = new Set(bannedChannels || []);
+    var chFreq = {}, catFreq = {}, langFreq = {};
+    histIds.forEach(function(id, idx) {
+      var hv = (videosData || []).find(function(x) { return x && x.id === id; });
+      if (!hv) return;
+      var w = (idx < 6) ? 3 : 1;
+      if (hv.channel) chFreq[hv.channel] = (chFreq[hv.channel] || 0) + w;
+      if (hv.category) catFreq[hv.category] = (catFreq[hv.category] || 0) + w;
+      if (hv.lang) langFreq[hv.lang] = (langFreq[hv.lang] || 0) + w;
+    });
+    var curWords = cur ? new Set(getTopicWords(cur.title)) : new Set();
+
+    var candidates = (videosData || []).filter(function(v) {
+      if (!v || v.id === currentVidId || blockedSet.has(v.id) || bannedSet.has(v.channel)) return false;
+      if (isKidsLocked && !v.kidsSafe) return false;
+      var isSh = isVideoShort(v);
+      if (v.channel === "Tarbiah Islamic Centre") isSh = true;
+      return wantShortsOnly ? isSh : !isSh;
+    });
+
+    var scored = candidates.map(function(v) {
+      var s = 0;
+      if (cur) {
+        if (v.category && v.category === cur.category) s += 160;
+        if (v.lang && v.lang === cur.lang) s += 80;
+        if (v.channel && v.channel === cur.channel) s += 110;
+        var vWords = getTopicWords(v.title);
+        var overlap = 0;
+        for (var i = 0; i < vWords.length; i++) { if (curWords.has(vWords[i])) overlap++; }
+        s += Math.min(90, overlap * 30);
+      }
+      if (catFreq[v.category]) s += Math.min(60, catFreq[v.category] * 12);
+      if (chFreq[v.channel]) s += Math.min(45, chFreq[v.channel] * 9);
+      if (langFreq[v.lang]) s += Math.min(30, langFreq[v.lang] * 6);
+      var rv = (typeof window.getQaafRealViewCount === "function") ? window.getQaafRealViewCount(v) : (v.realViews || 0);
+      s += Math.min(25, rv * 3);
+      return { video: v, score: s };
+    });
+
+    scored.sort(function(a, b) { return b.score - a.score; });
+
+    // Diversity Rule: Max 2 from current channel, and STRICTLY MAX 1 from any other channel (so newly updated channels never flood!)
+    var out = [], usedIds = new Set(), chCount = {};
+    var curCh = cur ? cur.channel : "";
+    scored.forEach(function(item) {
+      var ch = item.video.channel || "General";
+      var limit = (ch === curCh) ? 2 : 1;
+      if ((chCount[ch] || 0) < limit) {
+        chCount[ch] = (chCount[ch] || 0) + 1;
+        out.push(item.video);
+        usedIds.add(item.video.id);
+      }
+    });
+    // Fill remaining slots round-robin (max 2 per channel) only if needed
+    if (out.length < 12) {
+      scored.forEach(function(item) {
+        if (out.length >= 16 || usedIds.has(item.video.id)) return;
+        var ch = item.video.channel || "General";
+        if ((chCount[ch] || 0) < 2) {
+          chCount[ch] = (chCount[ch] || 0) + 1;
+          out.push(item.video);
+          usedIds.add(item.video.id);
+        }
+      });
+    }
+    return out;
+  };
+
+  // Override filterUpNextByMode so it ALWAYS uses real views (never 0.0K) & never shows fake 12:00
+  window.filterUpNextByMode = function(mode) {
+    var cur = (videosData || []).find(function(x) { return x && x.id === currentPlayingVideoId; });
+    var upNextGrid = document.getElementById("watchUpNextGrid");
+    if (!upNextGrid || !cur) return;
+    ["all", "channel", "related"].forEach(function(mKey) {
+      var pBtn = document.getElementById("qaafUpNextPill_" + mKey);
+      if (pBtn) pBtn.className = (mode === mKey) ? "px-3 py-1 rounded-lg text-xs font-extrabold bg-white text-black cursor-pointer shrink-0" : "px-3 py-1 rounded-lg text-xs font-bold bg-white/10 hover:bg-white/20 text-white cursor-pointer shrink-0";
+    });
+    var list;
+    if (mode === "channel") {
+      list = (videosData || []).filter(function(v) { return v && v.id !== cur.id && v.channel === cur.channel && !isVideoShort(v); });
+    } else if (mode === "related") {
+      list = window.getSmartRelatedVideos(cur.id, false).filter(function(v) { return v.channel !== cur.channel; });
+    } else {
+      list = window.getSmartRelatedVideos(cur.id, false);
+    }
+    upNextGrid.innerHTML = "";
+    list.slice(0, 14).forEach(function(v) {
+      var thumb = v.customThumb || ("https://i.ytimg.com/vi/" + v.ytId + "/hqdefault.jpg");
+      var rv = (typeof window.getQaafRealViewCount === "function") ? window.getQaafRealViewCount(v) : (v.realViews || 0);
+      var vStr = rv === 1 ? "1 view" : (rv + " views");
+      var durStr = (v.duration && v.duration !== "12:00" && v.duration !== "12:45" && v.duration !== "14:20" && v.duration !== "10:00") ? v.duration : "";
+      var a = document.createElement("a");
+      if (!isKidsLocked) a.href = "?watch=" + encodeURIComponent(v.id);
+      a.onclick = function(e) { return handleQaafVideoLinkClick(e, v.id); };
+      a.className = "bg-[#181818] hover:bg-[#222] rounded-xl overflow-hidden border border-white/10 flex sm:flex-col gap-2.5 p-2 sm:p-0 cursor-pointer transition group no-underline text-inherit";
+      a.innerHTML = "<div class=\x27relative w-36 sm:w-full aspect-video bg-slate-900 rounded-lg sm:rounded-none overflow-hidden shrink-0 pointer-events-none\x27><img src=\x27" + thumb + "\x27 alt=\x27\x27 class=\x27absolute inset-0 w-full h-full object-cover\x27 loading=\x27lazy\x27 />" + (durStr ? "<span class=\x27absolute bottom-1 right-1 bg-black/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded\x27>" + durStr + "</span>" : "") + "</div><div class=\x27p-1 sm:p-2.5 min-w-0 flex-1\x27><h5 class=\x27text-xs font-bold text-white line-clamp-2 leading-snug\x27>" + v.title + "</h5><p class=\x27text-[10px] text-slate-400 mt-1 truncate\x27>✅ " + v.channel + " • " + vStr + "</p></div>";
+      upNextGrid.appendChild(a);
+    });
+  };
+
+  // Also enforce Home Feed channel diversity (max 1 consecutive video per newly updated channel on All feed)
+  var prevRender104 = window.renderVideosNow;
+  window.renderVideosNow = function() {
+    if (prevRender104) prevRender104.apply(this, arguments);
+    var grid = document.getElementById("videoGrid");
+    if (!grid) return;
+    if ((window.qaafSelectedChannel || "ALL") === "ALL") {
+      var cards = Array.from(grid.children);
+      var chSeen = {};
+      var primary = [], overflow = [];
+      cards.forEach(function(card) {
+        var chEl = card.querySelector("p.text-slate-400, .text-xs.text-slate-400");
+        var chTxt = chEl ? (chEl.textContent || "").split("•")[0].replace(/[✅📺]/g, "").trim() : "";
+        if (!chTxt) { primary.push(card); return; }
+        chSeen[chTxt] = (chSeen[chTxt] || 0) + 1;
+        if (chSeen[chTxt] <= 1) primary.push(card);
+        else overflow.push(card);
+      });
+      if (overflow.length > 0 && primary.length > 2) {
+        primary.concat(overflow).forEach(function(c) { grid.appendChild(c); });
+      }
+    }
+  };
+})();
