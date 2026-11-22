@@ -1,0 +1,1800 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Asma-ul-Husna ASMR Coloring — QAAF Games</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@700&family=Fredoka:wght@600;700&family=Inter:wght@600;700;800&family=Noto+Nastaliq+Urdu:wght@400;700&family=Scheherazade+New:wght@700&display=swap" rel="stylesheet" />
+  <style>
+    @font-face {
+      font-family: 'KFGQPC Uthman Taha Naskh';
+      src: local('KFGQPC Uthman Taha Naskh'), local('UthmanicHafs'), local('Amiri');
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Jameel Noori Nastaleeq';
+      src: local('Jameel Noori Nastaleeq'), local('Jameel Noori Nastaleeq Regular'), local('Noto Nastaliq Urdu');
+      font-display: swap;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background-color: #ffffff;
+      color: #111827;
+      font-family: 'Fredoka', 'Inter', sans-serif;
+      touch-action: none;
+    }
+
+    .font-quran {
+      font-family: 'Amiri', 'Scheherazade New', 'KFGQPC Uthman Taha Naskh', serif;
+    }
+    .font-urdu {
+      font-family: 'Jameel Noori Nastaleeq', 'Noto Nastaliq Urdu', serif;
+      line-height: 1.9 !important;
+      direction: rtl;
+    }
+
+    /* Original QAAF Horizontal Toolbar Circular Buttons (Under LEVEL Title) */
+    .top-bar-circle-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 9999px;
+      border: 2.5px solid #1e293b;
+      box-shadow: 0 3px 0 #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.08s ease, box-shadow 0.08s ease;
+      background: #ffffff;
+    }
+    .top-bar-circle-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 #1e293b;
+    }
+
+    /* Bottom 4 Circular Color Swatches (Round Circles + 4th Mix Color) */
+    .color-circle-btn {
+      width: 72px;
+      height: 72px;
+      border-radius: 9999px;
+      border: 4px solid #111827;
+      box-shadow: 0 6px 0 #111827, 0 8px 15px rgba(0,0,0,0.08);
+      cursor: pointer;
+      transition: transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.14s ease;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    @media (max-width: 400px) {
+      .color-circle-btn {
+        width: 62px;
+        height: 62px;
+      }
+    }
+    .color-circle-btn.selected-swatch {
+      transform: translateY(-10px) scale(1.08);
+      box-shadow: 0 12px 0 #111827, 0 14px 22px rgba(0,0,0,0.14);
+    }
+    .color-circle-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 3px 0 #111827;
+    }
+
+    /* Gallery Card */
+    .gallery-item-card {
+      background: #ffffff;
+      border-radius: 24px;
+      border: 3px solid #cbd5e1;
+      border-bottom: 8px solid #94a3b8;
+      position: relative;
+      transition: transform 0.1s ease;
+    }
+    .gallery-item-card:active {
+      transform: scale(0.97);
+    }
+
+    @keyframes pulseSpeaker {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.14); }
+    }
+    .speaking-pulse {
+      animation: pulseSpeaker 0.7s infinite ease-in-out;
+      background-color: #fde047 !important;
+    }
+  </style>
+</head>
+<body class="bg-white">
+
+  <!-- =========================================================================
+       MAIN SINGLE-VIEWPORT WHITE SCREEN (ORIGINAL QAAF HEADER + ROUND SWATCHES)
+       ========================================================================= -->
+  <div id="mainScreen" class="w-full h-full relative flex flex-col justify-between items-center bg-white overflow-hidden">
+
+    <!-- Subtle Light Islamic Arch Filigree Watermark at Top Corners (Copyright-safe original touch) -->
+    <svg class="absolute top-0 left-0 w-28 h-28 text-amber-500/10 pointer-events-none" viewBox="0 0 100 100" fill="currentColor">
+      <path d="M0,0 L100,0 C60,15 15,60 0,100 Z"/>
+    </svg>
+    <svg class="absolute top-0 right-0 w-28 h-28 text-emerald-500/10 pointer-events-none" viewBox="0 0 100 100" fill="currentColor">
+      <path d="M100,0 L0,0 C40,15 85,60 100,100 Z"/>
+    </svg>
+
+    <!-- FULL-BLEED INTERACTIVE CALLIGRAPHY CANVAS IN THE CENTER -->
+    <div class="absolute inset-0 flex items-center justify-center z-0 pointer-events-auto">
+      <div class="relative w-full h-full max-w-[680px] max-h-[680px] flex items-center justify-center">
+        <canvas id="artCanvas" width="960" height="960" class="w-full h-full object-contain touch-none block"></canvas>
+        <canvas id="penCanvas" width="960" height="960" class="w-full h-full object-contain pointer-events-none absolute inset-0 block"></canvas>
+      </div>
+    </div>
+
+    <!-- TOP CENTER HEADER: "LEVEL X" + HORIZONTAL PILL TOOLBAR RIGHT BELOW IT -->
+    <div class="w-full max-w-md mx-auto px-3 pt-2.5 flex flex-col items-center z-20 pointer-events-none">
+
+      <!-- Row 1: Level Badge + Speaker Button -->
+      <div class="flex items-center gap-2.5 pointer-events-auto">
+        <span class="text-amber-500 text-lg">🌙</span>
+        <h1 id="txtLevelTitle" class="text-2xl sm:text-3xl font-extrabold tracking-wider text-slate-900">
+          LEVEL 1
+        </h1>
+        <button id="btnPlayVoice" type="button" class="w-9 h-9 rounded-full bg-amber-200 border-2 border-slate-900 shadow-[0_3px_0_#111827] flex items-center justify-center text-base active:translate-y-0.5" title="Listen Name">
+          🔊
+        </button>
+      </div>
+
+      <!-- Row 2: Sleek Horizontal Pill Toolbar Directly Under LEVEL Title -->
+      <div class="mt-2 px-3 py-1.5 rounded-full bg-slate-50/90 backdrop-blur-xs border-2 border-slate-200 shadow-xs flex items-center justify-center gap-2.5 pointer-events-auto">
+        <!-- Gallery Button -->
+        <button id="btnGallery" type="button" class="top-bar-circle-btn bg-[#e0f2fe]" title="Gallery">
+          <svg class="w-5 h-5 text-[#0369a1]" fill="currentColor" viewBox="0 0 24 24">
+            <rect x="3" y="3" width="8" height="8" rx="2"/>
+            <rect x="13" y="3" width="8" height="8" rx="2"/>
+            <rect x="3" y="13" width="8" height="8" rx="2"/>
+            <rect x="13" y="13" width="8" height="8" rx="2"/>
+          </svg>
+        </button>
+
+        <!-- Direct Tool Switcher (Marker -> Brush -> Fine Pen -> Gold Pen) -->
+        <button id="btnCycleTool" type="button" class="top-bar-circle-btn bg-[#ffedd5]" title="Switch Pen / Brush">
+          <span id="iconActiveTool" class="text-xl leading-none">🖍️</span>
+        </button>
+
+        <!-- Direct Thickness Dot Switcher -->
+        <button id="btnCycleSize" type="button" class="top-bar-circle-btn bg-[#fef9c3]" title="Pen Size">
+          <span id="iconActiveSize" class="rounded-full bg-slate-900 block" style="width: 16px; height: 16px;"></span>
+        </button>
+
+        <!-- Reset Button -->
+        <button id="btnResetArt" type="button" class="top-bar-circle-btn bg-[#ffe4e6]" title="Restart">
+          <svg class="w-5 h-5 text-[#be123c]" fill="none" stroke="currentColor" stroke-width="2.6" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+        </button>
+
+        <!-- Next Level Button -->
+        <button id="btnNextLevel" type="button" class="top-bar-circle-btn bg-[#fce7f3]" title="Next Level">
+          <svg class="w-5 h-5 text-[#be185d]" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M5.5 5.5v13l7-6.5-7-6.5zm7 0v13l7-6.5-7-6.5z"/>
+          </svg>
+        </button>
+
+        <!-- Exit Button -->
+        <button id="btnExitHub" type="button" class="top-bar-circle-btn bg-[#f1f5f9]" title="Exit">
+          <svg class="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" stroke-width="2.8" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Meaning Reveal Pill (Appears only after completion) -->
+      <div id="meaningRevealPill" class="hidden mt-2 px-4 py-1 rounded-full bg-amber-50 border-2 border-slate-900 shadow-xs text-center pointer-events-auto">
+        <span id="txtRevealedName" class="text-xs sm:text-sm font-extrabold text-slate-900">Ar-Rahman • الرَّحْمٰنُ</span>
+        <span class="mx-1 text-slate-400">|</span>
+        <span id="txtRevealedMeaning" class="text-xs sm:text-sm font-bold text-emerald-700 font-urdu">بڑا مہربان • The Most Gracious</span>
+      </div>
+
+    </div>
+
+    <!-- BOTTOM FLOATING BAR: 4 ROUND COLOR CIRCLES (3 SOLID + 4TH DUAL-COLOR MIX) + SHUFFLE -->
+    <div class="w-full max-w-lg mx-auto px-3 pb-5 flex items-center justify-center gap-3 sm:gap-4 z-20 pointer-events-none">
+      <!-- Circle 1: Solid Color 1 -->
+      <button id="swatch0" type="button" class="color-circle-btn selected-swatch pointer-events-auto" style="background-color: #38bdf8;" aria-label="Color 1"></button>
+      <!-- Circle 2: Solid Color 2 -->
+      <button id="swatch1" type="button" class="color-circle-btn pointer-events-auto" style="background-color: #facc15;" aria-label="Color 2"></button>
+      <!-- Circle 3: Solid Color 3 -->
+      <button id="swatch2" type="button" class="color-circle-btn pointer-events-auto" style="background-color: #4ade80;" aria-label="Color 3"></button>
+      <!-- Circle 4: Dual-Color MIX Swatch (دوہرا مکس کلر) -->
+      <button id="swatch3" type="button" class="color-circle-btn pointer-events-auto" style="background: linear-gradient(135deg, #f43f5e 0%, #f43f5e 48%, #fbbf24 52%, #fbbf24 100%);" aria-label="Mix Color">
+        <span class="px-1.5 py-0.5 rounded-full bg-white/90 border border-slate-900 text-[10px] font-extrabold text-slate-900 shadow-2xs">MIX</span>
+      </button>
+      <!-- Shuffle Colors Button -->
+      <button id="btnMoreColors" type="button" class="top-bar-circle-btn pointer-events-auto bg-gradient-to-tr from-rose-400 via-amber-300 to-sky-400 w-11 h-11" title="Change Colors">
+        <span class="text-lg">🎨</span>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- =========================================================================
+       FULLSCREEN CELEBRATION PETALS & ISLAMIC STARS OVERLAY CANVAS
+       (Flowers, Crescents & Stars gently rain from top and settle at the bottom!)
+       ========================================================================= -->
+  <canvas id="celebrationRainCanvas" width="960" height="960" class="fixed inset-0 w-full h-full pointer-events-none z-55"></canvas>
+
+  <!-- =========================================================================
+       SCREEN 2: GALLERY
+       ========================================================================= -->
+  <div id="screenGallery" class="hidden fixed inset-0 z-40 bg-[#fafaf5] flex-col overflow-hidden">
+    <div class="relative bg-gradient-to-r from-emerald-600 via-teal-600 to-sky-600 pt-4 pb-8 px-4 flex items-center justify-between shadow-md">
+      <button id="btnBackFromGallery" type="button" class="w-14 h-11 rounded-full bg-amber-400 border-3 border-[#111827] shadow-[0_4px_0_#111827] flex items-center justify-center active:translate-y-1">
+        <svg class="w-7 h-7 text-slate-900" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+        </svg>
+      </button>
+
+      <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-wide drop-shadow">
+        Noor Gallery
+      </h2>
+
+      <button id="btnUnlockProGallery" type="button" class="px-3 py-1.5 rounded-xl bg-amber-300 border-2 border-slate-900 shadow-[0_3px_0_#111827] font-extrabold text-xs text-slate-900">
+        👑 99 Names
+      </button>
+
+      <svg class="absolute bottom-0 left-0 w-full h-5 text-[#fafaf5]" preserveAspectRatio="none" viewBox="0 0 1200 60" fill="currentColor">
+        <path d="M0,60 L0,25 Q60,0 120,25 T240,25 T360,25 T480,25 T600,25 T720,25 T840,25 T960,25 T1080,25 T1200,25 L1200,60 Z"></path>
+      </svg>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-4 max-w-lg mx-auto w-full">
+      <div id="galleryGrid" class="grid grid-cols-2 gap-4 pb-10"></div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       COMPLETION CERTIFICATE CARD STUDIO MODAL
+       ========================================================================= -->
+  <div id="modalCardCreator" class="hidden fixed inset-0 z-50 bg-black/55 backdrop-blur-xs flex items-center justify-center p-3 overflow-y-auto">
+    <div class="bg-white rounded-3xl border-4 border-slate-900 shadow-[0_10px_0_#111827] max-w-md w-full p-4 flex flex-col items-center text-center relative">
+
+      <div class="w-full flex items-center justify-between mb-2 px-1">
+        <span id="txtModalNameTitle" class="text-base font-extrabold text-slate-900">
+          الرَّحْمٰنُ • Ar-Rahman
+        </span>
+        <button id="btnReplayCardVoice" type="button" class="px-3 py-1 rounded-full bg-amber-300 border-2 border-slate-900 font-extrabold text-xs flex items-center gap-1 shadow-[0_2px_0_#111827]">
+          <span>🔊</span>
+          <span>Listen Again</span>
+        </button>
+      </div>
+
+      <!-- Live Certificate Card Canvas -->
+      <div class="w-full max-w-[285px] aspect-[4/5] rounded-2xl overflow-hidden border-4 border-slate-900 shadow-md mb-3 bg-white">
+        <canvas id="cardPreviewCanvas" width="800" height="1000" class="w-full h-full block"></canvas>
+      </div>
+
+      <!-- Child's Name Input -->
+      <div class="w-full mb-2.5 text-left">
+        <label for="inpArtistName" class="block text-xs font-extrabold text-slate-700 mb-1">
+          ✏️ Your Name (آپ کا نام):
+        </label>
+        <input id="inpArtistName" type="text" maxlength="24" placeholder="Enter your name (اپنا نام لکھیں)"
+               class="w-full px-3.5 py-2 rounded-xl border-3 border-slate-900 font-bold text-sm text-slate-900 bg-amber-50/50 focus:outline-none" />
+      </div>
+
+      <!-- Card Background Color/Style Picker -->
+      <div class="w-full mb-3 text-left">
+        <div class="text-xs font-extrabold text-slate-700 mb-1.5">
+          🎨 Card Background (کارڈ کا بیک گراؤنڈ):
+        </div>
+        <div id="cardBgRow" class="grid grid-cols-6 gap-2"></div>
+      </div>
+
+      <div class="w-full grid grid-cols-2 gap-2.5">
+        <button id="btnDownloadCard" type="button" class="py-2.5 px-3 rounded-2xl bg-amber-400 border-3 border-slate-900 shadow-[0_4px_0_#111827] font-extrabold text-xs sm:text-sm text-slate-900 active:translate-y-1">
+          📥 Save Card (PNG)
+        </button>
+        <button id="btnContinueNextLevel" type="button" class="py-2.5 px-3 rounded-2xl bg-emerald-500 border-3 border-slate-900 shadow-[0_4px_0_#111827] font-extrabold text-xs sm:text-sm text-white active:translate-y-1">
+          Next Level ▶
+        </button>
+      </div>
+
+      <button id="btnDismissCardModal" type="button" class="mt-2.5 text-xs font-bold text-slate-500 hover:text-slate-800 underline">
+        Close
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // 1. 99 NAMES OF ALLAH DATASET & 4-SWATCH PALETTES (3 SOLID + 1 MIX PAIR)
+    // =========================================================================
+    const NAMES_99 = [[1, "الرَّحْمٰنُ", "Ar-Rahman", "The Most Gracious", "بڑا مہربان", "mercy"], [2, "الرَّحِيمُ", "Ar-Rahim", "The Most Merciful", "نہایت رحم والا", "mercy"], [3, "الْمَلِكُ", "Al-Malik", "The Sovereign Lord", "حقیقی بادشاہ", "majesty"], [4, "الْقُدُّوسُ", "Al-Quddus", "The Most Sacred", "ہر عیب سے پاک", "noor"], [5, "السَّلَامُ", "As-Salam", "The Source of Peace", "سلامتی دینے والا", "noor"], [6, "الْمُؤْمِنُ", "Al-Mu'min", "The Giver of Security", "امن و امان دینے والا", "noor"], [7, "الْمُهَيْمِنُ", "Al-Muhaymin", "The Guardian", "نگہبانی کرنے والا", "majesty"], [8, "الْعَزِيزُ", "Al-Aziz", "The Almighty", "سب پر غالب", "majesty"], [9, "الْجَبَّارُ", "Al-Jabbar", "The Restorer", "ٹوٹے کو جوڑنے والا", "majesty"], [10, "الْمُتَكَبِّرُ", "Al-Mutakabbir", "The Supreme", "بڑائی اور عظمت والا", "majesty"], [11, "الْخَالِقُ", "Al-Khaliq", "The Creator", "پیدا کرنے والا", "creation"], [12, "الْبَارِئُ", "Al-Bari'", "The Evolver", "جان ڈالنے والا", "creation"], [13, "الْمُصَوِّرُ", "Al-Musawwir", "The Fashioner", "صورت گری کرنے والا", "creation"], [14, "الْغَفَّارُ", "Al-Ghaffar", "The Constant Forgiver", "بار بار بخشنے والا", "mercy"], [15, "الْقَهَّارُ", "Al-Qahhar", "The All-Prevailing", "سب کو قابو میں رکھنے والا", "majesty"], [16, "الْوَهَّابُ", "Al-Wahhab", "The Supreme Bestower", "بے غرض عطا کرنے والا", "mercy"], [17, "الرَّزَّاقُ", "Ar-Razzaq", "The Provider", "رزق عطا فرمانے والا", "creation"], [18, "الْفَتَّاحُ", "Al-Fattah", "The Supreme Opener", "مشکلیں کھولنے والا", "noor"], [19, "الْعَلِيمُ", "Al-'Alim", "The All-Knowing", "سب کچھ جاننے والا", "wisdom"], [20, "الْقَابِضُ", "Al-Qabid", "The Withholder", "تنگی کرنے والا", "wisdom"], [21, "الْبَاسِطُ", "Al-Basit", "The Extender", "کشادگی دینے والا", "creation"], [22, "الْخَافِضُ", "Al-Khafid", "The Reducer", "پست کرنے والا", "wisdom"], [23, "الرَّافِعُ", "Ar-Rafi'", "The Exalter", "بلند کرنے والا", "majesty"], [24, "الْمُعِزُّ", "Al-Mu'izz", "The Honourer", "عزت دینے والا", "majesty"], [25, "الْمُذِلُّ", "Al-Mudhill", "The Humiliator", "ذلت دینے والا", "wisdom"], [26, "السَّمِيعُ", "As-Sami'", "The All-Hearing", "سب کچھ سننے والا", "wisdom"], [27, "الْبَصِيرُ", "Al-Basir", "The All-Seeing", "سب کچھ دیکھنے والا", "noor"], [28, "الْحَكَمُ", "Al-Hakam", "The Impartial Judge", "فیصلہ فرمانے والا", "wisdom"], [29, "الْعَدْلُ", "Al-'Adl", "The Utterly Just", "سراسر انصاف کرنے والا", "wisdom"], [30, "اللَّطِيفُ", "Al-Latif", "The Subtle One", "نہایت باریک بین و مہربان", "mercy"], [31, "الْخَبِيرُ", "Al-Khabir", "The All-Aware", "ہر بات سے باخبر", "wisdom"], [32, "الْحَلِيمُ", "Al-Halim", "The Most Forbearing", "نہایت بردبار", "mercy"], [33, "الْعَظِيمُ", "Al-'Azim", "The Magnificent", "بڑی عظمت والا", "majesty"], [34, "الْغَفُورُ", "Al-Ghafur", "The Great Forgiver", "خوب بخشنے والا", "mercy"], [35, "الشَّكُورُ", "Ash-Shakur", "The Most Appreciative", "تھوڑے عمل کی قدر کرنے والا", "mercy"], [36, "الْعَلِيُّ", "Al-'Ali", "The Most High", "سب سے بلند و بالا", "majesty"], [37, "الْكَبِيرُ", "Al-Kabir", "The Most Great", "سب سے بڑا", "majesty"], [38, "الْحَفِيظُ", "Al-Hafiz", "The Preserver", "حفاظت فرمانے والا", "noor"], [39, "الْمُقِيتُ", "Al-Muqit", "The Sustainer", "قوت اور روزی دینے والا", "creation"], [40, "الْحَسِيبُ", "Al-Hasib", "The Reckoner", "کافی ہونے والا", "wisdom"], [41, "الْجَلِيلُ", "Al-Jalil", "The Majestic", "جلالت اور شان والا", "majesty"], [42, "الْكَرِيمُ", "Al-Karim", "The Most Generous", "نہایت کرم فرمانے والا", "mercy"], [43, "الرَّقِيبُ", "Ar-Raqib", "The Watchful", "نگہبان اور دیکھنے والا", "noor"], [44, "الْمُجِيبُ", "Al-Mujib", "The Responsive One", "دعائیں قبول کرنے والا", "mercy"], [45, "الْوَاسِعُ", "Al-Wasi'", "The All-Encompassing", "وسعت اور کشادگی والا", "creation"], [46, "الْحَكِيمُ", "Al-Hakim", "The All-Wise", "کامل حکمت والا", "wisdom"], [47, "الْوَدُودُ", "Al-Wadud", "The Most Loving", "بے حد محبت کرنے والا", "mercy"], [48, "الْمَجِيدُ", "Al-Majid", "The Glorious", "بڑی شان اور بزرگی والا", "majesty"], [49, "الْبَاعِثُ", "Al-Ba'ith", "The Infuser of New Life", "دوبارہ زندہ کرنے والا", "creation"], [50, "الشَّهِيدُ", "Ash-Shahid", "The All Observing Witness", "ہر چیز پر گواہ", "wisdom"], [51, "الْحَقُّ", "Al-Haqq", "The Absolute Truth", "برحق اور سچا", "noor"], [52, "الْوَكِيلُ", "Al-Wakil", "The Trustee", "کام بنانے والا کارساز", "mercy"], [53, "الْقَوِيُّ", "Al-Qawiyy", "The All-Strong", "کامل قوت و طاقت والا", "majesty"], [54, "الْمَتِينُ", "Al-Matin", "The Firm", "مضبوط اور مستحکم", "majesty"], [55, "الْوَلِيُّ", "Al-Waliyy", "The Protecting Associate", "محبت کرنے والا دوست و مددگار", "mercy"], [56, "الْحَمِيدُ", "Al-Hamid", "The Praiseworthy", "ہر تعریف کے لائق", "noor"], [57, "الْمُحْصِي", "Al-Muhsi", "The All-Enumerating", "ہر چیز کو شمار کرنے والا", "wisdom"], [58, "الْمُبْدِئُ", "Al-Mubdi'", "The Originator", "پہلی بار پیدا کرنے والا", "creation"], [59, "الْمُعِيدُ", "Al-Mu'id", "The Restorer", "دوبارہ لوٹانے والا", "creation"], [60, "الْمُحْيِي", "Al-Muhyi", "The Giver of Life", "زندگی بخشنے والا", "creation"], [61, "الْمُمِيتُ", "Al-Mumit", "The Creator of Death", "موت دینے والا", "wisdom"], [62, "الْحَيُّ", "Al-Hayy", "The Ever-Living", "ہمیشہ زندہ رہنے والا", "noor"], [63, "الْقَيُّومُ", "Al-Qayyum", "The Sustainer of All", "سب کو قائم رکھنے والا", "majesty"], [64, "الْوَاجِدُ", "Al-Wajid", "The Perceiver", "ہر چیز پانے والا", "wisdom"], [65, "الْمَاجِدُ", "Al-Majid", "The Illustrious", "عزت اور بزرگی والا", "majesty"], [66, "الْوَاحِدُ", "Al-Wahid", "The One", "اکیلا اور یکتا", "noor"], [67, "الْأَحَدُ", "Al-Ahad", "The Unique", "اپنی ذات میں یکتا", "noor"], [68, "الصَّمَدُ", "As-Samad", "The Eternal Refuge", "بے نیاز جس کے سب محتاج ہیں", "majesty"], [69, "الْقَادِرُ", "Al-Qadir", "The Capable", "قدرت اور اختیار والا", "majesty"], [70, "الْمُقْتَدِرُ", "Al-Muqtadir", "The Omnipotent", "کامل قدرت رکھنے والا", "majesty"], [71, "الْمُقَدِّمُ", "Al-Muqaddim", "The Expediter", "آگے بڑھانے والا", "wisdom"], [72, "الْمُؤَخِّرُ", "Al-Mu'akhkhir", "The Delayer", "پیچھے رکھنے والا", "wisdom"], [73, "الْأَوَّلُ", "Al-Awwal", "The First", "سب سے پہلے", "noor"], [74, "الْآخِرُ", "Al-Akhir", "The Last", "سب کے بعد رہنے والا", "noor"], [75, "الظَّاهِرُ", "Az-Zahir", "The Manifest", "سب پر ظاہر و غالب", "noor"], [76, "الْبَاطِنُ", "Al-Batin", "The Hidden One", "نگاہوں سے پوشیدہ", "wisdom"], [77, "الْوَالِي", "Al-Wali", "The Governor", "مالک اور متصرف", "majesty"], [78, "الْمُتَعَالِي", "Al-Muta'ali", "The Self Exalted", "بلند صفتوں والا", "majesty"], [79, "الْبَرُّ", "Al-Barr", "The Source of Goodness", "احسان اور بھلائی کرنے والا", "mercy"], [80, "التَّوَّابُ", "At-Tawwab", "The Ever-Pardoning", "توبہ قبول فرمانے والا", "mercy"], [81, "الْمُنْتَقِمُ", "Al-Muntaqim", "The Avenger", "نافرمانوں سے بدلہ لینے والا", "wisdom"], [82, "الْعَفُوُّ", "Al-'Afuww", "The Pardoner", "معاف فرمانے والا", "mercy"], [83, "الرَّؤُوفُ", "Ar-Ra'uf", "The Most Kind", "بے حد شفقت کرنے والا", "mercy"], [84, "مَالِكُ الْمُلْكِ", "Malik-ul-Mulk", "Master of the Kingdom", "ساری بادشاہی کا مالک", "majesty"], [85, "ذُو الْجَلَالِ وَالْإِكْرَامِ", "Dhul-Jalali wal-Ikram", "Lord of Majesty and Generosity", "جلال اور انعام و اکرام والا", "majesty"], [86, "الْمُقْسِطُ", "Al-Muqsit", "The Equitable", "عدل و انصاف قائم کرنے والا", "wisdom"], [87, "الْجَامِعُ", "Al-Jami'", "The Gatherer", "سب کو جمع کرنے والا", "wisdom"], [88, "الْغَنِيُّ", "Al-Ghaniyy", "The Self-Sufficient", "بے نیاز اور غنی", "majesty"], [89, "الْمُغْنِي", "Al-Mughni", "The Enricher", "غنی اور مالدار بنانے والا", "mercy"], [90, "الْمَانِعُ", "Al-Mani'", "The Withholder", "روکنے اور بچانے والا", "wisdom"], [91, "الضَّارُّ", "Ad-Darr", "The Distresser", "حکمت سے نقصان پہنچانے والا", "wisdom"], [92, "النَّافِعُ", "An-Nafi'", "The Propitious", "نفع پہنچانے والا", "creation"], [93, "النُّورُ", "An-Nur", "The Light", "آسمانوں اور زمین کو روشن کرنے والا", "noor"], [94, "الْهَادِي", "Al-Hadi", "The Guide", "سیدھی راہ دکھانے والا", "noor"], [95, "الْبَدِيعُ", "Al-Badi'", "The Incomparable Originator", "بے مثال ایجاد کرنے والا", "creation"], [96, "الْبَاقِي", "Al-Baqi", "The Ever-Surviving", "ہمیشہ باقی رہنے والا", "noor"], [97, "الْوَارِثُ", "Al-Warith", "The Inheritor", "سب کے بعد حقیقی وارث", "majesty"], [98, "الرَّشِيدُ", "Ar-Rashid", "The Guide to the Right Path", "نیک راہ کی طرف رہنمائی کرنے والا", "wisdom"], [99, "الصَّبُورُ", "As-Sabur", "The Most Patient", "بڑے صبر و تحمل والا", "mercy"]];
+
+    // Each palette set has 3 solid colors + 1 dual-color Mix pair [colorA, colorB]
+    const PALETTE_SETS = [
+      { solids: ['#38bdf8', '#facc15', '#4ade80'], mix: ['#f43f5e', '#fbbf24'] },
+      { solids: ['#fb7185', '#a78bfa', '#34d399'], mix: ['#38bdf8', '#a855f7'] },
+      { solids: ['#2dd4bf', '#f472b6', '#60a5fa'], mix: ['#10b981', '#facc15'] },
+      { solids: ['#f43f5e', '#fb923c', '#eab308'], mix: ['#ec4899', '#38bdf8'] },
+      { solids: ['#818cf8', '#34d399', '#22d3ee'], mix: ['#f59e0b', '#10b981'] },
+      { solids: ['#a3e635', '#f43f5e', '#38bdf8'], mix: ['#a855f7', '#fb7185'] }
+    ];
+
+    const CARD_THEMES = [
+      { top: '#e0f2fe', bottom: '#bae6fd', border: '#0284c7', text: '#0369a1' },
+      { top: '#fef9c3', bottom: '#fde047', border: '#ca8a04', text: '#854d0e' },
+      { top: '#d1fae5', bottom: '#6ee7b7', border: '#059669', text: '#065f46' },
+      { top: '#ffe4e6', bottom: '#fda4af', border: '#e11d48', text: '#9f1239' },
+      { top: '#f3e8ff', bottom: '#d8b4fe', border: '#7e22ce', text: '#581c87' },
+      { top: '#ffffff', bottom: '#f1f5f9', border: '#1e293b', text: '#0f172a' }
+    ];
+
+    const TOOLS = [
+      { id: 'marker', icon: '🖍️', bodyColor: '#ffffff' },
+      { id: 'brush',  icon: '🖌️', bodyColor: '#fed7aa' },
+      { id: 'fine',   icon: '✒️', bodyColor: '#e0f2fe' },
+      { id: 'gold',   icon: '✨', bodyColor: '#fef08a' }
+    ];
+
+    const SIZES = [
+      { radius: 24, dotPx: 10 },
+      { radius: 40, dotPx: 16 },
+      { radius: 58, dotPx: 22 }
+    ];
+
+    // =========================================================================
+    // 2. STATE & LOCALSTORAGE ('qaaf_games_state_v4')
+    // =========================================================================
+    const STORAGE_KEY_V4 = 'qaaf_games_state_v4';
+    const STORAGE_THUMBS_KEY = 'qaaf_asmr_thumbs_v3';
+
+    let state = {
+      lang: 'ur',
+      levelIdx: 0,
+      toolIdx: 0,
+      sizeIdx: 1,
+      paletteIdx: 0,
+      swatchIdx: 0, // 0, 1, 2 = solid; 3 = dual-color MIX!
+      activeColor: '#38bdf8',
+      activeMixPair: ['#f43f5e', '#fbbf24'],
+      isMixMode: false,
+      childName: '',
+      cardThemeIdx: 0,
+      stars: 0,
+      isPro: false,
+      completed: {},
+      thumbs: {}
+    };
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY_V4);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (typeof parsed.stars === 'number') state.stars = parsed.stars;
+          if (parsed.isPro || parsed.supporterPro) state.isPro = true;
+          if (parsed.coloringCompleted) state.completed = parsed.coloringCompleted;
+          if (parsed.childName) state.childName = parsed.childName;
+        }
+        const rawThumbs = localStorage.getItem(STORAGE_THUMBS_KEY);
+        if (rawThumbs) state.thumbs = JSON.parse(rawThumbs) || {};
+      } catch (e) {}
+    }
+
+    function saveState() {
+      try {
+        let existing = {};
+        const raw = localStorage.getItem(STORAGE_KEY_V4);
+        if (raw) existing = JSON.parse(raw) || {};
+        existing.stars = state.stars;
+        existing.totalStars = state.stars;
+        existing.isPro = state.isPro;
+        existing.supporterPro = state.isPro;
+        existing.coloringCompleted = state.completed;
+        existing.childName = state.childName;
+        localStorage.setItem(STORAGE_KEY_V4, JSON.stringify(existing));
+        localStorage.setItem(STORAGE_THUMBS_KEY, JSON.stringify(state.thumbs));
+      } catch (e) {}
+    }
+
+    // =========================================================================
+    // 3. MULTI-TIER AUDIO ENGINE (SHORT MASHA'ALLAH + ARABIC + URDU + ENGLISH!)
+    // =========================================================================
+    const GAME_AUDIO_BASES = ['../../../audio/games/', '../../audio/games/', '../audio/games/', 'audio/games/', '/audio/games/'];
+    let activeAudio = null;
+    let audioCtx = null;
+    let needsFirstGestureAudio = false;
+    let hasSpokenCurrentLevelStart = false;
+
+    function setSpeakerPulse(isPlaying) {
+      const btn = document.getElementById('btnPlayVoice');
+      if (!btn) return;
+      if (isPlaying) btn.classList.add('speaking-pulse');
+      else btn.classList.remove('speaking-pulse');
+    }
+
+    function playSoftTactileSound(kind) {
+      try {
+        if (!audioCtx) {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (AC) audioCtx = new AC();
+        }
+        if (!audioCtx) return;
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        const dur = kind === 'brush' ? 0.015 : 0.025;
+        const len = Math.floor(audioCtx.sampleRate * dur);
+        const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+        const ch = buf.getChannelData(0);
+        for (let i = 0; i < len; i++) {
+          ch[i] = (Math.random() * 2 - 1) * (1 - i / len) * (kind === 'brush' ? 0.045 : 0.18);
+        }
+        const src = audioCtx.createBufferSource();
+        src.buffer = buf;
+        const flt = audioCtx.createBiquadFilter();
+        flt.type = 'bandpass';
+        flt.frequency.value = kind === 'brush' ? 850 : 1350;
+        src.connect(flt);
+        flt.connect(audioCtx.destination);
+        src.start();
+      } catch (e) {}
+    }
+
+    function fnv1aHash(str) {
+      const clean = String(str || '').trim();
+      let h = 0x811c9dc5;
+      for (let i = 0; i < clean.length; i++) {
+        h ^= clean.charCodeAt(i);
+        h = Math.imul(h, 0x01000193) >>> 0;
+      }
+      return ('00000000' + h.toString(16)).slice(-8);
+    }
+
+    function stopAllActiveAudio() {
+      if (activeAudio) {
+        try {
+          activeAudio.pause();
+          activeAudio.currentTime = 0;
+        } catch (e) {}
+        activeAudio = null;
+      }
+      try {
+        if (window.speechSynthesis) {
+          window.speechSynthesis.cancel();
+        }
+      } catch (e) {}
+      setSpeakerPulse(false);
+    }
+
+    function speakWithFallbackVoice(langCode, text, onDone) {
+      try {
+        if (!window.speechSynthesis) {
+          setSpeakerPulse(false);
+          if (typeof onDone === 'function') onDone();
+          return;
+        }
+        const voices = window.speechSynthesis.getVoices() || [];
+        const langPrefix = langCode === 'ar' ? 'ar' : (langCode === 'ur' ? 'ur' : 'en');
+        const matchedVoice = voices.find(function (v) {
+          return v.lang && v.lang.toLowerCase().indexOf(langPrefix) === 0;
+        });
+
+        if (langCode === 'ur' && !matchedVoice) {
+          setSpeakerPulse(false);
+          if (typeof onDone === 'function') onDone();
+          return;
+        }
+
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = langCode === 'ar' ? 'ar-SA' : (langCode === 'ur' ? 'ur-PK' : 'en-US');
+        utter.rate = langCode === 'ar' ? 0.84 : (langCode === 'ur' ? 0.88 : 0.92);
+        utter.pitch = 0.96;
+        if (matchedVoice) utter.voice = matchedVoice;
+
+        setSpeakerPulse(true);
+        utter.onend = function () {
+          setSpeakerPulse(false);
+          if (typeof onDone === 'function') onDone();
+        };
+        utter.onerror = function () {
+          setSpeakerPulse(false);
+          if (typeof onDone === 'function') onDone();
+        };
+        window.speechSynthesis.speak(utter);
+      } catch (e) {
+        setSpeakerPulse(false);
+        if (typeof onDone === 'function') onDone();
+      }
+    }
+
+    function playAudioWithFallback(candidateUrls, fallbackLang, fallbackText, onDone) {
+      stopAllActiveAudio();
+      setSpeakerPulse(true);
+
+      let idx = 0;
+      function tryNextUrl() {
+        if (idx >= candidateUrls.length) {
+          speakWithFallbackVoice(fallbackLang, fallbackText, onDone);
+          return;
+        }
+        const url = candidateUrls[idx++];
+        try {
+          const audio = new Audio();
+          activeAudio = audio;
+          audio.preload = 'auto';
+          let settled = false;
+
+          const finishFail = function () {
+            if (settled) return;
+            settled = true;
+            tryNextUrl();
+          };
+
+          audio.onended = function () {
+            if (settled) return;
+            settled = true;
+            setSpeakerPulse(false);
+            if (typeof onDone === 'function') onDone();
+          };
+
+          audio.onerror = finishFail;
+
+          audio.src = url;
+          const playPromise = audio.play();
+          if (playPromise && typeof playPromise.catch === 'function') {
+            playPromise.catch(function (err) {
+              if (err && err.name === 'NotAllowedError') {
+                needsFirstGestureAudio = true;
+                settled = true;
+                setSpeakerPulse(false);
+                return;
+              }
+              finishFail();
+            });
+          }
+        } catch (e) {
+          tryNextUrl();
+        }
+      }
+
+      tryNextUrl();
+    }
+
+    function playShortPraiseMp3(kind, fallbackArabicText, onDone) {
+      const urls = [];
+      const hAr1 = fnv1aHash('ما شاء الله');
+      const hAr2 = fnv1aHash('مَا شَاءَ اللَّهُ');
+      const hUr1 = fnv1aHash('ماشاءاللہ');
+      const hBarak = fnv1aHash('بَارَكَ اللَّهُ فِيكَ');
+
+      GAME_AUDIO_BASES.forEach(function (b) {
+        if (kind === 'barakallah') {
+          urls.push(b + 'asma_barakallah.mp3');
+          urls.push(b + 'ar_' + hBarak + '.mp3');
+          urls.push(b + hBarak + '.mp3');
+        } else {
+          urls.push(b + 'asma_mashaallah.mp3');
+          urls.push(b + 'mashaallah_short.mp3');
+          urls.push(b + 'mashaallah.mp3');
+          urls.push(b + 'ar_' + hAr1 + '.mp3');
+          urls.push(b + hAr1 + '.mp3');
+          urls.push(b + 'ar_' + hAr2 + '.mp3');
+          urls.push(b + 'ur_' + hUr1 + '.mp3');
+          urls.push(b + hUr1 + '.mp3');
+        }
+      });
+      playAudioWithFallback(urls, 'ar', fallbackArabicText || 'ما شاء الله', onDone);
+    }
+
+    function playNeuralMp3(lang, text, nameIdx, onDone) {
+      const h = fnv1aHash(text);
+      const urls = [];
+      GAME_AUDIO_BASES.forEach(function (b) {
+        if (nameIdx) {
+          urls.push(b + 'asma_' + lang + '_' + nameIdx + '.mp3');
+          urls.push(b + lang + '_name_' + nameIdx + '.mp3');
+        }
+        urls.push(b + lang + '_' + h + '.mp3');
+        urls.push(b + h + '.mp3');
+      });
+      playAudioWithFallback(urls, lang, text, onDone);
+    }
+
+    function speakLevelStartName() {
+      const item = NAMES_99[state.levelIdx];
+      if (!item) return;
+      hasSpokenCurrentLevelStart = true;
+      playNeuralMp3('ar', item[1], item[0]);
+    }
+
+    // Complete 4-Part Completion Sequence:
+    // 1. Short "Masha'Allah" -> 2. Arabic Name -> 3. Urdu Meaning -> 4. English Meaning!
+    function speakCompletionSequence() {
+      const item = NAMES_99[state.levelIdx];
+      if (!item) return;
+      const idx = item[0];
+      playShortPraiseMp3('mashaallah', 'ما شاء الله', function () {
+        playNeuralMp3('ar', item[1], idx, function () {
+          playNeuralMp3('ur', item[4], idx, function () {
+            playNeuralMp3('en', item[3], idx);
+          });
+        });
+      });
+    }
+
+    // =========================================================================
+    // 4. CALLIGRAPHY ENGINE + AUTOMATIC HIGH-DIACRITIC (PESH) HEIGHT COMPACTOR
+    // =========================================================================
+    const SIZE = 960;
+    const artCanvas = document.getElementById('artCanvas');
+    const artCtx = artCanvas.getContext('2d', { willReadFrequently: true });
+    const penCanvas = document.getElementById('penCanvas');
+    const penCtx = penCanvas.getContext('2d');
+    const rainCanvas = document.getElementById('celebrationRainCanvas');
+    const rainCtx = rainCanvas.getContext('2d');
+
+    const paintLayer = document.createElement('canvas');
+    paintLayer.width = SIZE;
+    paintLayer.height = SIZE;
+    const paintCtx = paintLayer.getContext('2d', { willReadFrequently: true });
+
+    const outlineLayer = document.createElement('canvas');
+    outlineLayer.width = SIZE;
+    outlineLayer.height = SIZE;
+    const outlineCtx = outlineLayer.getContext('2d');
+
+    let regionMap = new Uint16Array(SIZE * SIZE);
+    let paintedMask = new Uint8Array(SIZE * SIZE);
+    let totalPaintablePixels = 0;
+    let paintedPixelsCount = 0;
+    let levelFinished = false;
+
+    function buildCleanCalligraphyRegions() {
+      const item = NAMES_99[state.levelIdx];
+      const arName = item[1];
+      const cx = SIZE / 2;
+      const cy = SIZE / 2;
+
+      regionMap.fill(0);
+      paintedMask.fill(0);
+      totalPaintablePixels = 0;
+      paintedPixelsCount = 0;
+      levelFinished = false;
+      hasSpokenCurrentLevelStart = false;
+      clearCelebrationRain();
+
+      const revealPill = document.getElementById('meaningRevealPill');
+      if (revealPill) revealPill.classList.add('hidden');
+
+      paintCtx.clearRect(0, 0, SIZE, SIZE);
+      outlineCtx.clearRect(0, 0, SIZE, SIZE);
+
+      const maskCan = document.createElement('canvas');
+      maskCan.width = SIZE;
+      maskCan.height = SIZE;
+      const mCtx = maskCan.getContext('2d', { willReadFrequently: true });
+
+      let fontSize = 330;
+      mCtx.font = '700 ' + fontSize + 'px "Amiri", "Scheherazade New", "KFGQPC Uthman Taha Naskh", serif';
+      const measuredW = mCtx.measureText(arName).width;
+      const targetMaxW = SIZE * 0.84;
+      if (measuredW > targetMaxW && measuredW > 0) {
+        fontSize = Math.max(150, Math.floor(fontSize * (targetMaxW / measuredW)));
+        mCtx.font = '700 ' + fontSize + 'px "Amiri", "Scheherazade New", "KFGQPC Uthman Taha Naskh", serif';
+      }
+
+      mCtx.textAlign = 'center';
+      mCtx.textBaseline = 'middle';
+      mCtx.lineJoin = 'round';
+      mCtx.lineCap = 'round';
+
+      mCtx.strokeStyle = '#000000';
+      mCtx.lineWidth = 4;
+      mCtx.strokeText(arName, cx, cy + 28);
+      mCtx.fillStyle = '#000000';
+      mCtx.fillText(arName, cx, cy + 28);
+
+      const mData = mCtx.getImageData(0, 0, SIZE, SIZE).data;
+      const binaryMask = new Uint8Array(SIZE * SIZE);
+      for (let i = 0; i < SIZE * SIZE; i++) {
+        if (mData[i * 4 + 3] > 115) {
+          binaryMask[i] = 1;
+        }
+      }
+
+      // 2D Connected-Component Flood Fill (BFS)
+      const islandMap = new Int32Array(SIZE * SIZE);
+      const islandBounds = [];
+      let currentIslandId = 0;
+      const bfsQueue = new Int32Array(SIZE * SIZE);
+
+      for (let i = 0; i < SIZE * SIZE; i++) {
+        if (binaryMask[i] === 1 && islandMap[i] === 0) {
+          currentIslandId++;
+          let head = 0, tail = 0;
+          bfsQueue[tail++] = i;
+          islandMap[i] = currentIslandId;
+
+          let minX = SIZE, maxX = 0, minY = SIZE, maxY = 0, area = 0;
+
+          while (head < tail) {
+            const curr = bfsQueue[head++];
+            area++;
+            const y = Math.floor(curr / SIZE);
+            const x = curr - y * SIZE;
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+
+            if (x > 0 && binaryMask[curr - 1] === 1 && islandMap[curr - 1] === 0) {
+              islandMap[curr - 1] = currentIslandId;
+              bfsQueue[tail++] = curr - 1;
+            }
+            if (x < SIZE - 1 && binaryMask[curr + 1] === 1 && islandMap[curr + 1] === 0) {
+              islandMap[curr + 1] = currentIslandId;
+              bfsQueue[tail++] = curr + 1;
+            }
+            if (y > 0 && binaryMask[curr - SIZE] === 1 && islandMap[curr - SIZE] === 0) {
+              islandMap[curr - SIZE] = currentIslandId;
+              bfsQueue[tail++] = curr - SIZE;
+            }
+            if (y < SIZE - 1 && binaryMask[curr + SIZE] === 1 && islandMap[curr + SIZE] === 0) {
+              islandMap[curr + SIZE] = currentIslandId;
+              bfsQueue[tail++] = curr + SIZE;
+            }
+          }
+
+          islandBounds[currentIslandId] = {
+            id: currentIslandId,
+            minX: minX,
+            maxX: maxX,
+            minY: minY,
+            maxY: maxY,
+            width: maxX - minX + 1,
+            height: maxY - minY + 1,
+            area: area
+          };
+        }
+      }
+
+      // =====================================================================
+      // NEW: AUTOMATIC HIGH-DIACRITIC (PESH / SHADDAH / SUKOON) PULL-DOWN!
+      // Any floating upper diacritic island (whose area < 5500 and maxY < cy + 15)
+      // that sits too far above the letter/mark beneath it is shifted straight down
+      // so the final Pesh (e.g. on الرَّحِيمُ or الْمُعِزُّ) sits neatly near its letter!
+      // =====================================================================
+      const upperIslands = [];
+      for (let islId = 1; islId <= currentIslandId; islId++) {
+        const b = islandBounds[islId];
+        if (b && b.area >= 25 && b.area < 5500 && b.height < 145 && b.maxY < cy + 20) {
+          upperIslands.push(b);
+        }
+      }
+      // Sort from lowest (closest to letter body, e.g. Shaddah) to highest (e.g. Pesh above Shaddah)
+      upperIslands.sort(function (a, b) { return b.maxY - a.maxY; });
+
+      upperIslands.forEach(function (b) {
+        const islId = b.id;
+        // Look straight down in columns [minX - 24 .. maxX + 24] for the nearest pixel of another island below b.maxY
+        const colStart = Math.max(0, b.minX - 24);
+        const colEnd = Math.min(SIZE - 1, b.maxX + 24);
+        let supportTopY = -1;
+
+        for (let y = b.maxY + 1; y < SIZE - 20; y++) {
+          for (let x = colStart; x <= colEnd; x++) {
+            const otherId = islandMap[y * SIZE + x];
+            if (otherId !== 0 && otherId !== islId) {
+              supportTopY = y;
+              break;
+            }
+          }
+          if (supportTopY !== -1) break;
+        }
+
+        // If no pixel was directly below in that narrow band, widen search slightly to catch final letter tail (like م or ن)
+        if (supportTopY === -1) {
+          const wideStart = Math.max(0, b.minX - 65);
+          const wideEnd = Math.min(SIZE - 1, b.maxX + 65);
+          for (let y = b.maxY + 1; y < SIZE - 20; y++) {
+            for (let x = wideStart; x <= wideEnd; x++) {
+              const otherId = islandMap[y * SIZE + x];
+              if (otherId !== 0 && otherId !== islId) {
+                supportTopY = y;
+                break;
+              }
+            }
+            if (supportTopY !== -1) break;
+          }
+        }
+
+        const desiredGap = 18; // Neat, compact 18px gap above the letter or Shaddah!
+        if (supportTopY !== -1 && (supportTopY - b.maxY) > desiredGap + 6) {
+          const shiftDown = (supportTopY - b.maxY) - desiredGap;
+          // Shift pixels of `islId` down by `shiftDown` in `islandMap` (bottom-to-top to avoid overwriting)
+          for (let y = b.maxY; y >= b.minY; y--) {
+            for (let x = b.minX; x <= b.maxX; x++) {
+              const oldIdx = y * SIZE + x;
+              if (islandMap[oldIdx] === islId) {
+                islandMap[oldIdx] = 0;
+                const newY = Math.min(SIZE - 10, y + shiftDown);
+                islandMap[newY * SIZE + x] = islId;
+              }
+            }
+          }
+          b.minY += shiftDown;
+          b.maxY += shiftDown;
+        }
+      });
+
+      // Split wide multi-letter connected islands ONLY at narrow baseline ligature bridges
+      let nextRegionId = 1;
+
+      for (let islId = 1; islId <= currentIslandId; islId++) {
+        const b = islandBounds[islId];
+        if (!b || b.area < 25) continue;
+
+        if (b.width > 165 && b.area > 6500) {
+          const w = b.width;
+          const colSpan = new Int32Array(w);
+          const colCount = new Int32Array(w);
+
+          for (let x = b.minX; x <= b.maxX; x++) {
+            let topY = -1, botY = -1, cnt = 0;
+            for (let y = b.minY; y <= b.maxY; y++) {
+              if (islandMap[y * SIZE + x] === islId) {
+                if (topY === -1) topY = y;
+                botY = y;
+                cnt++;
+              }
+            }
+            colSpan[x - b.minX] = (topY !== -1) ? (botY - topY + 1) : 9999;
+            colCount[x - b.minX] = cnt;
+          }
+
+          const margin = Math.max(55, Math.floor(w * 0.22));
+          const cutColumns = [];
+          let xOffset = margin;
+
+          while (xOffset < w - margin) {
+            if (colSpan[xOffset] <= 36 && colCount[xOffset] <= 34) {
+              let bestX = xOffset;
+              let minSpan = colSpan[xOffset];
+              const winEnd = Math.min(w - margin, xOffset + 45);
+              for (let k = xOffset; k < winEnd; k++) {
+                if (colSpan[k] < minSpan) {
+                  minSpan = colSpan[k];
+                  bestX = k;
+                }
+              }
+              cutColumns.push(b.minX + bestX);
+              xOffset = bestX + 75;
+            } else {
+              xOffset++;
+            }
+          }
+
+          const numSubRegions = cutColumns.length + 1;
+          const baseRegionId = nextRegionId;
+          nextRegionId += numSubRegions;
+
+          for (let y = b.minY; y <= b.maxY; y++) {
+            for (let x = b.minX; x <= b.maxX; x++) {
+              const idx = y * SIZE + x;
+              if (islandMap[idx] === islId) {
+                let subIdx = 0;
+                for (let c = 0; c < cutColumns.length; c++) {
+                  if (x > cutColumns[c]) subIdx = c + 1;
+                }
+                regionMap[idx] = baseRegionId + subIdx;
+              }
+            }
+          }
+        } else {
+          const rId = nextRegionId++;
+          for (let y = b.minY; y <= b.maxY; y++) {
+            for (let x = b.minX; x <= b.maxX; x++) {
+              const idx = y * SIZE + x;
+              if (islandMap[idx] === islId) {
+                regionMap[idx] = rId;
+              }
+            }
+          }
+        }
+      }
+
+      // Build Crisp Dark Black Outlines
+      const outImg = outlineCtx.createImageData(SIZE, SIZE);
+      const outData = outImg.data;
+      const edgeR = 3;
+
+      for (let y = edgeR; y < SIZE - edgeR; y++) {
+        for (let x = edgeR; x < SIZE - edgeR; x++) {
+          const idx = y * SIZE + x;
+          const rId = regionMap[idx];
+          if (rId === 0) continue;
+
+          const nUp = regionMap[(y - edgeR) * SIZE + x];
+          const nDn = regionMap[(y + edgeR) * SIZE + x];
+          const nLt = regionMap[y * SIZE + (x - edgeR)];
+          const nRt = regionMap[y * SIZE + (x + edgeR)];
+
+          const isOuterEdge = (nUp === 0 || nDn === 0 || nLt === 0 || nRt === 0);
+          const isJointEdge = (
+            (nLt > 0 && nLt !== rId) ||
+            (nRt > 0 && nRt !== rId)
+          );
+
+          if (isOuterEdge || isJointEdge) {
+            const p = idx * 4;
+            outData[p] = 17;
+            outData[p + 1] = 24;
+            outData[p + 2] = 39;
+            outData[p + 3] = 255;
+          } else {
+            totalPaintablePixels++;
+          }
+        }
+      }
+      outlineCtx.putImageData(outImg, 0, 0);
+
+      const initImg = paintCtx.createImageData(SIZE, SIZE);
+      const initData = initImg.data;
+      for (let i = 0; i < SIZE * SIZE; i++) {
+        if (regionMap[i] > 0) {
+          const p = i * 4;
+          initData[p] = 248;
+          initData[p + 1] = 250;
+          initData[p + 2] = 252;
+          initData[p + 3] = 255;
+        }
+      }
+      paintCtx.putImageData(initImg, 0, 0);
+
+      document.getElementById('txtLevelTitle').textContent = 'LEVEL ' + item[0];
+      renderArtCanvas();
+    }
+
+    // =========================================================================
+    // 5. GENTLE ISLAMIC FLORAL, CRESCENT & STAR RAIN THAT SETTLES AT BOTTOM
+    // =========================================================================
+    let rainItems = [];
+    let rainActive = false;
+
+    function clearCelebrationRain() {
+      rainItems = [];
+      rainActive = false;
+      rainCtx.clearRect(0, 0, SIZE, SIZE);
+    }
+
+    function startGentleIslamicRain() {
+      rainItems = [];
+      rainActive = true;
+      const itemColors = ['#fbbf24', '#f43f5e', '#38bdf8', '#10b981', '#a855f7', '#fb923c'];
+      const types = ['flower', 'star8', 'crescent', 'flower'];
+
+      // 42 lightweight delicate items falling gently and stacking along the bottom
+      for (let i = 0; i < 42; i++) {
+        const colSlot = (i % 14);
+        const targetX = 60 + colSlot * 64 + (Math.random() * 26 - 13);
+        const layerRow = Math.floor(i / 14);
+        const restY = SIZE - 28 - layerRow * 22 - (Math.random() * 10);
+
+        rainItems.push({
+          x: targetX,
+          y: -30 - Math.random() * 420,
+          vy: 2.2 + Math.random() * 1.8,
+          vx: (Math.random() - 0.5) * 0.7,
+          swayPhase: Math.random() * Math.PI * 2,
+          rot: Math.random() * Math.PI * 2,
+          vRot: (Math.random() - 0.5) * 0.03,
+          size: 13 + (i % 3) * 4,
+          color: itemColors[i % itemColors.length],
+          type: types[i % types.length],
+          restY: restY,
+          settled: false
+        });
+      }
+    }
+
+    function drawRainShape(ctx, item) {
+      ctx.save();
+      ctx.translate(item.x, item.y);
+      ctx.rotate(item.rot);
+      ctx.fillStyle = item.color;
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 2;
+
+      const s = item.size;
+      if (item.type === 'flower') {
+        // Cute 5-petal Islamic Jasmine/Rose Blossom
+        for (let p = 0; p < 5; p++) {
+          const ang = (p * Math.PI * 2) / 5;
+          ctx.beginPath();
+          ctx.arc(Math.cos(ang) * (s * 0.55), Math.sin(ang) * (s * 0.55), s * 0.45, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        }
+        ctx.fillStyle = '#fef08a';
+        ctx.beginPath();
+        ctx.arc(0, 0, s * 0.32, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      } else if (item.type === 'star8') {
+        // 8-Point Islamic Rub el Hizb Star
+        ctx.beginPath();
+        for (let k = 0; k < 16; k++) {
+          const r = k % 2 === 0 ? s : s * 0.48;
+          const a = (k * Math.PI) / 8;
+          const px = Math.cos(a) * r;
+          const py = Math.sin(a) * r;
+          if (k === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      } else {
+        // Golden Crescent Moon
+        ctx.beginPath();
+        ctx.arc(0, 0, s * 0.85, 0.25 * Math.PI, 1.75 * Math.PI, false);
+        ctx.arc(s * 0.35, 0, s * 0.68, 1.65 * Math.PI, 0.35 * Math.PI, true);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function updateAndRenderRain() {
+      if (!rainActive) return;
+      rainCtx.clearRect(0, 0, SIZE, SIZE);
+
+      for (let i = 0; i < rainItems.length; i++) {
+        const it = rainItems[i];
+        if (!it.settled) {
+          it.swayPhase += 0.04;
+          it.x += Math.sin(it.swayPhase) * 0.6 + it.vx;
+          it.y += it.vy;
+          it.rot += it.vRot;
+
+          // Gently settle and rest at the bottom!
+          if (it.y >= it.restY) {
+            it.y = it.restY;
+            it.settled = true;
+          }
+        }
+        drawRainShape(rainCtx, it);
+      }
+    }
+
+    // =========================================================================
+    // 6. RENDERING & VISUAL PEN / BRUSH ON CANVAS (WITH DUAL-COLOR MIX SUPPORT!)
+    // =========================================================================
+    let pointer = { x: 500, y: 500, visible: false };
+
+    function renderArtCanvas() {
+      artCtx.clearRect(0, 0, SIZE, SIZE);
+      artCtx.fillStyle = '#ffffff';
+      artCtx.fillRect(0, 0, SIZE, SIZE);
+      artCtx.drawImage(paintLayer, 0, 0);
+      artCtx.drawImage(outlineLayer, 0, 0);
+    }
+
+    function renderPenLayer() {
+      penCtx.clearRect(0, 0, SIZE, SIZE);
+      updateAndRenderRain();
+
+      if (!pointer.visible || levelFinished) return;
+
+      const tool = TOOLS[state.toolIdx];
+      const tipColor = state.isMixMode ? state.activeMixPair[0] : state.activeColor;
+      const secondColor = state.isMixMode ? state.activeMixPair[1] : state.activeColor;
+
+      penCtx.save();
+      penCtx.translate(pointer.x, pointer.y);
+      penCtx.rotate(Math.PI / 4);
+
+      penCtx.fillStyle = 'rgba(0,0,0,0.12)';
+      penCtx.beginPath();
+      penCtx.roundRect(12, -10, 210, 44, 18);
+      penCtx.fill();
+
+      if (tool.id === 'brush') {
+        penCtx.fillStyle = tipColor;
+        penCtx.strokeStyle = '#111827';
+        penCtx.lineWidth = 3.5;
+        penCtx.beginPath();
+        penCtx.moveTo(0, 0);
+        penCtx.quadraticCurveTo(18, -20, 42, -16);
+        penCtx.lineTo(42, 16);
+        penCtx.quadraticCurveTo(18, 20, 0, 0);
+        penCtx.fill();
+        penCtx.stroke();
+
+        penCtx.fillStyle = '#cbd5e1';
+        penCtx.fillRect(42, -16, 22, 32);
+        penCtx.strokeRect(42, -16, 22, 32);
+
+        penCtx.fillStyle = secondColor;
+        penCtx.beginPath();
+        penCtx.roundRect(64, -14, 165, 28, [0, 14, 14, 0]);
+        penCtx.fill();
+        penCtx.stroke();
+      } else {
+        const nibW = tool.id === 'fine' ? 7 : 12;
+        penCtx.fillStyle = tipColor;
+        penCtx.strokeStyle = '#111827';
+        penCtx.lineWidth = 3.5;
+        penCtx.beginPath();
+        penCtx.moveTo(0, 0);
+        penCtx.lineTo(26, -nibW);
+        penCtx.lineTo(26, nibW);
+        penCtx.closePath();
+        penCtx.fill();
+        penCtx.stroke();
+
+        penCtx.fillStyle = '#ffffff';
+        penCtx.beginPath();
+        penCtx.moveTo(26, -nibW);
+        penCtx.lineTo(62, -22);
+        penCtx.lineTo(62, 22);
+        penCtx.lineTo(26, nibW);
+        penCtx.closePath();
+        penCtx.fill();
+        penCtx.stroke();
+
+        penCtx.fillStyle = tipColor;
+        penCtx.fillRect(62, -22, 22, 44);
+        penCtx.strokeRect(62, -22, 22, 44);
+
+        penCtx.fillStyle = tool.bodyColor;
+        penCtx.beginPath();
+        penCtx.roundRect(84, -22, 155, 44, [0, 18, 18, 0]);
+        penCtx.fill();
+        penCtx.stroke();
+
+        penCtx.fillStyle = secondColor;
+        penCtx.beginPath();
+        penCtx.roundRect(104, -7, 110, 14, 7);
+        penCtx.fill();
+      }
+
+      penCtx.restore();
+    }
+
+    function renderLoop() {
+      renderPenLayer();
+      requestAnimationFrame(renderLoop);
+    }
+
+    // =========================================================================
+    // 7. STRICT LETTER-LOCKED BRUSH PAINTING + DUAL-COLOR MIX GRADIENT ENGINE
+    // =========================================================================
+    let isDrawing = false;
+    let lockedRegionId = 0;
+    let lastPt = { x: 0, y: 0 };
+    let lastSoundTime = 0;
+
+    function getCanvasCoords(evt) {
+      const rect = artCanvas.getBoundingClientRect();
+      const cx = (evt.touches && evt.touches[0]) ? evt.touches[0].clientX : evt.clientX;
+      const cy = (evt.touches && evt.touches[0]) ? evt.touches[0].clientY : evt.clientY;
+      return {
+        x: Math.max(0, Math.min(SIZE - 1, Math.floor((cx - rect.left) * (SIZE / rect.width)))),
+        y: Math.max(0, Math.min(SIZE - 1, Math.floor((cy - rect.top) * (SIZE / rect.height))))
+      };
+    }
+
+    function findNearestRegion(x, y) {
+      const direct = regionMap[y * SIZE + x];
+      if (direct > 0) return direct;
+      for (let r = 2; r <= 18; r += 2) {
+        for (let dy = -r; dy <= r; dy += r) {
+          for (let dx = -r; dx <= r; dx += r) {
+            const nx = x + dx, ny = y + dy;
+            if (nx >= 0 && nx < SIZE && ny >= 0 && ny < SIZE) {
+              const id = regionMap[ny * SIZE + nx];
+              if (id > 0) return id;
+            }
+          }
+        }
+      }
+      return 0;
+    }
+
+    function hexToRgb(hex) {
+      const clean = hex.replace('#', '');
+      const n = parseInt(clean, 16);
+      return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    }
+
+    // Compute pixel RGB for either Solid Color OR 4th Swatch Dual-Color Mix!
+    function getPixelPaintRgb(x, y, rgbSolid, rgbMixA, rgbMixB, isGoldTool) {
+      if (isGoldTool && ((x + y) % 7 === 0)) {
+        return [254, 240, 138];
+      }
+      if (!state.isMixMode) {
+        return rgbSolid;
+      }
+      // Smooth spatial dual-color wave so both colors flow out of the pen side by side!
+      const wave = 0.5 + 0.5 * Math.sin((x + y) * 0.032);
+      return [
+        Math.round(rgbMixA[0] * (1 - wave) + rgbMixB[0] * wave),
+        Math.round(rgbMixA[1] * (1 - wave) + rgbMixB[1] * wave),
+        Math.round(rgbMixA[2] * (1 - wave) + rgbMixB[2] * wave)
+      ];
+    }
+
+    function paintDabLocked(cx, cy, radius, targetRegionId) {
+      if (!targetRegionId) return;
+      const rSq = radius * radius;
+      const minX = Math.max(0, Math.floor(cx - radius));
+      const maxX = Math.min(SIZE - 1, Math.ceil(cx + radius));
+      const minY = Math.max(0, Math.floor(cy - radius));
+      const maxY = Math.min(SIZE - 1, Math.ceil(cy + radius));
+      const w = maxX - minX + 1;
+      const h = maxY - minY + 1;
+
+      const img = paintCtx.getImageData(minX, minY, w, h);
+      const data = img.data;
+      const rgbSolid = hexToRgb(state.activeColor);
+      const rgbMixA = hexToRgb(state.activeMixPair[0]);
+      const rgbMixB = hexToRgb(state.activeMixPair[1]);
+      const isGoldTool = TOOLS[state.toolIdx].id === 'gold';
+
+      for (let y = minY; y <= maxY; y++) {
+        const dy = y - cy;
+        for (let x = minX; x <= maxX; x++) {
+          const dx = x - cx;
+          if (dx * dx + dy * dy <= rSq) {
+            const gIdx = y * SIZE + x;
+            if (regionMap[gIdx] === targetRegionId) {
+              const lIdx = ((y - minY) * w + (x - minX)) * 4;
+              const c = getPixelPaintRgb(x, y, rgbSolid, rgbMixA, rgbMixB, isGoldTool);
+              data[lIdx] = c[0];
+              data[lIdx + 1] = c[1];
+              data[lIdx + 2] = c[2];
+              data[lIdx + 3] = 255;
+
+              if (paintedMask[gIdx] === 0) {
+                paintedMask[gIdx] = 1;
+                paintedPixelsCount++;
+              }
+            }
+          }
+        }
+      }
+      paintCtx.putImageData(img, minX, minY);
+    }
+
+    function snapFinishSingleRegionIfAlmostDone(targetRegionId) {
+      if (!targetRegionId) return;
+      let totalInReg = 0, paintedInReg = 0;
+      for (let i = 0; i < SIZE * SIZE; i++) {
+        if (regionMap[i] === targetRegionId) {
+          totalInReg++;
+          if (paintedMask[i] === 1) paintedInReg++;
+        }
+      }
+      if (totalInReg > 0 && paintedInReg / totalInReg >= 0.80) {
+        const img = paintCtx.getImageData(0, 0, SIZE, SIZE);
+        const data = img.data;
+        const rgbSolid = hexToRgb(state.activeColor);
+        const rgbMixA = hexToRgb(state.activeMixPair[0]);
+        const rgbMixB = hexToRgb(state.activeMixPair[1]);
+        const isGoldTool = TOOLS[state.toolIdx].id === 'gold';
+
+        for (let i = 0; i < SIZE * SIZE; i++) {
+          if (regionMap[i] === targetRegionId && paintedMask[i] === 0) {
+            const y = Math.floor(i / SIZE);
+            const x = i - y * SIZE;
+            const c = getPixelPaintRgb(x, y, rgbSolid, rgbMixA, rgbMixB, isGoldTool);
+            const p = i * 4;
+            data[p] = c[0];
+            data[p + 1] = c[1];
+            data[p + 2] = c[2];
+            data[p + 3] = 255;
+            paintedMask[i] = 1;
+            paintedPixelsCount++;
+          }
+        }
+        paintCtx.putImageData(img, 0, 0);
+        renderArtCanvas();
+      }
+    }
+
+    function checkWholeWordCompleted() {
+      if (levelFinished || totalPaintablePixels === 0) return;
+      if (paintedPixelsCount / totalPaintablePixels >= 0.90) {
+        const img = paintCtx.getImageData(0, 0, SIZE, SIZE);
+        const data = img.data;
+        const rgbSolid = hexToRgb(state.activeColor);
+        const rgbMixA = hexToRgb(state.activeMixPair[0]);
+        const rgbMixB = hexToRgb(state.activeMixPair[1]);
+        const isGoldTool = TOOLS[state.toolIdx].id === 'gold';
+
+        for (let i = 0; i < SIZE * SIZE; i++) {
+          if (regionMap[i] > 0 && paintedMask[i] === 0) {
+            const y = Math.floor(i / SIZE);
+            const x = i - y * SIZE;
+            const c = getPixelPaintRgb(x, y, rgbSolid, rgbMixA, rgbMixB, isGoldTool);
+            const p = i * 4;
+            data[p] = c[0];
+            data[p + 1] = c[1];
+            data[p + 2] = c[2];
+            data[p + 3] = 255;
+            paintedMask[i] = 1;
+          }
+        }
+        paintCtx.putImageData(img, 0, 0);
+        renderArtCanvas();
+        onLevelComplete();
+      }
+    }
+
+    function onPointerDown(evt) {
+      if (levelFinished) return;
+      evt.preventDefault();
+
+      if (needsFirstGestureAudio || !hasSpokenCurrentLevelStart) {
+        needsFirstGestureAudio = false;
+        speakLevelStartName();
+      }
+
+      const pt = getCanvasCoords(evt);
+      isDrawing = true;
+      lastPt = pt;
+      pointer = { x: pt.x, y: pt.y, visible: true };
+      lockedRegionId = findNearestRegion(pt.x, pt.y);
+
+      const rad = getEffectiveRadius();
+      paintDabLocked(pt.x, pt.y, rad, lockedRegionId);
+      renderArtCanvas();
+      playSoftTactileSound('brush');
+    }
+
+    function onPointerMove(evt) {
+      if (!isDrawing || levelFinished) return;
+      evt.preventDefault();
+      const pt = getCanvasCoords(evt);
+      pointer = { x: pt.x, y: pt.y, visible: true };
+
+      if (!lockedRegionId) {
+        lockedRegionId = findNearestRegion(pt.x, pt.y);
+      }
+
+      const rad = getEffectiveRadius();
+      const dist = Math.hypot(pt.x - lastPt.x, pt.y - lastPt.y);
+      const steps = Math.max(1, Math.ceil(dist / (rad * 0.28)));
+
+      for (let s = 1; s <= steps; s++) {
+        const t = s / steps;
+        paintDabLocked(
+          lastPt.x + (pt.x - lastPt.x) * t,
+          lastPt.y + (pt.y - lastPt.y) * t,
+          rad,
+          lockedRegionId
+        );
+      }
+      lastPt = pt;
+      renderArtCanvas();
+
+      const now = Date.now();
+      if (now - lastSoundTime > 90) {
+        lastSoundTime = now;
+        playSoftTactileSound('brush');
+      }
+    }
+
+    function onPointerUp() {
+      if (!isDrawing) return;
+      isDrawing = false;
+      snapFinishSingleRegionIfAlmostDone(lockedRegionId);
+      checkWholeWordCompleted();
+    }
+
+    function getEffectiveRadius() {
+      const base = SIZES[state.sizeIdx].radius;
+      const toolId = TOOLS[state.toolIdx].id;
+      if (toolId === 'fine') return Math.max(14, Math.round(base * 0.6));
+      if (toolId === 'brush') return Math.round(base * 1.25);
+      return base;
+    }
+
+    // =========================================================================
+    // 8. COMPLETION CELEBRATION (GENTLE FLORAL/STAR RAIN + CERTIFICATE CARD)
+    // =========================================================================
+    function onLevelComplete() {
+      levelFinished = true;
+      pointer.visible = false;
+
+      const item = NAMES_99[state.levelIdx];
+      const nameId = item[0];
+      state.completed[nameId] = 3;
+      state.stars += 3;
+
+      const revealPill = document.getElementById('meaningRevealPill');
+      if (revealPill) {
+        document.getElementById('txtRevealedName').textContent = item[1] + ' • ' + item[2];
+        document.getElementById('txtRevealedMeaning').textContent = item[4] + ' • ' + item[3];
+        revealPill.classList.remove('hidden');
+      }
+
+      const tCan = document.createElement('canvas');
+      tCan.width = 260;
+      tCan.height = 260;
+      const tCtx = tCan.getContext('2d');
+      tCtx.fillStyle = '#ffffff';
+      tCtx.fillRect(0, 0, 260, 260);
+      tCtx.drawImage(paintLayer, 0, 0, 260, 260);
+      tCtx.drawImage(outlineLayer, 0, 0, 260, 260);
+      state.thumbs[nameId] = tCan.toDataURL('image/png');
+      saveState();
+
+      // Start gentle Islamic flowers, crescents & 8-point stars raining down and settling at the bottom!
+      startGentleIslamicRain();
+
+      // Speak Masha'Allah -> Arabic Name -> Urdu Meaning -> English Meaning!
+      speakCompletionSequence();
+
+      setTimeout(function () {
+        document.getElementById('txtModalNameTitle').textContent = item[1] + ' • ' + item[2];
+        document.getElementById('inpArtistName').value = state.childName || '';
+        renderKeepsakeCard();
+        document.getElementById('modalCardCreator').classList.remove('hidden');
+      }, 1200);
+    }
+
+    function renderKeepsakeCard() {
+      const can = document.getElementById('cardPreviewCanvas');
+      const ctx = can.getContext('2d');
+      const item = NAMES_99[state.levelIdx];
+      const th = CARD_THEMES[state.cardThemeIdx % CARD_THEMES.length];
+
+      const grad = ctx.createLinearGradient(0, 0, 0, 1000);
+      grad.addColorStop(0, th.top);
+      grad.addColorStop(1, th.bottom);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 800, 1000);
+
+      ctx.strokeStyle = th.border;
+      ctx.lineWidth = 14;
+      ctx.strokeRect(24, 24, 752, 952);
+
+      ctx.fillStyle = th.text;
+      ctx.font = 'bold 36px "Amiri", "Fredoka", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(item[1] + '  •  ' + item[2], 400, 86);
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(65, 115, 670, 560, 36);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.lineWidth = 8;
+      ctx.strokeStyle = '#111827';
+      ctx.stroke();
+      ctx.clip();
+      ctx.drawImage(paintLayer, 90, 85, 620, 620);
+      ctx.drawImage(outlineLayer, 90, 85, 620, 620);
+      ctx.restore();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = '#111827';
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.roundRect(65, 705, 670, 165, 28);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#111827';
+      ctx.font = 'bold 34px "Jameel Noori Nastaleeq", "Noto Nastaliq Urdu", serif';
+      ctx.fillText(item[4], 400, 760);
+
+      ctx.fillStyle = th.text;
+      ctx.font = 'bold 25px "Inter", sans-serif';
+      ctx.fillText(item[3], 400, 805);
+
+      const artist = (state.childName || '').trim() || 'Little Artist';
+      ctx.fillStyle = '#059669';
+      ctx.font = 'bold 27px "Fredoka", "Inter", sans-serif';
+      ctx.fillText('🎨 ' + artist + ' ⭐', 400, 848);
+
+      // Draw settled flowers & Islamic stars along the bottom border of the Certificate Card too!
+      const garlandColors = ['#fbbf24', '#f43f5e', '#38bdf8', '#10b981', '#a855f7'];
+      for (let g = 0; g < 11; g++) {
+        drawRainShape(ctx, {
+          x: 90 + g * 62,
+          y: 925 + (g % 2 === 0 ? -4 : 4),
+          rot: g * 0.4,
+          size: 14,
+          color: garlandColors[g % garlandColors.length],
+          type: g % 3 === 0 ? 'star8' : (g % 3 === 1 ? 'flower' : 'crescent')
+        });
+      }
+    }
+
+    function renderCardThemeButtons() {
+      const row = document.getElementById('cardBgRow');
+      row.innerHTML = '';
+      CARD_THEMES.forEach(function (th, idx) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'h-10 rounded-xl border-3 transition ' + (state.cardThemeIdx === idx ? 'border-slate-900 scale-110' : 'border-slate-300');
+        b.style.background = 'linear-gradient(135deg, ' + th.top + ', ' + th.bottom + ')';
+        b.addEventListener('click', function () {
+          playSoftTactileSound('click');
+          state.cardThemeIdx = idx;
+          renderCardThemeButtons();
+          renderKeepsakeCard();
+        });
+        row.appendChild(b);
+      });
+    }
+
+    // =========================================================================
+    // 9. GALLERY & 4-CIRCLE SWATCH WIRING
+    // =========================================================================
+    function renderGallery() {
+      const grid = document.getElementById('galleryGrid');
+      grid.innerHTML = '';
+
+      for (let i = 0; i < NAMES_99.length; i++) {
+        const item = NAMES_99[i];
+        const nameId = item[0];
+        const stageNum = Math.min(10, Math.floor(i / 10) + 1);
+        const locked = stageNum >= 6 && !state.isPro;
+        const done = Boolean(state.completed[nameId]);
+        const thumb = state.thumbs[nameId];
+
+        const card = document.createElement('div');
+        card.className = 'gallery-item-card p-3 flex flex-col items-center justify-between aspect-square cursor-pointer';
+
+        const preview = thumb
+          ? '<img src="' + thumb + '" alt="' + item[2] + '" class="w-full h-32 object-contain rounded-xl" />'
+          : '<div class="w-full h-32 rounded-xl bg-slate-50 flex items-center justify-center"><span class="font-quran text-4xl text-slate-800">' + item[1] + '</span></div>';
+
+        const checkBadge = done
+          ? '<div class="absolute bottom-2.5 right-2.5 w-10 h-10 rounded-full bg-[#84cc16] border-3 border-[#111827] shadow-[0_3px_0_#111827] flex items-center justify-center text-white font-extrabold text-lg">✔</div>'
+          : locked
+          ? '<div class="absolute bottom-2.5 right-2.5 w-9 h-9 rounded-full bg-amber-300 border-2 border-slate-900 flex items-center justify-center text-sm">🔒</div>'
+          : '';
+
+        card.innerHTML =
+          '<div class="w-full flex items-center justify-between text-xs font-extrabold text-slate-400">' +
+          '<span>LEVEL ' + nameId + '</span>' +
+          '<span>' + item[2] + '</span>' +
+          '</div>' +
+          preview +
+          '<div class="text-xs font-bold text-slate-700 truncate w-full text-center">' + item[4] + '</div>' +
+          checkBadge;
+
+        card.addEventListener('click', function () {
+          playSoftTactileSound('click');
+          if (locked) {
+            state.isPro = true;
+            saveState();
+            renderGallery();
+            return;
+          }
+          state.levelIdx = i;
+          document.getElementById('screenGallery').classList.add('hidden');
+          document.getElementById('screenGallery').classList.remove('flex');
+          buildCleanCalligraphyRegions();
+          speakLevelStartName();
+        });
+        grid.appendChild(card);
+      }
+    }
+
+    function updateSwatchesUI() {
+      const pSet = PALETTE_SETS[state.paletteIdx % PALETTE_SETS.length];
+      const solidIds = ['swatch0', 'swatch1', 'swatch2'];
+
+      for (let i = 0; i < 3; i++) {
+        const el = document.getElementById(solidIds[i]);
+        el.style.background = pSet.solids[i];
+        if (state.swatchIdx === i) {
+          el.classList.add('selected-swatch');
+          state.activeColor = pSet.solids[i];
+          state.isMixMode = false;
+        } else {
+          el.classList.remove('selected-swatch');
+        }
+      }
+
+      const mixBtn = document.getElementById('swatch3');
+      state.activeMixPair = pSet.mix;
+      mixBtn.style.background =
+        'linear-gradient(135deg, ' + pSet.mix[0] + ' 0%, ' + pSet.mix[0] + ' 48%, ' + pSet.mix[1] + ' 52%, ' + pSet.mix[1] + ' 100%)';
+
+      if (state.swatchIdx === 3) {
+        mixBtn.classList.add('selected-swatch');
+        state.isMixMode = true;
+      } else {
+        mixBtn.classList.remove('selected-swatch');
+      }
+    }
+
+    function exitToQaafHub() {
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage('QAAF_EXIT_GAME', '*');
+          window.parent.postMessage({ type: 'QAAF_EXIT_GAME', action: 'closeGame', gameId: 'coloring' }, '*');
+          if (typeof window.parent.closeInstalledGameModal === 'function') {
+            window.parent.closeInstalledGameModal();
+          }
+        }
+      } catch (e) {}
+    }
+
+    window.addEventListener('DOMContentLoaded', function () {
+      loadState();
+      renderCardThemeButtons();
+      updateSwatchesUI();
+
+      try {
+        if (window.speechSynthesis) {
+          window.speechSynthesis.getVoices();
+          window.speechSynthesis.onvoiceschanged = function () {
+            window.speechSynthesis.getVoices();
+          };
+        }
+      } catch (e) {}
+
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(function () {
+          buildCleanCalligraphyRegions();
+          speakLevelStartName();
+        });
+      } else {
+        buildCleanCalligraphyRegions();
+        speakLevelStartName();
+      }
+
+      requestAnimationFrame(renderLoop);
+
+      // Canvas Events
+      artCanvas.addEventListener('mousedown', onPointerDown);
+      window.addEventListener('mousemove', onPointerMove);
+      window.addEventListener('mouseup', onPointerUp);
+
+      artCanvas.addEventListener('touchstart', onPointerDown, { passive: false });
+      window.addEventListener('touchmove', onPointerMove, { passive: false });
+      window.addEventListener('touchend', onPointerUp);
+
+      // 4 Circular Color Swatches (0, 1, 2 = Solid, 3 = Dual-Color Mix)
+      ['swatch0', 'swatch1', 'swatch2', 'swatch3'].forEach(function (idStr, idx) {
+        document.getElementById(idStr).addEventListener('click', function () {
+          if (needsFirstGestureAudio || !hasSpokenCurrentLevelStart) {
+            needsFirstGestureAudio = false;
+            speakLevelStartName();
+          } else {
+            playSoftTactileSound('click');
+          }
+          state.swatchIdx = idx;
+          updateSwatchesUI();
+        });
+      });
+
+      document.getElementById('btnMoreColors').addEventListener('click', function () {
+        playSoftTactileSound('click');
+        state.paletteIdx = (state.paletteIdx + 1) % PALETTE_SETS.length;
+        updateSwatchesUI();
+      });
+
+      document.getElementById('btnCycleTool').addEventListener('click', function () {
+        playSoftTactileSound('click');
+        state.toolIdx = (state.toolIdx + 1) % TOOLS.length;
+        document.getElementById('iconActiveTool').textContent = TOOLS[state.toolIdx].icon;
+        pointer.visible = true;
+      });
+
+      document.getElementById('btnCycleSize').addEventListener('click', function () {
+        playSoftTactileSound('click');
+        state.sizeIdx = (state.sizeIdx + 1) % SIZES.length;
+        const dot = document.getElementById('iconActiveSize');
+        const px = SIZES[state.sizeIdx].dotPx;
+        dot.style.width = px + 'px';
+        dot.style.height = px + 'px';
+      });
+
+      document.getElementById('btnPlayVoice').addEventListener('click', function () {
+        needsFirstGestureAudio = false;
+        speakLevelStartName();
+      });
+
+      document.getElementById('btnReplayCardVoice').addEventListener('click', function () {
+        speakCompletionSequence();
+      });
+
+      document.getElementById('btnResetArt').addEventListener('click', function () {
+        playSoftTactileSound('click');
+        buildCleanCalligraphyRegions();
+        speakLevelStartName();
+      });
+
+      document.getElementById('btnNextLevel').addEventListener('click', function () {
+        playSoftTactileSound('click');
+        state.levelIdx = (state.levelIdx + 1) % NAMES_99.length;
+        buildCleanCalligraphyRegions();
+        speakLevelStartName();
+      });
+
+      document.getElementById('btnGallery').addEventListener('click', function () {
+        playSoftTactileSound('click');
+        renderGallery();
+        const g = document.getElementById('screenGallery');
+        g.classList.remove('hidden');
+        g.classList.add('flex');
+      });
+
+      document.getElementById('btnBackFromGallery').addEventListener('click', function () {
+        playSoftTactileSound('click');
+        const g = document.getElementById('screenGallery');
+        g.classList.add('hidden');
+        g.classList.remove('flex');
+      });
+
+      document.getElementById('btnUnlockProGallery').addEventListener('click', function () {
+        playSoftTactileSound('click');
+        state.isPro = !state.isPro;
+        saveState();
+        renderGallery();
+      });
+
+      document.getElementById('btnExitHub').addEventListener('click', exitToQaafHub);
+
+      // Card Creator Modal Events
+      document.getElementById('inpArtistName').addEventListener('input', function (e) {
+        state.childName = e.target.value;
+        saveState();
+        renderKeepsakeCard();
+      });
+
+      document.getElementById('btnDownloadCard').addEventListener('click', function () {
+        playSoftTactileSound('click');
+        renderKeepsakeCard();
+        const item = NAMES_99[state.levelIdx];
+        const can = document.getElementById('cardPreviewCanvas');
+        const a = document.createElement('a');
+        a.download = 'QAAF_' + item[2].replace(/[^a-zA-Z0-9]/g, '') + '.png';
+        a.href = can.toDataURL('image/png');
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        playShortPraiseMp3('barakallah', 'بارك الله فيك');
+      });
+
+      document.getElementById('btnContinueNextLevel').addEventListener('click', function () {
+        playSoftTactileSound('click');
+        clearCelebrationRain();
+        document.getElementById('modalCardCreator').classList.add('hidden');
+        state.levelIdx = (state.levelIdx + 1) % NAMES_99.length;
+        buildCleanCalligraphyRegions();
+        speakLevelStartName();
+      });
+
+      document.getElementById('btnDismissCardModal').addEventListener('click', function () {
+        clearCelebrationRain();
+        document.getElementById('modalCardCreator').classList.add('hidden');
+      });
+    });
+  </script>
+</body>
+</html>

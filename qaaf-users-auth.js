@@ -5411,3 +5411,38 @@
     }
   });
 })();
+
+
+// === QAAF V111 ASMA-UL-HUSNA COLORING STUDIO 6TH GAME HUB CARD ===
+(function initQaafV111ColoringStudioMainHubCard() {
+  var COLORING_GAME_OBJ = {
+    id: "g_coloring",
+    slug: "coloring",
+    category: "qaaf_simple",
+    icon: "🎨",
+    title: "Asma-ul-Husna Coloring Studio",
+    desc: "99 Names of Allah ASMR Calligraphy Coloring & Certificate Cards",
+    size: "1.2 MB",
+    installed: true,
+    blockedByParent: false,
+    externalFile: "./qaaf-games/games/coloring.html"
+  };
+  if (typeof gamesData !== "undefined" && Array.isArray(gamesData)) {
+    if (!gamesData.some(function(g) { return g && (g.id === "g_coloring" || g.slug === "coloring"); })) {
+      gamesData.push(COLORING_GAME_OBJ);
+    }
+  }
+  window.addEventListener("message", function(ev) {
+    var d = ev.data;
+    if (d === "QAAF_EXIT_GAME" || (d && typeof d === "object" && (d.type === "QAAF_EXIT_GAME" || d.action === "closeGame"))) {
+      try {
+        var v4 = JSON.parse(localStorage.getItem("qaaf_games_state_v4") || "null");
+        if (v4 && typeof v4.stars === "number" && typeof gameStars !== "undefined" && v4.stars > gameStars) {
+          gameStars = v4.stars;
+          localStorage.setItem("qaaf_game_stars", String(gameStars));
+        }
+      } catch (e) {}
+      if (typeof closeStandaloneGameModal === "function") closeStandaloneGameModal();
+    }
+  });
+})();

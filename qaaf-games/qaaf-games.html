@@ -411,7 +411,14 @@
             <span id="hubGameTitle-racing" class="text-sm sm:text-base font-bold text-white truncate">بائیک ریسنگ</span>
           </div>
           <i class="fa-solid fa-play text-xs text-rose-400 shrink-0"></i>
-        </button>
+        </button><button onclick="openGameFromHub('coloring')" class="hub-game-bar w-full px-3.5 py-2.5 flex items-center justify-between gap-3 text-right" style="border-color:rgba(22,78,58,0.65);">
+<div class="flex items-center gap-3 min-w-0">
+<span class="w-7 h-7 rounded-lg bg-[#164e3a] border border-emerald-400/70 text-emerald-200 font-english font-bold text-xs flex items-center justify-center shrink-0">6</span>
+<span class="text-xl shrink-0">🎨</span>
+<span id="hubGameTitle-coloring" class="text-sm sm:text-base font-bold text-white truncate">Asma-ul-Husna Coloring Studio</span>
+</div>
+<i class="fa-solid fa-play text-xs text-emerald-400 shrink-0"></i>
+</button>
       </div>
     </section>
 
@@ -742,6 +749,15 @@
         </div>
       </div>
     </section>
+
+  <!-- =====================================================================
+     GAME 6: ASMA-UL-HUSNA COLORING STUDIO (QAAF TUBE OUTER WRAPPER)
+     ===================================================================== -->
+<section id="gameSection-coloring" class="hidden w-full max-w-2xl mx-auto pt-1">
+<div class="rounded-2xl overflow-hidden border-2 border-[#164e3a] bg-white shadow-2xl" style="height:calc(100dvh - 64px); min-height:500px;">
+<iframe id="coloringGameIframe" src="about:blank" title="Asma-ul-Husna Coloring Studio" class="w-full h-full border-0 block bg-white" allow="autoplay"></iframe>
+</div>
+</section>
 
   </main>
 
@@ -5377,6 +5393,143 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', enhanceWordSearchLayout);
   else enhanceWordSearchLayout();
   setTimeout(enhanceWordSearchLayout, 150);
+})();
+</script>
+<!-- QAAF COLORING STUDIO 6TH GAME INTEGRATION -->
+<script id="qaafColoringHubIntegration">
+(function initQaafColoringStudioHubIntegration() {
+  var COLORING_TITLES = {
+    ur: "اسماء الحسنیٰ کلرنگ اسٹوڈیو",
+    ar: "استوديو تلوين أسماء الله الحسنى",
+    en: "Asma-ul-Husna Coloring Studio"
+  };
+  var STATE_V4_KEY = "qaaf_games_state_v4";
+
+  function resolveColoringHtmlPath() {
+    var p = (window.location.pathname || "").replace(/\\\\/g, "/").toLowerCase();
+    if (p.indexOf("/qaaf-games/") !== -1) return "./games/coloring.html";
+    return "./qaaf-games/games/coloring.html";
+  }
+
+  function syncHubToV4Storage() {
+    try {
+      var obj = JSON.parse(localStorage.getItem(STATE_V4_KEY) || "{}") || {};
+      if (typeof appState !== "undefined") {
+        if (typeof appState.stars === "number") {
+          obj.stars = Math.max(Number(obj.stars || 0), appState.stars);
+          obj.totalStars = obj.stars;
+        }
+        if (appState.isSupporterPro) {
+          obj.isPro = true;
+          obj.supporterPro = true;
+        }
+      }
+      localStorage.setItem(STATE_V4_KEY, JSON.stringify(obj));
+    } catch (e) {}
+  }
+
+  function syncV4StorageBackToHub() {
+    try {
+      var obj = JSON.parse(localStorage.getItem(STATE_V4_KEY) || "null");
+      if (!obj || typeof appState === "undefined") return;
+      var v4Stars = Number(obj.stars || obj.totalStars || 0);
+      if (!isNaN(v4Stars) && v4Stars > appState.stars) {
+        appState.stars = v4Stars;
+        localStorage.setItem("qaaf_game_stars", String(appState.stars));
+        if (typeof updateStarDisplay === "function") updateStarDisplay();
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: "QAAF_STARS_UPDATED", stars: appState.stars }, "*");
+        }
+      }
+      if ((obj.isPro || obj.supporterPro) && !appState.isSupporterPro) {
+        appState.isSupporterPro = true;
+        localStorage.setItem("qaaf_supporter_pro", "true");
+        if (typeof updateProBadgeUI === "function") updateProBadgeUI();
+        if (typeof renderAllStageBars === "function") renderAllStageBars();
+      }
+    } catch (e) {}
+  }
+
+  function updateColoringCardAndHeaderTitle() {
+    var lang = (typeof appState !== "undefined" && appState.uiLang) ? appState.uiLang : "en";
+    var titleTxt = COLORING_TITLES[lang] || COLORING_TITLES.en;
+    var hubLbl = document.getElementById("hubGameTitle-coloring");
+    if (hubLbl) hubLbl.textContent = titleTxt;
+    if (typeof appState !== "undefined" && appState.activeGame === "coloring") {
+      var iconEl = document.getElementById("activeGameHeaderIcon");
+      var titleEl = document.getElementById("activeGameHeaderTitle");
+      if (iconEl) iconEl.textContent = "🎨";
+      if (titleEl) titleEl.textContent = titleTxt;
+    }
+  }
+
+  var origSetGlobalLang = window.setGlobalLanguage;
+  if (typeof origSetGlobalLang === "function") {
+    window.setGlobalLanguage = function(lang) {
+      origSetGlobalLang.apply(this, arguments);
+      updateColoringCardAndHeaderTitle();
+    };
+  }
+
+  var origSwitchGame = window.switchGame;
+  window.switchGame = function(gameId) {
+    var coloringSec = document.getElementById("gameSection-coloring");
+    var coloringIfr = document.getElementById("coloringGameIframe");
+    if (gameId === "coloring") {
+      if (typeof playHalalTactileClick === "function") playHalalTactileClick("tap");
+      if (typeof appState !== "undefined" && appState.activeGame === "racing" && typeof stopActiveBikeRace === "function") {
+        stopActiveBikeRace(true);
+      }
+      if (typeof appState !== "undefined") appState.activeGame = "coloring";
+      ["hub", "wordsearch", "quiz", "alphabet", "masjid", "racing"].forEach(function(g) {
+        var sec = document.getElementById("gameSection-" + g);
+        if (sec) sec.classList.add("hidden");
+      });
+      syncHubToV4Storage();
+      if (coloringSec) coloringSec.classList.remove("hidden");
+      if (coloringIfr) {
+        var targetSrc = resolveColoringHtmlPath() + "?lang=" + encodeURIComponent((appState && appState.uiLang) || "en");
+        if (coloringIfr.getAttribute("src") !== targetSrc) coloringIfr.setAttribute("src", targetSrc);
+      }
+      updateColoringCardAndHeaderTitle();
+      return;
+    }
+    if (coloringSec && !coloringSec.classList.contains("hidden")) {
+      syncV4StorageBackToHub();
+      coloringSec.classList.add("hidden");
+      if (coloringIfr) coloringIfr.setAttribute("src", "about:blank");
+    }
+    if (typeof origSwitchGame === "function") origSwitchGame.apply(this, arguments);
+  };
+
+  window.closeInstalledGameModal = function() {
+    syncV4StorageBackToHub();
+    var params = new URLSearchParams(window.location.search);
+    if (params.get("game") === "coloring" && window.parent && window.parent !== window) {
+      window.parent.postMessage("QAAF_EXIT_GAME", "*");
+      return;
+    }
+    window.switchGame("hub");
+  };
+
+  window.addEventListener("message", function(ev) {
+    var d = ev.data;
+    if (d === "QAAF_EXIT_GAME" || (d && typeof d === "object" && (d.type === "QAAF_EXIT_GAME" || d.action === "closeGame"))) {
+      if (typeof appState !== "undefined" && appState.activeGame === "coloring") {
+        window.closeInstalledGameModal();
+      }
+    }
+  });
+
+  // Support opening directly via ?game=coloring
+  try {
+    var p = new URLSearchParams(window.location.search);
+    if (p.get("game") === "coloring") {
+      setTimeout(function() { window.switchGame("coloring"); }, 40);
+    } else {
+      setTimeout(updateColoringCardAndHeaderTitle, 60);
+    }
+  } catch (e) {}
 })();
 </script>
 </body>
