@@ -1887,7 +1887,7 @@
       mainCat: "qaaf_3d",
       title: "1. Desk Racer Pro",
       icon: "\ud83c\udfce\ufe0f",
-      path: "Qaaf 3d games/01-Desk racer Pro/desk_racer_pro.html"
+      path: "https://pub-5241f011e0704a3799e1dda07aca985d.r2.dev/desk-racer-pro/desk_racer_pro.html"
     }
   ];
 
@@ -5445,4 +5445,23 @@
       if (typeof closeStandaloneGameModal === "function") closeStandaloneGameModal();
     }
   });
+})();
+
+
+// === QAAF V112 CLOUDFLARE R2 3D GAMES CONNECTION ===
+(function initQaafV112CloudflareR2GamesLink() {
+  window.QAAF_GAMES_R2_BASE = "https://pub-5241f011e0704a3799e1dda07aca985d.r2.dev";
+  var r2DeskUrl = window.QAAF_GAMES_R2_BASE + "/desk-racer-pro/desk_racer_pro.html";
+  if (typeof gamesData !== "undefined" && Array.isArray(gamesData)) {
+    gamesData.forEach(function(g) {
+      if (!g) return;
+      var t = String(g.title || "").toLowerCase();
+      var f = String(g.externalFile || g.url || "").toLowerCase();
+      if (t.indexOf("desk racer") !== -1 || f.indexOf("desk_racer") !== -1) {
+        g.externalFile = r2DeskUrl;
+        g.url = r2DeskUrl;
+        g.size = "4.9 MB";
+      }
+    });
+  }
 })();
