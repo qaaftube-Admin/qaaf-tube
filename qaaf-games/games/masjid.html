@@ -5207,5 +5207,97 @@
   setInterval(applyQaafAutoTheme, 1000);
 })();
 </script>
+<!-- QAAF V113 MASJID SHORT PRAISE & CLEAR WORDSEARCH TARGET -->
+<script id="qaafV113GamesFix">
+(function qaafV113MasjidAudioAndWordSearchBannerFix() {
+  var isSubGame = (window.location.pathname || "").replace(/\\\\/g, "/").indexOf("/games/") !== -1;
+  var audioBase = isSubGame ? "../../audio/games/" : "../audio/games/";
+  var shortPraise = ["short_mashaallah.mp3", "short_subhanallah.mp3"];
+  var pIdx = 0;
+  var curAud = null;
+
+  window.speakMashaAllah = function() {
+    if (typeof appState !== "undefined" && appState.audioMuted) return;
+    try {
+      if (curAud) { curAud.pause(); curAud.currentTime = 0; }
+      var f = shortPraise[pIdx % shortPraise.length];
+      pIdx++;
+      curAud = new Audio(audioBase + f);
+      curAud.play().catch(function() {});
+    } catch (e) {}
+  };
+
+  // 1. MASJID & WUDU BUILDER: Remove long/wrong Arabic TTS audio completely — ONLY MashaAllah / SubhanAllah on correct step!
+  window.selectMasjidStepCard = function(stepOrder) {
+    if (typeof appState === "undefined") return;
+    var expectedOrder = appState.masjidCompletedSteps + 1;
+    if (stepOrder === expectedOrder) {
+      appState.masjidCompletedSteps++;
+      if (typeof playHalalTactileClick === "function") playHalalTactileClick("star");
+      if (typeof addStars === "function") addStars(2);
+      window.speakMashaAllah();
+      if (typeof updateMasjidBuilderUI === "function") updateMasjidBuilderUI();
+      if (appState.masjidCompletedSteps === 6) {
+        setTimeout(function() {
+          window.speakMashaAllah();
+          if (typeof addStars === "function") addStars(10);
+          if (typeof openCelebrationModal === "function") openCelebrationModal(10);
+        }, 700);
+      }
+    } else {
+      if (typeof playHalalTactileClick === "function") playHalalTactileClick("tap");
+    }
+  };
+
+  // 2. WORD SEARCH MIDDLE WHITE STRIP: Always show big, clear, high-contrast target word in selected language!
+  if (!document.getElementById("qaafV113WsWordColorCss")) {
+    var st = document.createElement("style");
+    st.id = "qaafV113WsWordColorCss";
+    st.textContent = [
+      ".ws-v113-main-word { color: #064e3b !important; }",
+      "body.theme-dark .ws-v113-main-word { color: #fbbf24 !important; }",
+      ".ws-v113-sub-word { color: #64748b !important; }",
+      "body.theme-dark .ws-v113-sub-word { color: #94a3b8 !important; }"
+    ].join("\n");
+    document.head.appendChild(st);
+  }
+
+  function renderClearWsTargetBanner() {
+    var spotCard = document.getElementById("wsSpotlightCard");
+    var stageData = (typeof getCurrentWordSearchStageData === "function") ? getCurrentWordSearchStageData() : null;
+    if (!spotCard || !stageData || typeof appState === "undefined") return;
+    var item = stageData.items[appState.wsActiveItemIdx] || stageData.items[0];
+    if (!item) return;
+    var lang = appState.wsLang || "en";
+    var mainWord = (lang === "ur") ? item.ur : ((lang === "ar") ? item.ar : item.en);
+    var mainFont = (lang === "ur") ? "font-urdu" : ((lang === "ar") ? "font-arabic" : "font-english");
+    var isRtlWord = (lang === "ur" || lang === "ar");
+
+    spotCard.innerHTML =
+      "<div onclick=\x27speakActiveWordSearchItem()\x27 class=\x27cursor-pointer flex items-center justify-center gap-3 w-full py-0.5\x27 dir=\x27" + (isRtlWord ? "rtl" : "ltr") + "\x27>" +
+        "<span class=\x27text-4xl sm:text-5xl leading-none shrink-0\x27>" + item.emoji + "</span>" +
+        "<span class=\x27ws-v113-main-word " + mainFont + " text-2xl sm:text-3xl font-extrabold tracking-wide leading-tight\x27>" + mainWord + "</span>" +
+      "</div>";
+  }
+
+  function wrapWsUiOnce() {
+    if (typeof window.updateWordSearchUI === "function" && !window.__qaafV113WsWrapped) {
+      window.__qaafV113WsWrapped = true;
+      var prevWsUpdate = window.updateWordSearchUI;
+      window.updateWordSearchUI = function() {
+        prevWsUpdate.apply(this, arguments);
+        renderClearWsTargetBanner();
+      };
+      renderClearWsTargetBanner();
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function() { setTimeout(wrapWsUiOnce, 220); });
+  } else {
+    setTimeout(wrapWsUiOnce, 220);
+  }
+})();
+</script>
 </body>
 </html>
