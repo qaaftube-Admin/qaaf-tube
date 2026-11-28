@@ -319,6 +319,28 @@
     </div>
   </div>
 
+
+  <!-- =========================================================================
+       MOBILE-SAFE IMAGE SAVE SHEET (WORKS IN ALL ANDROID WEBVIEWS & IFRAMES)
+       ========================================================================= -->
+  <div id="modalSaveImageSheet" class="hidden fixed inset-0 z-60 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl border-4 border-slate-900 shadow-2xl max-w-sm w-full p-4 flex flex-col items-center text-center">
+      <div class="text-sm font-extrabold text-emerald-700 mb-1">✅ Card Ready! کارڈ تیار ہے</div>
+      <div class="text-xs font-bold text-slate-600 mb-2 font-urdu" style="line-height:1.6 !important;">
+        اگر خود ڈاؤن لوڈ نہ ہو تو نیچے شیئر بٹن دبائیں یا تصویر پر دبا کر رکھیں (Save Image)
+      </div>
+      <img id="imgFinalSavePreview" src="" alt="Asma-ul-Husna Card" class="w-full max-w-[260px] rounded-2xl border-3 border-slate-900 shadow-md mb-3 select-auto" style="-webkit-touch-callout: default;" />
+      <div class="w-full grid grid-cols-2 gap-2">
+        <button id="btnNativeShareCard" type="button" class="py-2.5 px-3 rounded-2xl bg-emerald-500 border-3 border-slate-900 shadow-[0_4px_0_#111827] font-extrabold text-xs text-white active:translate-y-1">
+          📤 Share / Save
+        </button>
+        <button id="btnCloseSaveSheet" type="button" class="py-2.5 px-3 rounded-2xl bg-slate-200 border-3 border-slate-900 shadow-[0_4px_0_#111827] font-extrabold text-xs text-slate-900 active:translate-y-1">
+          Done ✓
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // =========================================================================
     // 1. 99 NAMES OF ALLAH DATASET & 4-SWATCH PALETTES (3 SOLID + 1 MIX PAIR)
@@ -413,14 +435,35 @@
     }
 
     // =========================================================================
-    // 3. FAST CACHED AUDIO ENGINE (ZERO-DELAY BASE DETECTION + INSTANT PLAYBACK)
+    // 3. MOBILE-SAFE SINGLE-ELEMENT MP3 AUDIO ENGINE (MALE NEURAL MP3 ONLY)
     // =========================================================================
-    const GAME_AUDIO_BASES = ['../../audio/games/', '/audio/games/', '../audio/games/', 'audio/games/'];
+    const GAME_AUDIO_BASES = ['/audio/games/', '../../audio/games/', '../audio/games/', 'audio/games/', '../../../audio/games/'];
     let cachedWorkingBase = null;
-    let activeAudio = null;
     let audioCtx = null;
     let needsFirstGestureAudio = false;
     let hasSpokenCurrentLevelStart = false;
+    let currentPlaybackToken = 0;
+
+    // Reuse ONE single Audio element unlocked on first user tap so chained
+    // Masha'Allah -> Arabic -> Urdu -> English works reliably on Android & iOS!
+    const sharedAudio = new Audio();
+    sharedAudio.preload = 'auto';
+    let sharedAudioUnlocked = false;
+
+    function unlockSharedAudioOnGesture() {
+      if (sharedAudioUnlocked) return;
+      sharedAudioUnlocked = true;
+      try {
+        // Unlock WebAudio context too
+        if (!audioCtx) {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (AC) audioCtx = new AC();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+      } catch (e) {}
+    }
 
     function setSpeakerPulse(isPlaying) {
       const btn = document.getElementById('btnPlayVoice');
@@ -467,19 +510,21 @@
     }
 
     function stopAllActiveAudio() {
-      if (activeAudio) {
-        try {
-          activeAudio.pause();
-          activeAudio.currentTime = 0;
-        } catch (e) {}
-        activeAudio = null;
-      }
+      currentPlaybackToken++;
+      try {
+        sharedAudio.onplaying = null;
+        sharedAudio.onended = null;
+        sharedAudio.onerror = null;
+        sharedAudio.pause();
+        sharedAudio.currentTime = 0;
+      } catch (e) {}
       setSpeakerPulse(false);
     }
 
-    // STRICT MALE-ONLY MP3 PLAYER (Zero female voice, zero Google TTS, zero browser speechSynthesis!)
+    // Plays candidate Male MP3 URLs using the single mobile-safe `sharedAudio` element
     function playAudioWithFallback(candidatePairs, _fallbackLang, _fallbackText, onDone) {
       stopAllActiveAudio();
+      const myToken = currentPlaybackToken;
       setSpeakerPulse(true);
 
       if (!candidatePairs || candidatePairs.length === 0) {
@@ -488,61 +533,66 @@
         return;
       }
 
+      // If we already discovered the working base folder (e.g., '/audio/games/'), try it first!
       let pairsToTry = candidatePairs;
       if (cachedWorkingBase) {
-        const filtered = candidatePairs.filter(function (p) { return p.base === cachedWorkingBase; });
-        if (filtered.length > 0) pairsToTry = filtered;
+        const primary = candidatePairs.filter(function (p) { return p.base === cachedWorkingBase; });
+        const others = candidatePairs.filter(function (p) { return p.base !== cachedWorkingBase; });
+        pairsToTry = primary.concat(others);
       }
 
       let idx = 0;
       function tryNextUrl() {
+        if (myToken !== currentPlaybackToken) return;
         if (idx >= pairsToTry.length) {
           setSpeakerPulse(false);
           if (typeof onDone === 'function') onDone();
           return;
         }
         const entry = pairsToTry[idx++];
-        try {
-          const audio = new Audio();
-          activeAudio = audio;
-          audio.preload = 'auto';
-          let settled = false;
+        let settled = false;
 
-          const loadGuard = setTimeout(function () {
-            if (!settled && audio.readyState < 2) {
-              settled = true;
-              try { audio.pause(); } catch (e) {}
-              tryNextUrl();
-            }
-          }, 500);
-
-          const finishFail = function () {
-            if (settled) return;
+        // 4500ms guard so slow 4G/mobile networks have plenty of time to fetch & decode the MP3
+        const loadGuard = setTimeout(function () {
+          if (myToken !== currentPlaybackToken) return;
+          if (!settled && sharedAudio.readyState < 2) {
             settled = true;
-            clearTimeout(loadGuard);
+            try { sharedAudio.pause(); } catch (e) {}
             tryNextUrl();
-          };
+          }
+        }, 4500);
 
-          audio.onplaying = function () {
-            clearTimeout(loadGuard);
-            cachedWorkingBase = entry.base;
-            setSpeakerPulse(true);
-          };
+        const finishFail = function () {
+          if (myToken !== currentPlaybackToken || settled) return;
+          settled = true;
+          clearTimeout(loadGuard);
+          tryNextUrl();
+        };
 
-          audio.onended = function () {
-            if (settled) return;
-            settled = true;
-            clearTimeout(loadGuard);
-            setSpeakerPulse(false);
-            if (typeof onDone === 'function') onDone();
-          };
+        sharedAudio.onplaying = function () {
+          if (myToken !== currentPlaybackToken) return;
+          clearTimeout(loadGuard);
+          cachedWorkingBase = entry.base;
+          setSpeakerPulse(true);
+        };
 
-          audio.onerror = finishFail;
+        sharedAudio.onended = function () {
+          if (myToken !== currentPlaybackToken || settled) return;
+          settled = true;
+          clearTimeout(loadGuard);
+          setSpeakerPulse(false);
+          if (typeof onDone === 'function') onDone();
+        };
 
-          audio.src = entry.url;
-          const playPromise = audio.play();
+        sharedAudio.onerror = finishFail;
+
+        try {
+          sharedAudio.src = entry.url;
+          sharedAudio.load();
+          const playPromise = sharedAudio.play();
           if (playPromise && typeof playPromise.catch === 'function') {
             playPromise.catch(function (err) {
+              if (myToken !== currentPlaybackToken) return;
               clearTimeout(loadGuard);
               if (err && err.name === 'NotAllowedError') {
                 needsFirstGestureAudio = true;
@@ -554,7 +604,7 @@
             });
           }
         } catch (e) {
-          tryNextUrl();
+          finishFail();
         }
       }
 
@@ -563,7 +613,7 @@
 
     function playShortPraiseMp3(kind, fallbackArabicText, onDone) {
       const pairs = [];
-      const hMashaBarak = fnv1aHash('ما شاء الله! بارك الله فيك'); // ar_1eb07279.mp3 (already generated in 515/515!)
+      const hMashaBarak = fnv1aHash('ما شاء الله! بارك الله فيك'); // ar_1eb07279.mp3
       GAME_AUDIO_BASES.forEach(function (b) {
         if (kind === 'barakallah') {
           pairs.push({ base: b, url: b + 'ar_' + hMashaBarak + '.mp3' });
@@ -581,8 +631,8 @@
       const h = fnv1aHash(text);
       const pairs = [];
       GAME_AUDIO_BASES.forEach(function (b) {
-        // Put FNV-1a hashed MP3 FIRST so all 515 generated files play instantly with zero 404 delay!
         pairs.push({ base: b, url: b + lang + '_' + h + '.mp3' });
+        pairs.push({ base: b, url: b + h + '.mp3' });
         if (nameIdx) {
           pairs.push({ base: b, url: b + 'asma_' + lang + '_' + nameIdx + '.mp3' });
         }
@@ -597,8 +647,8 @@
       playNeuralMp3('ar', item[1], item[0]);
     }
 
-    // Complete 4-Part Completion Sequence:
-    // 1. Short "Masha'Allah" -> 2. Arabic Name -> 3. Urdu Meaning -> 4. English Meaning!
+    // Complete 4-Part Completion Sequence (Male Neural MP3 Only):
+    // 1. Short "Masha'Allah" -> 2. Arabic Name -> 3. Urdu Meaning -> 4. English Meaning
     function speakCompletionSequence() {
       const item = NAMES_99[state.levelIdx];
       if (!item) return;
@@ -1672,6 +1722,10 @@
 
       requestAnimationFrame(renderLoop);
 
+      // Unlock mobile audio on very first touch/click
+      document.addEventListener('touchstart', unlockSharedAudioOnGesture, { once: true, passive: true });
+      document.addEventListener('mousedown', unlockSharedAudioOnGesture, { once: true });
+
       // Canvas Events
       artCanvas.addEventListener('mousedown', onPointerDown);
       window.addEventListener('mousemove', onPointerMove);
@@ -1770,18 +1824,96 @@
         renderKeepsakeCard();
       });
 
+      let lastSavedBlob = null;
+      let lastSavedFilename = 'QAAF_Card.png';
+
+      function triggerBlobDownload(blob, filename) {
+        try {
+          const blobUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = blobUrl;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(function () {
+            try {
+              document.body.removeChild(a);
+              URL.revokeObjectURL(blobUrl);
+            } catch (e) {}
+          }, 1500);
+          return true;
+        } catch (e) {
+          return false;
+        }
+      }
+
       document.getElementById('btnDownloadCard').addEventListener('click', function () {
+        unlockSharedAudioOnGesture();
         playSoftTactileSound('click');
         renderKeepsakeCard();
+
         const item = NAMES_99[state.levelIdx];
         const can = document.getElementById('cardPreviewCanvas');
-        const a = document.createElement('a');
-        a.download = 'QAAF_' + item[2].replace(/[^a-zA-Z0-9]/g, '') + '.png';
-        a.href = can.toDataURL('image/png');
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        const safeName = (state.childName || item[2]).replace(/[^a-zA-Z0-9_-]/g, '') || 'Card';
+        lastSavedFilename = 'QAAF_' + item[2].replace(/[^a-zA-Z0-9]/g, '') + '_' + safeName + '.png';
+
+        const dataUrl = can.toDataURL('image/png');
+        document.getElementById('imgFinalSavePreview').src = dataUrl;
+
+        // Notify parent app if running inside QAAF Hub iframe/WebView
+        try {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'QAAF_SAVE_CARD', filename: lastSavedFilename, dataUrl: dataUrl }, '*');
+          }
+        } catch (e) {}
+
+        // Use Blob download (much more reliable on Android Chrome than huge data: URLs)
+        if (can.toBlob) {
+          can.toBlob(function (blob) {
+            if (!blob) return;
+            lastSavedBlob = blob;
+            triggerBlobDownload(blob, lastSavedFilename);
+            // Also show the Save/Share sheet so mobile WebView users can tap Share/Save or long-press the image!
+            document.getElementById('modalSaveImageSheet').classList.remove('hidden');
+          }, 'image/png');
+        } else {
+          const a = document.createElement('a');
+          a.download = lastSavedFilename;
+          a.href = dataUrl;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          document.getElementById('modalSaveImageSheet').classList.remove('hidden');
+        }
+
         playShortPraiseMp3('barakallah', 'بارك الله فيك');
+      });
+
+      document.getElementById('btnNativeShareCard').addEventListener('click', function () {
+        playSoftTactileSound('click');
+        if (lastSavedBlob && navigator.share) {
+          try {
+            const file = new File([lastSavedBlob], lastSavedFilename, { type: 'image/png' });
+            if (!navigator.canShare || navigator.canShare({ files: [file] })) {
+              navigator.share({
+                title: 'Asma-ul-Husna Coloring Card',
+                files: [file]
+              }).catch(function () {
+                triggerBlobDownload(lastSavedBlob, lastSavedFilename);
+              });
+              return;
+            }
+          } catch (e) {}
+        }
+        if (lastSavedBlob) {
+          triggerBlobDownload(lastSavedBlob, lastSavedFilename);
+        }
+      });
+
+      document.getElementById('btnCloseSaveSheet').addEventListener('click', function () {
+        playSoftTactileSound('click');
+        document.getElementById('modalSaveImageSheet').classList.add('hidden');
       });
 
       document.getElementById('btnContinueNextLevel').addEventListener('click', function () {

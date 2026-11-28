@@ -5425,7 +5425,7 @@
     size: "1.2 MB",
     installed: true,
     blockedByParent: false,
-    externalFile: "./qaaf-games/games/coloring.html"
+    externalFile: "./qaaf-games/games/coloring.html?v=114.0"
   };
   if (typeof gamesData !== "undefined" && Array.isArray(gamesData)) {
     if (!gamesData.some(function(g) { return g && (g.id === "g_coloring" || g.slug === "coloring"); })) {
